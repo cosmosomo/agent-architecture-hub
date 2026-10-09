@@ -1,0 +1,20 @@
+{
+  "name": "agent-architecture-designer",
+  "description": "60 个专业子智能体与 62 个团队编排预设（调研、构建、QA、五心智辩论、HITL 质量门），由 Agent Architecture Designer 应用生成。覆盖战略、调研、构建、QA、数据与 AI、基础设施/运维、产品与合规各阶段。完整可视化设计器与百科见 GitHub 仓库（见 homepage）。",
+  "version": "0.41.0",
+  "author": {
+    "name": "TheJacksonCode"
+  },
+  "homepage": "https://github.com/TheJacksonCode/Agent-Architecture",
+  "repository": "https://github.com/TheJacksonCode/Agent-Architecture.git",
+  "license": "MIT",
+  "keywords": [
+    "multi-agent",
+    "orchestration",
+    "five-minds",
+    "hitl",
+    "agent-teams",
+    "subagents",
+    "presets"
+  ]
+}
