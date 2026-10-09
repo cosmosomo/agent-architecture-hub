@@ -32181,7 +32181,7 @@ const bMap={opus:'b-op',sonnet:'b-so',haiku:'b-ha'};
 // ================================================================
 // ZOOM / PAN
 // ================================================================
-function zastTransf(){cvT.style.transform='translate('+panX+'px,'+panY+'px) scale('+scale+')';G('zL').textContent=Math.round(scale*100)+'%';aktSiatke();aktMinimape()}
+function zastTransf(){cvT.style.transform='translate('+panX+'px,'+panY+'px) scale('+scale+')';/* hub */var obT=G('obsT');if(obT)obT.style.transform=cvT.style.transform;G('zL').textContent=Math.round(scale*100)+'%';aktSiatke();aktMinimape()}
 /* v41 PLYNNOSC CANVASU (1/3): wersja sklejajaca wywolania do jednej na klatke.
    Mysz raportuje ruch czesciej niz ekran sie odswieza - przy 1000 Hz to okolo szesnastu
    zdarzen na klatke, z czego pietnascie rysowalo obraz, ktorego nikt nigdy nie zobaczyl.
@@ -34262,7 +34262,7 @@ rWez();aktStan();aktLicznik();podswPreset(pid);pokazInfoPr(pid);aktPasekFaz();
 // V32.6: validate context budget for premium presets
 if(PM[pid]&&PM[pid].tier==='premium')walidujPremiumCtx(pid);
 dopasujWidok();
-if(pid==='deep_five_minds')pokazHero(pid)}
+/* hub */if(window.HUB&&HUB.obs)HUB.obs.onPreset(pid);if(pid==='deep_five_minds'&&!document.body.classList.contains('obs-on'))pokazHero(pid)}
 
 function podswPreset(pid){document.querySelectorAll('.pr-item').forEach(e=>e.classList.remove('on'));if(pid){const el=G('pi_'+pid);if(el)el.classList.add('on')}G('sP').querySelector('.st-v').textContent=pid?getPresetName(pid):'-'}
 
@@ -39746,7 +39746,7 @@ function tutOverlayOtwarty(id){
 /* Czy automat MA PRAWO wystartowac w tej chwili.
    Wydzielone z tutAutoStart celowo: dzieki temu cala decyzja daje sie sprawdzic
    testem bez czekania na zegary, a tutAutoStart zostaje sama orkiestracja czasu. */
-function tutAutoDozwolony(){
+function tutAutoDozwolony(){/* hub */if(document.body.classList.contains('obs-on'))return false;
   if(tutOpen)return false;
   var zapis=null;
   try{zapis=localStorage.getItem('acV32_tut')}catch(e){return false}
@@ -39790,5 +39790,32 @@ if(typeof window!=='undefined'&&window.addEventListener){
 }
 /* ===== SAMOUCZEK: KONIEC ===== */
 </script>
+<!-- hub: observation mode, see hub/SPEC.md -->
+<link rel="stylesheet" href="hub/css/obs.css">
+<link rel="stylesheet" href="hub/css/panels.css">
+<script src="hub/data/base.js"></script>
+<script src="hub/data/zh.js"></script>
+<script src="hub/data/cases/deep_five_minds.js"></script>
+<script src="hub/data/cases/feature_sprint.js"></script>
+<script src="hub/data/cases/incident_war_room.js"></script>
+<script src="hub/data/cases/deep_research_v2.js"></script>
+<script src="hub/js/core/util.js"></script>
+<script src="hub/js/core/store.js"></script>
+<script src="hub/js/core/casedef.js"></script>
+<script src="hub/js/core/sim.js"></script>
+<script src="hub/js/core/analysis.js"></script>
+<script src="hub/js/core/model.js"></script>
+<script src="hub/js/core/views.js"></script>
+<script src="hub/js/obs/cards.js"></script>
+<script src="hub/js/obs/stage.js"></script>
+<script src="hub/js/obs/scene-org.js"></script>
+<script src="hub/js/obs/scene-process.js"></script>
+<script src="hub/js/obs/scene-run.js"></script>
+<script src="hub/js/panels/panels.js"></script>
+<script src="hub/js/obs/panel.js"></script>
+<script src="hub/js/obs/side.js"></script>
+<script src="hub/js/obs/timeline.js"></script>
+<script src="hub/js/obs/main.js"></script>
+<!-- /hub -->
 </body>
 </html>
