@@ -253,7 +253,6 @@
       els.crumbs.appendChild(h('span', { class: 'ob-sep' }));
       els.crumbs.appendChild(sel);
     }
-    els.crumbs.appendChild(h('span', { class: 'ob-tag-sim', title: '运行事实由确定性模拟生成，用来演示；接入真实运行记录后换成真实数据' }, '模拟数据'));
   }
 
   /* ---------- canvas: granularity, comparison, presentation (top right) ---------- */
