@@ -372,3 +372,16 @@ HUB.cases['feature_sprint'] = {
 - 任一个体、渠道、判断点、运行都能在抽屉里看到详情和可用操作；操作后图上能看到变化。
 - 全部 62 个案例模板都能打开，没有报错；精选案例的内容更丰富。
 - 浅色、深色两套主题都清楚可读。
+
+## 14. 进度（2026-10-09，额度用完时暂停）
+
+已完成并提交：
+- 数据：base.js（从 v41 提取）、zh.js（全部中文名）、四个精选案例（deep_five_minds、feature_sprint、incident_war_room、deep_research_v2），都通过 tools/check_*.js。
+- 核心：util、store（观察状态、历史、链接、展开判定）、casedef、sim、analysis、model（含页面操作）、views（六个视图预设、我的视图、渲染器登记、HUB.orgRep）、render/svg.js（舞台、平移缩放、补间）、css/tokens.css。
+- 测试：node hub/tools/test_model.js，62 个案例模板全部通过。
+
+还没做：
+- 外壳：index.html、css/app.css、js/ui/shell.js、js/main.js（顶栏、上下文栏、侧栏、舞台、抽屉、时间线容器、键盘）。
+- ①②③ 组织视图：js/views/org.js、css/org.css。
+- 五个界面模块的 Haiku 任务已派出又中止（额度原因），需要重派：process.js（④）、run.js（⑤⑥）、panels.js、details.js、timeline.js + guide.js。派发说明与本文第 8～12 节一致。
+- 整合、浏览器测试（静态服务：python -m http.server 8899 --directory E:/program/GIT/Agent/multi）、单文件打包。

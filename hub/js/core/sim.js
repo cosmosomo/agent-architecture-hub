@@ -160,6 +160,8 @@
     };
 
     /* ---------- helpers ---------- */
+    var STD_CH = /^ch_(opus|sonnet|haiku|fable|tool_.+)$/;
+    var customCh = def.channels.filter(function (c) { return !STD_CH.test(c.id); }).map(function (c) { return c.id; });
     var addTask = function (o) {
       var t = { id: nid('t', 't'), caseId: o.caseId, parentId: o.parentId || null, name: o.name, stepId: o.stepId || null,
         assignee: o.assignee, status: o.status || 'done', created: o.created, started: o.started || null, done: o.done || null, visit: o.visit || 1 };
@@ -308,9 +310,14 @@
             }
             call.tokensIn = 0; call.tokensOut = 0;
           }
+          // Custom tool channels declared by a curated case (e.g. a monitoring query service) replace generic lookups.
+          if (call.kind === 'tool' && customCh.length && (kind === 'fetch' || kind === 'bash' || kind === 'search')) {
+            var cc = customCh.find(function (id) { return x.channels.indexOf(id) >= 0; });
+            if (cc && (ci % 2 === 0)) { call.channelId = cc; call.name = '调用 ' + ((def.channels.find(function (c) { return c.id === cc; }) || {}).name || cc).replace(/^工具：/, ''); }
+          }
           var hitCall = outageAt(call.channelId, call.start, call.end);
           if (failed && ci === kinds.length - 1) { call.status = 'error'; call.output = '渠道不可用：' + ((hitCall && hitCall.note) || '中断'); }
-          else if (hitCall && call.kind === 'model') { call.status = 'error'; call.output = '渠道不可用：' + hitCall.note; }
+          else if (hitCall) { call.status = call.kind === 'tool' ? 'retry' : 'error'; call.output = '渠道不可用：' + hitCall.note + (call.kind === 'tool' ? '，等恢复后重试成功' : ''); }
           F.calls.push(call);
           dec.evidence.push(call.id);
           run.tokens += call.tokensIn + call.tokensOut;
