@@ -240,6 +240,7 @@ HUB.render.register(subject, {
 ```
 
 渲染器内的交互约定：
+- 拖动背景平移，滚轮缩放（`HUB.svgkit` 负责）。大面积的容器（分组框、泳道底）加 class `svgk-pan`，从它上面也能拖动平移；只在真的拖动后才捕获指针，所以单击仍然落到它本身。
 - 单击对象：`HUB.store.set({ selection: {type, id}, drawer: true }, { history: false })`。
 - 双击分组、阶段、决策：`HUB.store.toggle(...)`。
 - 双击个体：进入它最近的一次运行（v5）。
@@ -360,6 +361,7 @@ HUB.cases['feature_sprint'] = {
 要求：
 - 流程覆盖时，阶段的 `executors` 合起来要覆盖所有会被派活的个体；`neverDispatch` 里的个体不要出现在任何阶段里。
 - 判断点的 `pass`、`fail` 只能指向已有阶段编号或 `'done'`。
+- `inject.at` 是相对这个案例自己时间窗的比例（0 是案例开始，1 是案例时间窗结束，时间窗长 0.28 × 模拟跨度），不是整个模拟跨度的比例；`outage.at`、`versionChanges.at` 才是整个跨度的比例。
 - 渠道编号：模型渠道固定为 `ch_opus`、`ch_sonnet`、`ch_haiku`、`ch_fable`；工具渠道固定为 `ch_tool_<工具名小写>`，比如 `ch_tool_websearch`。自定义渠道用别的编号。
 - 写完用 `node hub/tools/check_case.js hub/data/cases/<编号>.js` 自检，必须零错误。
 

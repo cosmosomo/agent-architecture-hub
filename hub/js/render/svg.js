@@ -54,30 +54,40 @@
       tr = { x: mx - (mx - tr.x) * f, y: my - (my - tr.y) * f, k: k };
       apply();
     }, { passive: false });
-    var drag = null;
+    // Drag the background (or any element with class svgk-pan, such as a group box) to pan.
+    // The pointer is captured only once it really moves, so a plain click still reaches the element under it.
+    var drag = null, suppressClick = false;
     svg.addEventListener('pointerdown', function (e) {
       if (e.button !== 0) return;
-      if (e.target !== svg && e.target !== bg) return;
-      drag = { x: e.clientX, y: e.clientY, tx: tr.x, ty: tr.y, moved: false };
-      svg.setPointerCapture(e.pointerId);
-      svg.classList.add('svgk-dragging');
+      var t = e.target;
+      var isBg = t === svg || t === bg;
+      if (!isBg && !(t.classList && t.classList.contains('svgk-pan'))) return;
+      drag = { x: e.clientX, y: e.clientY, tx: tr.x, ty: tr.y, moved: false, id: e.pointerId, bg: isBg };
     });
     svg.addEventListener('pointermove', function (e) {
       if (!drag) return;
+      if (!(e.buttons & 1)) { drag = null; svg.classList.remove('svgk-dragging'); return; }
       var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+      if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 3) {
+        drag.moved = true;
+        try { svg.setPointerCapture(drag.id); } catch (err) { /* pointer already gone */ }
+        svg.classList.add('svgk-dragging');
+      }
+      if (!drag.moved) return;
       tr = { x: drag.tx + dx, y: drag.ty + dy, k: tr.k };
       apply();
     });
-    var end = function (e) {
+    var end = function () {
       if (!drag) return;
-      var moved = drag.moved;
+      var d = drag;
       drag = null;
       svg.classList.remove('svgk-dragging');
-      if (!moved && (e.target === svg || e.target === bg)) svg.dispatchEvent(new CustomEvent('svgk-bgclick'));
+      if (d.moved) { suppressClick = true; setTimeout(function () { suppressClick = false; }, 0); }
+      else if (d.bg) svg.dispatchEvent(new CustomEvent('svgk-bgclick'));
     };
     svg.addEventListener('pointerup', end);
     svg.addEventListener('pointercancel', end);
+    svg.addEventListener('click', function (e) { if (suppressClick) { suppressClick = false; e.stopPropagation(); } }, true);
     apply();
     return {
       get: function () { return { x: tr.x, y: tr.y, k: tr.k }; },
