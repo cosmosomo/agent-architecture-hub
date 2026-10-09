@@ -1,0 +1,85 @@
+/* Design tokens. Light is the default; dark applies with [data-theme="dark"]. */
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  --fs: 13px;
+  --fs-2: 12px;
+  --fs-3: 11px;
+  --fs-title: 15px;
+  --radius: 6px;
+  --gap: 8px;
+  --pad: 12px;
+  --dur: 300ms;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+
+  --bg: #f6f6f4;
+  --panel: #ffffff;
+  --panel-2: #f1f1ee;
+  --panel-3: #e9e9e5;
+  --line: #e2e1dc;
+  --line-2: #cfcdc6;
+  --ink: #1f2328;
+  --ink-2: #57606a;
+  --ink-3: #8c959f;
+
+  --accent: #1f6feb;
+  --accent-weak: #ddeafd;
+  --accent-ink: #0b3d91;
+
+  --c-task: #4b5563;
+  --c-info: #7c4dbd;
+  --c-watch: #0f766e;
+  --c-channel: #9a6212;
+  --c-factonly: #d4531a;
+  --c-gate: #6d4fc2;
+  --c-human: #2f6d3a;
+
+  --s-working: #1a7f37;
+  --s-waiting: #b7791f;
+  --s-standby: #8c959f;
+  --s-error: #cf222e;
+  --s-never: #b8b6ae;
+
+  --hl: #1f6feb;
+  --hl-weak: rgba(31, 111, 235, 0.12);
+  --dim: 0.16;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] {
+  --bg: #15171a;
+  --panel: #1c1f23;
+  --panel-2: #22262b;
+  --panel-3: #2a2f35;
+  --line: #2e333a;
+  --line-2: #3d434b;
+  --ink: #e6e8eb;
+  --ink-2: #a8b0b9;
+  --ink-3: #727b85;
+
+  --accent: #5b9cf6;
+  --accent-weak: #1f324d;
+  --accent-ink: #b9d4fb;
+
+  --c-task: #aab2bc;
+  --c-info: #b393e6;
+  --c-watch: #4fb7a8;
+  --c-channel: #d4a052;
+  --c-factonly: #f07a43;
+  --c-gate: #a58ce8;
+  --c-human: #6cbf7a;
+
+  --s-working: #4ac26b;
+  --s-waiting: #d9a441;
+  --s-standby: #727b85;
+  --s-error: #f0605d;
+  --s-never: #4a5058;
+
+  --hl: #5b9cf6;
+  --hl-weak: rgba(91, 156, 246, 0.16);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur: 0ms; }
+}

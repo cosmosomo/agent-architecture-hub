@@ -28,7 +28,7 @@ Object.keys(B.presets).forEach((id) => {
 });
 ['strategy', 'research', 'debate1', 'debate2', 'build', 'qa', 'hitl'].forEach((k) => { if (!(Z.phases || {})[k]) err(`phases.${k} missing`); });
 const tools = new Set();
-Object.values(B.agents).forEach((a) => String(a.tools || '').split(',').map((s) => s.trim()).filter(Boolean).forEach((t) => tools.add(t)));
+Object.values(B.agents).forEach((a) => String(a.tools || '').split(',').map((s) => s.replace(/\(.*?\)/g, '').trim()).filter(Boolean).flatMap((s) => s.split('/')).map((s) => s.trim()).filter(Boolean).forEach((t) => tools.add(t)));
 tools.forEach((t) => { if (!(Z.tools || {})[t]) err(`tools.${t} missing`); });
 const extra = Object.keys(Z.agents || {}).filter((k) => !B.agents[k]);
 if (extra.length) err('unknown agent ids: ' + extra.join(','));

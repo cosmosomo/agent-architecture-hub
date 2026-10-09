@@ -17,7 +17,7 @@ const errors = [], warns = [];
 const err = (m) => errors.push(m), warn = (m) => warns.push(m);
 
 const TOOL_IDS = new Set();
-Object.values(B.agents).forEach((a) => String(a.tools || '').split(',').map((s) => s.trim()).filter(Boolean)
+Object.values(B.agents).forEach((a) => String(a.tools || '').split(',').map((s) => s.replace(/\(.*?\)/g, '').trim()).filter(Boolean).flatMap((s) => s.split('/')).map((s) => s.trim()).filter(Boolean)
   .forEach((t) => TOOL_IDS.add('ch_tool_' + t.toLowerCase().replace(/[^a-z0-9]/g, ''))));
 const MODEL_CH = new Set(['ch_opus', 'ch_sonnet', 'ch_haiku', 'ch_fable']);
 

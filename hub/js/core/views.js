@@ -1,0 +1,91 @@
+/* HUB.views: the registry of view presets (①..⑥ and user-saved views). */
+(function () {
+  'use strict';
+  var HUB = (window.HUB = window.HUB || {});
+  var list = [];
+  var KEY = 'hub.myviews.v1';
+
+  function register(v) { list = list.filter(function (x) { return x.id !== v.id; }); list.push(v); list.sort(function (a, b) { return (a.num || 99) - (b.num || 99); }); }
+  function get(id) { return list.find(function (x) { return x.id === id; }) || null; }
+  function current(state) {
+    for (var i = 0; i < list.length; i++) { if (list[i].test && list[i].test(state)) return list[i].id; }
+    return null;
+  }
+  function go(id) {
+    var v = get(id);
+    if (!v) return;
+    var st = HUB.store.get();
+    HUB.store.set(v.apply(st, HUB.model.current));
+  }
+  var noOverrides = function (s, subject) { return !(s.expanded[subject] || []).length && !(s.collapsed[subject] || []).length; };
+  var caseFocus = function (st, m) {
+    var c = HUB.model.instanceOf(st, m);
+    return c ? { type: 'case', id: c.id } : null;
+  };
+  var runFocus = function (st, m) {
+    var r = HUB.model.focusRun(st, m);
+    return r ? { type: 'run', id: r.id } : st.focus;
+  };
+
+  register({
+    id: 'v1', num: 1, name: '完整协作图', short: '完整协作', question: '看清所有个体和关系', subject: 'org',
+    apply: function () { return { subject: 'org', depth: { org: 3 }, expanded: { org: [] }, collapsed: { org: [] }, focus: null, present: 'graph' }; },
+    test: function (s) { return s.subject === 'org' && !s.focus && s.depth.org === 3 && noOverrides(s, 'org'); }
+  });
+  register({
+    id: 'v2', num: 2, name: '部门架构图', short: '部门架构', question: '看清组织和分工', subject: 'org',
+    apply: function () { return { subject: 'org', depth: { org: 1 }, expanded: { org: [] }, collapsed: { org: [] }, focus: null, present: 'graph' }; },
+    test: function (s) { return s.subject === 'org' && !s.focus && s.depth.org === 1 && noOverrides(s, 'org'); }
+  });
+  register({
+    id: 'v3', num: 3, name: '单案例路由图', short: '单案例路由', question: '看清一次协作实际怎么发生', subject: 'org',
+    apply: function (st, m) {
+      var f = caseFocus(st, m);
+      return { subject: 'org', focus: f, instanceId: f ? f.id : st.instanceId, depth: { org: Math.max(2, st.depth.org) }, present: 'graph' };
+    },
+    test: function (s) { return s.subject === 'org' && s.focus && s.focus.type === 'case'; }
+  });
+  register({
+    id: 'v4', num: 4, name: '业务流程图', short: '业务流程', question: '看清系统按什么规则运转', subject: 'process',
+    apply: function (st) {
+      return { subject: 'process', focus: st.focus && st.focus.type === 'case' ? st.focus : null, present: 'graph' };
+    },
+    test: function (s) { return s.subject === 'process'; }
+  });
+  register({
+    id: 'v5', num: 5, name: '粗粒度决策链', short: '决策链', question: '看清做了哪些决定、依据是什么', subject: 'exec',
+    apply: function (st, m) { return { subject: 'exec', depth: { exec: 1 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: runFocus(st, m), present: 'graph' }; },
+    test: function (s) { return s.subject === 'exec' && s.depth.exec === 1 && noOverrides(s, 'exec'); }
+  });
+  register({
+    id: 'v6', num: 6, name: '细粒度执行链', short: '执行链', question: '看清每一步实际做了什么', subject: 'exec',
+    apply: function (st, m) { return { subject: 'exec', depth: { exec: 2 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: runFocus(st, m), present: 'graph' }; },
+    test: function (s) { return s.subject === 'exec' && s.depth.exec >= 2 && noOverrides(s, 'exec'); }
+  });
+
+  /* ---------- user views ---------- */
+  function loadMine() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; }
+  }
+  function saveMine(arr) { try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch (e) { /* storage blocked */ } }
+  function saveCurrent(label) {
+    var st = HUB.store.get();
+    var snap = JSON.parse(JSON.stringify(st));
+    delete snap.selection;
+    var mine = loadMine();
+    var item = { id: 'my' + Date.now(), name: label || ('我的视图 ' + (mine.length + 1)), state: snap };
+    mine.push(item);
+    saveMine(mine);
+    return item;
+  }
+  function removeMine(id) { saveMine(loadMine().filter(function (x) { return x.id !== id; })); }
+  function goMine(id) {
+    var item = loadMine().find(function (x) { return x.id === id; });
+    if (!item) return;
+    if (item.state.caseId !== HUB.store.get().caseId) HUB.store.switchCase(item.state.caseId);
+    HUB.store.set(item.state);
+  }
+
+  HUB.views = { register: register, list: function () { return list.slice(); }, get: get, current: current, go: go,
+    mine: loadMine, saveCurrent: saveCurrent, removeMine: removeMine, goMine: goMine };
+})();
