@@ -88,4 +88,24 @@
 
   HUB.views = { register: register, list: function () { return list.slice(); }, get: get, current: current, go: go,
     mine: loadMine, saveCurrent: saveCurrent, removeMine: removeMine, goMine: goMine };
+
+  /* Renderer registry: one renderer per subject ('org' | 'process' | 'exec'). */
+  HUB.render = HUB.render || {
+    _r: {},
+    register: function (subject, renderer) { this._r[subject] = renderer; },
+    get: function (subject) { return this._r[subject] || null; }
+  };
+
+  /* Which node stands for an individual in the org subject: the outermost closed group above it, else itself. */
+  HUB.orgRep = function (indId, state, model) {
+    var m = model || HUB.model.current;
+    var x = m.idx.ind.get(indId);
+    if (!x || !x.groupId) return 'i:' + indId;
+    var chain = m.idx.ancestors(x.groupId).slice().reverse(); // top-level first
+    for (var i = 0; i < chain.length; i++) {
+      var g = m.idx.group.get(chain[i]);
+      if (!HUB.store.isOpen('org', g.id, g.level, state)) return 'g:' + g.id;
+    }
+    return 'i:' + indId;
+  };
 })();
