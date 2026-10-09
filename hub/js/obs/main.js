@@ -18,7 +18,7 @@
     exec: [[1, '决策'], [2, '调用']]
   };
   var LINE_CHIPS = [['task', '任务线', '--ob-task'], ['info', '信息线', '--ob-info'], ['watch', '监督线', '--ob-watch'], ['channel', '渠道线', '--ob-channel']];
-  var OVERLAYS = [['human', '人'], ['channels', '渠道节点'], ['delivery', '送达标记'], ['lanes', '执行路径']];
+  var OVERLAYS = [['human', '人'], ['channels', '渠道节点'], ['delivery', '送达标记']];
   var VIEW_ICONS = {
     v1: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18.5" r="2"/><circle cx="12" cy="10" r="1.7"/><path d="M7 6h10M6.2 7.8l4.6 9M17.8 7.8l-4.6 9M12 11.7v4.8"/>',
     v2: '<rect x="3" y="3.5" width="7.5" height="6.5" rx="1.5"/><rect x="13.5" y="3.5" width="7.5" height="6.5" rx="1.5"/><rect x="8.25" y="14" width="7.5" height="6.5" rx="1.5"/><path d="M6.75 10v2h10.5v-2M12 12v2"/>',
@@ -92,7 +92,10 @@
     }, true);
     document.addEventListener('keydown', onKey, true);
     document.addEventListener('click', function (e) { if (els.pop && !els.pop.contains(e.target) && !e.target.closest('[data-pop]')) closePop(); });
-    window.addEventListener('resize', function () { clearTimeout(rzTimer); rzTimer = setTimeout(function () { if (on) renderAll(st(), st()); }, 160); });
+    // the canvas can start at zero size (a background tab, a collapsed pane); refit as soon as it has room
+    var onResize = function () { clearTimeout(rzTimer); rzTimer = setTimeout(function () { if (on) renderAll(st(), st()); }, 160); };
+    window.addEventListener('resize', onResize);
+    if (window.ResizeObserver) new ResizeObserver(onResize).observe(cvA);
   }
 
   /* ================= mode ================= */
@@ -178,7 +181,7 @@
     [els.ctrl, els.tl].forEach(function (e) { if (e && e.offsetParent && e.style.display !== 'none') bottom = Math.max(bottom, cv.bottom - e.getBoundingClientRect().top + 14); });
     return { top: top, right: 36, bottom: bottom, left: 36 };
   }
-  function fit() { var sc = HUB.obsStage.scene; if (sc) HUB.obsStage.fit(sc.bbox, true, fitPad()); }
+  function fit(instant) { var sc = HUB.obsStage.scene; if (sc) HUB.obsStage.fit(sc.bbox, instant !== true, fitPad()); }
 
   function showPanelMode(s) {
     var panel = s.present === 'panel';
@@ -206,6 +209,7 @@
     if (!cur) els.tb.appendChild(h('span', { class: 'ob-custom', title: '当前的观察状态不等于任何一个常用视图。可以存成“我的视图”' }, '自定义'));
     var mine = h('button', { type: 'button', class: 'btn ob-mine', 'data-pop': '1', title: '把当前观察状态存下来，或打开存过的', onClick: function (e) { e.stopPropagation(); openMine(mine); } }, '我的视图 ▾');
     els.tb.appendChild(mine);
+    els.tb.appendChild(h('button', { type: 'button', class: 'btn ob-mine', title: '这是什么、图例、六种视图、键盘（?）', onClick: function () { if (HUB.obsGuide) HUB.obsGuide.open(); } }, '说明'));
   }
 
   /* ---------- canvas: breadcrumbs (top left) ---------- */
@@ -436,6 +440,15 @@
       renderAll(s, prev);
     });
     HUB.bus.on('model', function () { var s = st(); renderAll(s, s); });
+    // a pasted or edited link restores that observation state (our own writes use replaceState and fire nothing)
+    window.addEventListener('hashchange', function () {
+      if (location.hash === HUB.store.toHash(st())) return;
+      var p = HUB.store.fromHash(location.hash);
+      if (p.caseId && HUB.base.presets[p.caseId] && p.caseId !== st().caseId) HUB.store.switchCase(p.caseId);
+      delete p.caseId;
+      HUB.store.set(p);
+      if (!on) setMode(true);
+    });
     var mode = 'obs';
     try { mode = localStorage.getItem('hub.mode') || 'obs'; } catch (e) { /* storage blocked */ }
     setMode(fromLink || mode !== 'design');

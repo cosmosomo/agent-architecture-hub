@@ -514,3 +514,36 @@ body.obs-on .statbar > .ob-st { display: flex; }
 .ob-call-bar i { position: absolute; top: 0; height: 100%; border-radius: 1px; background: rgba(var(--ob-info), .8); }
 .ob-call-model .ob-call-bar i { background: rgba(var(--ob-task), .85); }
 .ob-note-card { box-sizing: border-box; padding: 14px 16px; border-radius: 12px; border: 1px dashed var(--brd); background: var(--bg-panel); font-size: 12px; color: var(--t2); line-height: 1.6; }
+
+/* ---------- guide modal ---------- */
+.ob-guide h3 { font-family: var(--hd); font-size: 13px; font-weight: 800; color: var(--t1); margin: 18px 0 8px; }
+.ob-guide h3:first-child { margin-top: 0; }
+.ob-guide p { font-size: 12px; line-height: 1.7; color: var(--t2); margin: 0 0 6px; }
+.ob-gnote { font-size: 11px !important; color: var(--t3) !important; }
+.ob-gtable { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.ob-gtable td { padding: 6px 8px; border-bottom: 1px solid var(--brd); color: var(--t2); vertical-align: top; line-height: 1.55; }
+.ob-gtable td.k { color: var(--t1); font-family: var(--hd); font-weight: 700; white-space: nowrap; width: 1%; }
+.ob-lgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; margin-bottom: 6px; }
+.ob-lg { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--t2); }
+.ob-lgp { fill: none; stroke-width: 2.4; stroke-linecap: round; }
+.ob-lgp.t-task { stroke: rgba(var(--ob-task), .9); }
+.ob-lgp.t-info { stroke: rgba(var(--ob-info), .9); }
+.ob-lgp.t-watch { stroke: rgba(var(--ob-watch), .9); }
+.ob-lgp.t-channel { stroke: rgba(var(--ob-channel), .9); }
+.ob-lgp.t-factonly { stroke: rgba(var(--ob-factonly), .95); }
+.ob-lgp.t-hl { stroke: rgba(var(--ob-hl), 1); }
+
+/* ---------- the panel presentation: map the panel module's names onto the page's colours ---------- */
+.ob-panelhost {
+  --ink: var(--t1); --ink-2: var(--t2); --ink-3: var(--t3);
+  --panel: var(--bg-card); --panel-2: rgba(255,255,255,.03); --panel-3: rgba(255,255,255,.06);
+  --line: var(--brd); --line-2: var(--brd);
+  --accent: var(--accent1); --accent-ink: var(--accent1); --accent-weak: rgba(var(--ob-task), .14);
+  --s-working: var(--accent2); --s-waiting: var(--accent3); --s-standby: var(--t3); --s-error: #F87171; --s-never: var(--t3);
+  --c-factonly: rgb(var(--ob-factonly));
+  --font: var(--bd); --fs: 12px; --fs-2: 11px; --fs-3: 10px; --fs-title: 13px; --radius: 10px; --gap: 8px; --pad: 12px;
+  color: var(--t1); font-family: var(--bd);
+}
+[data-theme="light"] .ob-panelhost { --panel-2: rgba(15,23,42,.03); --panel-3: rgba(15,23,42,.06); }
+.ob-panelhost .pn-card { border-radius: 14px; background: var(--bg-card); }
+.ob-panelhost .pn-card-title { font-family: var(--hd); }

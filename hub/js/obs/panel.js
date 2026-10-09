@@ -287,6 +287,8 @@
       (ctx ? sec('上下文组成', stats([['任务', U.fmtNum(ctx.task)], ['共识', U.fmtNum(ctx.consensus)], ['工具结果', U.fmtNum(ctx.tools)]])) : '');
   }
 
+  function overviewTail() { return '<div class="ds"><a class="ob-a" data-act="unfocus">取消聚焦，回到整个案例模板</a></div>'; }
+
   var BY_TYPE = { individual: individual, group: group, relation: relation, agg: agg, factonly: factonly, channel: channel, gate: gate, stage: stage, step: step, case: kase, run: run, decision: decision, call: call };
 
   /* ================= render + events ================= */
@@ -300,7 +302,10 @@
     var keepScroll = last && last.split('|').slice(0, 3).join('|') === key.split('|').slice(0, 3).join('|') ? el.scrollTop : 0;
     last = key;
     var html = '';
-    try { html = sel && BY_TYPE[sel.type] ? BY_TYPE[sel.type](m, s, a, sel.id) : overview(m, s, a); }
+    // with nothing selected the pane describes what the canvas shows: the run in ⑤⑥, the case otherwise
+    var fr = !sel && s.subject === 'exec' ? HUB.model.focusRun(s, m) : null;
+    var fc = !sel && !fr && s.focus && s.focus.type === 'case' ? s.focus.id : null;
+    try { html = sel && BY_TYPE[sel.type] ? BY_TYPE[sel.type](m, s, a, sel.id) : fr ? run(m, s, a, fr.id) : fc ? kase(m, s, a, fc) + overviewTail() : overview(m, s, a); }
     catch (e) { console.error('[obs.panel]', e); html = '<div class="sr-mt">这个对象的详情没画出来。</div>'; }
     if (sel && !html) html = overview(m, s, a);
     var back = sel ? '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="ds-l" style="margin:0">' + esc(TYPE_ZH[sel.type] || sel.type) + '</span><a class="ob-a" data-act="clear">回到案例概况</a></div>' : '';
@@ -321,6 +326,7 @@
     var s = HUB.store.get(), m = HUB.model.current;
     if (act === 'sel') HUB.store.set({ selection: { type: t.getAttribute('data-type'), id: t.getAttribute('data-id') } }, { history: false });
     else if (act === 'clear') HUB.store.set({ selection: null }, { history: false });
+    else if (act === 'unfocus') HUB.store.set({ focus: null, selection: null });
     else if (act === 'focus') HUB.store.set({ focus: { type: 'case', id: t.getAttribute('data-id') }, instanceId: t.getAttribute('data-id'), subject: s.subject === 'exec' ? 'org' : s.subject, present: 'graph',
       depth: { org: Math.max(2, s.depth.org) }, selection: { type: 'case', id: t.getAttribute('data-id') } });
     else if (act === 'run') HUB.store.set({ subject: 'exec', depth: { exec: 1 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: { type: 'run', id: t.getAttribute('data-id') }, selection: { type: 'run', id: t.getAttribute('data-id') }, present: 'graph' });

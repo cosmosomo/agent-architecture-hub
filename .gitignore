@@ -73,3 +73,6 @@ node_modules/
 *~
 .vscode/
 .idea/
+
+# Built single-file page (node hub/tools/build_single.js)
+hub/dist/

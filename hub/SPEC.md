@@ -220,62 +220,44 @@ HUB.views.go(id)           // 套用预设
 
 新视图只需要再注册一个对象，顶栏的按钮自动出现。用户也可以把当前状态存成“我的视图”（localStorage）。
 
-## 8. 渲染器接口（`HUB.render`）
+## 8. 场景与渲染（`HUB.obsStage`、`HUB.obsScene*`）
+
+每个视图由一个纯函数算出“场景”，渲染层只认场景：
 
 ```js
-HUB.render.register(subject, {
-  mount(stageEl),                 // 主体切换进来时调用一次，在 stageEl 里建自己的 DOM
-  update(model, state, prev),     // 每次状态或模型变化都调用；就地更新
-  unmount(),                      // 主体切走时调用，清理事件
-  fit()                           // 可选：适应窗口
-})
+scene = {
+  subject: 'org' | 'process' | 'exec',
+  cards:  [{ key, kind, x, y, w, h, sel, toggle, anchor, dim, data }],   // x, y 是左上角
+  frames: [{ key, kind, x, y, w, h, sel, toggle, anchor, dim, data }],   // 展开的分组、阶段、决策
+  links:  [{ key, from, to, type, state, label, weight, particles, route, hl, dim, sel }],
+  bbox:   { x, y, w, h }
+}
 ```
 
-渲染器内的交互约定：
-- 拖动背景平移，滚轮缩放（`HUB.svgkit` 负责）。大面积的容器（分组框、泳道底）加 class `svgk-pan`，从它上面也能拖动平移；只在真的拖动后才捕获指针，所以单击仍然落到它本身。
-- 单击对象：`HUB.store.set({ selection: {type, id}, drawer: true }, { history: false })`。
-- 双击分组、阶段、决策：`HUB.store.toggle(...)`。
-- 双击个体：进入它最近的一次运行（v5）。
-- 选中类型名：`individual`、`group`、`relation`、`agg`（合并线）、`channel`、`doc`、`case`、`task`、`run`、`decision`、`call`、`stage`、`step`、`gate`、`flow`、`handoff`、`delivery`。
+- `HUB.obsSceneOrg.build(model, state, an, view)`：①②③。`HUB.obsSceneProcess.build`：④。`HUB.obsSceneRun.build`：⑤⑥。都不碰 DOM，`tools/test_scenes.js` 在 node 里把 62 个模板全跑一遍。
+- `key` 跨视图稳定：个体是 `i:<编号>`，折起的部门 `g:<编号>`、展开的部门框 `b:<编号>`，阶段 `s:`/`sb:`，步骤 `st:`，判断点 `g:`，决策 `d:`/`db:`，调用 `c:`，运行头 `ru:`。同一个 key 在新场景里还在，卡片就原地移过去；新出现的从 `anchor` 列出的第一个旧位置长出来，消失的缩回 `anchor` 在新场景里的位置。
+- `kind` 决定卡片长相：`ind`/`human`/`meta`（原页面的 `.nd` 卡）、`dept`、`channel`、`stage`、`step`、`gate`、`term`、`runhead`、`dec`、`call`、`note`；框：`frame`、`stageframe`、`decframe`。HTML 在 `cards.js` 和各场景文件里登记（`HUB.obsCards.extra`、`extraFrame`）。
+- `link.state`：`both` 实线（粗细按次数）、`defonly` 虚线、`factonly` 橙色、`def` 细实线。`hl` 是聚焦案例走过的路（金色，带光点），`particles` 是线上流动的光点数。
+- `HUB.obsStage.render(scene, {instant})` 按 key 复用元素、补间移动；`fit(bbox, animate, pad)` 用原页面的 `scale/panX/panY` 移镜头。单击卡片或线 → `selection`；双击分组/阶段/决策 → 展开折叠；双击个体 → 它最近一次运行（⑤）；拖背景平移，滚轮缩放（原页面的）。
 
-其他模块：
-- `HUB.panels.render(el, model, state)`：面板呈现。
-- `HUB.details.render(el, model, state)`：详情抽屉，内容取决于 `state.selection`；没有选中时显示当前案例概况。
-- `HUB.timeline.mount(el)`、`HUB.timeline.update(model, state)`。
-- `HUB.guide.open(topic)`、`HUB.guide.legend(el, state)`。
-- `HUB.model.perform(kind, payload)`：页面操作，见第 11 节。
-
-## 9. 加载顺序（index.html）
+## 9. 加载顺序（根目录 index.html 末尾，由 `tools/patch_page.py` 维护）
 
 ```
-data/base.js, data/zh.js, data/cases/*.js,
-js/core/util.js, js/core/store.js, js/core/casedef.js, js/core/sim.js, js/core/analysis.js, js/core/model.js, js/core/views.js,
-js/render/svg.js, js/views/org.js, js/views/process.js, js/views/run.js,
-js/panels/panels.js, js/details/details.js, js/ui/timeline.js, js/ui/guide.js, js/ui/shell.js, js/main.js
+hub/css/obs.css, hub/css/panels.css,
+hub/data/base.js, hub/data/zh.js, hub/data/cases/*.js,
+hub/js/core/util.js, store.js, casedef.js, sim.js, analysis.js, model.js, views.js,
+hub/js/obs/cards.js, stage.js, scene-org.js, scene-process.js, scene-run.js,
+hub/js/panels/panels.js, hub/js/obs/panel.js, side.js, timeline.js, guide.js, main.js
 ```
+
+`python hub/tools/patch_page.py` 重复执行也安全：钩子已在就跳过，只刷新这一段脚本列表。`node hub/tools/build_single.js` 把它们内联成 `hub/dist/observatory.html` 单文件。
 
 ## 10. 视觉约定
 
-颜色全部取 `css/tokens.css` 的变量：
-
-| 用途 | 变量 |
-|---|---|
-| 正文、次要、弱 | `--ink`、`--ink-2`、`--ink-3` |
-| 底色、面板、线 | `--bg`、`--panel`、`--panel-2`、`--line`、`--line-2` |
-| 强调（选中、聚焦） | `--accent`、`--accent-weak` |
-| 线的类型 | `--c-task`、`--c-info`、`--c-watch`、`--c-channel` |
-| 只有事实 | `--c-factonly` |
-| 个体状态 | `--s-working`、`--s-waiting`、`--s-standby`、`--s-error`、`--s-never` |
-| 判断点 | `--c-gate` |
-
-对照的三种状态，三种主体都用同一种画法：
-- 两者都有：实线；线宽按次数（1 到 5 像素，对数）。
-- 只有定义（设计了没发生）：虚线 `4 4`，降低不透明度；个体、分组、阶段画虚线框。
-- 只有事实（编排里没有）：实线，颜色 `--c-factonly`，旁边标“未声明”。
-
-`compare='def'` 时不画次数和状态；`compare='fact'` 时不画没发生的东西。
-
-字号：正文 13px，次要 12px，最小 11px。字体用系统字体栈（tokens 里的 `--font`）。圆角 6px。动画 250～350 毫秒，`prefers-reduced-motion` 时关掉。
+- 一切跟原页面走：深色星空画布、玻璃面板、阶段色描边、模型徽标、按钮 `.btn`、详情 `.ds-*`、弹窗 `.mo`。浅色主题由原页面的 `[data-theme="light"]` 变量带过来，`obs.css` 只补自己的几种线色。
+- 线的颜色（`obs.css` 顶部变量）：任务 `--ob-task`（靛）、信息 `--ob-info`（青）、监督 `--ob-watch`（琥珀）、渠道 `--ob-channel`（绿）、编排外 `--ob-factonly`（橙）、聚焦路径 `--ob-hl`（金）、流程流转 `--ob-flow`（紫）、打回 `--ob-fail`（红）。
+- 对照的三种状态，三种主体同一套画法：两者都有＝实线；只有定义＝虚线、变淡；只有事实＝橙色并标“未声明”。`compare='def'` 时不画次数和状态，`compare='fact'` 时不画没发生的东西（从没派出的个体也不画）。
+- 个体状态：在做＝原页面的转圈（`sim-active`）；出错＝红框；在等＝黄框；从没派出＝虚线淡卡。右上角小标签：缺（资料没送到）、曾缺、令（收到新指令）。
 
 ## 11. 页面操作（`HUB.model.perform`）
 
@@ -367,15 +349,16 @@ HUB.cases['feature_sprint'] = {
 - 全部 62 个案例模板都能打开，没有报错；精选案例的内容更丰富。
 - 浅色、深色两套主题都清楚可读。
 
-## 14. 进度（2026-10-09，额度用完时暂停）
+## 14. 进度
 
-已完成并提交：
-- 数据：base.js（从 v41 提取）、zh.js（全部中文名）、四个精选案例（deep_five_minds、feature_sprint、incident_war_room、deep_research_v2），都通过 tools/check_*.js。
-- 核心：util、store（观察状态、历史、链接、展开判定）、casedef、sim、analysis、model（含页面操作）、views（六个视图预设、我的视图、渲染器登记、HUB.orgRep）、render/svg.js（舞台、平移缩放、补间）、css/tokens.css。
-- 测试：node hub/tools/test_model.js，62 个案例模板全部通过。
+10-10 改道后（提交 5b6f9c0 起）：
+- 原页面加了观察模式：顶栏“观察｜设计”和六个视图按钮；画布左上面包屑和聚焦、右上粒度和对照、下方线和叠加开关、回放、底部时间轴；左栏多了“结构”“体检”；右栏是详情和操作；状态栏换成观察的统计。
+- ①～⑥ 都能画，切换时卡片按 key 原地移动；62 个模板的场景测试全过（`node hub/tools/test_scenes.js`）。
+- 操作（对话、插话、补送、催办、改派、改规则、放行、渠道暂停恢复和维护）都会记成事实并刷新。
+- 浏览器里查过：深色、浅色、切换设计模式、从左栏换案例、面板呈现、地址栏链接还原、键盘。
+- 旧的独立外壳（hub/index.html、shell、org 视图等）已删除。
 
 还没做：
-- 外壳：index.html、css/app.css、js/ui/shell.js、js/main.js（顶栏、上下文栏、侧栏、舞台、抽屉、时间线容器、键盘）。
-- ①②③ 组织视图：js/views/org.js、css/org.css。
-- 五个界面模块的 Haiku 任务已派出又中止（额度原因），需要重派：process.js（④）、run.js（⑤⑥）、panels.js、details.js、timeline.js + guide.js。派发说明与本文第 8～12 节一致。
-- 整合、浏览器测试（静态服务：python -m http.server 8899 --directory E:/program/GIT/Agent/multi）、单文件打包。
+- 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
+- 面板呈现沿用 Haiku 写的 panels.js，只换了配色；还没按原页面的卡片风格重排。
+- 组织视图里线多时交叉多，可以再做线束或按部门出入口汇合。
