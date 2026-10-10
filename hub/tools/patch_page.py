@@ -36,6 +36,10 @@ HOOKS = [
     # the guided tour points at editor controls, so it does not start by itself while observing
     ("function tutAutoDozwolony(){",
      "function tutAutoDozwolony(){/* hub */if(document.body.classList.contains('obs-on'))return false;"),
+    # v41 defaults non-zh browsers to Polish; this derivative ships to Chinese users - default to zh.
+    # A stored choice (from the language toggle) is still honoured; only the fallback changes.
+    ("return v})() || (function(){\n  try{\n    var n=(navigator.languages&&navigator.languages[0])||navigator.language||'';\n    return /^zh/i.test(n)?'zh':'pl';\n  }catch(e){return 'zh'}\n})();",
+     "return v})() || 'zh'; /* hub: 中文用户的衍生版，缺省一律中文，原版非 zh 浏览器会落到波兰语 */"),
 ]
 
 
