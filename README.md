@@ -1,8 +1,6 @@
 # Agent Architecture Hub
 
-> 本仓库是 **[TheJacksonCode/Agent-Architecture](https://github.com/TheJacksonCode/Agent-Architecture)**（Agent Architecture Designer v41，MIT License）的衍生作品：在原作者的页面与技术栈之上叠加了"观察模式"——一个多智能体协作系统的可视化观察台。星空画布、`.nd` 卡片体系、平移缩放、深浅主题与设计器本体全部来自原作，感谢原作者 [TheJacksonCode](https://github.com/TheJacksonCode)。
->
-> 衍生部分同样以 MIT License 发布，原作者版权声明保留（见 [LICENSE](LICENSE)）。
+> 基于 [TheJacksonCode/Agent-Architecture](https://github.com/TheJacksonCode/Agent-Architecture) v41 衍生：在原页面与技术栈之上叠加"观察模式"——一个多智能体协作系统的可视化观察台（原作者致谢见文末）。
 
 ## 这个衍生版加了什么
 
@@ -314,3 +312,11 @@ generate_catalog.js          # Regenerate the routing catalog from HTML source (
 ---
 
 <sub>界面语言：波兰语（更全面）和英语（核心百科、Hooks 和 Patterns 模块完全对等）| 文档语言：英语 | 主要用途：教育与发展——理解多智能体系统如何思考</sub>
+
+---
+
+## 致谢
+
+本仓库基于 **[TheJacksonCode/Agent-Architecture](https://github.com/TheJacksonCode/Agent-Architecture)**（Agent Architecture Designer v41）构建：星空画布、\`.nd\` 卡片体系、平移缩放、深浅主题与设计器本体全部来自原作者 [TheJacksonCode](https://github.com/TheJacksonCode) 的工作，感谢原作者的开源分享。
+
+原项目以 MIT License 发布，其版权声明保留在 [LICENSE](LICENSE)；本仓库的衍生部分同样以 MIT License 发布。
