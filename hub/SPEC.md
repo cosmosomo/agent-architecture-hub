@@ -223,6 +223,18 @@ HUB.views.go(id)           // 套用预设
 
 新视图只需要再注册一个对象，顶栏的按钮自动出现。用户也可以把当前状态存成“我的视图”（localStorage）。
 
+### 7.1 视图的定义方式（10-10 用户补充）
+
+视图不绑定唯一的数据来源。可切换的部门架构、单案例路由、业务流程三个视图，每个都允许不同的定义方式；定义在进入统一模型之前完成，前端只认模型（与 §18.1 的解耦一致）。已支持的方式：
+
+| 视图 | 定义方式 |
+|---|---|
+| ② 部门架构图 | groups.md 显式分组（平铺 `members` / 嵌套 `parent-children` 两种写法）；标签命名空间自动分组（“自动分组”按钮，`suggestMerge` 按标签分桶）；无分组文档时按阶段 phase 的默认分组（`casedef.build`） |
+| ③ 单案例路由图 | 定义层回退：无事实时按 `def.process.flows` 画默认走法；编排事实：scenarios.md 的 K 案例（path、返工、阻塞、注入 → sim 生成 handoffs）；真实会话：from-trace 把本机会话的交接变成 handoffs。三种来源按模型择一，时间截断（`state.time`）叠加在任一来源上——路由随时间生长 |
+| ④ 业务流程图 | process.md 的 stages+gates（steps 列表或扁平 `executors` 两种写法）；关卡 `pass/fail` 双路或多路 `paths`；无编排文档时按分组与阶段自动生成（`casedef.defaultProcess`） |
+
+单案例路由图是定义方式最多的一个，因为它的本质是“事实从哪来”：加一种新来源 = 写一个产出 handoffs 的适配器，视图本身不改。
+
 ## 8. 场景与渲染（`HUB.obsStage`、`HUB.obsScene*`）
 
 每个视图由一个纯函数算出“场景”，渲染层只认场景：
