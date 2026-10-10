@@ -82,7 +82,12 @@ export function basename(p: string | undefined): string {
   return parts[parts.length - 1] || p;
 }
 
-export const KIND_LABEL: Record<string, string> = { codex: 'Codex', 'claude-code': 'Claude' };
+export const KIND_LABEL: Record<string, string> = { codex: 'Codex', 'claude-code': 'Claude', opencode: 'OpenCode' };
+
+/** Display name for a source kind; unknown future kinds degrade to their id, not "undefined". */
+export function kindLabel(kind: string): string {
+  return KIND_LABEL[kind] || kind;
+}
 
 export function usd(n: number | undefined): string {
   if (n === undefined) return '';

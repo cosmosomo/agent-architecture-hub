@@ -44,7 +44,7 @@ export function SessionList({ sessions, local, selectedId, onSelect }: Props) {
   }, [sessions]);
 
   const q = query.trim().toLowerCase();
-  const filtering = Boolean(q) || state !== 'all';
+  const filtering = Boolean(q) || state !== 'all' || kind !== 'all';
   const ok = (s: SessionSummary) => (state === 'all' || s.state.status === state) && (kind === 'all' || s.source.kind === kind) && matches(s, q);
 
   // A parent stays visible when one of its sub-agents matches; the selected session's parent opens itself.

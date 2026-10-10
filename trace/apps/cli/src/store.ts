@@ -5,7 +5,7 @@
  */
 import { createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 import { createInterface } from 'node:readline';
 import { ADAPTERS, type SourceAdapter } from '@hub-trace/adapters';
 import { CONTRACT_VERSION, summarize, type Session, type SessionIndex, type SessionSummary } from '@hub-trace/contract';
@@ -38,6 +38,27 @@ export function defaultRoots(): Root[] {
 
 const SKIP_DIRS = new Set(['node_modules', '.git']);
 
+/** Every file below a directory (bundle adapters assemble sessions out of many files). */
+export function walkAll(dir: string): string[] {
+  const out: string[] = [];
+  const stack = [dir];
+  while (stack.length) {
+    const d = stack.pop()!;
+    let entries;
+    try {
+      entries = readdirSync(d, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const e of entries) {
+      const p = join(d, e.name);
+      if (e.isDirectory()) { if (!SKIP_DIRS.has(e.name)) stack.push(p); }
+      else if (e.isFile()) out.push(p);
+    }
+  }
+  return out.sort((a, b) => (a < b ? -1 : 1));
+}
+
 export function findFiles(roots: Root[]): { adapter: SourceAdapter; path: string }[] {
   const out: { adapter: SourceAdapter; path: string }[] = [];
   for (const root of roots) {
@@ -61,13 +82,41 @@ export function findFiles(roots: Root[]): { adapter: SourceAdapter; path: string
   return out.sort((a, b) => (a.path < b.path ? -1 : 1));
 }
 
-/** Parse one file by streaming its lines through the adapter. */
+/** Parse one line-oriented file by streaming its lines through the adapter. */
 export async function parseFile(adapter: SourceAdapter, path: string, now: number): Promise<Session> {
+  return parsePath(adapter, path, now);
+}
+
+/** Parse a marker file; for bundle adapters `members` are the other files of the session. */
+export async function parsePath(adapter: SourceAdapter, path: string, now: number, members?: string[]): Promise<Session> {
   const st = statSync(path);
+  if (adapter.parseBundle && members) {
+    const files = members.includes(path) ? members : [path, ...members];
+    return adapter.parseBundle({ path, size: st.size, mtimeMs: st.mtimeMs }, {
+      files,
+      read: (p) => readFileSync(p, 'utf8'),
+    }, { now });
+  }
   const parser = adapter.createParser({ path, size: st.size, mtimeMs: st.mtimeMs });
   const rl = createInterface({ input: createReadStream(path, { encoding: 'utf8' }), crlfDelay: Infinity });
   for await (const line of rl) parser.push(line);
   return parser.finish({ now });
+}
+
+/** Total size and newest mtime of a bundle — the change signature the cache keys on. */
+function bundleStat(members: string[]): { size: number; mtimeMs: number } {
+  let size = 0;
+  let mtimeMs = 0;
+  for (const p of members) {
+    try {
+      const st = statSync(p);
+      size += st.size;
+      if (st.mtimeMs > mtimeMs) mtimeMs = st.mtimeMs;
+    } catch {
+      // A member that vanished between listing and stat is simply not counted.
+    }
+  }
+  return { size, mtimeMs };
 }
 
 /** Child links from the children's side: a parent learns about every child that names it. */
@@ -102,6 +151,8 @@ export class SessionStore {
   private scanning: Promise<ScanReport> | null = null;
   private lastScan = 0;
   private parsedCache = new Map<string, { size: number; mtimeMs: number; session: Session }>();
+  /** Marker path → the files its bundle adapter assembles. Filled by scan, lazily recomputed on demand. */
+  private membersByMarker = new Map<string, string[]>();
 
   constructor(opts: StoreOptions = {}) {
     this.roots = opts.roots || defaultRoots();
@@ -142,19 +193,49 @@ export class SessionStore {
     if (this.now() - this.lastScan >= maxAgeMs) await this.scan();
   }
 
+  /** Map every bundle adapter's marker file to the other files that make up its session. */
+  private resolveBundles(files: { adapter: SourceAdapter; path: string }[]) {
+    if (!files.some((f) => f.adapter.bundleMembers)) return;
+    const allByRoot = new Map<string, string[]>();
+    for (const root of this.roots) {
+      if (!root.adapter.bundleMembers || !existsSync(root.dir)) continue;
+      allByRoot.set(root.dir, walkAll(root.dir));
+    }
+    for (const f of files) {
+      if (!f.adapter.bundleMembers) continue;
+      const root = this.roots.find((r) => r.adapter === f.adapter && (f.path === r.dir || f.path.startsWith(r.dir + sep)));
+      if (!root) continue;
+      this.membersByMarker.set(f.path, root.adapter.bundleMembers!(f.path, allByRoot.get(root.dir) || []));
+    }
+  }
+
+  /** Members for one marker, walking its root when this process has not run a scan yet. */
+  private membersFor(adapter: SourceAdapter, marker: string): string[] | undefined {
+    if (!adapter.bundleMembers) return undefined;
+    const cached = this.membersByMarker.get(marker);
+    if (cached) return cached;
+    const root = this.roots.find((r) => r.adapter === adapter && (marker === r.dir || marker.startsWith(r.dir + sep)));
+    if (!root || !existsSync(root.dir)) return [marker];
+    const members = adapter.bundleMembers!(marker, walkAll(root.dir));
+    this.membersByMarker.set(marker, members);
+    return members;
+  }
+
   private async doScan(onProgress?: (done: number, total: number) => void): Promise<ScanReport> {
     const t0 = Date.now();
     this.load();
     const files = findFiles(this.roots);
+    this.resolveBundles(files);
     const seen = new Set<string>();
     const report: ScanReport = { files: files.length, parsed: 0, reused: 0, failed: 0, removed: 0, ms: 0, errors: [] };
     let i = 0;
     for (const f of files) {
       seen.add(f.path);
       i++;
+      const members = this.membersByMarker.get(f.path);
       let st;
       try {
-        st = statSync(f.path);
+        st = members ? bundleStat(members) : statSync(f.path);
       } catch {
         continue;
       }
@@ -166,7 +247,7 @@ export class SessionStore {
         continue;
       }
       try {
-        const session = await parseFile(f.adapter, f.path, this.now());
+        const session = await parsePath(f.adapter, f.path, this.now(), members);
         this.entries.set(f.path, { path: f.path, kind: f.adapter.kind, adapter: adapterId, size: st.size, mtimeMs: st.mtimeMs, summary: summarize(session) });
         report.parsed++;
       } catch (err) {
@@ -213,7 +294,7 @@ export class SessionStore {
   parseSource(f: SourceFile): Promise<Session> {
     const adapter = ADAPTERS.find((a) => a.kind === f.kind);
     if (!adapter) return Promise.reject(new Error('no adapter for ' + f.kind));
-    return parseFile(adapter, f.path, this.now());
+    return parsePath(adapter, f.path, this.now(), this.membersFor(adapter, f.path));
   }
 
   has(id: string): boolean {
@@ -231,7 +312,7 @@ export class SessionStore {
     const st = statSync(e.path);
     const hit = this.parsedCache.get(id);
     if (hit && hit.size === st.size && hit.mtimeMs === st.mtimeMs) return hit.session;
-    const session = await parseFile(adapter, e.path, this.now());
+    const session = await parsePath(adapter, e.path, this.now(), this.membersFor(adapter, e.path));
     const child = linkChildren([summarize(session), ...this.index().sessions.filter((s) => s.links.some((l) => l.rel === 'parent' && l.id === id))])[0];
     session.links = child.links;
     session.stats = child.stats;

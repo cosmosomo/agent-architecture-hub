@@ -20,6 +20,18 @@ export type LineParser = {
   finish(opts: FinishOptions): Session;
 };
 
+/**
+ * A directory-style session: one marker file plus the other files that belong to
+ * the same session (OpenCode keeps one JSON per message and per part). The Node
+ * store discovers the file list and backs `read` with fs; tests pass an in-memory
+ * map, so adapter code stays pure and runs in the browser.
+ */
+export type Bundle = {
+  /** Every file of the session (absolute paths), marker included. */
+  files: string[];
+  read(path: string): string;
+};
+
 export type SourceAdapter = {
   /** Contract `source.kind`. */
   kind: string;
@@ -31,4 +43,8 @@ export type SourceAdapter = {
   /** Whether a file below a root is a session of this source. */
   matchFile(path: string): boolean;
   createParser(file: SourceFile): LineParser;
+  /** Directory-style sources: one session spans many files assembled into a Bundle. */
+  parseBundle?(file: SourceFile, bundle: Bundle, opts: FinishOptions): Session;
+  /** Which files, out of every file below the root, make up one marker file's session. */
+  bundleMembers?(markerPath: string, allFiles: string[]): string[];
 };
