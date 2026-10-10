@@ -317,6 +317,6 @@ generate_catalog.js          # Regenerate the routing catalog from HTML source (
 
 ## 致谢
 
-本仓库基于 **[TheJacksonCode/Agent-Architecture](https://github.com/TheJacksonCode/Agent-Architecture)**（Agent Architecture Designer v41）构建：星空画布、\`.nd\` 卡片体系、平移缩放、深浅主题与设计器本体全部来自原作者 [TheJacksonCode](https://github.com/TheJacksonCode) 的工作，感谢原作者的开源分享。
+本仓库基于 **[TheJacksonCode/Agent-Architecture](https://github.com/TheJacksonCode/Agent-Architecture)**（Agent Architecture Designer v41）构建：星空画布、`.nd` 卡片体系、平移缩放、深浅主题与设计器本体全部来自原作者 [TheJacksonCode](https://github.com/TheJacksonCode) 的工作，感谢原作者的开源分享。
 
 原项目以 MIT License 发布，其版权声明保留在 [LICENSE](LICENSE)；本仓库的衍生部分同样以 MIT License 发布。
