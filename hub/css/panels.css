@@ -1,4 +1,6 @@
-/* Panel presentation. Class names are all prefixed pn-. Colors come only from tokens.css variables. */
+/* Panel presentation. Class names are all prefixed pn-.
+   材料语言跟原页一致（.nd-body / .side-l 的做法）：1.5px 边框、14px 圆角、
+   顶部内高光、indigo 色调的悬停、.25s 过渡；颜色全部走 tokens 变量。 */
 
 .pn-root {
   box-sizing: border-box;
@@ -9,7 +11,7 @@
 }
 .pn-root * { box-sizing: border-box; }
 
-/* ---------- header ---------- */
+/* ---------- header（底部一条 topbar 同款渐变发丝线） ---------- */
 .pn-header {
   display: flex;
   align-items: center;
@@ -18,6 +20,14 @@
   padding-bottom: var(--pad);
   margin-bottom: var(--gap);
   border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.pn-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2), var(--accent3));
+  opacity: .25;
 }
 .pn-header-left { display: flex; align-items: center; flex-wrap: wrap; gap: var(--gap); }
 .pn-tag-plain {
@@ -35,7 +45,7 @@
   color: var(--ink-2);
   border: 1px solid var(--line-2);
   background: var(--panel-2);
-  border-radius: var(--radius);
+  border-radius: 6px;
   padding: 1px 6px;
 }
 .pn-scope-chip {
@@ -43,7 +53,8 @@
   font-size: var(--fs-2);
   color: var(--accent-ink);
   background: var(--accent-weak);
-  border-radius: var(--radius);
+  border: 1px solid rgba(129, 140, 248, .2);
+  border-radius: 6px;
   padding: 2px 4px 2px 8px;
   display: inline-flex;
   align-items: center;
@@ -60,7 +71,7 @@
 }
 .pn-scope-x:hover { color: var(--accent); }
 
-/* ---------- grid & cards ---------- */
+/* ---------- grid & cards（.nd-body 的做法：1.5px 边 + 14px 圆角 + 内高光） ---------- */
 .pn-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -71,10 +82,15 @@
 }
 .pn-card {
   background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
   padding: var(--pad);
   min-width: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.pn-card:hover {
+  border-color: rgba(129, 140, 248, 0.35);
 }
 .pn-card-head { margin-bottom: var(--gap); }
 .pn-card-title {
@@ -104,16 +120,18 @@
 }
 .pn-stat {
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 10px;
   padding: 6px 8px;
   background: var(--panel-2);
+  transition: border-color .2s ease;
 }
+.pn-stat:hover { border-color: rgba(129, 140, 248, 0.35); }
 .pn-stat-val { font-size: var(--fs-title); font-weight: 600; color: var(--ink); }
 .pn-stat-label { font-size: var(--fs-3); color: var(--ink-2); margin-top: 2px; }
 
 /* ---------- lists / rows ---------- */
 .pn-list { display: flex; flex-direction: column; gap: 4px; }
-.pn-row { border-radius: var(--radius); }
+.pn-row { border-radius: 10px; }
 .pn-nh-row,
 .pn-health-row {
   display: flex;
@@ -122,25 +140,33 @@
   gap: var(--gap);
   padding: 6px 8px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 10px;
+  transition: border-color .2s ease, background .2s ease;
 }
 .pn-health-row { cursor: pointer; }
-.pn-health-row:hover { border-color: var(--line-2); background: var(--panel-2); }
+.pn-health-row:hover {
+  border-color: rgba(129, 140, 248, 0.35);
+  background: rgba(129, 140, 248, 0.06);
+}
 .pn-nh-text { flex: 1; }
 .pn-nh-time { color: var(--ink-3); font-size: var(--fs-3); margin-right: 4px; }
 .pn-row-actions { display: flex; gap: 4px; flex: none; }
 
-/* ---------- buttons ---------- */
+/* ---------- buttons（透明底 + indigo 悬停，和画布卡片的 hover 一个色） ---------- */
 .pn-btn {
   font-size: var(--fs-3);
   color: var(--ink);
-  background: var(--panel-2);
+  background: transparent;
   border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 6px;
   padding: 3px 8px;
   cursor: pointer;
+  transition: border-color .2s ease, background .2s ease, color .2s ease;
 }
-.pn-btn:hover { background: var(--panel-3); }
+.pn-btn:hover {
+  border-color: rgba(129, 140, 248, 0.45);
+  background: rgba(129, 140, 248, 0.08);
+}
 .pn-btn-ghost { background: transparent; }
 .pn-btn-mini {
   font-size: var(--fs-3);
@@ -154,13 +180,13 @@
 }
 .pn-btn-mini:hover { color: var(--ink); border-color: var(--ink-3); }
 
-/* ---------- tables ---------- */
+/* ---------- tables（.dtl-row 的做法：indigo 发丝分隔线） ---------- */
 .pn-table-wrap { overflow-x: auto; }
 .pn-table { width: 100%; border-collapse: collapse; font-size: var(--fs-2); }
 .pn-table th, .pn-table td {
   text-align: left;
   padding: 4px 6px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(129, 140, 248, 0.07);
   white-space: nowrap;
 }
 .pn-table th {
@@ -170,8 +196,8 @@
   user-select: none;
 }
 .pn-table td { color: var(--ink); }
-.pn-table tbody tr.pn-row { cursor: pointer; }
-.pn-table tbody tr.pn-row:hover { background: var(--panel-2); }
+.pn-table tbody tr.pn-row { cursor: pointer; transition: background .15s ease; }
+.pn-table tbody tr.pn-row:hover { background: rgba(129, 140, 248, 0.06); }
 .pn-th-sort { cursor: pointer; }
 .pn-th-sort:hover { color: var(--ink); }
 .pn-num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -229,16 +255,16 @@
   margin-bottom: 4px;
 }
 
-/* ---------- search ---------- */
+/* ---------- search（原页 --bg-input 的做法） ---------- */
 .pn-search {
   width: 100%;
   box-sizing: border-box;
   font: inherit;
   font-size: var(--fs-2);
   color: var(--ink);
-  background: var(--panel);
+  background: var(--bg-input, var(--panel));
   border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 8px;
   padding: 4px 8px;
   margin-bottom: 6px;
 }
