@@ -19,6 +19,11 @@
     ch_fn_boss: { name: 'OpenCLI · BOSS直聘', capacity: '独占：一个登录的浏览器会话，不能并发', quota: '每小时约 40 次访问', limit: 1,
       agents: ['career_document_builder'] }
   };
+  // Capabilities an agent brings with it (its host), registered to that individual only; they get no node in the shared layer.
+  var NATIVE_FROM_TOOL = {
+    Agent: { host: 'Claude Code', name: '派生子智能体并行执行', short: '派生子智能体', limit: 10,
+      note: '宿主自带：在一次运行里派出多个子智能体同时干活，再把结果收回来' }
+  };
   function limitFrom(cap) { var m = /并发\s*(\d+)/.exec(cap || ''); return m ? Number(m[1]) : null; }
   var QUOTA = { opus: '每日 800 万 token', sonnet: '每日 2000 万 token', haiku: '每日 5000 万 token', fable: '每日 300 万 token' };
   var MODEL_ZH = { opus: 'Opus', sonnet: 'Sonnet', haiku: 'Haiku', fable: 'Fable' };
@@ -75,7 +80,7 @@
         id: 'n' + i, agentId: n.d, kind: 'agent', name: name,
         model: n.m || a.model || 'sonnet', phase: a.phase || 'build', groupId: null,
         role: ov.role || agentRole(n.d), trigger: ov.trigger || '', watches: (ov.watches || []).slice(),
-        docs: [], channels: [], tools: U.toolList(a.tools),
+        docs: [], channels: [], natives: [], host: 'Claude Code', tools: U.toolList(a.tools),
         x: n.x, y: n.y, isHub: false, enhanced: false
       };
     });
@@ -84,13 +89,13 @@
     var human = {
       id: 'human', agentId: null, kind: 'human', name: '人（用户）', model: null, phase: null, groupId: null,
       role: (OI.human && OI.human.role) || '提出需求，在人工关拍板，随时通过中枢智能体或直接对个体下指令',
-      trigger: '自己决定', watches: [], docs: [], channels: [], tools: [],
+      trigger: '自己决定', watches: [], docs: [], channels: [], natives: [], host: null, tools: [],
       x: maxX + spanX * 0.18, y: minY, isHub: false, enhanced: true
     };
     var maint = {
       id: 'meta_maint', agentId: null, kind: 'meta', name: '渠道维护者', model: 'haiku', phase: null, groupId: null,
       role: (OI.meta_maint && OI.meta_maint.role) || '盯着模型和工具渠道，出故障时生成维护任务并跟进恢复',
-      trigger: '渠道检查失败或额度告警', watches: [], docs: [], channels: [], tools: ['Read', 'Bash'],
+      trigger: '渠道检查失败或额度告警', watches: [], docs: [], channels: [], natives: [], host: 'Claude Code', tools: ['Read', 'Bash'],
       x: maxX + spanX * 0.18, y: maxY, isHub: false, enhanced: true
     };
     individuals.push(human, maint);
@@ -167,6 +172,7 @@
         mc.users.push(x.id); x.channels.push(mc.id);
       }
       x.tools.forEach(function (t) {
+        if (NATIVE_FROM_TOOL[t]) return;   // a native capability, added below
         var tl = TOOL_LIMIT[String(t).toLowerCase().replace(/[^a-z]/g, '')] || null;
         var tc = addChannel({ id: U.toolChannelId(t), kind: tl ? 'function' : 'tool', name: '工具：' + toolName(t), maintainer: 'meta_maint',
           capacity: tl ? '并发 ' + tl : '不限', quota: '-', limit: tl, users: [] });
@@ -190,6 +196,22 @@
         if (indMap.get(u).channels.indexOf(ch.id) < 0) indMap.get(u).channels.push(ch.id);
       });
     });
+    // native capabilities: from a host tool (Claude Code's Agent) or declared by a curated case (e.g. an individual running on 豆包)
+    var addNative = function (owner, n) {
+      var x = indMap.get(owner);
+      if (!x) return;
+      var ch = addChannel({ id: n.id || 'ch_nat_' + owner, kind: 'native', owner: owner, host: n.host || 'Claude Code', name: n.name, short: n.short || n.name,
+        note: n.note || '', maintainer: owner, capacity: n.limit ? '一次最多 ' + n.limit + ' 个' : '-', quota: '-', limit: n.limit || null, users: [owner] });
+      if (n.host) x.host = n.host;
+      if (x.natives.indexOf(ch.id) < 0) x.natives.push(ch.id);
+      if (x.channels.indexOf(ch.id) < 0) x.channels.push(ch.id);
+    };
+    individuals.forEach(function (x) {
+      x.tools.forEach(function (t) { if (NATIVE_FROM_TOOL[t]) addNative(x.id, Object.assign({ id: 'ch_nat_' + x.id + '_' + t.toLowerCase() }, NATIVE_FROM_TOOL[t])); });
+    });
+    ((O && O.native) || []).forEach(function (n) { addNative(n.owner, n); });
+    // tiers: basic = what every agent can do with no upkeep; shared = models and function channels; native = one individual's own
+    channels.forEach(function (c) { c.tier = c.kind === 'native' ? 'native' : c.kind === 'tool' && !c.limit ? 'basic' : 'shared'; });
 
     /* ---------- relations ---------- */
     var relations = [], relKeys = {};

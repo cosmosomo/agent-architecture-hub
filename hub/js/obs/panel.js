@@ -116,10 +116,17 @@
       return '<div class="ob-msg' + (mm.from === 'human' ? ' me' : '') + '"><small>' + nm('individual', mm.from) + ' → ' + nm('individual', mm.to) + ' · ' + U.fmtClock(mm.at) + '</small>' + esc(mm.text) + '</div>';
     }).join('');
     var acts = x.kind === 'human' ? '' : actions({ type: 'individual', id: id }, x.kind === 'meta' ? ['talk', 'interject'] : ['talk', 'interject', 'urge', 'reassign', 'edit_rule']);
+    var natBlock = (x.natives || []).map(function (cid) {
+      var c = m.idx.ch.get(cid) || {};
+      var cs = a.channelStats[cid] || {};
+      return '<div class="ob-native-card"><div class="ob-native-h">★ 专属能力 · ' + esc(c.host || '') + ' 自带</div><div class="ob-native-n">' + esc(c.name || cid) + '</div>' +
+        '<div class="ob-note">' + esc(c.note || '') + '</div>' +
+        (s.compare === 'def' ? '' : '<div class="ob-native-s">用过 ' + (cs.calls || 0) + ' 次' + (cs.maxWidth ? ' · 最多同时 ' + cs.maxWidth + ' 个' : '') + (c.limit ? ' · 上限 ' + c.limit + ' 个' : '') + '</div>') + '</div>';
+    }).join('');
     var lastRun = s.compare !== 'def' ? HUB.model.latestRunOf(id, s, m) : null;
     var openChain = lastRun ? '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + lastRun.id + '">打开最近一次运行的决策链</button>'
       + '<div class="ob-note" style="margin-top:5px">在中间画布显示；双击个体也能打开，Esc 返回。</div></div>' : '';
-    return h + openChain + '<div class="ds">' + info + '</div>' +
+    return h + (natBlock ? '<div class="ds">' + natBlock + '</div>' : '') + openChain + '<div class="ds">' + info + '</div>' +
       (s.compare !== 'def' && x.kind !== 'human' ? sec('运行', stats([['运行', st.runs || 0], ['任务', st.tasks || 0], ['token', U.fmtNum(st.tokens || 0)]])) : '') +
       (s.compare !== 'def' ? sec('送达：它该知道的有没有真的到它手里', deliv) : '') +
       sec('线', relRows ? '<div class="ob-list">' + relRows + '</div>' : '') +
@@ -185,7 +192,8 @@
   }
 
   function chKindLabel(c) {
-    var k = (HUB.obsCards.CH_KIND || {})[c.kind === 'tool' && !c.limit ? 'local' : c.kind] || '渠道';
+    if (c.tier === 'native') return '专属能力 · ' + (c.host || '') + ' 自带 · 只属于 ' + HUB.model.name('individual', c.owner);
+    var k = (HUB.obsCards.CH_KIND || {})[c.tier === 'basic' ? 'basic' : c.kind] || '渠道';
     return k + (c.limit === 1 ? ' · 独占' : c.limit ? ' · 并发上限 ' + c.limit : ' · 不限并发');
   }
   function chIcon(c) { return (c.kind === 'model' ? HUB.obsCards.ICON.model : HUB.obsCards.ICON.tool).replace(/16/g, '26'); }
@@ -216,19 +224,20 @@
   }
 
   function localTools(m, s, a) {
-    var locals = m.def.channels.filter(function (c) { return c.kind === 'tool' && !c.limit; });
+    var locals = m.def.channels.filter(function (c) { return c.tier === 'basic'; });
     var rows = locals.map(function (c) {
       var cs = a.channelStats[c.id] || {};
       return rowItem('style="cursor:default"', esc(c.name.replace(/^工具：/, '')), (c.users || []).length + ' 人 · ' + (s.compare === 'def' ? '' : U.fmtNum(cs.calls || 0) + ' 次'));
     }).join('');
-    return hero({ name: '本地工具', role: '读写文件、改代码、跑命令这类工具，不限并发，合成一张卡', icon: HUB.obsCards.ICON.tool.replace(/16/g, '26'), color: 'var(--accent2)' }) +
+    return hero({ name: '基础能力', role: '读写文件、改文件、命令行、创建任务：每个智能体都能做，不用维护，所以合成一个点', icon: HUB.obsCards.ICON.tool.replace(/16/g, '26'), color: 'var(--accent2)' }) +
       sec('包括', '<div class="ob-list">' + rows + '</div>') +
       '<div class="ds"><a class="ob-a" data-act="sel" data-type="channels" data-id="all">看全部渠道</a></div>';
   }
 
   // channel management: every channel in one table, with what needs attention first
   function channels(m, s, a) {
-    var list = m.def.channels.filter(function (c) { return !(c.kind === 'tool' && !c.limit); });
+    var list = m.def.channels.filter(function (c) { return c.tier === 'shared'; });
+    var natives = m.def.channels.filter(function (c) { return c.tier === 'native'; });
     var score = function (c) { var cs = a.channelStats[c.id] || {}; return (cs.status !== 'ok' ? 100 : 0) + (cs.waiting || 0) * 10 + (cs.queued || 0); };
     list.sort(function (p, q) { return score(q) - score(p); });
     var rows = list.map(function (c) {
@@ -239,9 +248,14 @@
     }).join('');
     var t = list.length, bad = list.filter(function (c) { var st = (a.channelStats[c.id] || {}).status; return st && st !== 'ok'; }).length;
     var q = U.sum(list, function (c) { return (a.channelStats[c.id] || {}).queued || 0; });
-    return hero({ name: '渠道管理', role: '模型渠道、功能渠道的状态、负载和使用者；本地工具不限并发，不在这里', icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent2)' }) +
+    return hero({ name: '渠道管理', role: '分三层：共享渠道（模型、功能）、专属能力（挂在个体上）、基础能力（人人都有）', icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent2)' }) +
       (s.compare !== 'def' ? sec('概况', stats([['渠道', t], ['有故障', bad], ['累计排队', q]])) : '') +
-      sec('全部渠道（需要处理的在前）', '<div class="ob-list">' + rows + '</div>') +
+      sec('共享渠道（需要处理的在前）', '<div class="ob-list">' + rows + '</div>') +
+      sec('专属能力（只属于某个个体，标在它的卡片上）', natives.length ? '<div class="ob-list">' + natives.map(function (c) {
+        var cs = a.channelStats[c.id] || {};
+        return '<div class="ob-row" ' + selAttrs('individual', c.owner) + '><span class="ob-pill warn">★ 专属</span><span class="ob-nm">' + esc(c.name) + '</span><span class="ob-meta">' + nm('individual', c.owner) + (s.compare === 'def' ? '' : ' · 用过 ' + (cs.calls || 0) + ' 次') + '</span></div>';
+      }).join('') + '</div>' : '<div class="ob-note">这个团队里没有专属能力。</div>') +
+      sec('基础能力', '<div class="ob-list">' + rowItem(selAttrs('channel', '__local'), '读写文件、改文件、命令行、创建任务……', '人人都有') + '</div>') +
       '<div class="ob-note">点一条看它的负载、谁在用、谁在等，以及暂停、恢复、指派维护、改并发上限。维护者：' + link('individual', 'meta_maint') + '。</div>';
   }
 

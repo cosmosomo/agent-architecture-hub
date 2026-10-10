@@ -32,6 +32,12 @@ HUB.cases['feature_sprint'] = {
     }
   },
 
+  // 后端开发接入的是豆包：它自带“创建多智能体并行开发”，这是只属于它的能力
+  native: [
+    { owner: 'n4', host: '豆包', id: 'ch_nat_doubao_multi', name: '豆包 · 创建多智能体并行开发', short: '多智能体并行开发', limit: 6,
+      note: '豆包自带：把一项开发拆成几个子智能体同时写，写完自动合并；本团队只有后端开发有这个能力' }
+  ],
+
   docs: [
     { id: 'd_spec', layer: 'consensus', name: '功能说明', owner: 'human', audience: 'all',
       summary: '把客服反馈按缺陷、建议、咨询三类自动分类，后台列表支持按分类筛选的需求说明' },

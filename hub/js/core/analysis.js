@@ -223,7 +223,8 @@
         incidents: ev.filter(function (e) { return e.kind === 'outage' || e.kind === 'quota'; }).length, lastIncident: lastDown ? lastDown.at : null,
         limit: ch.limit || null, users: (ch.users || []).length, active: activeNow.length, activeUsers: U.uniq(actInd),
         waiting: waitingNow.length, waitingUsers: U.uniq(waitingNow.map(who).filter(Boolean)),
-        peak: peak, queued: queuedRuns.length, waitTotal: U.sum(queuedRuns, function (r) { return r.queued; }) };
+        peak: peak, queued: queuedRuns.length, waitTotal: U.sum(queuedRuns, function (r) { return r.queued; }),
+        tier: ch.tier, maxWidth: ch.kind === 'native' ? cs.reduce(function (mx, c) { return Math.max(mx, c.width || 0); }, 0) : null };
     });
 
     /* health check */

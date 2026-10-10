@@ -585,3 +585,25 @@ body.obs-on .statbar > .ob-st { display: flex; }
 .ob-fr-ch { background: linear-gradient(180deg, rgba(52, 211, 153, .06), rgba(52, 211, 153, .015)); }
 .ob-fr-ch .ob-fname { color: rgb(52, 211, 153); }
 [data-theme="light"] .ob-fr-ch .ob-fname { color: #047857; }
+
+/* ---------- capability tiers: basic is one quiet point, native is gold on its owner ---------- */
+.ob-card.ob-ch.ob-chk-basic { --chc: 128, 137, 160; gap: 4px; padding: 8px 11px; border-style: dashed; border-width: 1px; box-shadow: none; opacity: .85; }
+.ob-card.ob-ch.ob-chk-basic .ob-chc-kind { margin-left: auto; color: var(--t3); }
+.ob-card.ob-ch.ob-chk-basic .ob-ch-name { flex: 0 0 auto; }
+.ob-native {
+  position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); z-index: 22; max-width: 128px;
+  font-family: var(--hd); font-size: 8.5px; font-weight: 800; line-height: 16px; padding: 0 8px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: #1a1203; background: linear-gradient(135deg, #FDE68A, #F59E0B); box-shadow: 0 0 12px rgba(245, 158, 11, .55); pointer-events: auto;
+}
+.ob-card.ob-has-native .nd-body { box-shadow: 0 0 0 1px rgba(245, 158, 11, .45), 0 0 30px rgba(245, 158, 11, .25) !important; }
+.ob-card.ob-has-native .nd-orb { border-color: rgba(245, 158, 11, .8) !important; }
+.ob-host {
+  position: absolute; left: 6px; top: 20px; z-index: 21; font-family: var(--mn); font-size: 7.5px; font-weight: 700; padding: 0 5px; line-height: 13px; border-radius: 4px;
+  color: #F59E0B; border: 1px solid rgba(245, 158, 11, .55); background: var(--ob-glass); pointer-events: none;
+}
+.ob-mini.ob-mini-native { box-shadow: 0 0 0 1.5px #F59E0B, 0 0 8px rgba(245, 158, 11, .6); }
+.ob-native-card { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, .5); background: linear-gradient(160deg, rgba(245, 158, 11, .14), rgba(245, 158, 11, .03)); margin-bottom: 6px; }
+.ob-native-h { font-family: var(--mn); font-size: 9px; font-weight: 700; letter-spacing: .04em; color: #F59E0B; }
+.ob-native-n { font-family: var(--hd); font-size: 13px; font-weight: 800; color: var(--t1); margin: 3px 0 4px; }
+.ob-native-s { font-family: var(--mn); font-size: 9.5px; color: var(--t2); margin-top: 4px; }
+[data-theme="light"] .ob-native-h, [data-theme="light"] .ob-host { color: #B45309; }

@@ -49,13 +49,17 @@
     if (st === 'error') flags += '<span class="ob-flag ob-flag-err" title="最近一次运行失败或被打断">错</span>';
     else if (st === 'waiting') flags += '<span class="ob-flag ob-flag-wait" title="有案例停在它负责的判断点上">等</span>';
     var runs = d.runs != null && !special ? '<span class="ob-runs" title="运行次数">' + d.runs + '</span>' : '';
+    var natives = (d.natives || []);
+    var ribbon = natives.length ? '<span class="ob-native" title="' + esc('专属能力：' + natives.map(function (n) { return n.name + (n.host ? '（' + n.host + '自带）' : ''); }).join('；')) + '">★ ' + esc(natives[0].short) + (natives.length > 1 ? ' +' + (natives.length - 1) : '') + '</span>' : '';
+    var host = d.host ? '<span class="ob-host" title="这个个体接入的是' + esc(d.host) + '">' + esc(d.host) + '</span>' : '';
     var title = d.name + (st ? '：' + (L.indStatus[st] || st) : '') + (d.runs != null ? '，运行 ' + d.runs + ' 次' : '') + '。双击打开它最近一次运行';
     var html = '<div class="nd-body" title="' + esc(title) + '">' +
       '<div class="nd-orb duo"' + (special ? ' style="color:' + ic + '"' : '') + '>' + (special ? ICON[d.kind] : agentIcon(d.agentId, 26)) + '</div>' +
       '<div class="nd-lbl" style="color:' + ic + '">' + esc(d.name) + '</div>' + badge +
       '<div class="nd-load"><div class="nd-load-bar" style="width:' + load + '%;background:' + lc + '"></div></div>' +
       '<div class="nd-sim-progress"><div class="nd-sim-progress-bar"></div></div>' +
-      '</div>' + marks + (flags ? '<div class="ob-flags">' + flags + '</div>' : '') + runs;
+      '</div>' + marks + (flags ? '<div class="ob-flags">' + flags + '</div>' : '') + runs + host + ribbon;
+    if (natives.length) cls += ' ob-has-native';
     return { cls: cls, html: html, style: { '--ic': ic }, sig: JSON.stringify(d) };
   }
 
@@ -65,11 +69,12 @@
     var shown = d.agents.slice(0, 7);
     var orbs = shown.map(function (a) {
       var col = agentColor(a.agentId);
-      return '<span class="ob-mini ob-ms-' + (d.compare === 'def' ? 'none' : a.status || 'standby') + '" style="--ic:' + col + '" title="' + esc(HUB.model.name('individual', a.id)) + '">' + agentIcon(a.agentId, 15) + '</span>';
+      return '<span class="ob-mini ob-ms-' + (d.compare === 'def' ? 'none' : a.status || 'standby') + (a.native ? ' ob-mini-native' : '') + '" style="--ic:' + col + '" title="' + esc(HUB.model.name('individual', a.id) + (a.native ? '（有专属能力）' : '')) + '">' + agentIcon(a.agentId, 15) + '</span>';
     }).join('') + (d.agents.length > shown.length ? '<span class="ob-mini-more">+' + (d.agents.length - shown.length) + '</span>' : '');
     var stats = d.members + ' 人';
     if (d.runs != null) stats += d.cut ? ' · ' + d.working + ' 在做' : ' · 运行 ' + d.runs + ' 次';
     if (d.never) stats += ' · ' + d.never + ' 未派';
+    if (d.natives) stats += ' · ★ 专属 ' + d.natives;
     var bar = '';
     if (d.runs != null && d.members) {
       var cnt = { working: 0, waiting: 0, standby: 0, error: 0, never: 0 };
@@ -88,9 +93,16 @@
   }
 
   /* ---------- a channel: status, load against its limit, who uses it ---------- */
-  var CH_KIND = { model: '模型渠道', function: '功能渠道', tool: '工具', local: '本地工具' };
+  var CH_KIND = { model: '模型渠道', function: '功能渠道', tool: '工具', local: '基础能力', basic: '基础能力', native: '专属能力' };
   function channel(c) {
     var d = c.data;
+    if (d.chKind === 'basic') {
+      // one point for what every agent can do: no limit, no upkeep
+      var tl = d.tools.join(' · ');
+      return { cls: 'ob-card ob-ch ob-chk-basic', sized: true, sig: JSON.stringify(d),
+        html: '<div class="ob-chc-head"><span class="ob-ch-ic" style="color:var(--t2)">' + ICON.tool + '</span><span class="ob-ch-name">基础能力</span><span class="ob-chc-kind">人人都有 · 不用维护</span></div>' +
+          '<div class="ob-chc-tools" title="' + esc(d.tools.join('、')) + '">' + esc(tl) + (d.calls != null ? ' · ' + d.calls + ' 次' : '') + '</div>' };
+    }
     var bad = d.status && d.status !== 'ok';
     var col = d.model ? 'var(--mc-' + d.model + ', var(--accent1))' : d.chKind === 'function' ? 'var(--accent3)' : 'var(--accent2)';
     var name = String(d.name).replace(/^(模型|工具)：/, '');

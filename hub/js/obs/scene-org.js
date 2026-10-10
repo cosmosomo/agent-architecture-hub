@@ -127,6 +127,8 @@
         anchor: x.groupId ? HUB.obsSceneOrg.anchorsOf(x.groupId, idx) : [],
         data: { id: id, name: x.name, agentId: x.agentId, phase: x.phase, model: x.model, isHub: !!x.isHub, kind: x.kind,
           status: s.compare === 'def' ? null : st.status, runs: s.compare === 'def' ? null : st.runs || 0, maxRuns: maxRuns,
+          host: x.host && x.host !== 'Claude Code' ? x.host : null,
+          natives: (x.natives || []).map(function (cid) { var c = idx.ch.get(cid) || {}; return { id: cid, name: c.name, short: c.short || c.name, host: c.host }; }),
           delivery: s.overlays.delivery && s.compare !== 'def' ? a.delivery[id] || null : null } };
     };
     var groupCard = function (G, w, h) {
@@ -135,7 +137,8 @@
       return { key: 'g:' + G.id, kind: 'dept', w: w, h: h, sel: { type: 'group', id: G.id }, toggle: G.id,
         anchor: (G.parentId ? HUB.obsSceneOrg.anchorsOf(G.parentId, idx) : []).concat(['b:' + G.id]),
         data: { id: G.id, name: G.name, level: G.level, phase: dominantPhase(mem, idx),
-          agents: order(mem).map(function (id) { var x = idx.ind.get(id); return { id: id, agentId: x.agentId, status: (a.indStats[id] || {}).status }; }),
+          agents: order(mem).map(function (id) { var x = idx.ind.get(id); return { id: id, agentId: x.agentId, status: (a.indStats[id] || {}).status, native: (x.natives || []).length > 0 }; }),
+          natives: U.sum(mem, function (id) { return (idx.ind.get(id).natives || []).length; }),
           members: gs.members || 0, runs: s.compare === 'def' ? null : gs.runs || 0, never: s.compare === 'def' ? 0 : gs.never || 0,
           working: s.compare === 'def' ? 0 : gs.working || 0, cut: s.time != null, compare: s.compare } };
     };
@@ -250,14 +253,14 @@
           queued: defOnly ? 0 : cs.queued || 0, wait: defOnly ? 0 : cs.waitTotal || 0, calls: defOnly ? null : cs.calls || 0, cut: s.time != null } };
     };
     var KIND_ORDER = { model: 0, function: 1, tool: 2 };
-    var isLocal = function (c) { return c.kind === 'tool' && !c.limit; };
-    var chs = def.channels.filter(function (c) { return !isLocal(c); }).sort(function (p, q) { return (KIND_ORDER[p.kind] || 1) - (KIND_ORDER[q.kind] || 1); });
+    var isLocal = function (c) { return c.tier === 'basic'; };
+    var chs = def.channels.filter(function (c) { return c.tier === 'shared'; }).sort(function (p, q) { return (KIND_ORDER[p.kind] || 1) - (KIND_ORDER[q.kind] || 1); });
     var locals = def.channels.filter(isLocal);
     var chItems = (maint ? [indCard('meta_maint')] : []).concat(chs.map(chCard));
     if (locals.length) {
       var lusers = U.uniq([].concat.apply([], locals.map(function (c) { return c.users || []; }))).filter(function (u) { return idx.ind.has(u) && !hidden(u); });
-      chItems.push({ key: 'c:__local', kind: 'channel', w: CHW, h: CHH, sel: { type: 'channel', id: '__local' }, anchor: ['b:__channels'],
-        data: { id: '__local', name: '本地工具', chKind: 'local', def: defOnly, status: 'ok', limit: null, users: lusers.length,
+      chItems.push({ key: 'c:__local', kind: 'channel', w: CHW, h: 58, sel: { type: 'channel', id: '__local' }, anchor: ['b:__channels'],
+        data: { id: '__local', name: '基础能力', chKind: 'basic', def: defOnly, status: 'ok', limit: null, users: lusers.length,
           tools: locals.map(function (c) { return c.name.replace(/^工具：/, ''); }),
           agents: lusers.slice(0, 6).map(function (u) { var y = idx.ind.get(u); return { id: u, agentId: y.agentId, kind: y.kind, on: false }; }),
           active: 0, waiting: 0, peak: 0, queued: 0, wait: 0, cut: s.time != null,
@@ -279,7 +282,9 @@
     var rep = function (id) {
       if (idx.ch.has(id)) {
         if (cardByKey.has('c:' + id)) return 'c:' + id;
-        return cardByKey.has('c:__local') && idx.ch.get(id).kind === 'tool' && !idx.ch.get(id).limit ? 'c:__local' : null;
+        var cc = idx.ch.get(id);
+        if (cc.tier === 'native') return rep(cc.owner);   // a native capability is drawn on its owner
+        return cardByKey.has('c:__local') && cc.tier === 'basic' ? 'c:__local' : null;
       }
       var x = idx.ind.get(id);
       if (!x) return null;

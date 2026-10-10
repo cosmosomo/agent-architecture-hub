@@ -186,7 +186,7 @@
 
     /* ---------- channel slots: a model channel serves at most `limit` runs at once ---------- */
     var busy = {}, chLimit = {}, runSlot = {};
-    def.channels.forEach(function (c) { chLimit[c.id] = c.limit || null; });
+    def.channels.forEach(function (c) { chLimit[c.id] = c.kind === 'native' ? null : c.limit || null; });
     var overlapMax = function (list, s, e) {
       var ev = [];
       list.forEach(function (iv) { if (iv.s < e && iv.e > s) { ev.push([Math.max(iv.s, s), 1]); ev.push([Math.min(iv.e, e), -1]); } });
@@ -287,8 +287,9 @@
         F.decisions.push(dec);
         // calls inside the decision window
         var kinds = (tp.calls || ['model']).slice();
+        if (k === 0 && x.natives && x.natives.length && run.outcome !== 'failed') kinds.push('spawn');
         if (win > 30 * MIN && R.chance(0.35)) kinds.splice(1, 0, 'read:repeat');
-        var durs = kinds.map(function (kd) { return kd === 'model' ? R.int(6, 45) * 1000 : kd === 'search' || kd === 'fetch' ? R.int(2, 9) * 1000 : R.int(1, 6) * 1000; });
+        var durs = kinds.map(function (kd) { return kd === 'model' ? R.int(6, 45) * 1000 : kd === 'search' || kd === 'fetch' ? R.int(2, 9) * 1000 : kd === 'spawn' ? R.int(60, 240) * 1000 : R.int(1, 6) * 1000; });
         var total = U.sum(durs), room = Math.max(1000, (dEnd - dStart) * 0.8);
         var scale = total > room ? room / total : 1;
         var gap = Math.max(0, ((dEnd - dStart) - total * scale) / (kinds.length + 1));
@@ -334,6 +335,12 @@
             } else if (kind === 'bash') {
               call.name = '运行命令'; call.input = '测试或检查'; call.output = R.chance(0.8) ? '通过 ' + R.int(8, 60) + ' 项' : '失败 ' + R.int(1, 3) + ' 项，已重试';
               if (/失败/.test(call.output)) call.status = 'retry';
+            } else if (kind === 'spawn') {
+              var nat = def.channels.find(function (c) { return c.id === x.natives[0]; }) || {};
+              var width = R.int(2, Math.max(2, Math.min(6, nat.limit || 4)));
+              call.channelId = nat.id; call.width = width;
+              call.name = (nat.short || '派生子智能体') + '：同时派出 ' + width + ' 个';
+              call.input = '拆好的 ' + width + ' 个子任务'; call.output = width + ' 个子智能体完成，结果已合并';
             } else if (kind === 'grep') {
               call.name = '内容搜索'; call.input = '检查项关键词'; call.output = '命中 ' + R.int(1, 30) + ' 处';
             }
