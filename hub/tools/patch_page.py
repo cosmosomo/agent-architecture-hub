@@ -13,8 +13,8 @@ PAGE = os.path.join(ROOT, 'index.html')
 
 SCRIPTS = [
     'hub/data/base.js', 'hub/data/zh.js',
-    'hub/data/cases/deep_five_minds.js', 'hub/data/cases/feature_sprint.js',
-    'hub/data/cases/incident_war_room.js', 'hub/data/cases/deep_research_v2.js',
+    # hub/data/cases/*.js (archived v41 curated overrides) are no longer loaded:
+    # the hub/cases/ Markdown source owns those case ids via HUB.model.addSource('docs')
     'hub/js/core/util.js', 'hub/js/core/store.js', 'hub/js/core/casedef.js', 'hub/js/core/sim.js',
     'hub/js/core/analysis.js', 'hub/js/core/model.js', 'hub/js/core/to-trace.js', 'hub/js/core/from-trace.js', 'hub/js/core/views.js',
     'hub/js/obs/cards.js', 'hub/js/obs/stage.js', 'hub/js/obs/scene-org.js',
