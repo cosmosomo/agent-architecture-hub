@@ -108,7 +108,7 @@
     var humanGate = def.process.gates.find(function (g) { return g.decider.type === 'human'; });
     var midExec = (function () {
       var s = stages[Math.min(stages.length - 1, Math.max(1, Math.floor(stages.length / 2)))];
-      var list = s ? s.steps[0].executors.filter(function (x) { return !never.has(x) && !ind.get(x).isHub; }) : [];
+      var list = s && s.steps[0] ? s.steps[0].executors.filter(function (x) { return !never.has(x) && !ind.get(x).isHub; }) : [];
       return list[0] || (agents[1] || agents[0] || {}).id;
     })();
     var specs = (SC.cases && SC.cases.length) ? SC.cases : [
@@ -122,9 +122,9 @@
       var late = stages.slice(Math.floor(stages.length / 2));
       var early = stages.slice(0, Math.max(1, Math.floor(stages.length / 2)));
       for (var i = 0; i < late.length; i++) {
-        var a = late[i].steps[0].executors.find(function (x) { return !never.has(x); });
+        var a = late[i].steps[0] ? late[i].steps[0].executors.find(function (x) { return !never.has(x); }) : null;
         for (var j = 0; j < early.length; j++) {
-          var b = early[j].steps[0].executors.find(function (x) { return !never.has(x) && !ind.get(x).isHub; });
+          var b = early[j].steps[0] ? early[j].steps[0].executors.find(function (x) { return !never.has(x) && !ind.get(x).isHub; }) : null;
           if (a && b && a !== b && !relFromTo[a + '>' + b] && !relFromTo[b + '>' + a]) return [[a, b, '直接找对方要资料']];
         }
       }

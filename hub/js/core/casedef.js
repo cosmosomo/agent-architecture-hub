@@ -430,7 +430,8 @@
   }
 
   HUB.casedef = {
-    build: build,
+    build: build, finishProcess: finishProcess,
+    LIMIT: LIMIT, CAPACITY: CAPACITY, QUOTA: QUOTA, MODEL_ZH: MODEL_ZH,
     agentName: agentName, presetName: presetName, presetSummary: presetSummary, presetFlow: presetFlow,
     phaseName: phaseName, toolName: toolName, PHASE_ORDER: PHASE_ORDER
   };
