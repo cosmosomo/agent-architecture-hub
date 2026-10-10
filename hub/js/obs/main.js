@@ -187,6 +187,8 @@
     var panel = s.present === 'panel';
     if (!els.panelHost) {
       els.panelHost = h('div', { class: 'ob-panelhost ob-only' });
+      // the page zooms the canvas on wheel and cancels the scroll; the panel sits inside the canvas, so keep its wheel to itself
+      els.panelHost.addEventListener('wheel', function (e) { e.stopPropagation(); }, { passive: true });
       cvA.appendChild(els.panelHost);
     }
     els.panelHost.classList.toggle('on', panel);
