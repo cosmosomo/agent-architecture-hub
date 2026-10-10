@@ -384,6 +384,8 @@ HUB.cases['feature_sprint'] = {
 
 - 10-10 晚四：对照原 v41 预设补回 md 迁移时丢失的 agent——deep_research_v2 9→20 个（社区讨论/技术动态/技术论坛/官方文档四路调研员 + 提炼层 r_ex1~r_ex7，流程加 s_extract 长报告提炼阶段，调研质检关卡移到提炼之后），incident_war_room 8→10 个（代码取证员 forensics、质疑专家 devil）；extract_base.js 去掉角色文本截断（base.js 50 处恢复 v41 全文）；index.html 停载 4 个已归档的 data/cases/*.js（docs 源已接管这些 id）。
 
+- 10-10 晚五：本地自动解析成环——① hub/cases/ 目录自动发现（_index.md 注册表 ∪ http 目录列表，`hub/cases/` 下新建目录免注册即出现；file:// 与纯静态托管回退 _index.md）；② `from-hub-graph.js` 落地（§18.2 的 JSON → 统一模型适配器，objects/relations 翻译 + 未知 type 降级 + 不跑模拟器），`hub/graph/*.json` 同样目录自动发现；③ 左栏预设列表新增"本地自动解析"小节（rPresety 注入钩子），不在 62 个预设里的案例可见可点，点击直进观察模式；④ `model.select` 支持异步加载源（原先只认同步 build，异步源接管默认案例即崩）；⑤ 活样例：`hub/cases/demo_minimal/`（故意不注册，纯目录发现）与 `hub/graph/research_triage.json`。
+
 还没做：
 - 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
 
