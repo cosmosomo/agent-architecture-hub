@@ -11,6 +11,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { extname, join, resolve, sep } from 'node:path';
 import { CONTRACT_VERSION, type SessionDoc } from '@hub-trace/contract';
 import { sessionToOtlp } from '@hub-trace/otel';
+import type { SearchIndex, SearchQuery } from './search.ts';
 import type { SessionStore } from './store.ts';
 
 export type ServeOptions = {
@@ -23,7 +24,27 @@ export type ServeOptions = {
   port?: number;
   /** Rescan at most this often when the index is requested. */
   refreshMs?: number;
+  /** Step search; kept in step with the store after every scan. */
+  search?: SearchIndex;
 };
+
+const list = (v: string | null) => (v ? v.split(',').map((x) => x.trim()).filter(Boolean) : undefined);
+
+function searchQuery(p: URLSearchParams): SearchQuery {
+  const role = p.get('role');
+  return {
+    q: p.get('q') || undefined,
+    kinds: list(p.get('kind')),
+    errors: p.get('errors') === '1',
+    sessions: list(p.get('session')),
+    cwd: p.get('cwd') || undefined,
+    role: role === 'main' || role === 'subagent' ? role : undefined,
+    since: p.get('since') || undefined,
+    until: p.get('until') || undefined,
+    limit: p.get('limit') ? Number(p.get('limit')) : undefined,
+    offset: p.get('offset') ? Number(p.get('offset')) : undefined,
+  };
+}
 
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -69,6 +90,12 @@ function sendFile(res: ServerResponse, path: string, head: boolean) {
 export function createService(opts: ServeOptions): Server {
   const { store, repoRoot, viewerDir } = opts;
   const refreshMs = opts.refreshMs ?? 5000;
+  const { search } = opts;
+  /** Rescan if due, then let the search index catch up in the background. */
+  const refresh = async () => {
+    await store.refresh(refreshMs);
+    if (search) search.sync(store.files(), (f) => store.parseSource(f)).catch(() => {});
+  };
   let allowedHosts: Set<string> = new Set();
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
@@ -80,11 +107,16 @@ export function createService(opts: ServeOptions): Server {
       const head = req.method === 'HEAD';
 
       if (path === '/api/health') {
-        return json(res, 200, { ok: true, contract: CONTRACT_VERSION, sessions: store.index().sessions.length, viewer: existsSync(join(viewerDir, 'index.html')), roots: store.roots.map((r) => ({ kind: r.adapter.kind, dir: r.dir, exists: existsSync(r.dir) })) });
+        return json(res, 200, { ok: true, contract: CONTRACT_VERSION, sessions: store.index().sessions.length, viewer: existsSync(join(viewerDir, 'index.html')), search: search ? search.status() : null, roots: store.roots.map((r) => ({ kind: r.adapter.kind, dir: r.dir, exists: existsSync(r.dir) })) });
       }
       if (path === '/api/sessions') {
-        await store.refresh(refreshMs);
+        await refresh();
         return json(res, 200, store.index());
+      }
+      if (path === '/api/search') {
+        if (!search) return json(res, 404, { error: 'search is off' });
+        await refresh();
+        return json(res, 200, search.search(searchQuery(url.searchParams)));
       }
       const m = /^\/api\/sessions\/([^/]+)(\/otel)?$/.exec(path);
       if (m) {

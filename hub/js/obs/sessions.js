@@ -25,6 +25,12 @@
     return d < 31 ? d + ' 天前' : String(iso).slice(0, 10);
   }
   function base(p) { var a = String(p || '').split(/[\\/]/).filter(Boolean); return a[a.length - 1] || ''; }
+  function search(kind, id) {
+    var h = '#view=search';
+    if (kind) h += '&kind=' + encodeURIComponent(kind);
+    if (id) h += '&session=' + encodeURIComponent(id);
+    return '/trace/' + h + '&theme=' + (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+  }
   function viewer(id) { return '/trace/#s=' + encodeURIComponent(id) + '&theme=' + (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'); }
 
   function load(el, force) {
@@ -58,6 +64,7 @@
       '<span class="ob-dot ' + (DOT[s.state.status] || '') + '"></span>' +
       '<span class="ob-sess-b"><span class="ob-nm">' + esc(s.title) + '</span>' +
       '<span class="ob-meta">' + esc(meta) +
+      (s.stats.toolErrors ? ' <a href="' + search('', s.id) + '&errors=1" target="_blank" rel="noopener" title="在这个会话里看出错的那几步" style="color:var(--warn,#d08)">错 ' + s.stats.toolErrors + '</a>' : '') +
       (kids ? ' <b data-act="kids" data-id="' + esc(s.id) + '" title="展开或收起子智能体">' + (open[s.id] ? '▾' : '▸') + ' 子智能体 ' + kids + '</b>' : '') +
       '</span></span></a>';
   }
@@ -90,7 +97,8 @@
     var chips = ['<span class="ob-chip' + (filter === 'all' ? ' on' : '') + '" data-act="filter" data-v="all">全部 ' + cache.length + '</span>'];
     ORDER.forEach(function (k) { if (counts[k]) chips.push('<span class="ob-chip' + (filter === k ? ' on' : '') + '" data-act="filter" data-v="' + k + '">' + STATUS[k] + ' ' + counts[k] + '</span>'); });
     out.push('<div class="ob-chips" style="padding:2px 14px 6px;display:flex;flex-wrap:wrap;gap:4px">' + chips.join('') + '</div>');
-    out.push('<a class="ob-si" style="text-decoration:none" href="/trace/" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">打开 Trace 查看器 ↗</span><span class="ob-meta">搜索、看调用树</span></a>');
+    out.push('<a class="ob-si" style="text-decoration:none" href="/trace/" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">打开 Trace 查看器 ↗</span><span class="ob-meta">按会话看调用树</span></a>');
+    out.push('<a class="ob-si" style="text-decoration:none" href="' + search('') + '" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">在全部会话里检索 ↗</span><span class="ob-meta">找命令、文件、错误、说过的话</span></a>');
     var ok = function (s) { return filter === 'all' || s.state.status === filter; };
     var rows = [];
     tops.forEach(function (s) {

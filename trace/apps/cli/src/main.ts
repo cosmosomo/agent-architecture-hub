@@ -5,16 +5,18 @@
  *   list [--limit N] [--state S] list indexed sessions (titles included)
  *   show <id> [--otel] [--out F] one session as contract JSON (or OTLP)
  *   serve [--port P] [--host H]  local service: /api, /trace/ (viewer), / (observatory)
+ *   index                        build or update the step search index; prints counts only
  *
  *   --root DIR    search DIR instead of the default homes (repeatable)
  *   --cache FILE  index cache file (default ~/.agent-hub/trace/index-v<contract>.json)
  */
-import { writeFileSync } from 'node:fs';
+import { statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ADAPTERS } from '@hub-trace/adapters';
 import { CONTRACT_VERSION, type SessionStatus } from '@hub-trace/contract';
 import { sessionToOtlp } from '@hub-trace/otel';
+import { SearchIndex } from './search.ts';
 import { createService, listen } from './server.ts';
 import { SessionStore, type Root } from './store.ts';
 
@@ -41,6 +43,11 @@ function parseArgs(argv: string[]): Args {
 }
 
 const flag = (a: Args, k: string) => a.flags.get(k)?.[0];
+
+/** The search index lives next to the summary index. */
+const sizeOf = (f: string) => { try { return (statSync(f).size / 1048576).toFixed(0) + ' MB'; } catch { return '?'; } };
+
+const searchFile = (store: SessionStore) => join(dirname(store.cacheFile), 'search-v' + CONTRACT_VERSION + '.sqlite');
 
 function storeFrom(a: Args): SessionStore {
   const dirs = a.flags.get('root');
@@ -93,9 +100,24 @@ async function main() {
       else console.log(body);
       return;
     }
+    case 'index': {
+      await scan(store);
+      const search = new SearchIndex(searchFile(store));
+      const timer = setInterval(() => { const p = search.status(); process.stderr.write('\r索引 ' + p.done + '/' + p.total); }, 1000);
+      const r = await search.sync(store.files(), (f) => store.parseSource(f)).finally(() => clearInterval(timer));
+      clearInterval(timer);
+      process.stderr.write('\r');
+      console.log('检索索引：会话 ' + r.sessions + '，本次重建 ' + r.indexed + '，移除 ' + r.removed + '，失败 ' + r.failed + '，新写入 ' + r.steps + ' 步，用时 ' + (r.ms / 1000).toFixed(1) + ' 秒；共 ' + search.status().steps + ' 步');
+      if (r.indexed > 20) { process.stderr.write('整理索引…'); search.optimize(); process.stderr.write('好了' + String.fromCharCode(10)); }
+      console.log('存储 ' + sizeOf(search.file));
+      search.close();
+      return;
+    }
     case 'serve': {
       await scan(store);
-      const server = createService({ store, repoRoot: REPO_ROOT, viewerDir: join(TRACE_DIR, 'apps', 'viewer', 'dist') });
+      const search = new SearchIndex(searchFile(store));
+      search.sync(store.files(), (f) => store.parseSource(f)).then((r) => { if (r.indexed || r.removed) console.log('检索索引就绪：重建 ' + r.indexed + ' 个会话，用时 ' + (r.ms / 1000).toFixed(1) + ' 秒'); }).catch((err) => console.error('检索索引出错：' + (err instanceof Error ? err.message : err)));
+      const server = createService({ store, search, repoRoot: REPO_ROOT, viewerDir: join(TRACE_DIR, 'apps', 'viewer', 'dist') });
       const url = await listen(server, Number(flag(a, 'port') || 8790), flag(a, 'host') || '127.0.0.1');
       console.log('本地服务 ' + url + '/   观察台');
       console.log('         ' + url + '/trace/   Trace 查看器');
@@ -103,7 +125,7 @@ async function main() {
       return;
     }
     default:
-      console.log(['用法：node apps/cli/src/main.ts <scan|list|show|serve> [选项]', '  scan                     更新索引，只打印数量', '  list [--limit N] [--state S]', '  show <id> [--otel] [--out 文件]', '  serve [--port 8790] [--host 127.0.0.1]', '  --root 目录   换搜索目录（可多次）', '  --cache 文件  索引缓存文件'].join('\n'));
+      console.log(['用法：node apps/cli/src/main.ts <scan|list|show|serve> [选项]', '  scan                     更新索引，只打印数量', '  list [--limit N] [--state S]', '  show <id> [--otel] [--out 文件]', '  serve [--port 8790] [--host 127.0.0.1]', '  index                    建立或更新检索索引', '  --root 目录   换搜索目录（可多次）', '  --cache 文件  索引缓存文件'].join('\n'));
   }
 }
 

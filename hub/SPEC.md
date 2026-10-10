@@ -431,11 +431,11 @@ trace-data/                 解析结果（本机私有，不进 git）
 
 ### 17.3 任务清单
 
-- [ ] T1 搭工作区（package.json、tsconfig、.gitignore 里排除 node_modules、dist、trace-data）
-- [ ] T2 契约 v0.1：会话、轮、工作项、用量、生命周期事件、会话状态、会话之间的关系
-- [ ] T3 适配器接口和注册表；Codex 适配器（两种格式）、脱敏、会话状态判断
-- [ ] T4 命令行扫描：`~/.codex/sessions` → `trace-data/`，只处理新增或变化的文件，写出索引
-- [ ] T5 OpenTelemetry 导出
-- [ ] T6 Trace 查看器：会话列表 + TreeView + DetailsView，中文，配色跟原页面
-- [ ] T7 测试：适配器用仿真样例；查看器能构建
-- [ ] T8 接回观察台：观察台能列出真实的 Codex 会话并打开 Trace 查看器
+- [x] T1 搭工作区（package.json、tsconfig、.gitignore 里排除 node_modules、dist、trace-data）
+- [x] T2 契约 v0.1：会话、轮、工作项、用量、生命周期事件、会话状态、会话之间的关系
+- [x] T3 适配器接口和注册表；Codex 适配器（两种格式）、脱敏、会话状态判断
+- [x] T4 命令行扫描：`~/.codex/sessions` → `trace-data/`，只处理新增或变化的文件，写出索引
+- [x] T5 OpenTelemetry 导出
+- [x] T6 Trace 查看器：会话列表 + TreeView + DetailsView，中文，配色跟原页面
+- [x] T7 测试：适配器用仿真样例；查看器能构建
+- [x] T8 接回观察台：观察台能列出真实的 Codex 会话并打开 Trace 查看器

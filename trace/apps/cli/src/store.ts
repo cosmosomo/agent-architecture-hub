@@ -21,7 +21,8 @@ export type StoreOptions = {
 };
 
 type Entry = { path: string; kind: string; adapter: string; size: number; mtimeMs: number; summary: SessionSummary };
-type CacheFile = { contract: string; entries: Entry[] };
+export type SourceFile = { id: string; path: string; kind: string; adapter: string; size: number; mtimeMs: number; summary: SessionSummary };
+type CacheFile ={ contract: string; entries: Entry[] };
 
 export type ScanReport = { files: number; parsed: number; reused: number; failed: number; removed: number; ms: number; errors: string[] };
 
@@ -199,6 +200,20 @@ export class SessionStore {
     const summaries = linkChildren(Array.from(this.byId.values()).map((e) => e.summary));
     summaries.sort((a, b) => ((b.updatedAt || '') < (a.updatedAt || '') ? -1 : 1));
     return { contract: CONTRACT_VERSION, generatedAt: new Date(this.now()).toISOString(), sessions: summaries };
+  }
+
+  /** The file behind each session (newest copy), for modules that re-read sources, e.g. the search index. */
+  files(): SourceFile[] {
+    this.load();
+    if (!this.byId.size && this.entries.size) this.rebuildIds();
+    return Array.from(this.byId.values()).map((e) => ({ id: e.summary.id, path: e.path, kind: e.kind, adapter: e.adapter, size: e.size, mtimeMs: e.mtimeMs, summary: e.summary }));
+  }
+
+  /** Parse one source file as it is now, without caching or linking. */
+  parseSource(f: SourceFile): Promise<Session> {
+    const adapter = ADAPTERS.find((a) => a.kind === f.kind);
+    if (!adapter) return Promise.reject(new Error('no adapter for ' + f.kind));
+    return parseFile(adapter, f.path, this.now());
   }
 
   has(id: string): boolean {

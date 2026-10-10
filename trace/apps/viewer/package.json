@@ -1,0 +1,35 @@
+{
+  "name": "@hub-trace/viewer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Trace viewer: session list, AgentPrism TreeView and DetailsView over the trace contract. Served by the local service at /trace/.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@evilmartians/agent-prism-data": "1.0.0",
+    "@evilmartians/agent-prism-types": "1.0.0",
+    "@hub-trace/adapters": "0.1.0",
+    "@hub-trace/contract": "0.1.0",
+    "@radix-ui/react-collapsible": "^1.1.11",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "classnames": "2.5.1",
+    "lucide-react": "^0.534.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-json-pretty": "^2.2.0",
+    "react-resizable-panels": "^3.0.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^6.1.2",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "3.4.19",
+    "vite": "^8.3.4"
+  }
+}

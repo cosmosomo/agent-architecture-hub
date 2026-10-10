@@ -306,3 +306,56 @@ export function validateSessionDoc(doc: unknown): string[] {
   if (s.stats?.turns !== s.turns.length) errs.push('stats.turns does not match turns');
   return errs;
 }
+
+/**
+ * Step search (the retrieval layer, hub/SPEC.md 17.4). Types only: the service builds
+ * the index and answers, the viewer and the observatory ask. Kept here so both sides
+ * read the same field names without importing the service's database code.
+ */
+export type SearchRequest = {
+  /** Free text; several words all have to match one step. */
+  q?: string;
+  /** Facet keys as returned in `facets.kinds`: 'tool', 'tool:shell', 'message:user'. */
+  kinds?: string[];
+  errors?: boolean;
+  /** Restrict to these session ids. */
+  sessions?: string[];
+  cwd?: string;
+  role?: 'main' | 'subagent';
+  since?: Iso;
+  until?: Iso;
+  limit?: number;
+  offset?: number;
+};
+
+export type SearchHit = {
+  session: string;
+  turn: number;
+  step: string;
+  kind: StepKind;
+  /** Message role, tool family or event name. */
+  sub: string;
+  /** Tool name or model, when the step has one. */
+  name?: string;
+  status?: string;
+  at?: Iso;
+  /** Text around the match, matches wrapped in \u0001 and \u0002. */
+  snippet: string;
+};
+
+export type SearchResult = {
+  total: number;
+  hits: SearchHit[];
+  facets: {
+    /** Every step in scope before the kind and error filters: what the "全部" chip shows. */
+    all: number;
+    /** Steps per facet key, e.g. `tool:shell`, under the same scope. */
+    kinds: Record<string, number>;
+    errors: number;
+    sessions: number;
+    cwd: { cwd: string; n: number }[];
+  };
+  /** How far the index has got through the sessions on this machine. */
+  indexing: { done: number; total: number; running: boolean };
+  ms: number;
+};

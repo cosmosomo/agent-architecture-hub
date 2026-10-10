@@ -1,0 +1,23 @@
+@import './hub-theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: oklch(var(--agentprism-background));
+  color: oklch(var(--agentprism-foreground));
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(var(--agentprism-border-strong)) transparent;
+}
