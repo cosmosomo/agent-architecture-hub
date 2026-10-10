@@ -206,8 +206,24 @@
         else if (e.kind === 'recover' || e.kind === 'resume') status = 'ok';
         else if (e.kind === 'pause') status = 'paused';
       });
+      // load: model channels count runs, tool channels count calls; a run that had to wait for a slot counts as queued
+      var load = (ch.kind === 'model' ? F.runs.filter(function (r) { return r.channelId === ch.id; }) : F.calls.filter(function (c) { return c.channelId === ch.id; }))
+        .filter(function (x) { return within(x.start - (x.queued || 0), cut); });
+      var activeNow = load.filter(function (x) { return x.start <= now && x.end > now; });
+      var waitingNow = load.filter(function (x) { return x.queued && x.start - x.queued <= now && x.start > now; });
+      var queuedRuns = load.filter(function (x) { return x.queued > 0; });
+      var who = function (x) { if (x.individualId) return x.individualId; var r = idx.run.get(x.runId); return r ? r.individualId : null; };
+      var evs = [];
+      load.forEach(function (x) { if (within(x.start, cut)) { evs.push([x.start, 1]); evs.push([Math.min(x.end, now), -1]); } });
+      evs.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+      var c0 = 0, peak = 0;
+      evs.forEach(function (p) { c0 += p[1]; if (c0 > peak) peak = c0; });
+      var actInd = activeNow.map(who).filter(Boolean);
       channelStats[ch.id] = { calls: cs.length, errors: cs.filter(function (c) { return c.status === 'error'; }).length, status: status,
-        incidents: ev.filter(function (e) { return e.kind === 'outage' || e.kind === 'quota'; }).length, lastIncident: lastDown ? lastDown.at : null };
+        incidents: ev.filter(function (e) { return e.kind === 'outage' || e.kind === 'quota'; }).length, lastIncident: lastDown ? lastDown.at : null,
+        limit: ch.limit || null, users: (ch.users || []).length, active: activeNow.length, activeUsers: U.uniq(actInd),
+        waiting: waitingNow.length, waitingUsers: U.uniq(waitingNow.map(who).filter(Boolean)),
+        peak: peak, queued: queuedRuns.length, waitTotal: U.sum(queuedRuns, function (r) { return r.queued; }) };
     });
 
     /* health check */
@@ -241,6 +257,7 @@
       var s = channelStats[ch.id];
       if (s.status !== 'ok') addH('channel_down', 'high', ch.name + '：' + (HUB.util.LABELS.channelStatus[s.status] || s.status), { type: 'channel', id: ch.id });
       else if (s.incidents) addH('channel_down', 'low', ch.name + '：出过 ' + s.incidents + ' 次故障，已恢复', { type: 'channel', id: ch.id });
+      if (s.queued) addH('channel_busy', s.waitTotal > 30 * 60000 ? 'mid' : 'low', ch.name + '：' + (s.limit === 1 ? '独占' : '并发上限 ' + s.limit) + '，' + s.queued + (ch.kind === 'model' ? ' 次运行' : ' 次调用') + '排队，共等了 ' + U.fmtDur(s.waitTotal), { type: 'channel', id: ch.id });
     });
     var unusedTask = unusedRelations.filter(function (rid) { var r = idx.rel.get(rid); return r.type === 'task'; });
     if (unusedTask.length) addH('unused_relation', 'mid', unusedTask.length + ' 条任务线设计了但从没走过', { type: 'relations', id: 'unused' });

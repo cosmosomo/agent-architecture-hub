@@ -184,6 +184,29 @@
       return T[x.phase] || T.build;
     };
 
+    /* ---------- channel slots: a model channel serves at most `limit` runs at once ---------- */
+    var busy = {}, chLimit = {}, runSlot = {};
+    def.channels.forEach(function (c) { chLimit[c.id] = c.limit || null; });
+    var overlapMax = function (list, s, e) {
+      var ev = [];
+      list.forEach(function (iv) { if (iv.s < e && iv.e > s) { ev.push([Math.max(iv.s, s), 1]); ev.push([Math.min(iv.e, e), -1]); } });
+      ev.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+      var c = 0, mx = 0;
+      ev.forEach(function (p) { c += p[1]; if (c > mx) mx = c; });
+      return mx;
+    };
+    // earliest moment at or after `start` when the channel has room for a run of length `dur`
+    var freeSlot = function (ch, start, dur) {
+      var lim = chLimit[ch], list = busy[ch] || [], t = start, guard = 0;
+      if (!lim) return start;
+      while (guard++ < 80 && overlapMax(list, t, t + dur) >= lim) {
+        var ends = list.filter(function (iv) { return iv.s < t + dur && iv.e > t; }).map(function (iv) { return iv.e; }).filter(function (v) { return v > t; });
+        if (!ends.length) break;
+        t = Math.min.apply(null, ends);
+      }
+      return t;
+    };
+
     /* ---------- one run ---------- */
     function doRun(task, x, start, kase, opts) {
       opts = opts || {};
@@ -191,6 +214,9 @@
       var range = opts.short ? [4, 12] : (RUN_MIN[phase] || [10, 30]);
       var dur = R.int(range[0], range[1]) * MIN;
       var modelCh = 'ch_' + (x.model || 'sonnet');
+      // wait for a free slot; maintenance runs jump the queue
+      var asked = start;
+      if (x.kind !== 'meta') start = freeSlot(modelCh, start, dur);
       var hit = x.kind === 'meta' ? null : outageAt(modelCh, start, start + dur);
       var outcome = 'deliver', end = start + dur;
       if (hit) {
@@ -200,10 +226,13 @@
       if (opts.outcome && outcome === 'deliver') outcome = opts.outcome;
       var run = {
         id: nid('u', 'u'), taskId: task.id, caseId: kase ? kase.id : null, individualId: x.id, start: start, end: end,
-        outcome: outcome, version: versionAt(start), model: x.model, tokens: 0,
+        outcome: outcome, version: versionAt(start), model: x.model, tokens: 0, channelId: modelCh, queued: start - asked,
         coverage: { indexed: 0, metaOnly: 0, truncated: 0 }
       };
       F.runs.push(run);
+      var slotIv = { s: start, e: end };
+      runSlot[run.id] = slotIv;
+      (busy[modelCh] = busy[modelCh] || []).push(slotIv);
       // context delivered at run start (the work package)
       var missing = (opts.missing || []);
       x.docs.forEach(function (d) {
@@ -313,7 +342,22 @@
           // Custom tool channels declared by a curated case (e.g. a monitoring query service) replace generic lookups.
           if (call.kind === 'tool' && customCh.length && (kind === 'fetch' || kind === 'bash' || kind === 'search')) {
             var cc = customCh.find(function (id) { return x.channels.indexOf(id) >= 0; });
-            if (cc && (ci % 2 === 0)) { call.channelId = cc; call.name = '调用 ' + ((def.channels.find(function (c) { return c.id === cc; }) || {}).name || cc).replace(/^工具：/, ''); }
+            // a function channel (a logged-in browser such as OpenCLI) takes all of its users' web access, and each visit is slow
+            var fnCh = !!cc && /^ch_fn_/.test(cc);
+            if (cc && (fnCh ? kind !== 'bash' : ci % 2 === 0)) {
+              call.channelId = cc;
+              var cname = ((def.channels.find(function (c) { return c.id === cc; }) || {}).name || cc).replace(/^工具：/, '');
+              call.name = fnCh ? (kind === 'search' ? '用 ' + cname + ' 搜索' : '用 ' + cname + ' 打开页面') : '调用 ' + cname;
+              if (fnCh) { d = R.int(25, 80) * 1000; call.end = call.start + d; }
+            }
+          }
+          if (call.kind === 'tool' && chLimit[call.channelId]) {
+            var askedC = call.start, cd = call.end - call.start;
+            var ns = freeSlot(call.channelId, call.start, cd);
+            if (ns > call.start) { call.start = ns; call.end = ns + cd; call.queued = ns - askedC; t = ns; }
+            (busy[call.channelId] = busy[call.channelId] || []).push({ s: call.start, e: call.end });
+            if (call.end > dec.end) dec.end = call.end;
+            if (call.end > run.end) { run.end = call.end; if (runSlot[run.id]) runSlot[run.id].e = run.end; }
           }
           var hitCall = outageAt(call.channelId, call.start, call.end);
           if (failed && ci === kinds.length - 1) { call.status = 'error'; call.output = '渠道不可用：' + ((hitCall && hitCall.note) || '中断'); }

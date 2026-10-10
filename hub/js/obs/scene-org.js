@@ -13,7 +13,7 @@
   var SP = 12, ST = 28;              // sub-frame padding and title band
   var COLS = 4;                      // at most four cards in a row inside a department
   var BLOCKGAP = 72, ROWGAP = 96;
-  var CHW = 156, CHH = 46;
+  var CHW = 188, CHH = 104;        // a channel card in the capability layer
 
   /* how far along the flow each individual sits (longest path from the human, back edges ignored) */
   function computeRanks(m) {
@@ -190,12 +190,10 @@
       blocks.push(bl);
     });
 
-    /* the people column on the left: the human, and the maintainer when the channels row is hidden */
+    /* the person on the left; the maintainer lives with the channels it maintains */
     var showHuman = s.overlays.human !== false && idx.ind.has('human');
     var maint = idx.ind.get('meta_maint');
-    var showCh = !!s.overlays.channels;
-    var maintLeft = !!maint && !showCh;
-    var peopleW = showHuman || maintLeft ? NW : 0;
+    var peopleW = showHuman ? NW : 0;
     var x0 = peopleW ? peopleW + BLOCKGAP : 0;
 
     /* rows of departments: try 1..n rows, keep the widest arrangement whose scale is close to the best */
@@ -232,51 +230,57 @@
       mids.push(ytop + rh / 2);
       ytop += rh + ROWGAP;
     });
-    var firstMid = mids.length ? mids[0] : NH / 2, lastMid = mids.length ? mids[mids.length - 1] : NH / 2;
-    var oneRow = mids.length < 2;
-    if (showHuman) {
-      var hy = oneRow && maintLeft ? firstMid - NH / 2 - GY / 2 - NH / 2 : firstMid - NH / 2;
-      cards.push(Object.assign(indCard('human'), { x: 0, y: hy }));
-    }
-    if (maintLeft) {
-      var my = oneRow && showHuman ? firstMid + GY / 2 : lastMid - NH / 2;
-      cards.push(Object.assign(indCard('meta_maint'), { x: 0, y: my }));
-    }
+    var firstMid = mids.length ? mids[0] : NH / 2;
+    if (showHuman) cards.push(Object.assign(indCard('human'), { x: 0, y: firstMid - NH / 2 }));
 
-    /* channels: rows of pills under everything, the maintainer first */
-    if (showCh) {
-      var maxY = 0;
-      cards.forEach(function (c) { maxY = Math.max(maxY, c.y + c.h); });
-      frames.forEach(function (f) { maxY = Math.max(maxY, f.y + f.h); });
-      var chs = def.channels.slice().sort(function (p, q) { return p.kind === q.kind ? 0 : p.kind === 'model' ? -1 : 1; });
-      var pills = (maint ? [Object.assign(indCard('meta_maint'), {})] : []).concat(chs.map(function (c) {
-        var cs = a.channelStats[c.id] || {};
-        return { key: 'c:' + c.id, kind: 'channel', w: CHW, h: CHH, sel: { type: 'channel', id: c.id }, anchor: [],
-          data: { id: c.id, name: c.name, chKind: c.kind, model: c.kind === 'model' ? c.id.replace(/^ch_/, '') : null,
-            status: s.compare === 'def' ? 'ok' : cs.status || 'ok', calls: s.compare === 'def' ? null : cs.calls || 0 } };
-      }));
-      var contentW = Math.max(best.W - x0, (CHW + GX) * 4);
-      var y = maxY + ROWGAP, line = [], lineW = 0;
-      var flush = function () {
-        var rowH = Math.max.apply(null, line.map(function (it) { return it.h; }));
-        var sx = x0 + Math.max(0, (contentW - lineW) / 2);
-        line.forEach(function (it) { it.x = sx; it.y = y + (rowH - it.h) / 2; sx += it.w + GX; cards.push(it); });
-        y += rowH + GY;
-        line = []; lineW = 0;
-      };
-      pills.forEach(function (it) {
-        if (line.length && lineW + GX + it.w > contentW) flush();
-        lineW += (line.length ? GX : 0) + it.w;
-        line.push(it);
-      });
-      if (line.length) flush();
+    /* the capability layer: every channel is a unit of the main graph (status, users, load against its limit),
+       framed together with the maintainer that keeps them running */
+    var maxY = 0;
+    cards.forEach(function (c) { maxY = Math.max(maxY, c.y + c.h); });
+    frames.forEach(function (f) { maxY = Math.max(maxY, f.y + f.h); });
+    var defOnly = s.compare === 'def';
+    var chCard = function (c) {
+      var cs = a.channelStats[c.id] || {};
+      var users = (c.users || []).filter(function (u) { return idx.ind.has(u) && !hidden(u); });
+      return { key: 'c:' + c.id, kind: 'channel', w: CHW, h: CHH, sel: { type: 'channel', id: c.id }, anchor: ['b:__channels'],
+        data: { id: c.id, name: c.name, chKind: c.kind, model: c.kind === 'model' ? c.id.replace(/^ch_/, '') : null, def: defOnly,
+          status: defOnly ? 'ok' : cs.status || 'ok', limit: c.limit || null, users: users.length,
+          agents: users.slice(0, 6).map(function (u) { var y = idx.ind.get(u); return { id: u, agentId: y.agentId, kind: y.kind, on: !defOnly && (cs.activeUsers || []).indexOf(u) >= 0 }; }),
+          active: defOnly ? 0 : cs.active || 0, waiting: defOnly ? 0 : cs.waiting || 0, peak: defOnly ? 0 : cs.peak || 0,
+          queued: defOnly ? 0 : cs.queued || 0, wait: defOnly ? 0 : cs.waitTotal || 0, calls: defOnly ? null : cs.calls || 0, cut: s.time != null } };
+    };
+    var KIND_ORDER = { model: 0, function: 1, tool: 2 };
+    var isLocal = function (c) { return c.kind === 'tool' && !c.limit; };
+    var chs = def.channels.filter(function (c) { return !isLocal(c); }).sort(function (p, q) { return (KIND_ORDER[p.kind] || 1) - (KIND_ORDER[q.kind] || 1); });
+    var locals = def.channels.filter(isLocal);
+    var chItems = (maint ? [indCard('meta_maint')] : []).concat(chs.map(chCard));
+    if (locals.length) {
+      var lusers = U.uniq([].concat.apply([], locals.map(function (c) { return c.users || []; }))).filter(function (u) { return idx.ind.has(u) && !hidden(u); });
+      chItems.push({ key: 'c:__local', kind: 'channel', w: CHW, h: CHH, sel: { type: 'channel', id: '__local' }, anchor: ['b:__channels'],
+        data: { id: '__local', name: '本地工具', chKind: 'local', def: defOnly, status: 'ok', limit: null, users: lusers.length,
+          tools: locals.map(function (c) { return c.name.replace(/^工具：/, ''); }),
+          agents: lusers.slice(0, 6).map(function (u) { var y = idx.ind.get(u); return { id: u, agentId: y.agentId, kind: y.kind, on: false }; }),
+          active: 0, waiting: 0, peak: 0, queued: 0, wait: 0, cut: s.time != null,
+          calls: defOnly ? null : U.sum(locals, function (c) { return (a.channelStats[c.id] || {}).calls || 0; }) } });
     }
+    var contentW = Math.max(best.W - x0, (CHW + GX) * 4);
+    var chLay = pack(chItems, contentW - FP * 2, GX, GY);
+    var fw = chLay.w + FP * 2, fh = chLay.h + FT + FP;
+    var fx = x0 + Math.max(0, (contentW - fw) / 2), fy = maxY + ROWGAP;
+    var bad = chs.filter(function (c) { var st = (a.channelStats[c.id] || {}).status; return !defOnly && st && st !== 'ok'; }).length;
+    var full = chs.filter(function (c) { var cs = a.channelStats[c.id] || {}; return !defOnly && c.limit && (cs.waiting || cs.active >= c.limit); }).length;
+    frames.push({ key: 'b:__channels', kind: 'chframe', x: fx, y: fy, w: fw, h: fh, sel: { type: 'channels', id: 'all' }, anchor: [],
+      data: { n: chs.length, bad: bad, full: full, def: defOnly, queued: defOnly ? 0 : U.sum(chs, function (c) { return (a.channelStats[c.id] || {}).queued || 0; }) } });
+    chItems.forEach(function (it) { it.x = fx + FP + it.px; it.y = fy + FT + it.py; if (it.key === 'i:meta_maint') it.anchor = ['b:__channels']; cards.push(it); });
 
     var cardByKey = new Map(cards.map(function (c) { return [c.key, c]; }));
 
     /* which drawn card stands for an individual or a channel */
     var rep = function (id) {
-      if (idx.ch.has(id)) return cardByKey.has('c:' + id) ? 'c:' + id : null;
+      if (idx.ch.has(id)) {
+        if (cardByKey.has('c:' + id)) return 'c:' + id;
+        return cardByKey.has('c:__local') && idx.ch.get(id).kind === 'tool' && !idx.ch.get(id).limit ? 'c:__local' : null;
+      }
       var x = idx.ind.get(id);
       if (!x) return null;
       if (!x.groupId) return cardByKey.has('i:' + id) ? 'i:' + id : null;
@@ -286,7 +290,17 @@
 
     /* links: definitions aggregated between drawn cards, plus fact-only handoffs */
     var lines = s.lines;
-    var showType = function (t) { return t === 'channel' ? lines.channel && showCh : !!lines[t]; };
+    var showType = function (t) { return !!lines[t]; };
+    // usage lines are many; besides the 渠道线 switch, they appear for the channel or individual being looked at
+    var selCh = s.selection && s.selection.type === 'channel' ? s.selection.id : null;
+    var selInd = s.selection && s.selection.type === 'individual' ? s.selection.id : null;
+    var wanted = function (r) {
+      if (showType(r.type)) return true;
+      if (r.type !== 'channel') return false;
+      if (selInd && r.from === selInd) return true;
+      if (!selCh) return false;
+      return selCh === '__local' ? rep(r.to) === 'c:__local' : r.to === selCh;
+    };
     var focusCase = s.focus && s.focus.type === 'case' ? s.focus.id : null;
     var focusCount = {};
     if (focusCase) {
@@ -300,7 +314,7 @@
     }
     var aggs = new Map();
     def.relations.forEach(function (r) {
-      if (!showType(r.type)) return;
+      if (!wanted(r)) return;
       var rf = rep(r.from), rt = rep(r.to);
       if (!rf || !rt || rf === rt) return;
       var k = rf + '|' + rt + '|' + r.type;
@@ -346,7 +360,10 @@
         if (!HUB.model.visible(r.start, s)) return;
         var k = rep(r.individualId);
         if (k) involved[k] = true;
+        if (r.channelId) involved['c:' + r.channelId] = true;
+        (idx.callsByRun.get(r.id) || []).forEach(function (c) { if (HUB.model.visible(c.start, s)) { var ck = rep(c.channelId); if (ck) involved[ck] = true; } });
       });
+      involved['b:__channels'] = true;
       (idx.handoffsByCase.get(focusCase) || []).forEach(function (hf) { if (hf.from === 'human' && cardByKey.has('i:human')) involved['i:human'] = true; });
       frames.forEach(function (f) {
         var mem = idx.membersDeep.get(f.data.id) || [];

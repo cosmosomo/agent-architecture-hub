@@ -548,3 +548,40 @@ body.obs-on .statbar > .ob-st { display: flex; }
 [data-theme="light"] .ob-panelhost { --panel-2: rgba(15,23,42,.03); --panel-3: rgba(15,23,42,.06); }
 .ob-panelhost .pn-card { border-radius: 14px; background: var(--bg-card); }
 .ob-panelhost .pn-card-title { font-family: var(--hd); }
+
+/* ---------- capability layer: channel cards ---------- */
+.ob-card.ob-ch {
+  --chc: 52, 211, 153;
+  flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 5px; padding: 9px 11px 8px; border-radius: 14px;
+  border: 1.5px solid rgba(var(--chc), .4); background: var(--bg-panel); box-shadow: 0 0 26px rgba(var(--chc), .1);
+}
+.ob-card.ob-ch.ob-chk-model { --chc: 129, 140, 248; }
+.ob-card.ob-ch.ob-chk-function { --chc: 251, 191, 36; }
+.ob-card.ob-ch.ob-chk-local { --chc: 128, 137, 160; }
+.ob-card.ob-ch:hover { border-color: rgba(var(--chc), .75); }
+.ob-card.ob-ch.sel { border-color: var(--sel-c, #fff); box-shadow: 0 0 0 2px rgba(var(--chc), .4), 0 0 30px rgba(var(--chc), .25); }
+.ob-card.ob-ch.ob-ch-full { border-color: rgba(245, 158, 11, .75); box-shadow: 0 0 0 1px rgba(245, 158, 11, .25), 0 0 28px rgba(245, 158, 11, .2); }
+.ob-card.ob-ch.ob-ch-bad { border-color: rgba(248, 113, 113, .8); box-shadow: 0 0 0 1px rgba(248, 113, 113, .25), 0 0 28px rgba(248, 113, 113, .22); }
+.ob-chc-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.ob-chc-head .ob-ch-name { font-family: var(--hd); font-size: 12px; font-weight: 800; color: var(--t1); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ob-chs { font-family: var(--hd); font-size: 8.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
+.ob-chs.ok { color: var(--accent2); border: 1px solid rgba(52, 211, 153, .45); }
+.ob-chs.bad { color: #F87171; border: 1px solid rgba(248, 113, 113, .6); }
+.ob-chc-kind { font-family: var(--mn); font-size: 8.5px; color: rgba(var(--chc), .95); }
+.ob-chc-load { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.ob-chc-cells { display: inline-flex; gap: 3px; flex-shrink: 0; }
+.ob-chc-cells i { width: 10px; height: 10px; border-radius: 3px; border: 1px solid rgba(var(--chc), .55); }
+.ob-chc-cells i.on { background: rgba(var(--chc), .85); }
+.ob-chc-cells.full i.on { background: #F59E0B; border-color: #F59E0B; }
+.ob-chc-cells.bar { display: block; width: 70px; height: 6px; border-radius: 3px; background: rgba(var(--chc), .12); overflow: hidden; }
+.ob-chc-cells.bar b { display: block; height: 100%; background: rgba(var(--chc), .85); }
+.ob-chc-cells.bar.full b { background: #F59E0B; }
+.ob-chc-txt { font-family: var(--mn); font-size: 9px; color: var(--t2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ob-chc-tools { font-family: var(--hd); font-size: 9.5px; color: var(--t2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ob-chc-users { display: flex; align-items: center; gap: 6px; margin-top: auto; min-width: 0; }
+.ob-chc-av { display: inline-flex; gap: 2px; flex-shrink: 0; }
+.ob-chc-av .ob-mini { width: 18px; height: 18px; border-radius: 5px; }
+.ob-chc-n { font-family: var(--mn); font-size: 8.5px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ob-fr-ch { background: linear-gradient(180deg, rgba(52, 211, 153, .06), rgba(52, 211, 153, .015)); }
+.ob-fr-ch .ob-fname { color: rgb(52, 211, 153); }
+[data-theme="light"] .ob-fr-ch .ob-fname { color: #047857; }

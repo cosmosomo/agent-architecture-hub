@@ -18,7 +18,7 @@
     exec: [[1, '决策'], [2, '调用']]
   };
   var LINE_CHIPS = [['task', '任务线', '--ob-task'], ['info', '信息线', '--ob-info'], ['watch', '监督线', '--ob-watch'], ['channel', '渠道线', '--ob-channel']];
-  var OVERLAYS = [['human', '人'], ['channels', '渠道节点'], ['delivery', '送达标记']];
+  var OVERLAYS = [['human', '人'], ['delivery', '送达标记']];
   var VIEW_ICONS = {
     v1: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18.5" r="2"/><circle cx="12" cy="10" r="1.7"/><path d="M7 6h10M6.2 7.8l4.6 9M17.8 7.8l-4.6 9M12 11.7v4.8"/>',
     v2: '<rect x="3" y="3.5" width="7.5" height="6.5" rx="1.5"/><rect x="13.5" y="3.5" width="7.5" height="6.5" rx="1.5"/><rect x="8.25" y="14" width="7.5" height="6.5" rx="1.5"/><path d="M6.75 10v2h10.5v-2M12 12v2"/>',
@@ -99,7 +99,8 @@
   }
 
   /* ================= mode ================= */
-  function setMode(obs) {
+  // keepCase: the observed case stays (start-up from a link); otherwise switching from the designer follows its preset
+  function setMode(obs, keepCase) {
     on = !!obs;
     document.body.classList.toggle('obs-on', on);
     els.mode.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', (b.getAttribute('data-mode') === 'obs') === on); });
@@ -111,7 +112,7 @@
       var active = document.querySelector('.sl-tabs .sl-tab.on');
       if (!active || active.hasAttribute('data-ob-hide')) zmienTab('pr', tabs[1]);
       G('heroOverlay').classList.remove('show');
-      if (typeof actPr !== 'undefined' && actPr && actPr !== st().caseId && HUB.base.presets[actPr]) HUB.store.switchCase(actPr);
+      if (!keepCase && typeof actPr !== 'undefined' && actPr && actPr !== st().caseId && HUB.base.presets[actPr]) HUB.store.switchCase(actPr);
       lastFitSig = '';
       renderAll(st(), null);
     } else {
@@ -302,7 +303,6 @@
         var chip = h('button', { type: 'button', class: 'ob-chip' + (onNow ? ' on' : ''), style: { '--cc': 'var(' + c[2] + ')' },
           title: (onNow ? '隐藏' : '显示') + c[1], onClick: function () {
             var patch = { lines: {} }; patch.lines[c[0]] = !onNow;
-            if (c[0] === 'channel' && !onNow) patch.overlays = { channels: true };
             HUB.store.set(patch);
           } }, h('span', { class: 'ob-sw' }), c[1]);
         els.ctrl.appendChild(chip);
@@ -314,7 +314,6 @@
         var onNow = s.overlays[o[0]] !== false && !!s.overlays[o[0]];
         els.ctrl.appendChild(h('button', { type: 'button', class: 'ob-chip' + (onNow ? ' on' : ''), onClick: function () {
           var patch = { overlays: {} }; patch.overlays[o[0]] = !onNow;
-          if (o[0] === 'channels') patch.lines = { channel: !onNow };
           HUB.store.set(patch);
         } }, o[1]));
       });
@@ -458,11 +457,11 @@
       if (p.caseId && HUB.base.presets[p.caseId] && p.caseId !== st().caseId) HUB.store.switchCase(p.caseId);
       delete p.caseId;
       HUB.store.set(p);
-      if (!on) setMode(true);
+      if (!on) setMode(true, true);
     });
     var mode = 'obs';
     try { mode = localStorage.getItem('hub.mode') || 'obs'; } catch (e) { /* storage blocked */ }
-    setMode(fromLink || mode !== 'design');
+    setMode(fromLink || mode !== 'design', true);
   }
 
   HUB.obs = { start: start, onPreset: onPreset, setMode: setMode, isOn: function () { return on; }, fit: fit, render: function () { renderAll(st(), st()); } };

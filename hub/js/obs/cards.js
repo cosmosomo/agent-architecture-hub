@@ -87,16 +87,43 @@
     return { cls: cls, html: html, style: { '--pc': phaseVar(d.phase) }, sized: true, sig: JSON.stringify(d) };
   }
 
-  /* ---------- a channel: a pill ---------- */
+  /* ---------- a channel: status, load against its limit, who uses it ---------- */
+  var CH_KIND = { model: '模型渠道', function: '功能渠道', tool: '工具', local: '本地工具' };
   function channel(c) {
     var d = c.data;
     var bad = d.status && d.status !== 'ok';
-    var col = d.model ? 'var(--mc-' + d.model + ', var(--accent1))' : 'var(--accent2)';
-    var html = '<span class="ob-ch-ic" style="color:' + col + '">' + (d.chKind === 'model' ? ICON.model : ICON.tool) + '</span>' +
-      '<span class="ob-ch-name">' + esc(String(d.name).replace(/^(模型|工具)：/, '')) + '</span>' +
-      (d.calls != null ? '<span class="ob-ch-n">' + d.calls + '</span>' : '') +
-      (bad ? '<span class="ob-flag ob-flag-err">' + esc(L.channelStatus[d.status] || d.status) + '</span>' : '');
-    return { cls: 'ob-card ob-ch' + (bad ? ' ob-ch-bad' : ''), html: html, sized: true, sig: JSON.stringify(d) };
+    var col = d.model ? 'var(--mc-' + d.model + ', var(--accent1))' : d.chKind === 'function' ? 'var(--accent3)' : 'var(--accent2)';
+    var name = String(d.name).replace(/^(模型|工具)：/, '');
+    var kind = CH_KIND[d.chKind] || '渠道';
+    if (d.limit === 1) kind += ' · 独占';
+    else if (d.limit) kind += ' · 并发 ' + d.limit;
+    else kind += ' · 不限并发';
+    // load: at a time cut the slots show who is in now; over the whole span they show the busiest moment
+    var load = '';
+    if (!d.def && d.limit) {
+      var used = d.cut ? d.active : d.peak;
+      var cells = '';
+      if (d.limit <= 8) for (var i = 0; i < d.limit; i++) cells += '<i class="' + (i < used ? 'on' : '') + '"></i>';
+      else cells = '<b style="width:' + Math.min(100, Math.round(100 * used / d.limit)) + '%"></b>';
+      var txt = d.cut ? '在用 ' + d.active + '/' + d.limit + (d.waiting ? ' · 排队 ' + d.waiting : '')
+        : '峰值 ' + d.peak + '/' + d.limit + (d.queued ? ' · 排过 ' + d.queued + ' 次队' : '');
+      load = '<div class="ob-chc-load"><span class="ob-chc-cells' + (d.limit > 8 ? ' bar' : '') + (used >= d.limit ? ' full' : '') + '">' + cells + '</span><span class="ob-chc-txt">' + esc(txt) + '</span></div>';
+    } else if (d.chKind === 'local') {
+      load = '<div class="ob-chc-tools" title="' + esc(d.tools.join('、')) + '">' + esc(d.tools.join(' · ')) + '</div>';
+    } else if (!d.def) {
+      load = '<div class="ob-chc-load"><span class="ob-chc-txt">' + (d.cut ? '在用 ' + d.active : '峰值 ' + d.peak) + '</span></div>';
+    }
+    var avatars = d.agents.map(function (a) {
+      var ac = a.kind === 'meta' ? '#22C4E6' : agentColor(a.agentId);
+      return '<span class="ob-mini' + (a.on ? ' ob-ms-working' : ' ob-ms-none') + '" style="--ic:' + ac + '" title="' + esc(HUB.model.name('individual', a.id)) + (a.on ? '（正在用）' : '') + '">' + (a.agentId ? agentIcon(a.agentId, 13) : '') + '</span>';
+    }).join('') + (d.users > d.agents.length ? '<span class="ob-mini-more">+' + (d.users - d.agents.length) + '</span>' : '');
+    var html = '<div class="ob-chc-head"><span class="ob-ch-ic" style="color:' + col + '">' + (d.chKind === 'model' ? ICON.model : ICON.tool) + '</span>' +
+      '<span class="ob-ch-name" title="' + esc(name) + '">' + esc(name) + '</span>' +
+      (bad ? '<span class="ob-chs bad">' + esc(L.channelStatus[d.status] || d.status) + '</span>' : d.def ? '' : '<span class="ob-chs ok">正常</span>') + '</div>' +
+      '<div class="ob-chc-kind">' + esc(kind) + '</div>' + load +
+      '<div class="ob-chc-users"><span class="ob-chc-av">' + avatars + '</span><span class="ob-chc-n">' + d.users + ' 人在用' + (d.calls != null ? ' · ' + d.calls + ' 次调用' : '') + '</span></div>';
+    var cls = 'ob-card ob-ch ob-chk-' + d.chKind + (bad ? ' ob-ch-bad' : '') + (!d.def && d.limit && (d.cut ? d.active >= d.limit || d.waiting : d.queued) ? ' ob-ch-full' : '');
+    return { cls: cls, html: html, sized: true, sig: JSON.stringify(d) };
   }
 
   function card(c) {
@@ -122,6 +149,15 @@
     return { cls: 'ob-fr-lv' + d.level, html: html, style: { '--pc': phaseVar(d.phase) }, sig: JSON.stringify(d) };
   }
 
+  // the capability layer: all channels and their maintainer; selecting it opens channel management in the side panel
+  function chframe(f) {
+    var d = f.data;
+    var meta = d.n + ' 条渠道' + (d.def ? '' : (d.bad ? ' · ' + d.bad + ' 条有故障' : '') + (d.full ? ' · ' + d.full + ' 条满载' : '') + (d.queued ? ' · 累计排队 ' + d.queued + ' 次' : ''));
+    var html = '<div class="ob-fh" title="能力层：模型渠道、功能渠道和本地工具。点标题打开渠道管理">' +
+      '<span class="ob-fname">能力层 · 渠道</span><span class="ob-fmeta">' + esc(meta) + '</span></div>';
+    return { cls: 'ob-fr-lv1 ob-fr-ch', html: html, style: { '--pc': '52, 211, 153' }, sig: JSON.stringify(d) };
+  }
+
   // other subjects register their own card and frame kinds here (process stages, gates, decisions, ...)
-  HUB.obsCards = { card: card, frame: frame, extra: {}, extraFrame: {}, agentIcon: agentIcon, agentColor: agentColor, phaseVar: phaseVar, ICON: ICON };
+  HUB.obsCards = { card: card, frame: frame, extra: {}, extraFrame: { chframe: chframe }, agentIcon: agentIcon, agentColor: agentColor, phaseVar: phaseVar, ICON: ICON, CH_KIND: CH_KIND };
 })();

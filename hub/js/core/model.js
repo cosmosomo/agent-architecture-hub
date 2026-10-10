@@ -148,6 +148,23 @@
         F.channelEvents.push({ id: U.uid('ce'), channelId: target.id, at: now, kind: kind === 'pause_channel' ? 'pause' : 'resume',
           note: kind === 'pause_channel' ? '人暂停了这条渠道' : '人恢复了这条渠道' });
         break;
+      case 'set_limit':
+        var ch = m.idx.ch.get(target.id);
+        var lim = parseInt(text, 10);
+        lim = isFinite(lim) && lim > 0 ? lim : null;
+        if (ch) {
+          var old = ch.limit;
+          ch.limit = lim;
+          ch.capacity = lim ? (lim === 1 ? '独占' : '并发 ' + lim) : '不限';
+          var v2 = 'v' + (m.def.versions.length + 1);
+          var note2 = '“' + ch.name + '”并发上限 ' + (old || '不限') + ' → ' + (lim || '不限') + '（之后的运行按新上限排队）';
+          F.versionEvents.push({ id: U.uid('ve'), at: now, version: v2, note: note2, by: '人（用户）' });
+          m.def.versions.push({ id: v2, at: now, note: note2, by: '人（用户）' });
+          m.def.version = v2;
+          act.text = note2;
+        }
+        act.status = 'delivered';
+        break;
       case 'assign_maint':
         F.channelEvents.push({ id: U.uid('ce'), channelId: target.id, at: now, kind: 'maint_task', note: '人指派渠道维护者检查' + (text ? '：' + text : '') });
         break;

@@ -7,7 +7,19 @@
   var PHASE_ORDER = ['strategy', 'research', 'debate1', 'build', 'debate2', 'qa', 'hitl'];
   var PHASE_ZH = { strategy: '战略', research: '调研', debate1: '五心智辩论', debate2: '五心智复议', build: '构建', qa: '质检', hitl: '人工把关' };
   var STEP_ZH = { strategy: '拆解与规划', research: '并行调研', debate1: '专家辩论', build: '构建实现', debate2: '专家复议', qa: '质量验收', hitl: '整理决策选项' };
-  var CAPACITY = { opus: '并发 4', sonnet: '并发 8', haiku: '并发 16', fable: '并发 2' };
+  // concurrency limits: how many runs (model channels) or calls (tool channels) may use a channel at the same time
+  var LIMIT = { opus: 2, sonnet: 4, haiku: 6, fable: 1 };
+  var TOOL_LIMIT = { websearch: 4, webfetch: 4 };
+  var CAPACITY = { opus: '并发 2', sonnet: '并发 4', haiku: '并发 6', fable: '并发 1' };
+  // Function channels: outside capabilities with a session and an owner (a logged-in browser, an account),
+  // usually exclusive. They are given to the agents whose work needs them.
+  var FN_CHANNELS = {
+    ch_fn_xhs: { name: 'OpenCLI · 小红书', capacity: '独占：一个登录的浏览器会话，不能并发', quota: '每小时约 60 次访问', limit: 1,
+      agents: ['res_x', 'res_reddit', 'social_strategist'] },
+    ch_fn_boss: { name: 'OpenCLI · BOSS直聘', capacity: '独占：一个登录的浏览器会话，不能并发', quota: '每小时约 40 次访问', limit: 1,
+      agents: ['career_document_builder'] }
+  };
+  function limitFrom(cap) { var m = /并发\s*(\d+)/.exec(cap || ''); return m ? Number(m[1]) : null; }
   var QUOTA = { opus: '每日 800 万 token', sonnet: '每日 2000 万 token', haiku: '每日 5000 万 token', fable: '每日 300 万 token' };
   var MODEL_ZH = { opus: 'Opus', sonnet: 'Sonnet', haiku: 'Haiku', fable: 'Fable' };
 
@@ -151,18 +163,27 @@
     individuals.forEach(function (x) {
       if (x.model) {
         var mc = addChannel({ id: 'ch_' + x.model, kind: 'model', name: '模型：' + (MODEL_ZH[x.model] || x.model), maintainer: 'meta_maint',
-          capacity: CAPACITY[x.model] || '-', quota: QUOTA[x.model] || '-', users: [] });
+          capacity: CAPACITY[x.model] || '-', quota: QUOTA[x.model] || '-', limit: LIMIT[x.model] || null, users: [] });
         mc.users.push(x.id); x.channels.push(mc.id);
       }
       x.tools.forEach(function (t) {
-        var tc = addChannel({ id: U.toolChannelId(t), kind: 'tool', name: '工具：' + toolName(t), maintainer: 'meta_maint',
-          capacity: '-', quota: '-', users: [] });
+        var tl = TOOL_LIMIT[String(t).toLowerCase().replace(/[^a-z]/g, '')] || null;
+        var tc = addChannel({ id: U.toolChannelId(t), kind: tl ? 'function' : 'tool', name: '工具：' + toolName(t), maintainer: 'meta_maint',
+          capacity: tl ? '并发 ' + tl : '不限', quota: '-', limit: tl, users: [] });
         if (tc.users.indexOf(x.id) < 0) tc.users.push(x.id);
         if (x.channels.indexOf(tc.id) < 0) x.channels.push(tc.id);
       });
+      Object.keys(FN_CHANNELS).forEach(function (fid) {
+        var f = FN_CHANNELS[fid];
+        if (f.agents.indexOf(x.agentId) < 0) return;
+        var fc = addChannel({ id: fid, kind: 'function', name: f.name, maintainer: 'meta_maint', capacity: f.capacity, quota: f.quota, limit: f.limit, users: [] });
+        if (fc.users.indexOf(x.id) < 0) fc.users.push(x.id);
+        if (x.channels.indexOf(fc.id) < 0) x.channels.push(fc.id);
+      });
     });
     ((O && O.channels) || []).forEach(function (c) {
-      var ch = addChannel({ id: c.id, kind: c.kind || 'tool', name: c.name, maintainer: 'meta_maint', capacity: c.capacity || '-', quota: c.quota || '-', users: [] });
+      var ch = addChannel({ id: c.id, kind: c.kind || 'function', name: c.name, maintainer: 'meta_maint', capacity: c.capacity || '-', quota: c.quota || '-',
+        limit: c.limit != null ? c.limit : limitFrom(c.capacity), users: [] });
       (c.users || []).forEach(function (u) {
         if (!indMap.has(u)) return;
         if (ch.users.indexOf(u) < 0) ch.users.push(u);

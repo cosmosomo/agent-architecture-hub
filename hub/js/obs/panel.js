@@ -7,7 +7,7 @@
   var esc = U.esc;
   var host = null, last = null;
 
-  var TYPE_ZH = { individual: '个体', group: '分组', relation: '一条定义的线', agg: '合并的线', factonly: '编排外的交接', channel: '能力渠道',
+  var TYPE_ZH = { individual: '个体', group: '分组', relation: '一条定义的线', agg: '合并的线', factonly: '编排外的交接', channel: '能力渠道', channels: '能力层',
     gate: '判断点', stage: '阶段', step: '步骤', case: '案例实例', run: '一次运行', decision: '决策', call: '调用', doc: '资料', flow: '流转' };
   var KIND_ZH = { approval: '等你拍板', escalation: '上报给你', direction: '可以调整' };
   var DEC_ACTION_CLS = { deliver: 'good', request: 'info', yield: 'warn', escalate: 'bad', tool: 'info' };
@@ -184,19 +184,65 @@
       sec('处理', actions({ type: 'individual', id: f.from }, ['edit_rule']));
   }
 
+  function chKindLabel(c) {
+    var k = (HUB.obsCards.CH_KIND || {})[c.kind === 'tool' && !c.limit ? 'local' : c.kind] || '渠道';
+    return k + (c.limit === 1 ? ' · 独占' : c.limit ? ' · 并发上限 ' + c.limit : ' · 不限并发');
+  }
+  function chIcon(c) { return (c.kind === 'model' ? HUB.obsCards.ICON.model : HUB.obsCards.ICON.tool).replace(/16/g, '26'); }
+
   function channel(m, s, a, id) {
+    if (id === '__local') return localTools(m, s, a);
     var c = m.idx.ch.get(id);
     if (!c) return '';
     var cs = a.channelStats[id] || {};
     var ev = m.facts.channelEvents.filter(function (e) { return e.channelId === id && HUB.model.visible(e.at, s); }).slice(-8).reverse();
-    var h = hero({ name: c.name, role: (c.kind === 'model' ? '模型渠道' : '工具渠道') + ' · 维护者：' + HUB.model.name('individual', c.maintainer),
-      icon: c.kind === 'model' ? HUB.obsCards.ICON.model.replace(/16/g, '26') : HUB.obsCards.ICON.tool.replace(/16/g, '26'), color: 'var(--accent2)', chips: chip(L.channelStatus[cs.status] || '正常') });
-    var users = (c.users || []).map(function (u) { return link('individual', u); }).join('、');
+    var h = hero({ name: c.name.replace(/^(模型|工具)：/, ''), role: chKindLabel(c) + ' · 维护者：' + HUB.model.name('individual', c.maintainer),
+      icon: chIcon(c), color: c.kind === 'function' ? 'var(--accent3)' : 'var(--accent2)', chips: chip(L.channelStatus[cs.status] || '正常') + (c.limit === 1 ? chip('不能并发') : '') });
+    var people = function (ids) { return ids.length ? ids.map(function (u) { return link('individual', u); }).join('、') : '-'; };
+    var unit = c.kind === 'model' ? '次运行' : '次调用';
+    var load = s.compare === 'def' ? '' : sec(s.time == null ? '负载（整段时间）' : '负载（截止 ' + U.fmtClock(s.time) + '）',
+      stats(c.limit ? [['此刻在用', cs.active + ' / ' + c.limit], ['此刻排队', cs.waiting || 0], ['峰值', (cs.peak || 0) + ' / ' + c.limit],
+        ['排过队', (cs.queued || 0) + ' ' + unit], ['共等了', U.fmtDur(cs.waitTotal || 0)], ['调用', U.fmtNum(cs.calls || 0)]]
+        : [['此刻在用', cs.active || 0], ['峰值', cs.peak || 0], ['调用', U.fmtNum(cs.calls || 0)]]) +
+      '<div class="ds" style="margin-top:8px">' + kv([['正在用的', people(cs.activeUsers || [])], ['在排队的', people(cs.waitingUsers || [])]]) + '</div>');
     var rows = ev.map(function (e) { return '<div class="ob-row" style="cursor:default"><span class="ob-meta">' + U.fmtClock(e.at) + '</span><span class="ob-nm ob-wrap-text">' + esc(e.note || e.kind) + '</span></div>'; }).join('');
-    return h + sec('概况', stats([['调用', U.fmtNum(cs.calls || 0)], ['出错', cs.errors || 0], ['故障', cs.incidents || 0]])) +
-      '<div class="ds">' + kv([['容量', esc(c.capacity || '-')], ['额度', esc(c.quota || '-')], ['谁在用', users || '-']]) + '</div>' +
-      sec('维护记录', rows ? '<div class="ob-list">' + rows + '</div>' : '<div class="ob-note">没有故障和维护记录。</div>') +
-      sec('操作', actions({ type: 'channel', id: id }, [cs.status === 'paused' ? 'resume_channel' : 'pause_channel', 'assign_maint']));
+    var limitInput = '<div class="ob-say"><input type="number" min="1" max="64" data-limit value="' + (c.limit || '') + '" placeholder="不限" aria-label="并发上限" style="max-width:90px">' +
+      '<button class="btn" type="button" data-act="limit" data-id="' + esc(id) + '">改并发上限</button></div>';
+    return h + load +
+      '<div class="ds">' + kv([['容量', esc(c.capacity || '-')], ['额度', esc(c.quota || '-')], ['谁能用', people(c.users || [])]]) + '</div>' +
+      sec('故障和维护', rows ? '<div class="ob-list">' + rows + '</div>' : '<div class="ob-note">没有故障和维护记录。</div>') +
+      sec('管理', limitInput + actions({ type: 'channel', id: id }, [cs.status === 'paused' ? 'resume_channel' : 'pause_channel', 'assign_maint']).replace(/<div class="ob-say">[\s\S]*?<\/div>/, '')) +
+      '<div class="ds"><a class="ob-a" data-act="sel" data-type="channels" data-id="all">看全部渠道</a></div>';
+  }
+
+  function localTools(m, s, a) {
+    var locals = m.def.channels.filter(function (c) { return c.kind === 'tool' && !c.limit; });
+    var rows = locals.map(function (c) {
+      var cs = a.channelStats[c.id] || {};
+      return rowItem('style="cursor:default"', esc(c.name.replace(/^工具：/, '')), (c.users || []).length + ' 人 · ' + (s.compare === 'def' ? '' : U.fmtNum(cs.calls || 0) + ' 次'));
+    }).join('');
+    return hero({ name: '本地工具', role: '读写文件、改代码、跑命令这类工具，不限并发，合成一张卡', icon: HUB.obsCards.ICON.tool.replace(/16/g, '26'), color: 'var(--accent2)' }) +
+      sec('包括', '<div class="ob-list">' + rows + '</div>') +
+      '<div class="ds"><a class="ob-a" data-act="sel" data-type="channels" data-id="all">看全部渠道</a></div>';
+  }
+
+  // channel management: every channel in one table, with what needs attention first
+  function channels(m, s, a) {
+    var list = m.def.channels.filter(function (c) { return !(c.kind === 'tool' && !c.limit); });
+    var score = function (c) { var cs = a.channelStats[c.id] || {}; return (cs.status !== 'ok' ? 100 : 0) + (cs.waiting || 0) * 10 + (cs.queued || 0); };
+    list.sort(function (p, q) { return score(q) - score(p); });
+    var rows = list.map(function (c) {
+      var cs = a.channelStats[c.id] || {};
+      var load = s.compare === 'def' ? (c.limit ? '上限 ' + c.limit : '不限') : c.limit ? (s.time == null ? '峰值 ' + cs.peak + '/' + c.limit : '在用 ' + cs.active + '/' + c.limit) + (cs.queued ? ' · 排队 ' + cs.queued : '') : '不限';
+      var st = cs.status && cs.status !== 'ok' ? pill(L.channelStatus[cs.status] || cs.status, 'bad') : (cs.queued ? pill('有排队', 'warn') : pill('正常', 'good'));
+      return '<div class="ob-row" ' + selAttrs('channel', c.id) + '>' + st + '<span class="ob-nm">' + esc(c.name.replace(/^(模型|工具)：/, '')) + '</span><span class="ob-meta">' + esc(load) + ' · ' + (c.users || []).length + ' 人</span></div>';
+    }).join('');
+    var t = list.length, bad = list.filter(function (c) { var st = (a.channelStats[c.id] || {}).status; return st && st !== 'ok'; }).length;
+    var q = U.sum(list, function (c) { return (a.channelStats[c.id] || {}).queued || 0; });
+    return hero({ name: '渠道管理', role: '模型渠道、功能渠道的状态、负载和使用者；本地工具不限并发，不在这里', icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent2)' }) +
+      (s.compare !== 'def' ? sec('概况', stats([['渠道', t], ['有故障', bad], ['累计排队', q]])) : '') +
+      sec('全部渠道（需要处理的在前）', '<div class="ob-list">' + rows + '</div>') +
+      '<div class="ob-note">点一条看它的负载、谁在用、谁在等，以及暂停、恢复、指派维护、改并发上限。维护者：' + link('individual', 'meta_maint') + '。</div>';
   }
 
   function gate(m, s, a, id) {
@@ -292,7 +338,7 @@
 
   function overviewTail() { return '<div class="ds"><a class="ob-a" data-act="unfocus">取消聚焦，回到整个案例模板</a></div>'; }
 
-  var BY_TYPE = { individual: individual, group: group, relation: relation, agg: agg, factonly: factonly, channel: channel, gate: gate, stage: stage, step: step, case: kase, run: run, decision: decision, call: call };
+  var BY_TYPE = { individual: individual, group: group, relation: relation, agg: agg, factonly: factonly, channel: channel, channels: channels, gate: gate, stage: stage, step: step, case: kase, run: run, decision: decision, call: call };
 
   /* ================= render + events ================= */
   function render(el, m, s) {
@@ -335,6 +381,11 @@
     else if (act === 'run') HUB.store.set({ subject: 'exec', depth: { exec: 1 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: { type: 'run', id: t.getAttribute('data-id') }, selection: { type: 'run', id: t.getAttribute('data-id') }, present: 'graph' });
     else if (act === 'toggle') { var g = m.idx.group.get(t.getAttribute('data-id')); if (g) HUB.store.toggle('org', g.id, g.level); }
     else if (act === 'replay') { if (HUB.obsTimeline) HUB.obsTimeline.replay(t.getAttribute('data-id')); }
+    else if (act === 'limit') {
+      var li = host.querySelector('[data-limit]');
+      var res2 = HUB.model.perform('set_limit', { target: { type: 'channel', id: t.getAttribute('data-id') }, text: li ? li.value.trim() : '' });
+      if (res2 && typeof pokazToast === 'function') pokazToast('已记为编排改动');
+    }
     else if (act === 'health') {
       var hc = HUB.model.an(s, m).health.find(function (x) { return x.id === t.getAttribute('data-hid'); });
       if (hc) HUB.obsPanel.followHealth(hc);
