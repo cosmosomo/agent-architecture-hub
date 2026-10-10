@@ -310,6 +310,14 @@ body.obs-on .zm-ctrl { bottom: 96px; }
 .ob-sev.mid { color: var(--accent3); border: 1px solid rgba(251,191,36,.45); }
 .ob-sev.low { color: var(--t3); border: 1px solid var(--brd); }
 .ob-wrap-text { white-space: normal !important; line-height: 1.45; }
+/* sessions tab: two-line rows (title, then where / turns / when) */
+.ob-si.ob-sess { align-items: flex-start; text-decoration: none; padding-top: 6px; padding-bottom: 6px; }
+.ob-si.ob-sess .ob-dot { margin-top: 4px; }
+.ob-sess-b { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ob-sess-b .ob-nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ob-sess-b .ob-meta { overflow: hidden; text-overflow: ellipsis; }
+.ob-sess-b .ob-meta b { font-weight: 500; color: var(--t2); cursor: pointer; }
+.ob-sess-b .ob-meta b:hover { color: var(--t1); }
 
 /* ---------- right panel ---------- */
 #obSr { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 12px; }

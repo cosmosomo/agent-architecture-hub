@@ -62,11 +62,13 @@
     if (allTabs[2]) allTabs[2].setAttribute('data-ob-hide', '1');
     els.tabTree = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', onClick: function () { zmienTab('obtree', els.tabTree); renderSide(); } }, '结构');
     els.tabHealth = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', onClick: function () { zmienTab('obhealth', els.tabHealth); renderSide(); } }, '体检');
-    tabs.append(els.tabTree, els.tabHealth);
+    els.tabSessions = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', title: '本机真实的智能体会话', onClick: function () { zmienTab('obsessions', els.tabSessions); renderSide(); } }, '会话');
+    tabs.append(els.tabTree, els.tabHealth, els.tabSessions);
     var pans = document.querySelector('.sl-panels');
     els.panTree = h('div', { class: 'sl-pan ob-pan', id: 'panObtree' });
     els.panHealth = h('div', { class: 'sl-pan ob-pan', id: 'panObhealth' });
-    pans.append(els.panTree, els.panHealth);
+    els.panSessions = h('div', { class: 'sl-pan ob-pan', id: 'panObsessions' });
+    pans.append(els.panTree, els.panHealth, els.panSessions);
 
     // right sidebar: our details pane in front of the page's own
     var sr = G('sR');
@@ -329,6 +331,7 @@
     var s = st();
     if (els.panTree.classList.contains('on')) safe('side.tree', function () { HUB.obsSide.tree(els.panTree, model(), s); });
     if (els.panHealth.classList.contains('on')) safe('side.health', function () { HUB.obsSide.health(els.panHealth, model(), s); });
+    if (els.panSessions.classList.contains('on') && HUB.obsSessions) safe('side.sessions', function () { HUB.obsSessions.render(els.panSessions); });
   }
   function renderPanel(s) {
     if (HUB.obsPanel) safe('panel', function () { HUB.obsPanel.render(els.sr, model(), s); });

@@ -20,7 +20,7 @@ SCRIPTS = [
     'hub/js/obs/cards.js', 'hub/js/obs/stage.js', 'hub/js/obs/scene-org.js',
     'hub/js/obs/scene-process.js', 'hub/js/obs/scene-run.js',
     'hub/js/panels/panels.js', 'hub/js/obs/panel.js', 'hub/js/obs/side.js', 'hub/js/obs/timeline.js',
-    'hub/js/obs/guide.js', 'hub/js/obs/main.js',
+    'hub/js/obs/guide.js', 'hub/js/obs/sessions.js', 'hub/js/obs/main.js',
 ]
 STYLES = ['hub/css/obs.css', 'hub/css/panels.css']
 

@@ -1,0 +1,113 @@
+/* HUB.obsSessions: the "会话" tab of the left sidebar. Lists the real agent sessions on this machine
+   (trace module, hub/SPEC.md 17) and opens one in the Trace viewer. The list comes from the local
+   service (`npm run serve` in trace/), which also serves this page: same origin, so no CORS. Opened as
+   a file, the page cannot reach it and the tab says how to start it. */
+(function () {
+  'use strict';
+  var HUB = (window.HUB = window.HUB || {});
+  var esc = HUB.util.esc;
+  var STATUS = { working: '在做', waiting: '等待中', failed: '出错', aborted: '被打断', stale: '疑似已退出', idle: '空闲', empty: '空' };
+  var DOT = { working: 'working', waiting: 'waiting', failed: 'error', aborted: 'waiting', stale: 'never', idle: '', empty: 'never' };
+  var ORDER = ['working', 'waiting', 'failed', 'aborted', 'stale', 'idle', 'empty'];
+  var PAGE = 80;
+  var cache = null, error = null, loading = false, loadedAt = 0, filter = 'all', limit = PAGE, open = {};
+  var bound = new WeakSet();
+
+  function ago(iso) {
+    var ms = Date.now() - Date.parse(iso || '');
+    if (!isFinite(ms)) return '';
+    var min = Math.round(ms / 60000);
+    if (min < 1) return '刚刚';
+    if (min < 60) return min + ' 分钟前';
+    var h = Math.round(min / 60);
+    if (h < 24) return h + ' 小时前';
+    var d = Math.round(h / 24);
+    return d < 31 ? d + ' 天前' : String(iso).slice(0, 10);
+  }
+  function base(p) { var a = String(p || '').split(/[\\/]/).filter(Boolean); return a[a.length - 1] || ''; }
+  function viewer(id) { return '/trace/#s=' + encodeURIComponent(id) + '&theme=' + (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'); }
+
+  function load(el, force) {
+    if (loading || (!force && cache && Date.now() - loadedAt < 15000)) return;
+    if (location.protocol !== 'http:' && location.protocol !== 'https:') { error = 'file'; return; }
+    loading = true;
+    fetch('/api/sessions', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+      .then(function (idx) { cache = idx.sessions || []; error = null; })
+      .catch(function () { error = 'down'; })
+      .then(function () { loading = false; loadedAt = Date.now(); if (el.classList.contains('on')) render(el); });
+  }
+
+  function bind(el) {
+    if (bound.has(el)) return;
+    bound.add(el);
+    el.addEventListener('click', function (e) {
+      var t = e.target.closest('[data-act]');
+      if (!t) return;
+      var act = t.getAttribute('data-act');
+      if (act === 'filter') { filter = t.getAttribute('data-v'); limit = PAGE; render(el); }
+      else if (act === 'kids') { e.preventDefault(); e.stopPropagation(); var id = t.getAttribute('data-id'); open[id] = !open[id]; render(el); }
+      else if (act === 'more') { limit += PAGE; render(el); }
+      else if (act === 'reload') { load(el, true); render(el); }
+    });
+  }
+
+  function row(s, lv, kids) {
+    var meta = [s.agent.role === 'subagent' ? (s.agent.path || s.agent.name) : base(s.cwd), s.stats.turns + ' 轮', ago(s.updatedAt)].filter(Boolean).join(' · ');
+    return '<a class="ob-si ob-sess" style="padding-left:' + (14 + lv * 14) + 'px" href="' + viewer(s.id) + '" target="_blank" rel="noopener" title="' + esc(s.title + '\n' + (STATUS[s.state.status] || '') + (s.state.detail ? '：' + s.state.detail : '') + '\n在 Trace 查看器里打开') + '">' +
+      '<span class="ob-dot ' + (DOT[s.state.status] || '') + '"></span>' +
+      '<span class="ob-sess-b"><span class="ob-nm">' + esc(s.title) + '</span>' +
+      '<span class="ob-meta">' + esc(meta) +
+      (kids ? ' <b data-act="kids" data-id="' + esc(s.id) + '" title="展开或收起子智能体">' + (open[s.id] ? '▾' : '▸') + ' 子智能体 ' + kids + '</b>' : '') +
+      '</span></span></a>';
+  }
+
+  function render(el) {
+    bind(el);
+    load(el, false);
+    var out = [];
+    out.push('<div class="ob-sh">本机会话 · Codex</div>');
+    if (error === 'file' || error === 'down') {
+      out.push('<div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">' +
+        (error === 'file' ? '这个页面是直接用文件打开的，读不到本机会话。' : '连不上本地服务。') +
+        '在 <code>trace</code> 目录运行 <code>npm run serve</code>，再打开 <code>http://127.0.0.1:8790/</code>：观察台和 Trace 查看器由同一个本地服务提供，只监听本机。</div>');
+      if (error === 'down') out.push('<div class="ob-si" data-act="reload"><span class="ob-nm" style="color:var(--accent1)">重试</span></div>');
+      el.innerHTML = out.join('');
+      return;
+    }
+    if (!cache) {
+      out.push('<div class="ob-si" style="cursor:default"><span class="ob-nm" style="color:var(--t3)">读取中…</span></div>');
+      el.innerHTML = out.join('');
+      return;
+    }
+    var byId = {}, kids = {}, counts = {};
+    cache.forEach(function (s) { byId[s.id] = s; counts[s.state.status] = (counts[s.state.status] || 0) + 1; });
+    var tops = cache.filter(function (s) {
+      var p = s.links.filter(function (l) { return l.rel === 'parent' && byId[l.id]; })[0];
+      if (p) { (kids[p.id] = kids[p.id] || []).push(s); return false; }
+      return true;
+    });
+    var chips = ['<span class="ob-chip' + (filter === 'all' ? ' on' : '') + '" data-act="filter" data-v="all">全部 ' + cache.length + '</span>'];
+    ORDER.forEach(function (k) { if (counts[k]) chips.push('<span class="ob-chip' + (filter === k ? ' on' : '') + '" data-act="filter" data-v="' + k + '">' + STATUS[k] + ' ' + counts[k] + '</span>'); });
+    out.push('<div class="ob-chips" style="padding:2px 14px 6px;display:flex;flex-wrap:wrap;gap:4px">' + chips.join('') + '</div>');
+    out.push('<a class="ob-si" style="text-decoration:none" href="/trace/" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">打开 Trace 查看器 ↗</span><span class="ob-meta">搜索、看调用树</span></a>');
+    var ok = function (s) { return filter === 'all' || s.state.status === filter; };
+    var rows = [];
+    tops.forEach(function (s) {
+      var ks = kids[s.id] || [];
+      var hit = ks.filter(ok);
+      if (!ok(s) && !hit.length) return;
+      rows.push(row(s, 0, ks.length));
+      if (open[s.id] || (filter !== 'all' && hit.length)) (filter === 'all' ? ks : hit).forEach(function (k) { rows.push(row(k, 1, 0)); });
+    });
+    out = out.concat(rows.slice(0, limit));
+    if (rows.length > limit) out.push('<div class="ob-si" data-act="more"><span class="ob-nm" style="color:var(--accent1)">再显示 ' + Math.min(PAGE, rows.length - limit) + ' 条（共 ' + rows.length + '）</span></div>');
+    if (!rows.length) out.push('<div class="ob-si" style="cursor:default"><span class="ob-nm" style="color:var(--t3)">没有这种状态的会话</span></div>');
+    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">这里是本机 Codex 会话的实时状态（约 15 秒刷新）。“疑似已退出”指进行中的一轮很久没有新记录。点一条在新标签页打开 Trace 查看器，看每一轮的模型调用、工具调用和子智能体。</div>');
+    var keep = el.scrollTop;
+    el.innerHTML = out.join('');
+    el.scrollTop = keep;
+  }
+
+  HUB.obsSessions = { render: render };
+})();
