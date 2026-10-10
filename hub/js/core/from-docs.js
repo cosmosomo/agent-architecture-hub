@@ -363,4 +363,44 @@
     loadRelations: loadRelations,
     loadDecisions: loadDecisions,
   };
+
+  /* ── 自动注册 docs source（当 HUB.model 已就绪时）────────── */
+  if (HUB.model && HUB.model.addSource) {
+    // 计算 hub/cases/ 相对于当前页面的路径
+    var CASES_BASE = (function () {
+      var p = (typeof location !== 'undefined' ? location.pathname : '') || '';
+      // observatory.html 在 hub/dist/，需要向上两级
+      if (p.indexOf('/hub/dist/') >= 0 || p.indexOf('%2Fhub%2Fdist%2F') >= 0) return '../../hub/cases/';
+      return 'hub/cases/';
+    })();
+
+    function fetchText(url) {
+      return fetch(url).then(function (r) { return r.ok ? r.text() : ''; }).catch(function () { return ''; });
+    }
+
+    var docsCaseIds = null;   // null=未加载, string[]=已加载
+
+    function ensureIndex() {
+      if (docsCaseIds !== null) return Promise.resolve(docsCaseIds);
+      return loadIndex(fetchText, CASES_BASE + '_index.md').then(function (rows) {
+        docsCaseIds = rows.map(function (r) { return r.id; });
+        return docsCaseIds;
+      });
+    }
+
+    HUB.model.addSource({
+      id: 'docs',
+      label: '文档案例',
+      owns: function (id) { return !!(docsCaseIds && docsCaseIds.indexOf(id) >= 0); },
+      load: function (caseId) {
+        return ensureIndex().then(function (ids) {
+          if (ids.indexOf(caseId) < 0) return Promise.reject(new Error('docs 案例未找到：' + caseId));
+          return loadCase(fetchText, CASES_BASE + caseId + '/', caseId);
+        });
+      },
+    });
+
+    // 预加载索引，让 owns() 能在 hash-restore 时同步返回
+    ensureIndex();
+  }
 })();
