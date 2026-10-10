@@ -325,13 +325,8 @@
         });
       }
     });
-    if (HUB.casedef && HUB.casedef.finishProcess) {
-      stages.forEach(function (s, i) { s.order = i; });   // sim 的案例行走按 order 找下一阶段
-      return HUB.casedef.finishProcess(stages, gates);
-    }
-    var flows = [];
-    stages.forEach(function (s, i) { flows.push({ id: 'f' + i, from: s.id, to: stages[i + 1] ? stages[i + 1].id : 'done', kind: 'normal', label: '' }); });
-    return { stages: stages, gates: gates, flows: flows };
+    stages.forEach(function (s, i) { s.order = i; });   // sim 的案例行走按 order 找下一阶段
+    return HUB.casedef.finishProcess(stages, gates);
   }
 
   /** relations.md → infoReads 和 watches 列表（从 @from >rel @to 格式解析） */
