@@ -247,5 +247,16 @@ HUB.model.addSource({
 | `view` | `hub/js/core/store.js` state |
 | `merged[]` | `store.state.merged` |
 | 适配器注册 | `HUB.model.addSource` (`hub/js/core/model.js`) |
-| 格式 → 统一模型 | `hub/js/core/from-trace.js`（会话版），`from-hub-graph.js`（待实现） |
+| 格式 → 统一模型 | `hub/js/core/from-trace.js`（会话版），`from-hub-graph.js`（文件版） |
 | type → 组件 | `hub/js/obs/cards.js` `HUB.obsCards.extra` |
+
+---
+
+## 11. 托管与案例发现
+
+放在 `hub/graph/` 下的 `<案例id>.json` 由 `from-hub-graph.js` 自动发现，规则按顺序：
+
+1. **目录列表**：本地 http 服务（python http.server 等）的目录页里能扫到 `href="*.json"` 就直接用，新建文件免注册；
+2. **`hub/graph/_index.json` 回退**：目录请求拿不到列表（GitHub Pages 等纯静态托管对目录返回 404）时，读这份注册表——数组，元素是案例 id 字符串或 `{id, name}`。
+
+也就是说：本地开发靠 1（零注册），公开静态托管靠 2（新案例往数组里加一行）。案例文件本身两种环境都能直接访问，回退只影响"发现"，不影响"加载"。

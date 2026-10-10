@@ -386,6 +386,8 @@ HUB.cases['feature_sprint'] = {
 
 - 10-10 晚五：本地自动解析成环——① hub/cases/ 目录自动发现（_index.md 注册表 ∪ http 目录列表，`hub/cases/` 下新建目录免注册即出现；file:// 与纯静态托管回退 _index.md）；② `from-hub-graph.js` 落地（§18.2 的 JSON → 统一模型适配器，objects/relations 翻译 + 未知 type 降级 + 不跑模拟器），`hub/graph/*.json` 同样目录自动发现；③ 左栏预设列表新增"本地自动解析"小节（rPresety 注入钩子），不在 62 个预设里的案例可见可点，点击直进观察模式；④ `model.select` 支持异步加载源（原先只认同步 build，异步源接管默认案例即崩）；⑤ 活样例：`hub/cases/demo_minimal/`（故意不注册，纯目录发现）与 `hub/graph/research_triage.json`。
 
+- 10-11：graph 静态托管回退补上（L2 缺口闭合）——GitHub Pages 对目录请求 404、没有目录列表，JSON 案例在线上不可见。`from-hub-graph.js` 的 scan 改为：目录列表扫到就用；扫不到（404/空）回退 `hub/graph/_index.json` 注册表（数组，元素是 id 字符串或 {id, name}）。节点脚本验证两条路径：静态模拟（目录 404 + _index.json）下发现/归属/加载/建索引全通；目录列表模拟下列表优先、`_index.json` 本身不进案例。规则写进 hub-graph-format.md §11。
+
 还没做：
 - 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
 

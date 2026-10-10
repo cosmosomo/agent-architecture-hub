@@ -172,13 +172,29 @@
     function scan() {
       if (ids !== null) return Promise.resolve(ids);
       if (ready) return ready;
+      var fromListing = function (html) {
+        var out = [], re = /href="([A-Za-z0-9][A-Za-z0-9_.\-]*)\.json"/g, m;
+        while ((m = re.exec(html || ''))) out.push(m[1]);
+        return out;
+      };
+      // 纯静态托管（GitHub Pages 等）没有目录列表页，目录请求 404 → 列表为空：
+      // 回退到 hub/graph/_index.json 注册表（数组，元素是案例 id 或 {id, name}）。
+      var fromIndex = function () {
+        return fetch(BASE + '_index.json').then(function (r) {
+          return r.ok ? r.json() : [];
+        }).catch(function () { return []; }).then(function (list) {
+          return (list || []).map(function (x) { return typeof x === 'string' ? x : (x && x.id); })
+            .filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+        });
+      };
       ready = fetchText(BASE).then(function (html) {
-        ids = [];
-        var re = /href="([A-Za-z0-9][A-Za-z0-9_.\-]*)\.json"/g, m;
-        while ((m = re.exec(html || ''))) ids.push(m[1]);
+        var listed = fromListing(html);
+        return listed.length ? listed : fromIndex();
+      }).catch(function () { return fromIndex(); }).then(function (list) {
+        ids = list;
         HUB.fromHubGraph.cases = ids.slice();
         return ids;
-      }).catch(function () { ids = []; return ids; });
+      });
       return ready;
     }
 
