@@ -396,3 +396,46 @@ HUB.cases['feature_sprint'] = {
 现状：⑤⑥ 一次只看一条运行的链，适合看细节，不适合在成百上千条里找问题。
 
 10-10 用户决定：“借鉴它的数据模型和界面，自己做轻量版吧，我觉得 agentscope 的更值得借鉴”。设计（AgentScope 2.0 的做法、对齐的数据模型、自动解析流程、地图/检索/归纳/单条四层、原型顺序）写在可视化架构文章第十二节，等用户确认后照 12.5 的顺序做原型。
+
+## 17. Trace 与会话解析（10-10 起，独立模块）
+
+用户确认（F18）：第十二节的设计通过，一定会改；不同智能体要各自专门设计，所以架构要可扩展、可调整、解耦；先接 Codex；Trace 查看器可以用 npm 构建。
+
+### 17.1 目录和边界
+
+```
+trace/                      npm 工作区，和观察台（hub/，原生 JS）分开
+  packages/contract/        数据契约：类型、版本号、校验。所有模块只通过它交换数据
+  packages/adapters/        适配器接口和注册表；每种来源一个子目录（codex/，以后 claude-code/ …）
+  packages/otel/            契约 → OpenTelemetry 文档（给 AgentPrism 等通用查看器）
+  apps/cli/                 扫描本地会话 → 写出契约 JSON（增量、幂等）
+  apps/viewer/              Trace 查看器：React 19 + TypeScript + Tailwind 3，组合 AgentPrism 的 TreeView 和 DetailsView
+trace-data/                 解析结果（本机私有，不进 git）
+```
+
+规则：
+- 适配器只依赖契约；查看器只依赖契约和 otel 导出；观察台以后通过同一份契约接入。
+- 每个适配器自己处理来源的格式版本，输出带上 `source.formatVersion` 和 `source.adapterVersion`。
+- 编号稳定：由来源里的编号生成，同一份记录重复解析结果不变。
+- 脱敏在适配器里做（密钥、令牌一类的字符串打码，超长文本截断，加密内容和图片丢弃）。
+- 会话正文是用户的私有内容：只在本机解析和查看，测试用手写的仿真样例，不用真实会话。
+
+### 17.2 Codex 记录的结构（10-10 只看字段名核对，1226 个文件抽 70 个）
+
+- 新格式每行是 `{timestamp, ordinal, type, payload}`；老格式第一行 `{id, timestamp, instructions, …}`，之后每行直接是 `message`、`reasoning`、`function_call` 等。
+- `session_meta`：会话编号、父会话（子智能体）、分叉来源、工作目录、来源程序和版本、模型提供方、子智能体昵称和路径、git。
+- 一轮：`event_msg/task_started` → … → `task_complete` 或 `turn_aborted`（带耗时、首字耗时、错误）；`turn_context` 给出这一轮的模型、推理强度、审批策略、沙箱。
+- 工作项：`response_item` 下的 message（user、assistant、developer；phase 区分中间说明和最终回答）、reasoning（摘要）、function_call 和输出、custom_tool_call 和输出、agent_message（智能体之间，带作者和收件人）；`event_msg/item_completed` 下有命令执行（命令、退出码、耗时）、文件改动、MCP 工具调用、派生子智能体等。
+- 用量：`token_usage_record`（每次响应、本轮、整个会话），`event_msg/token_count` 里还有额度是否触顶。
+- 其他：`compacted`（上下文压缩）、`thread_settings_applied`、`thread_goal_updated`、`world_state`。
+
+### 17.3 任务清单
+
+- [ ] T1 搭工作区（package.json、tsconfig、.gitignore 里排除 node_modules、dist、trace-data）
+- [ ] T2 契约 v0.1：会话、轮、工作项、用量、生命周期事件、会话状态、会话之间的关系
+- [ ] T3 适配器接口和注册表；Codex 适配器（两种格式）、脱敏、会话状态判断
+- [ ] T4 命令行扫描：`~/.codex/sessions` → `trace-data/`，只处理新增或变化的文件，写出索引
+- [ ] T5 OpenTelemetry 导出
+- [ ] T6 Trace 查看器：会话列表 + TreeView + DetailsView，中文，配色跟原页面
+- [ ] T7 测试：适配器用仿真样例；查看器能构建
+- [ ] T8 接回观察台：观察台能列出真实的 Codex 会话并打开 Trace 查看器
