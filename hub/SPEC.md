@@ -368,10 +368,10 @@ HUB.cases['feature_sprint'] = {
 - 新增 `启动观察台.bat`：双击 = 起本地静态服务器（127.0.0.1:8899，已在跑则复用）并开浏览器。file:// 直接双击 html 依然不行（fetch 被禁、文档源案例为空），看页面必须走 http。
 - 10-10 晚二：from-docs 补齐到与 v41 精编案例同一条流水线：多行列表解析（alternatives / missing / inject / paths）、steps 与扁平 executors 两种 stage 写法、任务线按 stages 的 executors 推断、watch 双写去重（42→22）、frontmatter hub 校验、meta yaml 文件清单、_index 分隔行修复；**scenarios.md 接入 sim 事实层**——③任务路由、⑤⑥决策/执行链、时间轴、回放对文档案例全部点亮（deep_five_minds 76 runs / 627 calls / 218 决策全带候选；deep_research_v2 修复 stages 缺 order 导致案例一步即"完成"的问题）。新增 `node hub/tools/check_from_docs.js` 校验四个文档案例。
 
+- 10-10 晚三：面板按原页卡片语言重排（1.5px 边框、14px 圆角、顶部内高光、indigo 悬停色调、dtl 发丝分隔线、topbar 同款渐变发丝线）；组织视图按部门出入口汇合——端点都在组框内且框不同时，线走框边 36px 量化共享口岸，卡片端保留错道扇出，同框/无框/回退弧走原路由（deep_five_minds 个体层 184 条线中 153 条成束）。
+
 还没做：
 - 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
-- 面板呈现沿用 Haiku 写的 panels.js，只换了配色；还没按原页面的卡片风格重排。
-- 组织视图里线多时交叉多，可以再做线束或按部门出入口汇合。
 
 
 ## 15. 待思考：侧栏和其他区域的信息重复（10-10 记录，暂不改）

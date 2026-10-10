@@ -274,19 +274,82 @@
     var r = S.cards.get(key) || S.frames.get(key);
     return r && !r.exiting ? r.g : null;
   }
+  // the smallest frame whose rect contains the card centre: the card's department
+  function frameContaining(g) {
+    var best = null;
+    S.frames.forEach(function (rec) {
+      var f = rec.g;
+      if (!f) return;
+      var cx = g.x + g.w / 2, cy = g.y + g.h / 2;
+      if (cx < f.x || cy < f.y || cx > f.x + f.w || cy > f.y + f.h) return;
+      if (!best || f.w * f.h < best.w * best.h) best = f;
+    });
+    return best;
+  }
+  // a port on the frame border facing the target, quantised to 36px slots so
+  // links between the same two frames share ports and bundle into one stream
+  function portOn(f, toward) {
+    var fx = f.x + f.w / 2, fy = f.y + f.h / 2;
+    var dx = toward.x - fx, dy = toward.y - fy;
+    var clamp = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
+    if (Math.abs(dx) * f.h > Math.abs(dy) * f.w) {
+      var slot = Math.round((fy + clamp(dy * (f.w / 2) / Math.abs(dx), -f.h / 2 + 8, f.h / 2 - 8)) / 36) * 36;
+      return { x: dx > 0 ? f.x + f.w : f.x, y: clamp(slot, fy - f.h / 2 + 8, fy + f.h / 2 - 8) };
+    }
+    var slot2 = Math.round((fx + clamp(dx * (f.h / 2) / Math.abs(dy), -f.w / 2 + 8, f.w / 2 - 8)) / 36) * 36;
+    return { x: clamp(slot2, fx - f.w / 2 + 8, fx + f.w / 2 - 8), y: dy > 0 ? f.y + f.h : f.y };
+  }
   function drawLinks(p) {
     S.links.forEach(function (rec) {
       var l = rec.obj;
       var a = geomOf(l.from), b = geomOf(l.to);
       if (!a || !b) { rec.el.style.display = 'none'; return; }
       rec.el.style.display = '';
-      var d = route(a, b, l._lane || 0, l.route);
+      var fa = frameContaining(a), fb = frameContaining(b);
+      var d;
+      if (fa && fb && fa !== fb && l.route !== 'loop-down' && l.route !== 'loop-up') {
+        d = routeBundled(a, b, fa, fb, l._lane || 0);
+      } else {
+        d = route(a, b, l._lane || 0, l.route);
+      }
       rec.path.setAttribute('d', d.path);
       rec.hit.setAttribute('d', d.path);
       if (l.label) rec.lab.setAttribute('transform', 'translate(' + d.mx.toFixed(1) + ',' + (d.my - 7).toFixed(1) + ')');
       if (rec.el.classList.contains('ob-entering')) rec.el.style.opacity = String(Math.min(1, p * 1.5));
       else rec.el.style.opacity = '';
     });
+  }
+  // card -> shared port on frame A -> shared port on frame B -> card:
+  // the stubs fan out per link (lanes), the middle converges into one bundle
+  function routeBundled(a, b, fa, fb, lane) {
+    var ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
+    var off = lane * 12;
+    var bc = { x: bx, y: by }, ac = { x: ax, y: ay };
+    var pa = portOn(fa, bc), pb = portOn(fb, ac);
+    var midDx = pb.x - pa.x, midDy = pb.y - pa.y;
+    var vertical = Math.abs(midDy) > Math.abs(midDx) * 0.55 && Math.abs(midDy) > 24;
+    var p0, p3;
+    if (Math.abs(pa.y - ay) <= Math.abs(pa.x - ax) * 0.55 || pa.y === ay) {
+      p0 = { x: pa.x > ax ? a.x + a.w : a.x, y: ay + off };
+    } else {
+      p0 = { x: ax + off, y: pa.y > ay ? a.y + a.h : a.y };
+    }
+    if (Math.abs(pb.y - by) <= Math.abs(pb.x - bx) * 0.55 || pb.y === by) {
+      p3 = { x: pb.x > bx ? b.x + b.w : b.x, y: by - off };
+    } else {
+      p3 = { x: bx - off, y: pb.y > by ? b.y + b.h : b.y };
+    }
+    var hA = { x: (p0.x + pa.x) / 2, y: pa.y !== p0.y ? p0.y : (p0.y + pa.y) / 2 };
+    var hB = { x: (p3.x + pb.x) / 2, y: pb.y !== p3.y ? p3.y : (p3.y + pb.y) / 2 };
+    var m = Math.max(24, Math.hypot(midDx, midDy) * 0.4);
+    var cA = vertical ? { x: pa.x, y: pa.y + (midDy > 0 ? m : -m) } : { x: pa.x + (midDx > 0 ? m : -m), y: pa.y };
+    var cB = vertical ? { x: pb.x, y: pb.y - (midDy > 0 ? m : -m) } : { x: pb.x - (midDx > 0 ? m : -m), y: pb.y };
+    var f = function (v) { return v.toFixed(1); };
+    var path = 'M' + f(p0.x) + ',' + f(p0.y)
+      + ' C' + f(hA.x) + ',' + f(hA.y) + ' ' + f(pa.x) + ',' + f(pa.y) + ' ' + f(pa.x) + ',' + f(pa.y)
+      + ' C' + f(cA.x) + ',' + f(cA.y) + ' ' + f(cB.x) + ',' + f(cB.y) + ' ' + f(pb.x) + ',' + f(pb.y)
+      + ' C' + f(pb.x) + ',' + f(pb.y) + ' ' + f(hB.x) + ',' + f(hB.y) + ' ' + f(p3.x) + ',' + f(p3.y);
+    return { path: path, mx: (pa.x + pb.x) / 2, my: (pa.y + pb.y) / 2 };
   }
   // A cubic curve between two boxes, leaving and entering through the sides that face each other.
   function route(a, b, lane, kind) {
