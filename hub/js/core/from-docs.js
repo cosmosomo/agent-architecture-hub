@@ -152,9 +152,69 @@
     });
   }
 
+  /**
+   * 从一个对象块的原始文本里提取 paths 列表。
+   * 识别格式（每个条目三个可选字段，缩进不限）：
+   *   paths:
+   *     - condition: 条件描述
+   *       next: stage_id
+   *       note: 可选说明
+   */
+  function parsePaths(block) {
+    var lines = block.split('\n');
+    var inPaths = false;
+    var paths = [];
+    var cur = null;
+    lines.forEach(function (line) {
+      var trimmed = line.trimEnd();
+      if (/^paths\s*:/.test(trimmed.trimStart())) { inPaths = true; return; }
+      if (!inPaths) return;
+      // 新条目以 "  - " 开头（允许任意缩进）
+      if (/^\s+-\s+/.test(trimmed)) {
+        if (cur) paths.push(cur);
+        cur = {};
+        // 条目首行可能直接带 condition: 值
+        var rest = trimmed.replace(/^\s+-\s+/, '');
+        var m = rest.match(/^condition\s*:\s*(.*)/);
+        if (m) cur.condition = m[1].trim();
+        return;
+      }
+      if (!cur) return;
+      // 退出 paths 块：遇到另一个顶层 key（不以空格开头且包含冒号，非列表项）
+      if (/^\S/.test(trimmed) && trimmed.indexOf(':') > 0 && !/^\s*-/.test(trimmed)) {
+        if (cur) { paths.push(cur); cur = null; }
+        inPaths = false;
+        return;
+      }
+      // 条目内的字段行
+      var fm = trimmed.trimStart().match(/^(condition|next|note)\s*:\s*(.*)/);
+      if (fm) cur[fm[1]] = fm[2].trim();
+    });
+    if (cur) paths.push(cur);
+    return paths;
+  }
+
   /** process.md → def.process {stages, gates} */
   function loadProcess(body) {
     var objects = parseObjects(body);
+
+    // 把 body 按对象标题切片，以便给每个 gate 单独跑 parsePaths
+    var lines = body.split('\n');
+    var slices = {};   // id → 原始文本块
+    var curId = null, curLines = [];
+    lines.forEach(function (line) {
+      if (line.startsWith('#') && line.includes('@')) {
+        var h = parseHeading(line);
+        if (h) {
+          if (curId) slices[curId] = curLines.join('\n');
+          curId = h.id; curLines = [line];
+          return;
+        }
+      }
+      if (curId) curLines.push(line);
+    });
+    if (curId) slices[curId] = curLines.join('\n');
+
     var stages = [], gates = [];
     objects.forEach(function (o) {
       var a = o.attributes;
@@ -168,6 +228,16 @@
           tags: o.tags,
         });
       } else if (o.type === 'gate') {
+        // paths 优先；无 paths 则从 pass/fail 简写构造两条路
+        var rawPaths = parsePaths(slices[o.id] || '');
+        var paths;
+        if (rawPaths.length > 0) {
+          paths = rawPaths;
+        } else {
+          paths = [];
+          if (a.pass) paths.push({ condition: 'pass', next: a.pass });
+          if (a.fail) paths.push({ condition: 'fail', next: a.fail });
+        }
         gates.push({
           id: o.id,
           name: a.name || o.id,
@@ -177,8 +247,10 @@
             who: a.decider_who || null,
             text: a.decider_text || '',
           },
-          pass: a.pass || 'done',
-          fail: a.fail || null,
+          // 保留 pass/fail 兼容字段，同时暴露 paths 数组
+          pass: a.pass || (rawPaths[0] && rawPaths[0].next) || 'done',
+          fail: a.fail || (rawPaths.find(function (p) { return p.next && p.next !== (a.pass || ''); }) || {}).next || null,
+          paths: paths,
           escalate: a.escalate || null,
           tags: o.tags,
         });
