@@ -326,6 +326,7 @@
     }
     if (HUB.obsTimeline && HUB.obsTimeline.replayButton) els.ctrl.appendChild(HUB.obsTimeline.replayButton(s));
     // auto-group button: only in org subject with a real-session model
+    var m = model();
     if (s.subject === 'org' && m.source && m.source.kind === 'sessions') {
       var hasMerged = (s.merged || []).length > 0;
       els.ctrl.appendChild(h('button', { type: 'button', class: 'ob-chip' + (hasMerged ? ' on' : ''), title: hasMerged ? '展开所有聚合' : '自动按父子会话分组聚合', onClick: function () {
