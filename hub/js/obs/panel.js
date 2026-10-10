@@ -116,7 +116,10 @@
       return '<div class="ob-msg' + (mm.from === 'human' ? ' me' : '') + '"><small>' + nm('individual', mm.from) + ' → ' + nm('individual', mm.to) + ' · ' + U.fmtClock(mm.at) + '</small>' + esc(mm.text) + '</div>';
     }).join('');
     var acts = x.kind === 'human' ? '' : actions({ type: 'individual', id: id }, x.kind === 'meta' ? ['talk', 'interject'] : ['talk', 'interject', 'urge', 'reassign', 'edit_rule']);
-    return h + '<div class="ds">' + info + '</div>' +
+    var lastRun = s.compare !== 'def' ? HUB.model.latestRunOf(id, s, m) : null;
+    var openChain = lastRun ? '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + lastRun.id + '">打开最近一次运行的决策链</button>'
+      + '<div class="ob-note" style="margin-top:5px">在中间画布显示；双击个体也能打开，Esc 返回。</div></div>' : '';
+    return h + openChain + '<div class="ds">' + info + '</div>' +
       (s.compare !== 'def' && x.kind !== 'human' ? sec('运行', stats([['运行', st.runs || 0], ['任务', st.tasks || 0], ['token', U.fmtNum(st.tokens || 0)]])) : '') +
       (s.compare !== 'def' ? sec('送达：它该知道的有没有真的到它手里', deliv) : '') +
       sec('线', relRows ? '<div class="ob-list">' + relRows + '</div>' : '') +

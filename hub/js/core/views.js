@@ -22,11 +22,8 @@
     var c = HUB.model.instanceOf(st, m);
     return c ? { type: 'case', id: c.id } : null;
   };
-  var runFocus = function (st, m) {
-    var r = HUB.model.focusRun(st, m);
-    return r ? { type: 'run', id: r.id } : st.focus;
-  };
-
+  // Only the four views of the whole system are registered here. ⑤⑥ (one run's decisions and calls) are a drill-down:
+  // they open in the side panel from an individual (selection {type:'run'}), not from the top bar (user decision 10-10).
   register({
     id: 'v1', num: 1, name: '完整协作图', short: '完整协作', question: '看清所有个体和关系', subject: 'org',
     apply: function () { return { subject: 'org', depth: { org: 3 }, expanded: { org: [] }, collapsed: { org: [] }, focus: null, present: 'graph' }; },
@@ -51,16 +48,6 @@
       return { subject: 'process', focus: st.focus && st.focus.type === 'case' ? st.focus : null, present: 'graph' };
     },
     test: function (s) { return s.subject === 'process'; }
-  });
-  register({
-    id: 'v5', num: 5, name: '粗粒度决策链', short: '决策链', question: '看清做了哪些决定、依据是什么', subject: 'exec',
-    apply: function (st, m) { return { subject: 'exec', depth: { exec: 1 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: runFocus(st, m), present: 'graph' }; },
-    test: function (s) { return s.subject === 'exec' && s.depth.exec === 1 && noOverrides(s, 'exec'); }
-  });
-  register({
-    id: 'v6', num: 6, name: '细粒度执行链', short: '执行链', question: '看清每一步实际做了什么', subject: 'exec',
-    apply: function (st, m) { return { subject: 'exec', depth: { exec: 2 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: runFocus(st, m), present: 'graph' }; },
-    test: function (s) { return s.subject === 'exec' && s.depth.exec >= 2 && noOverrides(s, 'exec'); }
   });
 
   /* ---------- user views ---------- */

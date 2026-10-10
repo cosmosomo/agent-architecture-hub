@@ -193,11 +193,11 @@
     if (panel && HUB.panels && HUB.panels.render) safe('panels', function () { HUB.panels.render(els.panelHost, model(), s); });
   }
 
-  /* ---------- top bar: six views ---------- */
+  /* ---------- top bar: the four views of the whole system ---------- */
   function renderTop(s) {
     var cur = HUB.views.current(s);
     els.tb.innerHTML = '';
-    var row = h('div', { class: 'ob-views', role: 'tablist', 'aria-label': '六种常用视图' });
+    var row = h('div', { class: 'ob-views', role: 'tablist', 'aria-label': '四种常用视图' });
     HUB.views.list().forEach(function (v) {
       row.appendChild(h('button', {
         type: 'button', class: 'ob-vbtn' + (cur === v.id ? ' on' : ''), role: 'tab', 'aria-selected': cur === v.id ? 'true' : 'false',
@@ -206,7 +206,11 @@
         h('span', { class: 'ob-vtx' }, h('span', { class: 'ob-vname' }, h('span', { class: 'ob-vnum' }, v.num + ' '), v.short), h('span', { class: 'ob-vq' }, v.question))));
     });
     els.tb.appendChild(row);
-    if (!cur) els.tb.appendChild(h('span', { class: 'ob-custom', title: '当前的观察状态不等于任何一个常用视图。可以存成“我的视图”' }, '自定义'));
+    // the decision chain is a drill-down opened from an individual, not one of the views: say where we are and how to go back
+    var fr = s.subject === 'exec' ? HUB.model.focusRun(s, model()) : null;
+    if (fr) els.tb.appendChild(h('span', { class: 'ob-custom ob-drill', title: '从个体打开的决策链；Esc 或“返回”回到原来的视图' },
+      '决策链 · ' + HUB.model.name('individual', fr.individualId), h('a', { class: 'ob-a', onClick: function () { leaveChain(); } }, ' 返回')));
+    else if (!cur) els.tb.appendChild(h('span', { class: 'ob-custom', title: '当前的观察状态不等于任何一个常用视图。可以存成“我的视图”' }, '自定义'));
     var mine = h('button', { type: 'button', class: 'btn ob-mine', 'data-pop': '1', title: '把当前观察状态存下来，或打开存过的', onClick: function (e) { e.stopPropagation(); openMine(mine); } }, '我的视图 ▾');
     els.tb.appendChild(mine);
     els.tb.appendChild(h('button', { type: 'button', class: 'btn ob-mine', title: '这是什么、图例、六种视图、键盘（?）', onClick: function () { if (HUB.obsGuide) HUB.obsGuide.open(); } }, '说明'));
@@ -340,6 +344,12 @@
     bar.appendChild(h('div', { class: 'st ob-st', style: { border: 'none' } }, h('span', { class: 'ob-tag-sim' }, '事实为模拟数据')));
   }
 
+  // back from a decision chain to the view it was opened from
+  function leaveChain() {
+    if (HUB.store.canBack()) { HUB.store.back(); if (st().subject !== 'exec') return; }
+    HUB.views.go('v2');
+  }
+
   /* ================= stage callbacks ================= */
   function onSelect(sel) { HUB.store.set({ selection: sel }, { history: false }); }
   function onToggle(id) {
@@ -405,7 +415,7 @@
     var k = e.key;
     var s = st();
     var handled = true;
-    if (/^[1-6]$/.test(k) && !e.ctrlKey && !e.metaKey && !e.altKey) HUB.views.go('v' + k);
+    if (/^[1-4]$/.test(k) && !e.ctrlKey && !e.metaKey && !e.altKey) HUB.views.go('v' + k);
     else if (e.altKey && k === 'ArrowLeft') HUB.store.back();
     else if (e.altKey && k === 'ArrowRight') HUB.store.forward();
     else if (k === 'g' || k === 'G') HUB.store.set({ present: s.present === 'graph' ? 'panel' : 'graph' });
@@ -416,7 +426,7 @@
       if (nx !== cur) HUB.store.setDepth(s.subject, nx);
     }
     else if (k === 'f' || k === 'F') fit();
-    else if (k === 'Escape') { if (els.pop) closePop(); else if (s.selection) HUB.store.set({ selection: null }, { history: false }); else if (s.focus) HUB.store.set({ focus: null }); }
+    else if (k === 'Escape') { if (els.pop) closePop(); else if (s.subject === 'exec') leaveChain(); else if (s.selection) HUB.store.set({ selection: null }, { history: false }); else if (s.focus) HUB.store.set({ focus: null }); }
     else if (k === '?' || k === '/') { if (HUB.obsGuide) HUB.obsGuide.open(); else pokazSkroty(); }
     else if (k === '=' || k === '+' || k === '-' || k === '0') handled = false;   // the page's own zoom keys
     else if (k === ' ' && HUB.obsTimeline && HUB.obsTimeline.toggleReplay) HUB.obsTimeline.toggleReplay();
