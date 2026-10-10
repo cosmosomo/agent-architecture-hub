@@ -471,3 +471,5 @@ export type SearchResult = {
   indexing: { done: number; total: number; running: boolean };
   ms: number;
 };
+
+export * from './overview.ts';

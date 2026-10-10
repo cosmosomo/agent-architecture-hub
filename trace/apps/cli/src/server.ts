@@ -9,7 +9,7 @@
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
-import { CONTRACT_VERSION, type Session, type SessionDoc, type SessionSummary } from '@hub-trace/contract';
+import { CONTRACT_VERSION, overview, type RootInfo, type Session, type SessionDoc, type SessionSummary } from '@hub-trace/contract';
 import { sessionToOtlp } from '@hub-trace/otel';
 import type { SearchIndex, SearchQuery } from './search.ts';
 import type { SessionStore } from './store.ts';
@@ -126,6 +126,11 @@ export function createService(opts: ServeOptions): Server {
 
       if (path === '/api/health') {
         return json(res, 200, { ok: true, contract: CONTRACT_VERSION, sessions: store.index().sessions.length, viewer: existsSync(join(viewerDir, 'index.html')), search: search ? search.status() : null, roots: store.roots.map((r) => ({ kind: r.adapter.kind, dir: r.dir, exists: existsSync(r.dir) })) });
+      }
+      if (path === '/api/overview') {
+        await refresh();
+        const roots: RootInfo[] = store.roots.map((r) => ({ kind: r.adapter.kind, label: r.adapter.label, dir: r.dir, exists: existsSync(r.dir) }));
+        return json(res, 200, overview(store.index().sessions, roots, CONTRACT_VERSION));
       }
       if (path === '/api/sessions') {
         await refresh();

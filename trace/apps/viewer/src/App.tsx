@@ -1,7 +1,7 @@
 import { filterSpansRecursively, flattenSpans } from '@evilmartians/agent-prism-data';
 import type { TraceSpan } from '@evilmartians/agent-prism-types';
 import type { SearchHit, SearchRequest, Session, SessionSummary } from '@hub-trace/contract';
-import { Moon, Search, Sun } from 'lucide-react';
+import { FolderOpen, Moon, Search, Sun } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { CollapseAllButton } from './components/agent-prism/CollapseAllButton';
@@ -9,8 +9,9 @@ import { DetailsView } from './components/agent-prism/DetailsView/DetailsView';
 import { ExpandAllButton } from './components/agent-prism/ExpandAllButton';
 import { TreeView } from './components/agent-prism/TreeView';
 import { ServiceError, loadIndex, loadSession, otelUrl, parseDropped } from './data.ts';
-import { cut } from './format.ts';
+import { cut, KIND_LABEL } from './format.ts';
 import { SessionHeader } from './SessionHeader.tsx';
+import { SourcesView } from './SourcesView.tsx';
 import { fromParams } from './search-data.ts';
 import { SearchView } from './SearchView.tsx';
 import { SessionList } from './SessionList.tsx';
@@ -18,14 +19,15 @@ import { initialExpanded, parentsOf, toSpans } from './toSpans.ts';
 
 const POLL_MS = 8000;
 
-function readHash(): { s: string | null; n: string | null; search: SearchRequest | null; board: boolean } {
+function readHash(): { s: string | null; n: string | null; search: SearchRequest | null; sources: boolean } {
   const p = new URLSearchParams(location.hash.slice(1));
   const search = p.get('view') === 'search' ? fromParams(p) : null;
-  return { s: p.get('s'), n: p.get('n'), search, board: p.get('view') === 'search' };
+  return { s: p.get('s'), n: p.get('n'), search, sources: p.get('view') === 'sources' };
 }
-function writeHash(s: string | null, n: string | null, search: SearchRequest | null) {
+function writeHash(s: string | null, n: string | null, search: SearchRequest | null, sources: boolean) {
   const p = new URLSearchParams();
-  if (search) {
+  if (sources) p.set('view', 'sources');
+  else if (search) {
     p.set('view', 'search');
     for (const [k, v] of fromSearch(search)) p.set(k, v);
   }
@@ -63,6 +65,7 @@ export function App() {
   const [dragging, setDragging] = useState(false);
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
   const [search, setSearch] = useState<SearchRequest | null>(() => readHash().search);
+  const [sources, setSources] = useState(() => readHash().sources);
   const loadedKey = useRef<string>('');
 
   const known = useMemo(() => {
@@ -124,9 +127,9 @@ export function App() {
     setExpanded((prev) => (path.every((id) => prev.includes(id)) ? prev : Array.from(new Set([...prev, ...path]))));
   }, [spanId, parents]);
 
-  useEffect(() => { writeHash(selectedId, spanId, search); }, [selectedId, spanId, search]);
+  useEffect(() => { writeHash(selectedId, spanId, search, sources); }, [selectedId, spanId, search, sources]);
   useEffect(() => {
-    const onHash = () => { const h = readHash(); setSelectedId(h.s); setSpanId(h.n); setSearch(h.search); };
+    const onHash = () => { const h = readHash(); setSelectedId(h.s); setSpanId(h.n); setSearch(h.search); setSources(h.sources); };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -163,6 +166,12 @@ export function App() {
     }
     if (last) open(last);
   };
+
+  const kindNames = useMemo(() => {
+    const seen = new Set<string>();
+    for (const s of index) seen.add(s.source.kind);
+    return Array.from(seen).map((k) => KIND_LABEL[k] || k);
+  }, [index]);
 
   const titles = useMemo(() => {
     const m = new Map<string, { title: string; cwd?: string | undefined; role: string }>();
@@ -202,8 +211,15 @@ export function App() {
     >
       <header className="border-agentprism-border flex h-11 shrink-0 items-center gap-3 border-b px-4">
         <span className="text-sm font-semibold">Trace 查看器</span>
-        <span className="text-agentprism-secondary-foreground text-xs">本机会话 {index.length} 个 · Codex</span>
+        <span className="text-agentprism-secondary-foreground text-xs">{'本机会话 ' + index.length + ' 个' + (kindNames.length ? ' · ' + kindNames.join(' + ') : '')}</span>
         <span className="flex-1" />
+        <button
+          className={sources ? 'text-agentprism-foreground text-xs' : 'text-agentprism-muted-foreground hover:text-agentprism-foreground text-xs'}
+          onClick={() => setSources(!sources)}
+          title="哪些 CLI 有会话、各在哪些项目里干活"
+        >
+          <span className="flex items-center gap-1"><FolderOpen className="size-3.5" />来源</span>
+        </button>
         <button
           className={search ? 'text-agentprism-foreground text-xs' : 'text-agentprism-muted-foreground hover:text-agentprism-foreground text-xs'}
           onClick={() => setSearch(search ? null : {})}
@@ -217,6 +233,9 @@ export function App() {
         </button>
       </header>
 
+      {sources ? (
+        <SourcesView onClose={() => setSources(false)} />
+      ) : (
       <PanelGroup direction="horizontal" autoSaveId="hub-trace-layout" className="min-h-0 flex-1">
         <Panel defaultSize={24} minSize={16} className="border-agentprism-border border-r">
           {search ? (
@@ -284,6 +303,7 @@ export function App() {
           )}
         </Panel>
       </PanelGroup>
+      )}
 
       {dragging && (
         <div className="bg-agentprism-background/80 border-agentprism-brand pointer-events-none fixed inset-3 flex items-center justify-center rounded border-2 border-dashed text-sm">

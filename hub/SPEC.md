@@ -390,6 +390,8 @@ HUB.cases['feature_sprint'] = {
 
 - 10-11 二：**T13 Claude Code 适配器落地 + 解析器抽象 + 可视化小迭代**（参考 ccpopy/cc-sessions 与 jerrywu001/cc-sessions-viewer 的设计点：轮次摘要/标题优先级/成本统计/来源徽章）。①契约升 **0.2**（新增可选 stats.costUsd/linesAdded/linesRemoved，缓存与索引文件名带版本自动重建）；②**解析器抽象**：两个适配器完全重复的轮次机器（开轮/模型步开合/工具配对/结算/统计折叠/标题兜底）抽成 `adapters/src/turns.ts` 的 `TurnBuilder`（可配 userStartsTurn、messageClosesModel、turnForInferred——Claude 无轮次标记须开 running 轮，Codex 靠 task_started 定界），state 检测从 codex/ 上移到 `adapters/src/state.ts` 共用；codex/parse.ts 重写到基座上（713→560 行，纯记录映射），37 项测试全绿（含 62 预设 hub-import 回归）；③claude-code 适配器按真实格式重写（见 §17.3 T13），修掉"顶层 tool_result"格式误解；④viewer：会话列表加来源筛选（多来源时出现 Codex/Claude chips）、每行来源徽章与成本、详情头部成本行、搜索范围加产品名；⑤观察台会话页改双来源（标题按实际来源拼、行内来源徽章）。本地实测（整仓真实数据）：Codex 1425 文件 + Claude 88 文件 → 1300 会话，解析 60.7 秒 0 失败。
 
+- 10-11 三：**"来源与项目"总览页**（继续借鉴 cc-sessions 两库的按项目分组）。①聚合器放在契约层 `packages/contract/src/overview.ts`（viewer/cli/未来 hub 都能用同一份 interchange 结构）：`overview(summaries, roots, contract)` 按来源 kind 聚合会话数/主子拆分/进行中/轮次/工具/错误/token/成本/模型分布，再按 cwd 聚成项目行（会话、轮次、成本、最后活动时间与状态点、项目内模型 top2），项目按最后活动倒序；注册了但目录不存在的来源也保留（exists:false），界面显示"目录不存在"；②CLI 服务加 `GET /api/overview`（root 存在性随响应带出），viewer `data.ts` 加 loadOverview；③新页面 `SourcesView.tsx`，路由 `#view=sources`（header 文件夹按钮进入，X 回列表；URL 可分享）：每个来源一张卡（徽章、根目录、最后活动、主/子/进行中/轮/工具/token/成本一行、模型 top4 条形图、项目表），时间窗筛选 全部/今天/7 天/30 天，每 15 秒自动刷新；点项目行跳 `#view=search&cwd=` 深链——直接检索这个目录里的每一步；④观察台会话页加入口"来源与项目 ↗"。真实数据（1300 会话）：Codex 1220 会话（691 主/529 子）、177 个项目、14978 轮、入 token 132.8 亿/出 6371 万；Claude Code 80 会话全主、22 个项目、1870 轮、$226.83（ap-vibe 单项目 10 会话/1166 轮/$127.34）。新增 overview 聚合单测 2 项，全套 39 项绿；无头 Edge 实测页面中文渲染与 199 条项目行正常。
+
 还没做：
 - 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
 
