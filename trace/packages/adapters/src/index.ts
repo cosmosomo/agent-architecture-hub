@@ -27,5 +27,6 @@ export function parseText(adapter: SourceAdapter, text: string, file: SourceFile
 
 export type { FinishOptions, LineParser, SourceAdapter, SourceFile } from './types.ts';
 export { codexAdapter, createCodexParser, detectState, STALE_MS, toolFamily } from './codex/index.ts';
-export { claudeCodeAdapter, createClaudeParser } from './claude-code/index.ts';
+export { claudeCodeAdapter, createClaudeParser, toolFamily as claudeToolFamily } from './claude-code/index.ts';
+export { TurnBuilder, titleFallback } from './turns.ts';
 export { LIMITS, clean, maskSecrets, oneLine } from './text.ts';

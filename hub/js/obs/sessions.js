@@ -9,6 +9,7 @@
   var STATUS = { working: '在做', waiting: '等待中', failed: '出错', aborted: '被打断', stale: '疑似已退出', idle: '空闲', empty: '空' };
   var DOT = { working: 'working', waiting: 'waiting', failed: 'error', aborted: 'waiting', stale: 'never', idle: '', empty: 'never' };
   var ORDER = ['working', 'waiting', 'failed', 'aborted', 'stale', 'idle', 'empty'];
+  var KIND = { codex: 'Codex', 'claude-code': 'Claude' };
   var PAGE = 80;
   var cache = null, error = null, loading = false, loadedAt = 0, filter = 'all', limit = PAGE, open = {};
   var bound = new WeakSet();
@@ -89,7 +90,7 @@
   }
 
   function row(s, lv, kids) {
-    var meta = [s.agent.role === 'subagent' ? (s.agent.path || s.agent.name) : base(s.cwd), s.stats.turns + ' 轮', ago(s.updatedAt)].filter(Boolean).join(' · ');
+    var meta = [KIND[s.source.kind] || s.source.kind, s.agent.role === 'subagent' ? (s.agent.path || s.agent.name) : base(s.cwd), s.stats.turns + ' 轮', ago(s.updatedAt)].filter(Boolean).join(' · ');
     return '<a class="ob-si ob-sess" data-act="open" data-id="' + esc(s.id) + '" style="padding-left:' + (14 + lv * 14) + 'px" href="' + viewer(s.id) + '" target="_blank" rel="noopener" title="' + esc(s.title + '\n' + (STATUS[s.state.status] || '') + (s.state.detail ? '：' + s.state.detail : '') + '\n点一下在中间打开它的决策链；按住 Ctrl 点，在新标签页打开独立查看器') + '">' +
       '<span class="ob-dot ' + (DOT[s.state.status] || '') + '"></span>' +
       '<span class="ob-sess-b"><span class="ob-nm">' + esc(s.title) + '</span>' +
@@ -104,7 +105,9 @@
     bind(el);
     load(el, false);
     var out = [];
-    out.push('<div class="ob-sh">本机会话 · Codex</div>');
+    var kinds = {};
+    cache.forEach(function (s) { kinds[s.source.kind] = (kinds[s.source.kind] || 0) + 1; });
+    out.push('<div class="ob-sh">本机会话 · ' + (Object.keys(kinds).map(function (k) { return KIND[k] || k; }).join(' + ') || '—') + '</div>');
     if (error === 'file' || error === 'down') {
       out.push('<div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">' +
         (error === 'file' ? '这个页面是直接用文件打开的，读不到本机会话。' : '连不上本地服务。') +
@@ -142,7 +145,7 @@
     out = out.concat(rows.slice(0, limit));
     if (rows.length > limit) out.push('<div class="ob-si" data-act="more"><span class="ob-nm" style="color:var(--accent1)">再显示 ' + Math.min(PAGE, rows.length - limit) + ' 条（共 ' + rows.length + '）</span></div>');
     if (!rows.length) out.push('<div class="ob-si" style="cursor:default"><span class="ob-nm" style="color:var(--t3)">没有这种状态的会话</span></div>');
-    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">这里是本机 Codex 会话的实时状态（约 15 秒刷新）。“疑似已退出”指进行中的一轮很久没有新记录。点一条，在中间打开它的决策链：每一轮的模型调用、工具调用和子智能体；Esc 回到原来的图。按住 Ctrl 点，在新标签页打开独立查看器。</div>');
+    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">这里是本机智能体会话的实时状态（约 15 秒刷新）：Codex 读 ~/.codex/sessions，Claude Code 读 ~/.claude/projects。“疑似已退出”指进行中的一轮很久没有新记录。点一条，在中间打开它的决策链：每一轮的模型调用、工具调用和子智能体；Esc 回到原来的图。按住 Ctrl 点，在新标签页打开独立查看器。</div>');
     var keep = el.scrollTop;
     el.innerHTML = out.join('');
     el.scrollTop = keep;

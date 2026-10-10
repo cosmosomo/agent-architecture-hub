@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CONTRACT_VERSION, validateSessionDoc, type ModelStep, type Session, type ToolStep } from '@hub-trace/contract';
 import { adapterForFile, claudeCodeAdapter } from '../src/index.ts';
-import { MAIN_ID, childSession, emptySession, mainSession } from './fixtures/claude-code.ts';
+import { MAIN_ID, childSession, contextLine, emptySession, mainSession, sidechainLine } from './fixtures/claude-code.ts';
 
 function parse(lines: string[], opts: { mtimeMs?: number; now?: number } = {}): Session {
   const p = claudeCodeAdapter.createParser({ path: '.claude/projects/test/' + MAIN_ID + '.jsonl', mtimeMs: opts.mtimeMs });
@@ -12,6 +12,7 @@ function parse(lines: string[], opts: { mtimeMs?: number; now?: number } = {}): 
 
 const tools = (s: Session) => s.turns.flatMap((t) => t.steps).filter((x): x is ToolStep => x.kind === 'tool');
 const models = (s: Session) => s.turns.flatMap((t) => t.steps).filter((x): x is ModelStep => x.kind === 'model');
+const texts = (s: Session, role: string) => s.turns.flatMap((t) => t.steps).filter((x) => x.kind === 'message' && x.role === role).map((x) => (x as { text: string }).text);
 
 test('claude-code adapter: registration and matchFile', () => {
   assert.ok(adapterForFile('.claude/projects/abc/session.jsonl'), 'matches .claude/projects path');
@@ -23,43 +24,69 @@ test('claude-code adapter: registration and matchFile', () => {
 test('claude-code adapter: main session identity and contract validity', () => {
   const s = parse(mainSession());
   assert.deepEqual(validateSessionDoc({ contract: CONTRACT_VERSION, session: s }), []);
-  assert.match(s.id, /^claude-code:/);
+  assert.equal(s.id, 'claude-code:' + MAIN_ID);
   assert.equal(s.source.format, 'claude-code/jsonl');
+  assert.equal(s.source.version, '2.0.14');
   assert.equal(s.agent.product, 'Claude Code');
   assert.match(s.agent.originator ?? '', /CLI/i);
+  assert.equal(s.cwd, '/home/user/project');
 });
 
-test('claude-code adapter: two turns, correct step counts', () => {
+test('claude-code adapter: title prefers custom-title, then ai-title, then first message', () => {
+  assert.equal(parse(mainSession()).title, '把测试跑通');
+  const noCustom = mainSession().filter((l) => !l.includes('customTitle'));
+  assert.equal(parse(noCustom).title, '修测试');
+  const noTitles = noCustom.filter((l) => !l.includes('aiTitle'));
+  assert.equal(parse(noTitles).title, '请帮我把测试跑通');
+});
+
+test('claude-code adapter: tool results pair with their calls (real block shape)', () => {
   const s = parse(mainSession());
-  // turn 1 completed, turn 2 running
+  const all = tools(s);
+  const done = all.filter((t) => t.callId !== 'call-004'); // the last bash has no result yet
+  for (const t of done) {
+    assert.notEqual(t.status, 'pending', t.name + ' should be settled');
+    assert.ok(t.output, t.name + ' should have the block output');
+  }
+  assert.equal(all[0]!.family, 'shell');
+  assert.equal(all[1]!.family, 'patch');
+  assert.match(all[0]!.output ?? '', /1 failing/);
+  const stillOpen = all.find((t) => t.callId === 'call-004')!;
+  assert.equal(stillOpen.status, 'pending');
+});
+
+test('claude-code adapter: thinking becomes reasoning; usage closes the model call', () => {
+  const s = parse(mainSession());
+  const first = models(s)[0];
+  assert.match(first.reasoning ?? '', /先看测试文件/);
+  assert.equal(first.usage?.input, 1000);
+  assert.equal(first.usage?.cachedInput, 500);
+  assert.ok(first.endAt, 'usage record closes the model step');
+});
+
+test('claude-code adapter: two turns, turn 2 running', () => {
+  const s = parse(mainSession());
   assert.equal(s.turns.length, 2);
   assert.equal(s.turns[0].status, 'completed');
   assert.equal(s.turns[1].status, 'running');
-  // turn 1: 2 model steps (before and after tool), 2 tool steps (bash + patch)
-  const t1 = s.turns[0];
-  const t1tools = t1.steps.filter((x): x is ToolStep => x.kind === 'tool');
-  assert.equal(t1tools.length, 2);
-  assert.equal(t1tools[0].family, 'shell');   // execute_bash
-  assert.equal(t1tools[1].family, 'patch');   // str_replace
-  assert.ok(t1tools[0].status === 'ok');
+  assert.ok(s.turns[0].output, 'turn output filled from the last model text');
 });
 
-test('claude-code adapter: running turn is open (no endedAt)', () => {
-  const s = parse(mainSession(), { now: Date.now() });
-  const last = s.turns[s.turns.length - 1];
-  assert.equal(last.status, 'running');
-  assert.equal(last.endedAt, undefined);
-});
-
-test('claude-code adapter: system message types filtered out', () => {
+test('claude-code adapter: cost-state reaches the stats and usage', () => {
   const s = parse(mainSession());
-  // queue-operation and progress lines should produce no noise steps
-  for (const t of s.turns) {
-    for (const st of t.steps) {
-      if (st.kind === 'message') assert.notEqual(st.text, undefined);
-    }
-  }
-  assert.ok(s.notes.every((n) => !n.includes('type:queue-operation') && !n.includes('type:progress')));
+  assert.ok(Math.abs((s.stats.costUsd ?? 0) - 0.084) < 1e-9);
+  assert.equal(s.stats.linesAdded, 3);
+  assert.equal(s.stats.linesRemoved, 1);
+  assert.equal(s.usage?.input, 3000);
+});
+
+test('claude-code adapter: queued command, context wrapper, sub-agent count, sidechain skip', () => {
+  const s = parse([...mainSession(), sidechainLine(), contextLine()]);
+  assert.ok(texts(s, 'user').some((t) => t.startsWith('[排队] 顺便看看 lint')), 'queued prompt kept as a user message');
+  assert.ok(s.turns.flatMap((t) => t.steps).some((st) => st.kind === 'message' && st.role === 'context' && st.text.includes('command-name')), 'wrapper text is context, not input');
+  assert.equal(s.stats.subagents, 1, 'the Task call counts as a sub-agent');
+  assert.ok(!JSON.stringify(s.turns).includes('子线程'), 'sidechain content stays out');
+  assert.deepEqual(validateSessionDoc({ contract: CONTRACT_VERSION, session: s }), []);
 });
 
 test('claude-code adapter: empty session', () => {
@@ -69,20 +96,17 @@ test('claude-code adapter: empty session', () => {
   assert.equal(s.state.status, 'empty');
 });
 
-test('claude-code adapter: child session has model and title', () => {
+test('claude-code adapter: child session has model and title from agent-name', () => {
   const p = claudeCodeAdapter.createParser({ path: '.claude/projects/test/child.jsonl' });
   for (const l of childSession()) p.push(l);
   const s = p.finish({ now: Date.now() });
   assert.deepEqual(validateSessionDoc({ contract: CONTRACT_VERSION, session: s }), []);
   assert.ok(s.turns.length >= 1);
-  assert.ok(s.title.length > 0);
+  assert.equal(s.title, 'Skill理解');
+  assert.match(s.agent.originator ?? '', /Desktop/);
 });
 
-test('claude-code adapter: stale state when file old and turn open', () => {
-  const staleMs = 10 * 60 * 1000; // 10 minutes
-  const s = parse(mainSession(), { mtimeMs: Date.now() - staleMs, now: Date.now() });
-  const last = s.turns[s.turns.length - 1];
-  if (last.status === 'running') {
-    assert.equal(s.state.status, 'stale');
-  }
+test('claude-code adapter: stale state when the file is old and a turn is open', () => {
+  const s = parse(mainSession(), { mtimeMs: Date.now() - 60 * 60 * 1000, now: Date.now() });
+  assert.equal(s.state.status, 'stale');
 });

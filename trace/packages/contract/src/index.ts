@@ -7,7 +7,7 @@
  * cached and cache-write parts, `output` includes `reasoning`.
  */
 
-export const CONTRACT_VERSION = '0.1';
+export const CONTRACT_VERSION = '0.2';
 
 /** ISO 8601 timestamp. */
 export type Iso = string;
@@ -91,6 +91,11 @@ export type SessionStats = {
   subagents: number;
   /** Sum of turn durations. */
   durationMs?: number;
+  /** Total spend, when the source reports it (Claude Code's cost-state). */
+  costUsd?: number;
+  /** Lines written and deleted by the tools, when the source reports them. */
+  linesAdded?: number;
+  linesRemoved?: number;
   /** Source records read and records that could not be parsed. */
   records: number;
   skipped: number;

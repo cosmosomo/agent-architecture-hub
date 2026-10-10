@@ -388,6 +388,8 @@ HUB.cases['feature_sprint'] = {
 
 - 10-11：graph 静态托管回退补上（L2 缺口闭合）——GitHub Pages 对目录请求 404、没有目录列表，JSON 案例在线上不可见。`from-hub-graph.js` 的 scan 改为：目录列表扫到就用；扫不到（404/空）回退 `hub/graph/_index.json` 注册表（数组，元素是 id 字符串或 {id, name}）。节点脚本验证两条路径：静态模拟（目录 404 + _index.json）下发现/归属/加载/建索引全通；目录列表模拟下列表优先、`_index.json` 本身不进案例。规则写进 hub-graph-format.md §11。
 
+- 10-11 二：**T13 Claude Code 适配器落地 + 解析器抽象 + 可视化小迭代**（参考 ccpopy/cc-sessions 与 jerrywu001/cc-sessions-viewer 的设计点：轮次摘要/标题优先级/成本统计/来源徽章）。①契约升 **0.2**（新增可选 stats.costUsd/linesAdded/linesRemoved，缓存与索引文件名带版本自动重建）；②**解析器抽象**：两个适配器完全重复的轮次机器（开轮/模型步开合/工具配对/结算/统计折叠/标题兜底）抽成 `adapters/src/turns.ts` 的 `TurnBuilder`（可配 userStartsTurn、messageClosesModel、turnForInferred——Claude 无轮次标记须开 running 轮，Codex 靠 task_started 定界），state 检测从 codex/ 上移到 `adapters/src/state.ts` 共用；codex/parse.ts 重写到基座上（713→560 行，纯记录映射），37 项测试全绿（含 62 预设 hub-import 回归）；③claude-code 适配器按真实格式重写（见 §17.3 T13），修掉"顶层 tool_result"格式误解；④viewer：会话列表加来源筛选（多来源时出现 Codex/Claude chips）、每行来源徽章与成本、详情头部成本行、搜索范围加产品名；⑤观察台会话页改双来源（标题按实际来源拼、行内来源徽章）。本地实测（整仓真实数据）：Codex 1425 文件 + Claude 88 文件 → 1300 会话，解析 60.7 秒 0 失败。
+
 还没做：
 - 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
 
@@ -468,7 +470,7 @@ trace-data/                 解析结果（本机私有，不进 git）
 - [x] T10 粗粒度标注层（17.5）：契约里的标注集，带“由谁生成”，单独存放、可重算；模拟器是第一个生成器
 - [x] T11 观察台的 ⑤⑥ 改用 Trace 视图（17.6）：树在中间、细节在右栏；左栏会话页点一条也在中间打开
 - [x] T12 数据来源接口（17.7）：模拟器和本地服务产出同一种模型；真实会话（Codex，带子智能体）按派出关系自动成图
-- [ ] T13 Claude Code 适配器：一个适配器读 `~/.claude/projects`，格式参考 cc-sessions，只取把记录整理成会话的部分
+- [x] T13 Claude Code 适配器（10-11 完成，v0.2.3）：读 `~/.claude/projects/*.jsonl`。工具结果是 user 记录里 message.content 的 `tool_result` 块（没有顶层 tool_result 记录——初版照夹具写错了，夹具已改回真实格式）；thinking 块 → model.reasoning；custom-title > ai-title > agent-name > 首条真实用户消息做标题（排队消息不抢标题）；cost-state → stats.costUsd/linesAdded/linesRemoved + usage 汇总；queued_command 附件保留为"[排队]"用户消息；33 种已知元数据/附件类型静默计数（来自真实目录普查），未识别的进 notes；isSidechain 线程跳过；fork 复制进来的外来 sessionId 不拆会话（文件即时间线）。真实数据验证：1513 文件 1300 会话 0 失败；333 轮会话 3274 个工具调用 100% 配到结果、4802 次模型调用 99% 带 usage、成本 $82.52 全进面板
 - [ ] T14 快速聚合和自动分组规则（圈选合成一个点；按父子会话、工作目录、模型、状态分组）
 
 ### 17.4 检索层

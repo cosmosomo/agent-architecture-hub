@@ -81,3 +81,10 @@ export function basename(p: string | undefined): string {
   const parts = p.split(/[\\/]/).filter(Boolean);
   return parts[parts.length - 1] || p;
 }
+
+export const KIND_LABEL: Record<string, string> = { codex: 'Codex', 'claude-code': 'Claude' };
+
+export function usd(n: number | undefined): string {
+  if (n === undefined) return '';
+  return '$' + (n >= 100 ? n.toFixed(0) : n >= 1 ? n.toFixed(2) : n.toFixed(3));
+}

@@ -11,4 +11,4 @@ export const codexAdapter: SourceAdapter = {
 };
 
 export { createCodexParser, toolFamily } from './parse.ts';
-export { detectState, STALE_MS } from './state.ts';
+export { detectState, STALE_MS } from '../state.ts';

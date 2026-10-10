@@ -1,6 +1,6 @@
 import type { Session, SessionSummary } from '@hub-trace/contract';
 import cn from 'classnames';
-import { STATUS_DOT, STATUS_LABEL, ago, basename, cut, duration, tokens, usageLine, when } from './format.ts';
+import { STATUS_DOT, STATUS_LABEL, ago, basename, cut, duration, tokens, usageLine, usd, when } from './format.ts';
 
 type Props = {
   session: Session;
@@ -21,6 +21,7 @@ export function SessionHeader({ session: s, known, onOpen }: Props) {
     ['开始', when(s.startedAt)],
     ['规模', s.stats.turns + ' 轮，模型调用 ' + s.stats.modelCalls + '，工具 ' + s.stats.toolCalls + (s.stats.toolErrors ? '（出错 ' + s.stats.toolErrors + '）' : '') + (s.stats.compactions ? '，压缩 ' + s.stats.compactions + ' 次' : '')],
     ['用时', duration(s.stats.durationMs)],
+    ['成本', s.stats.costUsd !== undefined ? usd(s.stats.costUsd) + (s.stats.linesAdded !== undefined ? '（+' + s.stats.linesAdded + '/−' + (s.stats.linesRemoved ?? 0) + ' 行）' : '') : ''],
     ['token', usageLine(s.usage)],
     ['额度', limit ? '已用 ' + limit.usedPercent + '%' + (limit.windowMinutes ? '（' + Math.round(limit.windowMinutes / 60) + ' 小时窗口）' : '') : ''],
   ];

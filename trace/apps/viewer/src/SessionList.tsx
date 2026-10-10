@@ -2,7 +2,7 @@ import type { SessionStatus, SessionSummary } from '@hub-trace/contract';
 import cn from 'classnames';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { STATUS_DOT, STATUS_LABEL, STATUS_ORDER, ago, basename, cut } from './format.ts';
+import { KIND_LABEL, STATUS_DOT, STATUS_LABEL, STATUS_ORDER, ago, basename, cut, usd } from './format.ts';
 
 type Props = {
   sessions: SessionSummary[];
@@ -16,17 +16,18 @@ const PAGE = 150;
 
 function matches(s: SessionSummary, q: string): boolean {
   if (!q) return true;
-  const hay = (s.title + ' ' + (s.cwd || '') + ' ' + s.id + ' ' + (s.agent.path || '') + ' ' + (s.agent.model || '')).toLowerCase();
+  const hay = (s.title + ' ' + (s.cwd || '') + ' ' + s.id + ' ' + (s.agent.product || '') + ' ' + (s.agent.path || '') + ' ' + (s.agent.model || '')).toLowerCase();
   return q.split(/\s+/).every((w) => hay.includes(w));
 }
 
 export function SessionList({ sessions, local, selectedId, onSelect }: Props) {
   const [query, setQuery] = useState('');
   const [state, setState] = useState<SessionStatus | 'all'>('all');
+  const [kind, setKind] = useState<string>('all');
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [limit, setLimit] = useState(PAGE);
 
-  const { tops, kids, counts } = useMemo(() => {
+  const { tops, kids, counts, kinds } = useMemo(() => {
     const byId = new Map(sessions.map((s) => [s.id, s]));
     const kids = new Map<string, SessionSummary[]>();
     const tops: SessionSummary[] = [];
@@ -37,12 +38,14 @@ export function SessionList({ sessions, local, selectedId, onSelect }: Props) {
     }
     const counts = new Map<SessionStatus, number>();
     for (const s of sessions) counts.set(s.state.status, (counts.get(s.state.status) || 0) + 1);
-    return { tops, kids, counts };
+    const kinds = new Map<string, number>();
+    for (const s of sessions) kinds.set(s.source.kind, (kinds.get(s.source.kind) || 0) + 1);
+    return { tops, kids, counts, kinds };
   }, [sessions]);
 
   const q = query.trim().toLowerCase();
   const filtering = Boolean(q) || state !== 'all';
-  const ok = (s: SessionSummary) => (state === 'all' || s.state.status === state) && matches(s, q);
+  const ok = (s: SessionSummary) => (state === 'all' || s.state.status === state) && (kind === 'all' || s.source.kind === kind) && matches(s, q);
 
   // A parent stays visible when one of its sub-agents matches; the selected session's parent opens itself.
   const parentOfSelected = selectedId ? sessions.find((s) => s.id === selectedId)?.links.find((l) => l.rel === 'parent')?.id : undefined;
@@ -69,6 +72,14 @@ export function SessionList({ sessions, local, selectedId, onSelect }: Props) {
           value={query}
           onChange={(e) => { setQuery(e.target.value); setLimit(PAGE); }}
         />
+        {kinds.size > 1 && (
+          <div className="flex flex-wrap gap-1">
+            <Chip active={kind === 'all'} onClick={() => setKind('all')} label={'全部来源 ' + sessions.length} />
+            {Array.from(kinds).map(([k, n]) => (
+              <Chip key={k} active={kind === k} onClick={() => { setKind(kind === k ? 'all' : k); setLimit(PAGE); }} label={(KIND_LABEL[k] || k) + ' ' + n} />
+            ))}
+          </div>
+        )}
         <div className="flex flex-wrap gap-1">
           <Chip active={state === 'all'} onClick={() => setState('all')} label={'全部 ' + sessions.length} />
           {STATUS_ORDER.filter((k) => counts.get(k)).map((k) => (
@@ -111,8 +122,10 @@ function Chip({ active, onClick, label, dot }: { active: boolean; onClick: () =>
 
 function Row({ s, depth, childCount, dim, selected, onSelect, expanded, onToggle }: { s: SessionSummary; depth: number; childCount: number; dim?: boolean | undefined; selected: boolean; onSelect: (id: string) => void; expanded?: boolean; onToggle?: (() => void) | undefined }) {
   const meta = [
+    KIND_LABEL[s.source.kind] || s.source.kind,
     s.agent.role === 'subagent' ? s.agent.path || s.agent.name : basename(s.cwd),
     s.agent.model,
+    s.stats.costUsd !== undefined ? usd(s.stats.costUsd) : '',
     s.stats.turns + ' 轮',
     s.stats.toolCalls ? '工具 ' + s.stats.toolCalls + (s.stats.toolErrors ? '（错 ' + s.stats.toolErrors + '）' : '') : '',
   ].filter(Boolean);

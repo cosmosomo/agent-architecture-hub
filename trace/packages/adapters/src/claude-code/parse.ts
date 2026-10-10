@@ -1,52 +1,61 @@
 /**
  * Claude Code session records (`~/.claude/projects/<encoded-path>/*.jsonl`) to the trace contract.
  *
- * Format: Each line is a JSON object with uuid, parentUuid, sessionId, timestamp, type, message,
- * toolUse, toolUseResult, isSidechain, entrypoint, cwd. The entrypoint field identifies the source:
- * - "cli" - Claude Code CLI
- * - "claude-vscode" - VS Code extension
- * - "claude-desktop" - Desktop app
+ * Record shapes verified against a real ~/.claude/projects (field names, not content):
+ * - user/assistant entries carry `message.content`: a string, or a list of typed blocks
+ *   ({type:'text'}, {type:'thinking', thinking}, {type:'tool_use', id, name, input}).
+ *   Tool results come back inside USER entries as {type:'tool_result', tool_use_id, content,
+ *   is_error} blocks — there is no top-level tool_result record.
+ * - meta records around them: custom-title (customTitle), ai-title (aiTitle), agent-name
+ *   (agentName), cost-state (totalCostUSD, totalLinesAdded/Removed, modelUsage), permission-mode,
+ *   attachment (queued_command carries a message the user typed while the agent was busy).
+ * - forks copy earlier records in, so a file can hold several sessionIds; the file is still
+ *   one session timeline. isSidechain entries are a different thread in the same file and are
+ *   skipped (counted, not silent).
  *
- * Filters: isSidechain=true and isMeta=true messages are excluded.
- * System message types (progress, queue-operation, file-history-snapshot, system) are metadata only.
+ * Unknown record kinds are counted into `notes`, never dropped silently.
+ * The turn/model/tool lifecycle lives in ../turns.ts; this file only maps records.
  */
 import {
   CONTRACT_VERSION,
   sessionId,
-  type Effect,
-  type EventStep,
   type Iso,
-  type MessageStep,
   type ModelStep,
   type Session,
-  type SessionLink,
-  type Step,
   type ToolFamily,
-  type ToolStep,
-  type Turn,
-  type TurnSettings,
   type Usage,
 } from '@hub-trace/contract';
 import type { FinishOptions, LineParser, SourceFile } from '../types.ts';
-import { LIMITS, clean, isoFromEpoch, msBetween, oneLine, partsText } from '../text.ts';
+import { clean, oneLine } from '../text.ts';
+import { basename, titleFallback, TurnBuilder } from '../turns.ts';
+import { detectState } from '../state.ts';
 
 export const CLAUDE_KIND = 'claude-code';
-export const CLAUDE_ADAPTER_VERSION = '0.1.0';
+export const CLAUDE_ADAPTER_VERSION = '0.2.3';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type J = any;
 
-const SYSTEM_MESSAGE_TYPES = new Set(['summary', 'progress', 'queue-operation', 'file-history-snapshot', 'system', 'ai-title', 'custom-title']);
-const AGENT_TOOLS = new Set(['spawn_agent', 'send_message', 'Agent']);
-const SHELL_TOOLS = new Set(['execute_bash', 'PowerShell', 'Bash']);
+const AGENT_TOOLS = new Set(['Task', 'Agent', 'spawn_agent', 'send_message']);
+const SHELL_TOOLS = new Set(['Bash', 'execute_bash', 'PowerShell']);
+const PATCH_TOOLS = new Set(['str_replace', 'str_replace_editor', 'fs_write', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
+const WEB_TOOLS = new Set(['WebFetch', 'WebSearch', 'web_search', 'WebSearchTool']);
+const PLAN_TOOLS = new Set(['TodoWrite', 'ExitPlanMode', 'EnterWorktree', 'ExitWorktree']);
+/** Client-injected wrappers, not words the user typed: shown as context, not as turn input. */
+const CONTEXT_PREFIX = /^\s*<(command-name|command-message|command-args|local-command|task-notification|system-reminder|bash-input|bash-stdout)/;
+/** Records that carry metadata only; counted so the parser stays honest without flooding notes. */
+const KNOWN_META = new Set(['system', 'progress', 'queue-operation', 'file-history-snapshot', 'file-history-delta', 'last-prompt', 'atis-latch', 'mode', 'permission-mode', 'relocated', 'bridge-session', 'isolation-latch', 'summary']);
+/** Attachments the client injects around a turn (environment, snapshots, listings); context, not conversation.
+ *  The full list comes from a census of a real ~/.claude/projects (2026-10). */
+const KNOWN_ATTACHMENTS = new Set(['session_context', 'date', 'date_change', 'environment', 'prompt_snapshot', 'instructions', 'model', 'skill_listing', 'agent_listing_delta', 'total_tokens_reminder', 'remote_session_change', 'mcp_instructions_delta', 'auto_mode', 'deferred_tools_record', 'deferred_tools_delta', 'silent_turn_reminder', 'output_style', 'edited_text_file', 'hook_success', 'hook_additional_context', 'file', 'directory', 'compact_file_reference', 'task_reminder', 'task_status', 'thinking_drop', 'credential_org', 'read_truncation_notice', 'command_permissions', 'plan_mode', 'plan_mode_exit', 'budget_usd', 'nested_memory', 'thinking_stripped', 'output_style_instructions', 'diagnostics']);
 
 export function toolFamily(name: string): ToolFamily {
-  if (name === 'str_replace' || name === 'fs_write') return 'patch';
-  if (name === 'EnterWorktree' || name === 'ExitWorktree') return 'plan';
+  if (PATCH_TOOLS.has(name)) return 'patch';
+  if (PLAN_TOOLS.has(name)) return 'plan';
   if (AGENT_TOOLS.has(name)) return 'agent';
   if (SHELL_TOOLS.has(name)) return 'shell';
   if (name.startsWith('mcp__')) return 'mcp';
-  if (name === 'WebFetch' || name === 'web_search') return 'web';
+  if (WEB_TOOLS.has(name)) return 'web';
   return 'other';
 }
 
@@ -58,244 +67,184 @@ function usageOf(u: J): Usage | undefined {
   put('cachedInput', u.cache_read_input_tokens || u.cacheReadInputTokens || u.cached_input_tokens);
   put('cacheWrite', u.cache_creation_input_tokens || u.cacheCreationInputTokens);
   put('output', u.output_tokens || u.outputTokens);
-  put('reasoning', u.reasoning_tokens || u.reasoningTokens);
-  put('total', u.total_tokens);
   return Object.keys(out).length ? out : undefined;
 }
 
-function durationMs(d: J): number | undefined {
-  return typeof d === 'number' ? d : undefined;
+/** Text of a tool_result block's content: a string, or a list of text/image parts. */
+function resultText(content: J, fallback: J): string {
+  let out = '';
+  if (typeof content === 'string') out = content;
+  else if (Array.isArray(content)) {
+    const parts: string[] = [];
+    for (const c of content) {
+      if (typeof c === 'string') { parts.push(c); continue; }
+      if (c && typeof c === 'object' && typeof c.text === 'string') parts.push(c.text);
+      else if (c && typeof c === 'object' && /image/i.test(String(c.type))) parts.push('[图片]');
+    }
+    out = parts.join('\n');
+  }
+  if (!out && fallback != null) {
+    if (typeof fallback === 'string') out = fallback;
+    else if (typeof fallback.stdout === 'string') out = fallback.stdout + (fallback.stderr ? '\n' + fallback.stderr : '');
+    else if (typeof fallback === 'object') out = JSON.stringify(fallback);
+  }
+  return out;
 }
 
-function basename(p: string): string {
-  const parts = p.split(/[\\/]/);
-  return parts[parts.length - 1] || p;
+function queuedPrompt(q: J): string {
+  const p = q?.queuedCommand?.prompt ?? q?.prompt;
+  if (typeof p === 'string') return p;
+  if (Array.isArray(p)) return p.map((x: J) => (typeof x?.text === 'string' ? x.text : typeof x === 'string' ? x : '')).filter(Boolean).join('\n');
+  return '';
 }
 
 export function createClaudeParser(file: SourceFile): LineParser {
   let records = 0;
   let skipped = 0;
-  let firstAt: Iso | undefined;
-  let lastAt: Iso | undefined;
-  const unknown = new Map<string, number>();
 
-  const turns: Turn[] = [];
-  let cur: Turn | null = null;
-  let model: ModelStep | null = null;
-  const openTools = new Map<string, ToolStep>();
-  let lastTool: ToolStep | null = null;
-  let lastInputAt: Iso | undefined;
-  let settings: TurnSettings = {};
-  let sessionUsage: Usage | undefined;
-  let entrypoint: string | undefined;
-  let cwd: string | undefined;
+  const B = new TurnBuilder({ userStartsTurn: true, turnForInferred: false });
+  let firstRealUser = '';   // a queued message is real, but not what the session was about
+
   let sessionIdValue: string | undefined;
-  const children = new Map<string, string>();
-  const usedIds = new Set<string>();
-  let seq = 0;
+  let entrypoint: string | undefined;
+  let cliVersion: string | undefined;
+  let cwd: string | undefined;
+  let customTitle = '';
+  let aiTitle = '';
+  let agentName = '';
+  let cost: { usd?: number; linesAdded?: number; linesRemoved?: number } = {};
+  let sessionUsage: Usage | undefined;
+  let usageSum: Usage | undefined; // added up per model call until cost-state replaces it
+  const agentToolCalls = new Set<string>();
 
-  const note = (k: string) => unknown.set(k, (unknown.get(k) || 0) + 1);
-  const uid = (base: string | undefined, prefix: string): string => {
-    let id = base && typeof base === 'string' ? base : prefix + ++seq;
-    if (usedIds.has(id)) id = id + '#' + ++seq;
-    usedIds.add(id);
-    return id;
-  };
-  const stamp = (at: Iso | undefined) => {
-    if (!at) return;
-    if (!firstAt || at < firstAt) firstAt = at;
-    if (!lastAt || at > lastAt) lastAt = at;
-  };
+  function onRecord(o: J) {
+    B.stamp(typeof o.timestamp === 'string' ? o.timestamp : undefined);
+    if (!sessionIdValue && typeof o.sessionId === 'string') sessionIdValue = o.sessionId;
+    if (!entrypoint && typeof o.entrypoint === 'string') entrypoint = o.entrypoint;
+    if (!cliVersion && typeof o.version === 'string') cliVersion = o.version;
+    if (!cwd && typeof o.cwd === 'string') cwd = o.cwd;
 
-  function openTurn(id: string | undefined, at: Iso | undefined): Turn {
-    const t: Turn = {
-      id: id || 't' + (turns.length + 1),
-      index: turns.length + 1,
-      status: 'running',
-      startedAt: at,
-      steps: [],
-      settings: { ...settings },
-    };
-    turns.push(t);
-    cur = t;
-    lastInputAt = at;
-    return t;
-  }
-
-  function turnFor(at: Iso | undefined): Turn {
-    if (cur) return cur;
-    return openTurn(undefined, at);
-  }
-
-  function push(t: Turn, s: Step) {
-    t.steps.push(s);
-    if (s.at && (!t.startedAt || s.at < t.startedAt)) t.startedAt = s.at;
-  }
-
-  function ensureModel(at: Iso | undefined): ModelStep {
-    if (model) return model;
-    const t = turnFor(at);
-    model = { kind: 'model', id: uid(undefined, 'm'), at: lastInputAt || at, calls: [] };
-    if (t.settings?.model) model.model = t.settings.model;
-    push(t, model);
-    return model;
-  }
-
-  function closeModel(at: Iso | undefined, usage?: Usage) {
-    if (!model) return;
-    if (at) model.endAt = at;
-    if (usage && !model.usage) model.usage = usage;
-    model = null;
-  }
-
-  function closeTool(tool: ToolStep, at: Iso | undefined) {
-    if (at) tool.endAt = at;
-    if (tool.durationMs === undefined) tool.durationMs = msBetween(tool.at, at);
-    if (tool.callId) openTools.delete(tool.callId);
-    if (lastTool === tool) {
-      const rest = Array.from(openTools.values());
-      lastTool = rest.length ? rest[rest.length - 1] : null;
-    }
-  }
-
-  function settle(tool: ToolStep) {
-    if (tool.effects.some((e) => e.status === 'error')) tool.status = 'error';
-    else tool.status = 'ok';
-  }
-
-  function closeTurn(t: Turn, at: Iso | undefined, status: Turn['status'], error?: string) {
-    if (model && t.steps.includes(model)) closeModel(at);
-    for (const tool of Array.from(openTools.values())) {
-      if (!t.steps.includes(tool)) continue;
-      if (status === 'completed') { settle(tool); tool.output = tool.output || '（无输出记录）'; }
-      else { tool.status = 'error'; tool.output = tool.output || '（未完成）'; }
-      closeTool(tool, at);
-    }
-    t.status = status;
-    if (error) t.error = error;
-    if (at) t.endedAt = at;
-    if (t.durationMs === undefined) t.durationMs = msBetween(t.startedAt, t.endedAt);
-    if (cur === t) cur = null;
-  }
-
-  function addMessage(role: MessageStep['role'], text: string, at: Iso | undefined, id?: string) {
-    if (role === 'user' && cur && cur.steps.some((s) => s.kind === 'model')) {
-      closeTurn(cur, lastAt, 'completed');
-    }
-    const t = turnFor(at);
-    const m: MessageStep = { kind: 'message', id: uid(id, 'msg'), at, role, text: clean(text) };
-    push(t, m);
-    if (role === 'user' && !t.input) t.input = oneLine(text, 400);
-    lastInputAt = at;
-  }
-
-  function addToolCall(callId: string | undefined, name: string, input: string | undefined, at: Iso | undefined) {
-    const m = ensureModel(at);
-    const tool: ToolStep = {
-      kind: 'tool',
-      id: uid(callId ? 'tool:' + callId : undefined, 'tool'),
-      at,
-      name,
-      family: toolFamily(name),
-      status: 'pending',
-      effects: [],
-    };
-    if (callId) tool.callId = callId;
-    if (input !== undefined) tool.input = clean(input, LIMITS.io);
-    m.calls.push(tool.id);
-    push(turnFor(at), tool);
-    if (callId) openTools.set(callId, tool);
-    lastTool = tool;
-  }
-
-  function addToolOutput(callId: string | undefined, output: string, at: Iso | undefined, isError: boolean) {
-    closeModel(undefined);
-    let tool = callId ? openTools.get(callId) : lastTool;
-    if (!tool) {
-      tool = { kind: 'tool', id: uid(callId ? 'tool:' + callId + ':out' : undefined, 'tool'), at, name: 'unknown', family: 'other', status: 'pending', effects: [] };
-      if (callId) tool.callId = callId;
-      push(turnFor(at), tool);
-    }
-    tool.output = clean(output, LIMITS.io);
-    tool.status = isError ? 'error' : 'ok';
-    closeTool(tool, at);
-    lastInputAt = at;
-  }
-
-  function onRecord(o: J, idx: number) {
-    stamp(o.timestamp);
-
-    // Track session metadata
-    if (!sessionIdValue && o.sessionId) sessionIdValue = o.sessionId;
-    if (!entrypoint && o.entrypoint) entrypoint = o.entrypoint;
-    if (!cwd && o.cwd) cwd = o.cwd;
-
-    // Filter out sidechain and meta messages
+    // a different thread inside the same file (sub-agent sidechain): another timeline, not ours
     if (o.isSidechain === true || o.isMeta === true) return;
 
-    // Filter out system message types
-    if (SYSTEM_MESSAGE_TYPES.has(o.type)) return;
-
-    const at: Iso | undefined = o.timestamp;
+    const at: Iso | undefined = typeof o.timestamp === 'string' ? o.timestamp : undefined;
     const type: string = o.type || 'unknown';
 
     try {
       switch (type) {
         case 'user': {
-          const msg = o.message;
-          if (msg && msg.content) {
-            const text = partsText(msg.content);
-            if (text.trim()) addMessage('user', text, at, o.uuid);
+          const content = o.message?.content;
+          if (Array.isArray(content)) {
+            const texts: string[] = [];
+            for (const b of content) {
+              if (!b || typeof b !== 'object') continue;
+              if (b.type === 'text' && typeof b.text === 'string') texts.push(b.text);
+              else if (b.type === 'tool_result') {
+                const isError = b.is_error === true || b.isError === true || o.toolUseResult?.is_error === true || o.toolUseResult?.type === 'error';
+                B.addToolOutput({ callId: typeof b.tool_use_id === 'string' ? b.tool_use_id : undefined, output: resultText(b.content, o.toolUseResult), at, isError });
+              } else if (b.type === 'image') texts.push('[图片]');
+            }
+            const text = texts.join('\n').trim();
+            if (text) {
+              const role = CONTEXT_PREFIX.test(text) ? 'context' : 'user';
+              B.addMessage(role, text, at, o.uuid);
+              if (role === 'user' && !text.startsWith('[排队] ') && !firstRealUser) firstRealUser = text;
+            }
+          } else if (typeof content === 'string' && content.trim()) {
+            B.addMessage(CONTEXT_PREFIX.test(content) ? 'context' : 'user', content, at, o.uuid);
+            if (!CONTEXT_PREFIX.test(content) && !firstRealUser) firstRealUser = content;
           }
-          break;
+          return;
         }
 
         case 'assistant': {
           const msg = o.message;
-          if (msg && msg.content) {
-            const content = msg.content;
-            if (Array.isArray(content)) {
-              for (const part of content) {
-                if (part.type === 'text' && part.text) {
-                  const m = ensureModel(at);
-                  if (!m.text) m.text = '';
-                  m.text += clean(part.text);
-                } else if (part.type === 'tool_use' && part.name) {
-                  addToolCall(part.id, part.name, JSON.stringify(part.input || {}), at);
-                }
+          if (!msg || typeof msg !== 'object') return;
+          if (typeof msg.model === 'string') {
+            B.settings = { ...B.settings, model: msg.model };
+            if (B.model) B.model.model = msg.model;
+          }
+          const content = msg.content;
+          if (Array.isArray(content)) {
+            for (const b of content) {
+              if (!b || typeof b !== 'object') continue;
+              if (b.type === 'text' && b.text) {
+                const m = B.ensureModel(at);
+                m.text = m.text ? m.text + '\n\n' + clean(b.text) : clean(b.text);
+              } else if (b.type === 'thinking' && typeof b.thinking === 'string' && b.thinking.trim()) {
+                const m = B.ensureModel(at);
+                m.reasoning = m.reasoning ? m.reasoning + '\n\n' + clean(b.thinking) : clean(b.thinking);
+              } else if (b.type === 'tool_use' && b.name) {
+                const tool = B.addToolCall({ callId: typeof b.id === 'string' ? b.id : undefined, name: b.name, family: toolFamily(b.name), input: JSON.stringify(b.input || {}), at });
+                if (tool.family === 'agent') agentToolCalls.add(tool.id);
               }
-            } else if (typeof content === 'string') {
-              const m = ensureModel(at);
-              m.text = clean(content);
             }
-
-            if (msg.model) {
-              settings.model = msg.model;
-              if (model) model.model = msg.model;
-            }
-            if (msg.usage) {
-              const usage = usageOf(msg.usage);
-              if (usage) closeModel(at, usage);
-            }
+          } else if (typeof content === 'string' && content.trim()) {
+            const m = B.ensureModel(at);
+            m.text = clean(content);
           }
-          break;
+          const usage = usageOf(msg.usage);
+          if (usage) {
+            B.closeModel(at, usage);
+            usageSum = addUsage(usageSum, usage);
+          }
+          return;
         }
 
-        case 'tool_result': {
-          if (o.toolUseResult) {
-            const result = o.toolUseResult;
-            const text = partsText(result.content || result);
-            const isError = result.isError === true || result.type === 'error';
-            addToolOutput(result.tool_use_id, text, at, isError);
-          }
-          break;
+        case 'attachment': {
+          const a = o.attachment;
+          if (a?.type === 'queued_command') {
+            const text = queuedPrompt(a);
+            if (text.trim()) B.addMessage('user', '[排队] ' + text, at, o.uuid);
+          } else if (!KNOWN_ATTACHMENTS.has(String(a?.type))) B.note('attachment:' + String(a?.type));
+          return;
         }
+
+        case 'custom-title':
+          if (!customTitle && typeof o.customTitle === 'string') customTitle = o.customTitle;
+          return;
+        case 'ai-title':
+          if (!aiTitle && typeof o.aiTitle === 'string') aiTitle = o.aiTitle;
+          return;
+        case 'agent-name':
+          if (!agentName && typeof o.agentName === 'string') agentName = o.agentName;
+          return;
+
+        case 'cost-state': {
+          const usd = Number(o.totalCostUSD);
+          if (Number.isFinite(usd) && usd > 0) cost.usd = usd;
+          const la = Number(o.totalLinesAdded), lr = Number(o.totalLinesRemoved);
+          if (Number.isFinite(la)) cost.linesAdded = la;
+          if (Number.isFinite(lr)) cost.linesRemoved = lr;
+          const mu = o.modelUsage;
+          if (mu && typeof mu === 'object') {
+            const sum: Usage = {};
+            for (const k of Object.keys(mu)) {
+              const v = mu[k] || {};
+              sum.input = (sum.input || 0) + (Number(v.inputTokens) || 0);
+              sum.output = (sum.output || 0) + (Number(v.outputTokens) || 0);
+              sum.cachedInput = (sum.cachedInput || 0) + (Number(v.cacheReadTokens) || Number(v.cacheReadInputTokens) || 0);
+              sum.cacheWrite = (sum.cacheWrite || 0) + (Number(v.cacheCreationInputTokens) || 0);
+            }
+            if (sum.input || sum.output) sessionUsage = sum;
+          }
+          return;
+        }
+
+        case 'permission-mode':
+          if (typeof o.permissionMode === 'string') B.settings = { ...B.settings, approval: o.permissionMode };
+          return;
+
+        case 'summary':
+          // the file starts with a summary of an earlier context: the same continuation a compaction is
+          B.addEvent('compaction', at, '会话带着上一次的摘要继续');
+          return;
 
         default:
-          note('type:' + type);
+          if (!KNOWN_META.has(type)) B.note('type:' + type);
       }
-    } catch (e) {
-      note('parse-error:' + type);
+    } catch {
+      B.note('parse-error:' + type);
     }
   }
 
@@ -310,56 +259,27 @@ export function createClaudeParser(file: SourceFile): LineParser {
         records++;
         return;
       }
-      onRecord(o, records);
+      onRecord(o);
       records++;
     },
 
     finish(opts: FinishOptions): Session {
-      if (model) closeModel(lastAt);
-      for (const tool of Array.from(openTools.values())) {
-        const t = turns.find((x) => x.steps.includes(tool));
-        if (t && t.status === 'running') continue;
-        settle(tool);
-        closeTool(tool, tool.at);
-      }
+      B.finishPending();
 
       const sourceId: string = sessionIdValue || (file.path ? basename(file.path).replace(/\.jsonl$/i, '') : 'unknown');
-      const links: SessionLink[] = [];
-      for (const [id, label] of children) links.push({ rel: 'child', id, label: oneLine(label, 80) });
+      const f = B.fold();
+      if (!sessionUsage && usageSum) sessionUsage = usageSum;
 
-      let firstUser = '';
-      let messages = 0;
-      let modelCalls = 0;
-      let toolCalls = 0;
-      let toolErrors = 0;
-      let durationTotal = 0;
-      for (const t of turns) {
-        if (t.durationMs) durationTotal += t.durationMs;
-        for (const s of t.steps) {
-          if (s.kind === 'message') {
-            messages++;
-            if (s.role === 'user' && !firstUser) firstUser = s.text;
-          } else if (s.kind === 'model') modelCalls++;
-          else if (s.kind === 'tool') { toolCalls++; if (s.status === 'error') toolErrors++; }
-        }
-        if (!t.output) {
-          const finals = t.steps.filter((s): s is ModelStep => s.kind === 'model' && Boolean(s.text));
-          const f = finals[finals.length - 1];
-          if (f?.text && t.status !== 'running') t.output = oneLine(f.text, 400);
-        }
-      }
+      const startedAt = B.firstAt;
+      const title = titleFallback([customTitle, aiTitle, agentName, firstRealUser || f.firstUser], cwd, startedAt, 'Claude Code');
 
-      const startedAt = firstAt;
-      let title = oneLine(firstUser, 80);
-      if (!title) title = (cwd ? basename(cwd) : 'Claude Code') + (startedAt ? ' · ' + startedAt.slice(0, 16).replace('T', ' ') : '');
-
-      // Normalize entrypoint to product name
       let originator: string | undefined;
       if (entrypoint === 'cli') originator = 'Claude CLI';
       else if (entrypoint === 'claude-vscode') originator = 'Claude VS Code';
       else if (entrypoint === 'claude-desktop') originator = 'Claude Desktop';
+      else if (entrypoint) originator = oneLine(entrypoint, 40);
 
-      const lastModel = [...turns].reverse().find((t) => t.settings?.model)?.settings?.model;
+      const lastModel = [...B.turns].reverse().find((t) => t.settings?.model)?.settings?.model || B.settings.model;
       const session: Session = {
         id: sessionId(CLAUDE_KIND, sourceId),
         sourceId,
@@ -367,6 +287,7 @@ export function createClaudeParser(file: SourceFile): LineParser {
           kind: CLAUDE_KIND,
           format: 'claude-code/jsonl',
           adapter: CLAUDE_KIND + '@' + CLAUDE_ADAPTER_VERSION,
+          ...(cliVersion ? { version: cliVersion } : {}),
           ...(file.path ? { path: file.path } : {}),
           ...(file.size !== undefined ? { size: file.size } : {}),
           ...(file.mtimeMs !== undefined ? { mtimeMs: file.mtimeMs } : {}),
@@ -374,53 +295,47 @@ export function createClaudeParser(file: SourceFile): LineParser {
         title,
         agent: {
           product: 'Claude Code',
-          name: 'Claude Code',
+          name: agentName || 'Claude Code',
           role: 'main',
           ...(originator ? { originator } : {}),
           ...(lastModel ? { model: lastModel } : {}),
         },
         ...(cwd ? { cwd } : {}),
         ...(startedAt ? { startedAt } : {}),
-        ...(lastAt ? { updatedAt: lastAt } : {}),
-        links,
-        turns,
+        ...(B.lastAt ? { updatedAt: B.lastAt } : {}),
+        links: [],
+        turns: B.turns,
         ...(sessionUsage ? { usage: sessionUsage } : {}),
         state: { status: 'empty' },
         stats: {
-          turns: turns.length,
-          modelCalls,
-          toolCalls,
-          toolErrors,
-          messages,
-          compactions: 0,
-          subagents: children.size,
-          ...(durationTotal ? { durationMs: durationTotal } : {}),
+          turns: B.turns.length,
+          modelCalls: f.modelCalls,
+          toolCalls: f.toolCalls,
+          toolErrors: f.toolErrors,
+          messages: f.messages,
+          compactions: f.compactions,
+          subagents: agentToolCalls.size,
+          ...(f.durationTotal ? { durationMs: f.durationTotal } : {}),
+          ...(cost.usd !== undefined ? { costUsd: cost.usd } : {}),
+          ...(cost.linesAdded !== undefined ? { linesAdded: cost.linesAdded } : {}),
+          ...(cost.linesRemoved !== undefined ? { linesRemoved: cost.linesRemoved } : {}),
           records,
           skipped,
         },
-        notes: Array.from(unknown.entries()).sort((a, b) => b[1] - a[1]).map(([k, n]) => '未识别 ' + k + ' × ' + n),
+        notes: B.notes(),
       };
-
-      // Simple state detection
-      if (turns.length === 0) {
-        session.state = { status: 'empty' };
-      } else {
-        const last = turns[turns.length - 1];
-        if (last.status === 'running') {
-          const stale = opts.now - (file.mtimeMs || Date.now());
-          session.state = { status: stale > 300000 ? 'stale' : 'working', since: last.startedAt };
-        } else if (last.status === 'completed') {
-          session.state = { status: 'idle', since: last.endedAt };
-        } else if (last.status === 'aborted') {
-          session.state = { status: 'aborted', since: last.endedAt };
-        } else {
-          session.state = { status: 'failed', since: last.endedAt, detail: last.error };
-        }
-      }
-
+      session.state = detectState(session, { now: opts.now, mtimeMs: file.mtimeMs, staleMs: opts.staleMs, openTools: Array.from(B.openTools.values()) });
       return session;
     },
   };
+}
+
+function addUsage(a: Usage | undefined, b: Usage): Usage {
+  const out: Usage = { ...a };
+  for (const k of ['input', 'cachedInput', 'cacheWrite', 'output', 'reasoning'] as const) {
+    if (typeof b[k] === 'number') out[k] = (out[k] || 0) + b[k];
+  }
+  return out;
 }
 
 export { CONTRACT_VERSION };
