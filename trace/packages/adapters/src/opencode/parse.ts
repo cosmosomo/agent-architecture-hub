@@ -69,6 +69,7 @@ function joinJson(a: unknown, b: unknown): string {
 export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: FinishOptions): Session {
   const B = new TurnBuilder({ userStartsTurn: true, turnForInferred: false });
   const records = { markers: 0, messages: 0, parts: 0 };
+  let skipped = 0;
 
   let marker: J = {};
   try {
@@ -76,6 +77,7 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
     records.markers = 1;
   } catch {
     // A bundle without a readable marker still parses; ids come from file names.
+    skipped++;
   }
   const sid: string = marker.id || file.path!.split(/[\\/]/).pop()!.replace(/\.json$/i, '');
   const startedAt = iso(marker.time?.created);
@@ -105,7 +107,7 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
 
   for (const mp of messageFiles) {
     const m = readJsonSafe(mp);
-    if (!m) continue;
+    if (!m) { skipped++; continue; }
     records.messages++;
     const msgId = String(m.id || mp.split(/[\\/]/).pop()!.replace(/\.json$/i, ''));
     const at = iso(m.time?.created);
@@ -115,10 +117,10 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
       const texts: string[] = [];
       for (const pp of parts) {
         const p = readJsonSafe(pp);
-        if (!p) continue;
+        if (!p) { skipped++; continue; }
         records.parts++;
         if (p.type === 'text' && typeof p.text === 'string') texts.push(p.text);
-        else if (p.type && p.type !== 'step-start' && p.type !== 'step-finish') B.note('part:' + p.type);
+        else if (p.type && p.type !== 'step-start' && p.type !== 'step-finish') { B.note('part:' + p.type); skipped++; }
       }
       const text = texts.map((t) => clean(t)).filter(Boolean).join('\n').trim();
       if (text) {
@@ -127,7 +129,7 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
       }
       continue;
     }
-    if (m.role !== 'assistant') continue;
+    if (m.role !== 'assistant') { skipped++; continue; }
 
     if (typeof m.modelID === 'string') {
       lastModel = m.modelID;
@@ -140,7 +142,7 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
     let usageFromStep = false;
     for (const pp of parts) {
       const p = readJsonSafe(pp);
-      if (!p) continue;
+      if (!p) { skipped++; continue; }
       records.parts++;
       const pat = iso(p.time?.start) || at;
       if (p.type === 'text' && typeof p.text === 'string' && p.text.trim()) {
@@ -166,8 +168,12 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
       } else if (p.type === 'step-finish') {
         const u = usageOf(p.tokens);
         if (u) { B.closeModel(iso(p.time?.end) || iso(m.time?.completed), u); usageSum = addUsage(usageSum, u); usageFromStep = true; }
-      } else if (p.type && p.type !== 'text' && p.type !== 'reasoning' && p.type !== 'tool') {
+      } else if (p.type) {
+        // text/reasoning/tool/step-start/step-finish are handled above; anything else is counted.
         B.note('part:' + p.type);
+        skipped++;
+      } else {
+        skipped++;
       }
     }
     // Some writes roll tokens onto the message without any step-finish part.
@@ -185,8 +191,9 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
 
   B.finishPending();
   const f = B.fold();
-  const title = typeof marker.title === 'string' && marker.title.trim()
-    ? marker.title
+  const markerTitle = typeof marker.title === 'string' ? oneLine(marker.title, 80) : '';
+  const title = markerTitle
+    ? markerTitle
     : titleFallback([firstUser || f.firstUser], cwd, startedAt, 'OpenCode');
 
   const session: Session = {
@@ -228,7 +235,7 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
       ...(Number.isFinite(+marker.summary?.additions) ? { linesAdded: +marker.summary.additions } : {}),
       ...(Number.isFinite(+marker.summary?.deletions) ? { linesRemoved: +marker.summary.deletions } : {}),
       records: records.markers + records.messages + records.parts,
-      skipped: 0,
+      skipped,
     },
     notes: B.notes(),
   };

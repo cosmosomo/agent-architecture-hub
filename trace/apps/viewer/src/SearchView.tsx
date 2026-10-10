@@ -152,7 +152,12 @@ export function SearchView({ query, onChange, onOpen, titles, onClose }: Props) 
             </div>
           </>
         )}
-        {error && <div className="text-agentprism-error text-xs">{error}</div>}
+        {error && (
+          <div className="text-agentprism-muted-foreground space-y-1 text-xs">
+            <p className="text-agentprism-error">{error}</p>
+            <p>在 <code className="bg-agentprism-secondary rounded px-1">trace</code> 目录运行 <code className="bg-agentprism-secondary rounded px-1">npm run serve</code>，再打开 http://127.0.0.1:8790/trace/ 。</p>
+          </div>
+        )}
       </div>
 
       <div className={cn('min-h-0 flex-1 overflow-y-auto', busy && 'opacity-60')}>

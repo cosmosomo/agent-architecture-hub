@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { CONTRACT_VERSION, validateSessionDoc, type ModelStep, type Session, type ToolStep } from '@hub-trace/contract';
 import { adapterForFile, opencodeAdapter, opencodeBundleMembers } from '../src/index.ts';
 import { parseOpencodeBundle } from '../src/opencode/parse.ts';
-import { MARKER, SID, T0, allFiles, finishedBundle, runningBundle, untitledBundle } from './fixtures/opencode.ts';
+import { A1, MARKER, SID, T0, U1, allFiles, finishedBundle, partPath, runningBundle, untitledBundle } from './fixtures/opencode.ts';
 
 const parse = (b = finishedBundle(), mtimeMs = T0 + 90000, now = T0 + 100000) =>
   parseOpencodeBundle({ path: MARKER, mtimeMs }, b, { now });
@@ -83,6 +83,37 @@ test('a tool still running keeps the last turn open and the session working/stal
 
 test('untitled marker falls back to the first user message', () => {
   assert.equal(parse(untitledBundle()).title, '先看下登录测试为什么挂');
+});
+
+test('titles are one-lined and secrets in a title, message or tool input are masked', () => {
+  const SECRET = 'ghp_01234567890123456789AB';
+  const b = finishedBundle();
+  const files = new Map(b.files.map((p) => [p, b.read(p)]));
+  const marker = JSON.parse(files.get(MARKER)!);
+  marker.title = '排障\nkey ' + SECRET;
+  files.set(MARKER, JSON.stringify(marker));
+  const userText = files.get(partPath(U1, 'prt_u1text'))!;
+  files.set(partPath(U1, 'prt_u1text'), userText.replace('先看下登录测试为什么挂', '日志里有 ' + SECRET));
+
+  const s = parseOpencodeBundle({ path: MARKER, mtimeMs: T0 + 90000 }, {
+    files: Array.from(files.keys()).sort(),
+    read: (p) => files.get(p)!,
+  }, { now: T0 + 100000 });
+  assert.ok(!/\n/.test(s.title), 'title is one line: ' + s.title);
+  assert.ok(!JSON.stringify(s).includes(SECRET), 'the raw token appears nowhere in the parsed session');
+  assert.match(s.title, /已打码/);
+});
+
+test('unknown part types and non-user/assistant messages are counted as skipped, not dropped', () => {
+  const b = finishedBundle();
+  const files = new Map(b.files.map((p) => [p, b.read(p)]));
+  files.set(partPath(A1, 'prt_a1weird'), JSON.stringify({ id: 'prt_a1weird', messageID: A1, type: 'file' }));
+  const s = parseOpencodeBundle({ path: MARKER, mtimeMs: T0 + 90000 }, {
+    files: Array.from(files.keys()).sort(),
+    read: (p) => files.get(p)!,
+  }, { now: T0 + 100000 });
+  assert.ok(s.stats.skipped >= 1, 'unknown part counted: ' + s.stats.skipped);
+  assert.ok(s.notes.some((n) => n.includes('part:file')));
 });
 
 test('a lone marker file (dropped) parses metadata without steps', () => {

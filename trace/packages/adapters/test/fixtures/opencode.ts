@@ -12,10 +12,10 @@ export const partPath = (m: string, p: string) => base + '/part/' + m + '/' + p 
 
 type Bundle = { files: string[]; read: (p: string) => string };
 
-const U1 = 'msg_u10000000000000000000001';
-const A1 = 'msg_a10000000000000000000002';
-const U2 = 'msg_u20000000000000000000003';
-const A2 = 'msg_a20000000000000000000004';
+export const U1 = 'msg_u10000000000000000000001';
+export const A1 = 'msg_a10000000000000000000002';
+export const U2 = 'msg_u20000000000000000000003';
+export const A2 = 'msg_a20000000000000000000004';
 
 /** A normal finished two-turn session: a bash tool in turn 1, a failing read + final text in turn 2. */
 export function finishedBundle(): Bundle {

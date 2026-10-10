@@ -1,0 +1,30 @@
+name: trace CI
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "trace/**"
+      - ".github/workflows/trace-ci.yml"
+  pull_request:
+    paths:
+      - "trace/**"
+      - ".github/workflows/trace-ci.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: trace
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: trace/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
