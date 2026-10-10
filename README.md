@@ -1,3 +1,32 @@
+# Agent Architecture Hub
+
+> 本仓库是 **[TheJacksonCode/Agent-Architecture](https://github.com/TheJacksonCode/Agent-Architecture)**（Agent Architecture Designer v41，MIT License）的衍生作品：在原作者的页面与技术栈之上叠加了"观察模式"——一个多智能体协作系统的可视化观察台。星空画布、`.nd` 卡片体系、平移缩放、深浅主题与设计器本体全部来自原作，感谢原作者 [TheJacksonCode](https://github.com/TheJacksonCode)。
+>
+> 衍生部分同样以 MIT License 发布，原作者版权声明保留（见 [LICENSE](LICENSE)）。
+
+## 这个衍生版加了什么
+
+- **观察模式**：原页面顶栏新增"观察｜设计"切换，六种视图（完整协作、组织架构、任务路由、业务流程、粗粒度决策链、细粒度 Trace），键盘 1~6 直接切换，原设计器不受影响。
+- **文档即数据源**：`hub/cases/` 下的 Markdown（hub-graph 方言）经 `hub/js/core/from-docs.js` 适配器编译成统一模型，页面只认统一模型。
+- **hub-graph 通用格式 v1.0**：格式规范见 `hub/docs/hub-graph-format.md`，任何来源实现一个适配器并 `HUB.model.addSource` 注册即可接入。
+- **Trace / 真实会话模块**：`hub/js/obs/trace.js`、`sessions.js`，可打开本机真实会话的运行图。
+- **双击启动**：`启动观察台.bat` = 起本地静态服务器（127.0.0.1:8899）并打开浏览器。注意 file:// 直接双击 html 会因 fetch 被禁而看不到文档源案例，必须走 http。
+
+## 运行
+
+```bash
+# 方式一：双击 启动观察台.bat
+# 方式二：
+python -m http.server 8899 --bind 127.0.0.1
+# 浏览器打开 http://127.0.0.1:8899/
+```
+
+测试：`node hub/tools/test_model.js`（62 个预设）与 `node hub/tools/test_scenes.js`。
+
+---
+
+以下是原项目的 README：
+
 # Agent Architecture Designer
 
 > 如果说 Claude Code 是引擎，那么 Agent Architecture Designer 就是仪表盘——先设计好团队，在花费哪怕一个 token 之前先看它如何运转，然后精确导出 Claude Code 真正运行它所需的一切。
