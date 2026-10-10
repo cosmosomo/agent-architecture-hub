@@ -366,6 +366,7 @@ HUB.cases['feature_sprint'] = {
 - 10-10 下午：⑤⑥ 改由 Trace 视图画（17.6），原来的卡片画法 scene-run.js 删除；左栏会话页点一条在中间打开本机真实会话。
 - 10-10 晚：浏览器实测抓到 renderCtrl 里未定义的 `m`（19:07 auto-group 提交引入）——组织视图一加载就 Uncaught ReferenceError，页面空白，即“打开没东西”的元凶。修复后六个视图、文档源案例、单文件在 http 下全部 0 控制台错误，单文件已重建。
 - 新增 `启动观察台.bat`：双击 = 起本地静态服务器（127.0.0.1:8899，已在跑则复用）并开浏览器。file:// 直接双击 html 依然不行（fetch 被禁、文档源案例为空），看页面必须走 http。
+- 10-10 晚二：from-docs 补齐到与 v41 精编案例同一条流水线：多行列表解析（alternatives / missing / inject / paths）、steps 与扁平 executors 两种 stage 写法、任务线按 stages 的 executors 推断、watch 双写去重（42→22）、frontmatter hub 校验、meta yaml 文件清单、_index 分隔行修复；**scenarios.md 接入 sim 事实层**——③任务路由、⑤⑥决策/执行链、时间轴、回放对文档案例全部点亮（deep_five_minds 76 runs / 627 calls / 218 决策全带候选；deep_research_v2 修复 stages 缺 order 导致案例一步即"完成"的问题）。新增 `node hub/tools/check_from_docs.js` 校验四个文档案例。
 
 还没做：
 - 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
