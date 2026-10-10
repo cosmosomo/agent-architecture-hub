@@ -1,3 +1,7 @@
+/* ARCHIVED: v41 curated override for 'feature_sprint'.
+   Source of truth has moved to hub/cases/feature_sprint/ (Markdown, parsed by from-docs.js).
+   This file is kept for reference and backward compatibility with the sim pipeline.
+   Do NOT edit — update hub/cases/feature_sprint/ instead. */
 window.HUB = window.HUB || {};
 HUB.cases = HUB.cases || {};
 HUB.cases['feature_sprint'] = {

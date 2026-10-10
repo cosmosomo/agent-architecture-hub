@@ -1,3 +1,7 @@
+/* ARCHIVED: v41 curated override for 'incident_war_room'.
+   Source of truth has moved to hub/cases/incident_war_room/ (Markdown, parsed by from-docs.js).
+   This file is kept for reference and backward compatibility with the sim pipeline.
+   Do NOT edit — update hub/cases/incident_war_room/ instead. */
 window.HUB = window.HUB || {};
 HUB.cases = HUB.cases || {};
 HUB.cases['incident_war_room'] = {

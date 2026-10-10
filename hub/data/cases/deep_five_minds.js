@@ -1,3 +1,7 @@
+/* ARCHIVED: v41 curated override for 'deep_five_minds'.
+   Source of truth has moved to hub/cases/deep_five_minds/ (Markdown, parsed by from-docs.js).
+   This file is kept for reference and backward compatibility with the sim pipeline.
+   Do NOT edit — update hub/cases/deep_five_minds/ instead. */
 window.HUB = window.HUB || {};
 HUB.cases = HUB.cases || {};
 HUB.cases['deep_five_minds'] = {

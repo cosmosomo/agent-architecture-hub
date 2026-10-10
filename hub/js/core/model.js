@@ -46,7 +46,14 @@
 
   addSource({
     id: 'sim', label: '模拟案例',
-    owns: function (id) { return !!(HUB.base && HUB.base.presets[id]); },
+    owns: function (id) {
+      if (!HUB.base || !HUB.base.presets[id]) return false;
+      // defer to 'docs' source if it has already claimed this id
+      // (hub/data/cases/*.js are archived curated overrides; hub/cases/*.md is the source of truth)
+      var docsSrc = sources.find(function (s) { return s.id === 'docs'; });
+      if (docsSrc && docsSrc.owns(id)) return false;
+      return true;
+    },
     build: function (caseId) {
       var cd = HUB.casedef.build(caseId);
       return {

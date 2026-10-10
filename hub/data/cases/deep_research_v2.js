@@ -1,3 +1,7 @@
+/* ARCHIVED: v41 curated override for 'deep_research_v2'.
+   Source of truth has moved to hub/cases/deep_research_v2/ (Markdown, parsed by from-docs.js).
+   This file is kept for reference and backward compatibility with the sim pipeline.
+   Do NOT edit — update hub/cases/deep_research_v2/ instead. */
 window.HUB = window.HUB || {};
 HUB.cases = HUB.cases || {};
 HUB.cases['deep_research_v2'] = {
