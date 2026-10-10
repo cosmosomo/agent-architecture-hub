@@ -26,7 +26,15 @@ export type SpanBadgeProps = Omit<
   "iconEnd" | "iconStart" | "label"
 > & {
   category: TraceSpanCategory;
+  /** Overrides the category's label, e.g. a coarse-grained segment shown as "决策". */
+  label?: string | undefined;
 };
+
+/** The label a span asks for in `metadata.badge`, if any. */
+export const spanBadgeLabel = (span: {
+  readonly metadata?: Readonly<Record<string, unknown>> | undefined;
+}): string | undefined =>
+  typeof span.metadata?.badge === "string" ? span.metadata.badge : undefined;
 
 const categoryContent: Record<
   TraceSpanCategory,
@@ -106,6 +114,7 @@ const badgeClasses: Record<TraceSpanCategory, string> = {
 export const SpanBadge = ({
   category,
   className,
+  label: labelOverride,
   ...props
 }: ReadonlyProps<SpanBadgeProps>): ReactElement => {
   const { icon: Icon, label } = categoryContent[category];
@@ -115,7 +124,7 @@ export const SpanBadge = ({
       className={cn(badgeClasses[category], className)}
       iconStart={<Icon className="size-2.5" />}
       {...props}
-      label={label}
+      label={labelOverride ?? label}
       unstyled
     />
   );

@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Trace viewer: session list, AgentPrism TreeView and DetailsView over the trace contract. Served by the local service at /trace/.",
+  "description": "Trace viewer: session list, AgentPrism TreeView and DetailsView over the trace contract. Served by the local service at /trace/; also built as hub/vendor/hub-trace.js for the observatory.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "typecheck": "tsc -p tsconfig.json"
+    "build": "vite build && vite build -c vite.embed.config.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "build:embed": "vite build -c vite.embed.config.ts"
   },
   "dependencies": {
     "@evilmartians/agent-prism-data": "1.0.0",

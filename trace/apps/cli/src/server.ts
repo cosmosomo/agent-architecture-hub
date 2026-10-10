@@ -1,6 +1,6 @@
 /**
  * Local HTTP service. Serves, on 127.0.0.1 only:
- *   /api/...   the session index and sessions (contract JSON, or OTLP)
+ *   /api/...   the session index and sessions (contract JSON, or OTLP); a session with all its sub-agents
  *   /trace/    the Trace viewer (apps/viewer/dist)
  *   /          the observatory page (repo index.html) and /hub/ its assets
  * Everything is same-origin, so no CORS header is sent: other sites in the
@@ -9,7 +9,7 @@
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
-import { CONTRACT_VERSION, type SessionDoc } from '@hub-trace/contract';
+import { CONTRACT_VERSION, type Session, type SessionDoc, type SessionSummary } from '@hub-trace/contract';
 import { sessionToOtlp } from '@hub-trace/otel';
 import type { SearchIndex, SearchQuery } from './search.ts';
 import type { SessionStore } from './store.ts';
@@ -29,6 +29,24 @@ export type ServeOptions = {
 };
 
 const list = (v: string | null) => (v ? v.split(',').map((x) => x.trim()).filter(Boolean) : undefined);
+
+/** A larger tree is cut, breadth first: the observatory still gets its top. */
+const TREE_MAX = 600;
+
+/** The session and the sessions it started, at any depth, breadth first; empty when the id is unknown. */
+export function subtree(sessions: SessionSummary[], root: string, max = TREE_MAX): string[] {
+  const kids = new Map<string, string[]>();
+  for (const s of sessions) {
+    const p = s.links.find((l) => l.rel === 'parent');
+    if (p) (kids.get(p.id) || kids.set(p.id, []).get(p.id)!).push(s.id);
+  }
+  if (!sessions.some((s) => s.id === root)) return [];
+  const out = [root], seen = new Set(out);
+  for (let i = 0; i < out.length && out.length < max; i++) {
+    for (const k of kids.get(out[i]) || []) if (out.length < max && !seen.has(k)) { seen.add(k); out.push(k); }
+  }
+  return out;
+}
 
 function searchQuery(p: URLSearchParams): SearchQuery {
   const role = p.get('role');
@@ -117,6 +135,15 @@ export function createService(opts: ServeOptions): Server {
         if (!search) return json(res, 404, { error: 'search is off' });
         await refresh();
         return json(res, 200, search.search(searchQuery(url.searchParams)));
+      }
+      // a session and every sub-agent it started, at any depth: what the observatory draws as one org graph
+      const t = /^\/api\/sessions\/([^/]+)\/tree$/.exec(path);
+      if (t) {
+        await refresh();
+        const ids = subtree(store.index().sessions, t[1], TREE_MAX);
+        if (!ids.length) return json(res, 404, { error: 'no such session' });
+        const sessions = (await Promise.all(ids.map((id) => store.session(id)))).filter((s): s is Session => Boolean(s));
+        return json(res, 200, { contract: CONTRACT_VERSION, sessions, truncated: ids.length >= TREE_MAX });
       }
       const m = /^\/api\/sessions\/([^/]+)(\/otel)?$/.exec(path);
       if (m) {

@@ -17,7 +17,7 @@ import type { ReadonlyProps } from "../ReadonlyProps";
 import { Avatar } from "../Avatar";
 import { IconButton } from "../IconButton";
 import { PriceBadge } from "../PriceBadge";
-import { SpanBadge } from "../SpanBadge";
+import { SpanBadge, spanBadgeLabel } from "../SpanBadge";
 import { SpanStatus } from "../SpanStatus";
 import { TimestampBadge } from "../TimestampBadge";
 import { TokensBadge } from "../TokensBadge";
@@ -97,7 +97,7 @@ export const DetailsViewHeader = ({
         </IconButton>
       ) : null}
 
-      <SpanBadge category={data.type} />
+      <SpanBadge category={data.type} label={spanBadgeLabel(data)} />
 
       {data.tokenUsage ? (
         <>

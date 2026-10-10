@@ -1,5 +1,5 @@
 /* HUB.obsSessions: the "会话" tab of the left sidebar. Lists the real agent sessions on this machine
-   (trace module, hub/SPEC.md 17) and opens one in the Trace viewer. The list comes from the local
+   (trace module, hub/SPEC.md 17) and opens one in the canvas (HUB.obsTrace). The list comes from the local
    service (`npm run serve` in trace/), which also serves this page: same origin, so no CORS. Opened as
    a file, the page cannot reach it and the tab says how to start it. */
 (function () {
@@ -33,6 +33,29 @@
   }
   function viewer(id) { return '/trace/#s=' + encodeURIComponent(id) + '&theme=' + (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'); }
 
+  /* The local service as a source of models: 'tree:<session id>' is that session and every sub-agent it
+     started, drawn by the org views like a case (HUB.fromTrace builds the model). */
+  HUB.model.addSource({
+    id: 'sessions', label: '本机会话',
+    owns: function (id) { return /^tree:/.test(id); },
+    load: function (id) {
+      if (location.protocol !== 'http:' && location.protocol !== 'https:') return Promise.reject(new Error('这个页面是直接用文件打开的，读不到本机会话'));
+      return fetch('/api/sessions/' + encodeURIComponent(id.slice(5)) + '/tree', { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? '本机没有这个会话' : '本地服务返回 ' + r.status); return r.json(); })
+        .then(function (doc) { return HUB.fromTrace.model(doc.sessions, { id: id }); });
+    }
+  });
+  function toast(t) { if (typeof pokazToast === 'function') pokazToast(t); }
+  /* draw a session and its sub-agents as the org graph: one group per dispatch, opened one level */
+  function openTree(sid) {
+    var id = 'tree:' + sid;
+    if (!HUB.model.ready(id)) toast('正在读取这个会话和它派出的子智能体…');
+    HUB.model.load(id).then(function () {
+      HUB.store.switchCase(id);
+      HUB.store.set({ subject: 'org', depth: { org: 2 }, expanded: { org: [] }, collapsed: { org: [] }, focus: null, present: 'graph' });
+    }).catch(function (e) { toast('没打开：' + e.message); });
+  }
+
   function load(el, force) {
     if (loading || (!force && cache && Date.now() - loadedAt < 15000)) return;
     if (location.protocol !== 'http:' && location.protocol !== 'https:') { error = 'file'; return; }
@@ -51,8 +74,15 @@
       var t = e.target.closest('[data-act]');
       if (!t) return;
       var act = t.getAttribute('data-act');
-      if (act === 'filter') { filter = t.getAttribute('data-v'); limit = PAGE; render(el); }
+      // a plain click opens the session's trace in the canvas; Ctrl or middle click keeps the link's new tab
+      if (act === 'open') {
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        HUB.store.set({ subject: 'exec', depth: { exec: 1 }, focus: { type: 'session', id: t.getAttribute('data-id') }, selection: null, present: 'graph' });
+      }
+      else if (act === 'filter') { filter = t.getAttribute('data-v'); limit = PAGE; render(el); }
       else if (act === 'kids') { e.preventDefault(); e.stopPropagation(); var id = t.getAttribute('data-id'); open[id] = !open[id]; render(el); }
+      else if (act === 'tree') { e.preventDefault(); e.stopPropagation(); openTree(t.getAttribute('data-id')); }
       else if (act === 'more') { limit += PAGE; render(el); }
       else if (act === 'reload') { load(el, true); render(el); }
     });
@@ -60,12 +90,13 @@
 
   function row(s, lv, kids) {
     var meta = [s.agent.role === 'subagent' ? (s.agent.path || s.agent.name) : base(s.cwd), s.stats.turns + ' 轮', ago(s.updatedAt)].filter(Boolean).join(' · ');
-    return '<a class="ob-si ob-sess" style="padding-left:' + (14 + lv * 14) + 'px" href="' + viewer(s.id) + '" target="_blank" rel="noopener" title="' + esc(s.title + '\n' + (STATUS[s.state.status] || '') + (s.state.detail ? '：' + s.state.detail : '') + '\n在 Trace 查看器里打开') + '">' +
+    return '<a class="ob-si ob-sess" data-act="open" data-id="' + esc(s.id) + '" style="padding-left:' + (14 + lv * 14) + 'px" href="' + viewer(s.id) + '" target="_blank" rel="noopener" title="' + esc(s.title + '\n' + (STATUS[s.state.status] || '') + (s.state.detail ? '：' + s.state.detail : '') + '\n点一下在中间打开它的决策链；按住 Ctrl 点，在新标签页打开独立查看器') + '">' +
       '<span class="ob-dot ' + (DOT[s.state.status] || '') + '"></span>' +
       '<span class="ob-sess-b"><span class="ob-nm">' + esc(s.title) + '</span>' +
       '<span class="ob-meta">' + esc(meta) +
-      (s.stats.toolErrors ? ' <a href="' + search('', s.id) + '&errors=1" target="_blank" rel="noopener" title="在这个会话里看出错的那几步" style="color:var(--warn,#d08)">错 ' + s.stats.toolErrors + '</a>' : '') +
-      (kids ? ' <b data-act="kids" data-id="' + esc(s.id) + '" title="展开或收起子智能体">' + (open[s.id] ? '▾' : '▸') + ' 子智能体 ' + kids + '</b>' : '') +
+      (s.stats.toolErrors ? ' <a data-act="ext" href="' + search('', s.id) + '&errors=1" target="_blank" rel="noopener" title="在这个会话里看出错的那几步" style="color:var(--warn,#d08)">错 ' + s.stats.toolErrors + '</a>' : '') +
+      (kids ? ' <b data-act="kids" data-id="' + esc(s.id) + '" title="展开或收起子智能体">' + (open[s.id] ? '▾' : '▸') + ' 子智能体 ' + kids + '</b>' +
+        ' <b data-act="tree" data-id="' + esc(s.id) + '" title="把它和它派出的子智能体画成协作图：一次派出的算一组">画成协作图</b>' : '') +
       '</span></span></a>';
   }
 
@@ -111,11 +142,11 @@
     out = out.concat(rows.slice(0, limit));
     if (rows.length > limit) out.push('<div class="ob-si" data-act="more"><span class="ob-nm" style="color:var(--accent1)">再显示 ' + Math.min(PAGE, rows.length - limit) + ' 条（共 ' + rows.length + '）</span></div>');
     if (!rows.length) out.push('<div class="ob-si" style="cursor:default"><span class="ob-nm" style="color:var(--t3)">没有这种状态的会话</span></div>');
-    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">这里是本机 Codex 会话的实时状态（约 15 秒刷新）。“疑似已退出”指进行中的一轮很久没有新记录。点一条在新标签页打开 Trace 查看器，看每一轮的模型调用、工具调用和子智能体。</div>');
+    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">这里是本机 Codex 会话的实时状态（约 15 秒刷新）。“疑似已退出”指进行中的一轮很久没有新记录。点一条，在中间打开它的决策链：每一轮的模型调用、工具调用和子智能体；Esc 回到原来的图。按住 Ctrl 点，在新标签页打开独立查看器。</div>');
     var keep = el.scrollTop;
     el.innerHTML = out.join('');
     el.scrollTop = keep;
   }
 
-  HUB.obsSessions = { render: render };
+  HUB.obsSessions = { render: render, openTree: openTree };
 })();

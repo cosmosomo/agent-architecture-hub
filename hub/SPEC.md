@@ -32,12 +32,15 @@ hub/
   data/base.js        由 tools/extract_base.js 从原页面生成（测试也用）
   data/zh.js          中文名与说明
   data/cases/*.js     精选案例的覆盖数据
-  js/core/*.js        数据层：util、store（观察状态）、casedef、sim、analysis、model、views（六个视图预设）
+  js/core/*.js        数据层：util、store（观察状态）、casedef、sim、analysis、model、views（六个视图预设）、
+                      to-trace（一次运行 → Trace 契约的会话加决策标注，见 17.5）、
+                      from-trace（本机会话 → 统一模型，真实的多智能体运行用 ①②③ 画，见 17.7）
   js/obs/stage.js     观察层：在原画布里按 key 渲染卡片、框、线，补间移动，镜头适配
   js/obs/cards.js     各种卡片的 HTML（个体卡＝原 .nd 结构）
   js/obs/scene-org.js ①②③ 的布局（纯函数，可在 node 里测）
   js/obs/scene-process.js ④
-  js/obs/scene-run.js ⑤⑥
+  js/obs/trace.js     ⑤⑥：一次运行的明细交给 Trace 视图画（树在中间，选中项的细节在右栏），见 17.6
+  vendor/hub-trace.js Trace 视图的构建产物（trace/apps/viewer 的 npm run build 生成，随仓库提交，不手改）
   js/obs/panel.js     右侧详情和操作（写进原页面的右栏）
   js/obs/side.js      左栏的“结构”“体检”页
   js/obs/timeline.js  画布底部的时间轴和回放
@@ -235,9 +238,9 @@ scene = {
 ```
 
 - `HUB.obsSceneOrg.build(model, state, an, view)`：①②③。`HUB.obsSceneProcess.build`：④。都不碰 DOM，`tools/test_scenes.js` 在 node 里把 62 个模板全跑一遍。
-- ⑤⑥ 不进顶栏（10-10 用户决定）：它们是某个个体一次运行的下钻明细，从个体打开（双击，或个体详情里的“打开最近一次运行的决策链”、运行列表），显示在中间画布（`HUB.obsSceneRun.build`），侧栏显示选中决策、调用的细节；Esc 或顶栏的“返回”回到原视图。顶栏只放 ①～④。
-- `key` 跨视图稳定：个体是 `i:<编号>`，折起的部门 `g:<编号>`、展开的部门框 `b:<编号>`，阶段 `s:`/`sb:`，步骤 `st:`，判断点 `g:`，决策 `d:`/`db:`，调用 `c:`，运行头 `ru:`。同一个 key 在新场景里还在，卡片就原地移过去；新出现的从 `anchor` 列出的第一个旧位置长出来，消失的缩回 `anchor` 在新场景里的位置。
-- `kind` 决定卡片长相：`ind`/`human`/`meta`（原页面的 `.nd` 卡）、`dept`、`channel`、`stage`、`step`、`gate`、`term`、`runhead`、`dec`、`call`、`note`；框：`frame`、`stageframe`、`decframe`。HTML 在 `cards.js` 和各场景文件里登记（`HUB.obsCards.extra`、`extraFrame`）。
+- ⑤⑥ 不进顶栏（10-10 用户决定）：它们是某个个体一次运行的下钻明细，从个体打开（双击，或个体详情里的“打开最近一次运行的决策链”、运行列表），也可以从左栏“会话”页打开本机的真实会话。10-10 下午起不再自己画卡片（原来的 scene-run.js 已删，用户说它“还是工作流”，撑不住真实解析出的大量步骤）：由 Trace 视图画，树盖在画布中间，选中项的细节在右栏的概况下面；Esc 或顶栏的“返回”回到原视图。顶栏只放 ①～④。细节见 17.6。
+- `key` 跨视图稳定：个体是 `i:<编号>`，折起的部门 `g:<编号>`、展开的部门框 `b:<编号>`，阶段 `s:`/`sb:`，步骤 `st:`，判断点 `g:`。同一个 key 在新场景里还在，卡片就原地移过去；新出现的从 `anchor` 列出的第一个旧位置长出来，消失的缩回 `anchor` 在新场景里的位置。
+- `kind` 决定卡片长相：`ind`/`human`/`meta`（原页面的 `.nd` 卡）、`dept`、`channel`、`stage`、`step`、`gate`、`term`；框：`frame`、`stageframe`。HTML 在 `cards.js` 和各场景文件里登记（`HUB.obsCards.extra`、`extraFrame`）：新增一类节点，只加一个模板。
 - `link.state`：`both` 实线（粗细按次数）、`defonly` 虚线、`factonly` 橙色、`def` 细实线。`hl` 是聚焦案例走过的路（金色，带光点），`particles` 是线上流动的光点数。
 - `HUB.obsStage.render(scene, {instant})` 按 key 复用元素、补间移动；`fit(bbox, animate, pad)` 用原页面的 `scale/panX/panY` 移镜头。单击卡片或线 → `selection`；双击分组/阶段/决策 → 展开折叠；双击个体 → 它最近一次运行（⑤）；拖背景平移，滚轮缩放（原页面的）。
 
@@ -246,9 +249,9 @@ scene = {
 ```
 hub/css/obs.css, hub/css/panels.css,
 hub/data/base.js, hub/data/zh.js, hub/data/cases/*.js,
-hub/js/core/util.js, store.js, casedef.js, sim.js, analysis.js, model.js, views.js,
-hub/js/obs/cards.js, stage.js, scene-org.js, scene-process.js, scene-run.js,
-hub/js/panels/panels.js, hub/js/obs/panel.js, side.js, timeline.js, guide.js, main.js
+hub/js/core/util.js, store.js, casedef.js, sim.js, analysis.js, model.js, to-trace.js, views.js,
+hub/js/obs/cards.js, stage.js, scene-org.js, scene-process.js, hub/vendor/hub-trace.js,
+hub/js/panels/panels.js, hub/js/obs/panel.js, side.js, timeline.js, guide.js, sessions.js, trace.js, main.js
 ```
 
 `python hub/tools/patch_page.py` 重复执行也安全：钩子已在就跳过，只刷新这一段脚本列表。`node hub/tools/build_single.js` 把它们内联成 `hub/dist/observatory.html` 单文件。
@@ -360,6 +363,7 @@ HUB.cases['feature_sprint'] = {
 - 操作（对话、插话、补送、催办、改派、改规则、放行、渠道暂停恢复和维护）都会记成事实并刷新。
 - 浏览器里查过：深色、浅色、切换设计模式、从左栏换案例、面板呈现、地址栏链接还原、键盘。
 - 旧的独立外壳（hub/index.html、shell、org 视图等）已删除。
+- 10-10 下午：⑤⑥ 改由 Trace 视图画（17.6），原来的卡片画法 scene-run.js 删除；左栏会话页点一条在中间打开本机真实会话。
 
 还没做：
 - 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
@@ -439,3 +443,47 @@ trace-data/                 解析结果（本机私有，不进 git）
 - [x] T6 Trace 查看器：会话列表 + TreeView + DetailsView，中文，配色跟原页面
 - [x] T7 测试：适配器用仿真样例；查看器能构建
 - [x] T8 接回观察台：观察台能列出真实的 Codex 会话并打开 Trace 查看器
+- [x] T9 检索层（17.4）：全部会话的每一步建全文索引，按类型、出错、工作目录、主或子智能体筛（提交 0b391a4）
+- [x] T10 粗粒度标注层（17.5）：契约里的标注集，带“由谁生成”，单独存放、可重算；模拟器是第一个生成器
+- [x] T11 观察台的 ⑤⑥ 改用 Trace 视图（17.6）：树在中间、细节在右栏；左栏会话页点一条也在中间打开
+- [x] T12 数据来源接口（17.7）：模拟器和本地服务产出同一种模型；真实会话（Codex，带子智能体）按派出关系自动成图
+- [ ] T13 Claude Code 适配器：一个适配器读 `~/.claude/projects`，格式参考 cc-sessions，只取把记录整理成会话的部分
+- [ ] T14 快速聚合和自动分组规则（圈选合成一个点；按父子会话、工作目录、模型、状态分组）
+
+### 17.4 检索层
+
+服务端把每一步的文本和类型写进 SQLite 全文索引（trigram，中文和代码片段都能搜），`/api/search` 按词、类型、出错、会话、工作目录、主或子智能体、时间筛，返回命中和各类型的次数。查看器的“检索”页和观察台会话页的入口都用它；点一条打开到那一步。请求和结果的类型在契约里（`SearchRequest`、`SearchResult`）。
+
+### 17.5 粗粒度标注层（10-10 用户：“我们怎么去标注这个粗粒度呢？……还需要一个专门的字段，未来去添加粗粒度的自动解析功能”）
+
+- 原始记录（会话 → 轮 → 步）是解析出来的样子，粗粒度分析不改它。
+- 粗粒度是叠在上面的一层：`AnnotationSet`，每段（`Segment`）框住一轮里连续的几步并列出它们的编号，就是这一段的证据。现在只有一种段：决策，带触发、读到的、该知道但没读到的、运行中送进来的、备选、选择、理由、影响、后续结果和问题标记；以后可以加阶段、意图。
+- 专门的字段是 `producer`：谁生成的（模拟器、规则、摘要智能体、人）、名字和版本、时间；`basis` 记着生成时会话有多少步。以后的自动解析写自己的一层：重跑只换自己那层；会话又长了，`isStale` 看得出标注过时；页面上可以对照不同生成器的版本。
+- 标注集自带版本号 `ANNOTATION_VERSION`，和会话的 `CONTRACT_VERSION` 分开：加一层、改一层，不会让已经解析好的会话和索引作废。
+- `validateAnnotationSet(set, session)` 检查：段都在自己那一轮里、步骤连续、一步不进两段、编号存在。
+- 现在的生成器只有一个：`hub/js/core/to-trace.js` 把模拟器的决策写成标注（`producer.kind = 'simulator'`）。真实会话还没有标注，树按轮和步显示。
+- 解析结果有两类读者（用户 10-10，见反馈台账 F39）：人看页面，其他智能体（下一个执行者、验收者、维护者、中枢智能体）读同一份结果决定下一步。所以标注集和会话一样存成文件（计划放在 `trace-data/annotations/<生成器>/<会话>.json`），命令行能直接输出，智能体不用经过页面也能读。
+
+### 17.6 观察台里的 Trace 视图
+
+- 同一套 Trace 视图两个入口：`/trace/` 独立查看器，和观察台的 ⑤⑥。观察台不再自己画决策链。
+- `trace/apps/viewer/src/embed.tsx` 打包成一个普通脚本 `hub/vendor/hub-trace.js`（`npm run build` 一起生成，约 360 KB，含 React），提供 `window.HubTrace.mount({tree, details}, props)`，返回 `update`、`unmount`。观察台不用构建，用文件打开也能用。
+- 输入只认契约：`session` 加可选的 `layer`（一个标注集）；`depth` 是粒度（1 折到决策 = ⑤，2 展开到步 = ⑥），`selected` 和 `onSelect` 是选中项。样式各自装在 shadow root 里，原页面的样式和 Tailwind 的重置互不影响；主题跟页面的 `data-theme`。
+- 观察状态仍是唯一的真相：粒度是 `depth.exec`，选中的一步是 `selection {type: 'span'}`，打开的真实会话是 `focus {type: 'session'}`，都在地址里，链接能还原现场。
+- `HUB.obsTrace`（`hub/js/obs/trace.js`）管两个容器（画布上的树、右栏概况下面的细节）和数据：模拟的运行由 `HUB.toTrace.fromRun(model, run, 时间截点)` 转换，真实会话从本地服务 `/api/sessions/<编号>` 读。
+- 换展示组件（比如 AgentPrism 升级或换掉）只动 `embed.tsx` 这一处；加一种来源只加适配器；页面这边都不用改。
+- 测试：`trace/packages/contract/test/hub-export.test.ts` 把 62 个预设的每一次模拟运行都转一遍，用契约的同一套校验检查会话和标注。
+
+### 17.7 数据来源和真实会话成图（10-10 用户：“把现在这东西做成中间，未来接入会变得更简单”）
+
+- 统一模型（第 5 节）是图这边的中间层：任何来源先变成它，①②③④、面板、侧栏只认它。
+- 来源在 `HUB.model.addSource({ id, label, owns(id), build(id) 或 load(id) })` 登记。现在两个：
+  - `sim`：62 个案例模板，`casedef` 加 `sim` 立即生成；
+  - `sessions`（在 `hub/js/obs/sessions.js`）：`tree:<会话编号>` 是这个会话和它派出的全部子智能体，从本地服务的 `/api/sessions/<编号>/tree` 读来（一次返回整棵树，最多 600 个），由 `HUB.fromTrace.model` 变成模型。
+  以后接别的协作系统（Paperclip、Orca、Cezar 这类）或编排目录，就是再登记一个来源。
+- `HUB.fromTrace.model(sessions)`：会话里没有编排，定义从事实里读出来。每个会话是一个个体，没人派出的会话是人对话的那个主智能体；同一轮里一起派出去的子智能体算一组（一次派活，这是真实运行默认的粗粒度），嵌套在派出者的组下面，最多三层；派出是派发线，交回结果是交付线；每个模型是一条共享渠道，MCP 服务器是共享渠道，命令行、改文件、搜索、和其他智能体通信是基础能力，真的派出过子智能体的会话有“派生子智能体”这项专属能力。每一轮是一次运行（带一个任务），每个模型或工具步骤是一次调用。
+- 下钻：`HUB.model.traceOf(model, run)` 对真实会话直接给原来的会话，打开在那一轮；对模拟的运行才转换（17.5）。
+- 时间：真实会话的时间从第一个会话开始算，模型带 `clock`（那一刻），`HUB.util.fmtClock` 显示真实的月日时分；模拟的模型照旧显示“第几天”。
+- 入口：左栏“会话”页，带子智能体的会话有“画成协作图”；右栏会话概况里也有按钮。链接 `#c=tree:<编号>` 打开时先读来再显示。④ 对真实会话显示一句说明：会话里只有事实，没有写下的业务流程。
+- 本机实测（只看数量）：29 个会话的树，转换 45 毫秒，最细粒度 33 张卡；374 个会话的树，服务端第一次读文件约 8～14 秒，转换约 0.6 秒，最细粒度 382 张卡。
+- 测试：`trace/packages/adapters/test/hub-import.test.ts` 用 Codex 的仿真样例（主会话派出一个子智能体）建模型，交给分析和 ①②③ 的场景；`apps/cli/test/cli.test.ts` 测 `/tree` 接口。

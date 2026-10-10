@@ -459,70 +459,21 @@ body.obs-on .statbar > .ob-st { display: flex; }
 }
 .ob-term-done { border-color: rgba(52,211,153,.55); color: var(--accent2); box-shadow: 0 0 20px rgba(52,211,153,.14); }
 
-/* ---------- ⑤⑥ run, decisions, calls ---------- */
-.ob-runhead {
-  box-sizing: border-box; padding: 10px 13px; border-radius: 14px; display: flex; flex-direction: column; gap: 5px;
-  background: var(--bg-panel); border: 1.5px solid rgba(var(--ob-task), .4); box-shadow: 0 0 30px rgba(var(--ob-task), .12);
-}
-.ob-runhead.sel { border-color: var(--sel-c, #fff); }
-.ob-rh-top { display: flex; align-items: center; gap: 8px; }
-.ob-rh-task { font-family: var(--hd); font-size: 13px; font-weight: 800; color: var(--t1); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ob-rh-meta { font-family: var(--mn); font-size: 9px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ob-rh-docs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; max-height: 38px; overflow: hidden; }
-.ob-rh-lbl { font-family: var(--mn); font-size: 8.5px; color: var(--t3); margin-right: 2px; }
-.ob-rh-none { font-size: 9.5px; color: var(--t3); }
-.ob-doc { font-family: var(--hd); font-size: 9px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--brd); color: var(--t2); white-space: nowrap; }
-.ob-doc.ok { border-color: rgba(52,211,153,.4); color: var(--accent2); }
-.ob-doc.miss { border-color: rgba(248,113,113,.6); color: #F87171; text-decoration: line-through; text-decoration-color: rgba(248,113,113,.6); }
-.ob-doc.ins { border-color: rgba(var(--ob-task), .55); color: var(--accent1); }
-
-.ob-dec {
-  box-sizing: border-box; display: flex; gap: 10px; padding: 10px 34px 10px 10px; border-radius: 13px;
-  background: var(--bg-panel); border: 1px solid var(--brd); --dc: var(--ob-task);
-  box-shadow: inset 3px 0 0 rgba(var(--dc), .85), 0 0 24px rgba(var(--dc), .08);
-}
-.ob-act-deliver { --dc: 52, 211, 153; }
-.ob-act-request { --dc: var(--ob-task); }
-.ob-act-yield { --dc: 251, 191, 36; }
-.ob-act-escalate { --dc: 248, 113, 113; }
-.ob-act-tool { --dc: var(--ob-info); }
-.ob-dec:hover { border-color: rgba(var(--dc), .55); }
-.ob-dec.sel { border-color: var(--sel-c, #fff); box-shadow: inset 3px 0 0 rgba(var(--dc), 1), 0 0 0 1px rgba(var(--dc), .4), 0 0 30px rgba(var(--dc), .2); }
-.ob-dec-over { opacity: .8; }
-.ob-dec-over .ob-dec-title { text-decoration: line-through; text-decoration-color: rgba(248,113,113,.7); }
-.ob-dec-n {
-  flex-shrink: 0; width: 22px; height: 22px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center;
-  font-family: var(--mn); font-size: 10px; font-weight: 700; color: rgb(var(--dc, var(--ob-task))); background: rgba(var(--dc, var(--ob-task)), .12); border: 1px solid rgba(var(--dc, var(--ob-task)), .4);
-}
-.ob-dec-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.ob-dec-top { display: flex; align-items: center; gap: 8px; }
-.ob-dec-title { font-family: var(--hd); font-size: 12px; font-weight: 800; color: var(--t1); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ob-dec-line { font-size: 10.5px; color: var(--t2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ob-dec-k { font-family: var(--mn); font-size: 8.5px; color: var(--t3); margin-right: 4px; }
-.ob-dec-why { font-size: 10px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 13px; }
-.ob-dec-foot { font-family: var(--mn); font-size: 8.5px; color: var(--t3); display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; }
-.ob-dec-foot .ob-flag { position: static; }
-.ob-fr-dec { --pc: var(--dc); border-radius: 14px; background: linear-gradient(180deg, rgba(var(--dc), .07), rgba(var(--dc), .015)); border-color: rgba(var(--dc), .35); }
-.ob-dec-fh { height: 40px; gap: 8px; padding-left: 10px; }
-.ob-dec-fh .ob-fname { color: var(--t1); font-size: 12px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.ob-fr-dec .ob-dec-n { --dc: inherit; }
-
-.ob-call {
-  box-sizing: border-box; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-radius: 9px; position: absolute;
-  background: var(--bg-panel); border: 1px solid var(--brd); overflow: hidden;
-}
-.ob-call:hover { border-color: rgba(var(--ob-info), .5); }
-.ob-call.sel { border-color: var(--sel-c, #fff); }
-.ob-call-ic { display: inline-flex; color: var(--ph-research); flex-shrink: 0; }
-.ob-call-model .ob-call-ic { color: var(--accent1); }
-.ob-call-name { font-family: var(--hd); font-size: 10px; font-weight: 600; color: var(--t1); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ob-call-meta { font-family: var(--mn); font-size: 8.5px; color: var(--t3); white-space: nowrap; }
-.ob-call .ob-flag { position: static; }
-.ob-call-bad { border-color: rgba(248,113,113,.45); }
-.ob-call-bar { position: absolute; left: 10px; right: 10px; bottom: 3px; height: 2px; border-radius: 1px; background: rgba(255,255,255,.04); }
-.ob-call-bar i { position: absolute; top: 0; height: 100%; border-radius: 1px; background: rgba(var(--ob-info), .8); }
-.ob-call-model .ob-call-bar i { background: rgba(var(--ob-task), .85); }
 .ob-note-card { box-sizing: border-box; padding: 14px 16px; border-radius: 12px; border: 1px dashed var(--brd); background: var(--bg-panel); font-size: 12px; color: var(--t2); line-height: 1.6; }
+
+/* ---------- ⑤⑥ a run's detail: the trace view (hub/vendor/hub-trace.js) over the canvas, a step's details in the sidebar ---------- */
+.ob-tracehost {
+  position: absolute; left: 10px; right: 10px; top: 58px; bottom: 96px; z-index: 53; display: none; overflow: hidden;
+  background: var(--bg-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--brd); border-radius: 14px;
+}
+.ob-tracehost.on { display: flex; flex-direction: column; }
+.ob-trace-tree { flex: 1; min-height: 0; }
+.ob-trace-note { padding: 18px 20px; font-size: 12px; line-height: 1.6; color: var(--t2); }
+.ob-traceside { display: none; flex: 1; min-height: 0; border-top: 1px solid var(--brd); }
+.ob-traceside.on { display: block; }
+/* with a run open, the summary keeps its height and the step's details take the rest */
+.ob-trace-open #obSr { flex: 0 1 auto; max-height: 42%; }
 
 /* ---------- guide modal ---------- */
 .ob-guide h3 { font-family: var(--hd); font-size: 13px; font-weight: 800; color: var(--t1); margin: 18px 0 8px; }

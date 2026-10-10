@@ -16,11 +16,11 @@ SCRIPTS = [
     'hub/data/cases/deep_five_minds.js', 'hub/data/cases/feature_sprint.js',
     'hub/data/cases/incident_war_room.js', 'hub/data/cases/deep_research_v2.js',
     'hub/js/core/util.js', 'hub/js/core/store.js', 'hub/js/core/casedef.js', 'hub/js/core/sim.js',
-    'hub/js/core/analysis.js', 'hub/js/core/model.js', 'hub/js/core/views.js',
+    'hub/js/core/analysis.js', 'hub/js/core/model.js', 'hub/js/core/to-trace.js', 'hub/js/core/from-trace.js', 'hub/js/core/views.js',
     'hub/js/obs/cards.js', 'hub/js/obs/stage.js', 'hub/js/obs/scene-org.js',
-    'hub/js/obs/scene-process.js', 'hub/js/obs/scene-run.js',
+    'hub/js/obs/scene-process.js', 'hub/vendor/hub-trace.js',
     'hub/js/panels/panels.js', 'hub/js/obs/panel.js', 'hub/js/obs/side.js', 'hub/js/obs/timeline.js',
-    'hub/js/obs/guide.js', 'hub/js/obs/sessions.js', 'hub/js/obs/main.js',
+    'hub/js/obs/guide.js', 'hub/js/obs/sessions.js', 'hub/js/obs/trace.js', 'hub/js/obs/main.js',
 ]
 STYLES = ['hub/css/obs.css', 'hub/css/panels.css']
 

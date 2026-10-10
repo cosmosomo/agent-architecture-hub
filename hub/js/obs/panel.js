@@ -315,14 +315,30 @@
     var x = m.idx.ind.get(r.individualId);
     var decs = (m.idx.decsByRun.get(id) || []);
     var cov = r.coverage || {};
+    var open = s.subject === 'exec' && s.focus && s.focus.id === id;
     return hero({ name: HUB.model.name('individual', r.individualId) + ' 的一次运行', role: (t ? t.name : '') + (r.caseId ? ' · ' + r.caseId : ''), icon: iconFor(x), phase: x && x.phase,
       chips: chip(L.outcome[r.outcome] || r.outcome) + chip(U.fmtDur(r.end - r.start)) }) +
       '<div class="ds">' + kv([['开始', U.fmtClock(r.start)], ['结束', U.fmtClock(r.end)], ['编排版本', esc(r.version || '-')], ['token', U.fmtNum(r.tokens || 0)],
         ['会话覆盖', '读全 ' + (cov.indexed || 0) + ' · 只看元信息 ' + (cov.metaOnly || 0) + ' · 截断 ' + (cov.truncated || 0)]]) + '</div>' +
-      sec('决策（' + decs.length + '）', '<div class="ob-list">' + decs.map(function (d) {
-        return rowItem(selAttrs('decision', d.id), esc(d.title), '', pill(L.action[d.action] || d.action, DEC_ACTION_CLS[d.action]));
-      }).join('') + '</div>') +
-      (s.subject !== 'exec' || !(s.focus && s.focus.id === id) ? '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + id + '">打开决策链</button></div>' : '');
+      // open in the canvas, the decisions are the tree itself and the details of a step show below this pane
+      (open ? '<div class="ob-note">中间是这次运行的决策链：粒度选“决策”看每个决定，选“调用”展开到每一步。选中一项，下面显示它的输入输出和属性。</div>'
+        : sec('决策（' + decs.length + '）', '<div class="ob-list">' + decs.map(function (d) {
+          return rowItem(selAttrs('decision', d.id), esc(d.title), '', pill(L.action[d.action] || d.action, DEC_ACTION_CLS[d.action]));
+        }).join('') + '</div>') + '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + id + '">打开决策链</button></div>');
+  }
+
+  // a session from this machine, opened from the session list (HUB.obsTrace loads it)
+  var STATE_ZH = { working: '在做', waiting: '等待中', failed: '出错', aborted: '被打断', stale: '疑似已退出', idle: '空闲', empty: '空' };
+  function session(t) {
+    var x = t.session;
+    var viewer = '/trace/#s=' + encodeURIComponent(t.id);
+    if (!x) return '<div class="ob-note">' + esc(t.error || '读取会话…') + '</div>';
+    return hero({ name: x.title, role: x.agent.product + ' · ' + (x.agent.role === 'subagent' ? '子智能体 ' + (x.agent.path || x.agent.name) : '主会话'),
+      icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent1)', chips: chip(STATE_ZH[x.state.status] || x.state.status) + chip(x.stats.turns + ' 轮') }) +
+      '<div class="ds">' + kv([['工作目录', esc(x.cwd || '-')], ['模型', esc(x.agent.model || '-')], ['开始', esc((x.startedAt || '').replace('T', ' ').slice(0, 16))],
+        ['最近', esc((x.updatedAt || '').replace('T', ' ').slice(0, 16))], ['调用', x.stats.modelCalls + ' 次模型 · ' + x.stats.toolCalls + ' 次工具' + (x.stats.toolErrors ? ' · 出错 ' + x.stats.toolErrors : '')]]) + '</div>' +
+      '<div class="ob-note">这是本机的真实会话，还没有粗粒度标注，所以树按“轮 → 步”显示。选中一项，下面显示它的细节。<a class="ob-a" href="' + viewer + '" target="_blank" rel="noopener">在独立查看器打开 ↗</a></div>' +
+      (x.links.some(function (l) { return l.rel === 'child'; }) ? '<div class="ds"><button class="btn btn-p" type="button" data-act="tree" data-id="' + esc(t.id) + '">把它和它派出的子智能体画成协作图</button></div>' : '');
   }
 
   function decision(m, s, a, id) {
@@ -359,16 +375,18 @@
     if (!el || !m) return;
     if (host !== el) { host = el; el.addEventListener('click', onClick); el.addEventListener('keydown', onKeydown); }
     var a = HUB.model.an(s, m);
-    var sel = s.selection;
-    var key = m.id + '|' + m.rev + '|' + (sel ? sel.type + ':' + sel.id : '-') + '|' + s.time + '|' + s.compare + '|' + s.subject + '|' + (s.focus ? s.focus.id : '');
+    // a step selected in the trace tree shows its details under this pane (HUB.obsTrace); the pane keeps the summary
+    var sel = s.selection && s.selection.type !== 'span' ? s.selection : null;
+    var dr = !sel && HUB.obsTrace ? HUB.obsTrace.current(s, m) : null;
+    var key = m.id + '|' + m.rev + '|' + (sel ? sel.type + ':' + sel.id : '-') + '|' + s.time + '|' + s.compare + '|' + s.subject + '|' + (s.focus ? s.focus.id : '') + '|' + (dr && dr.kind === 'session' ? !!dr.session + (dr.error || '') : '');
     if (key === last) return;
     var keepScroll = last && last.split('|').slice(0, 3).join('|') === key.split('|').slice(0, 3).join('|') ? el.scrollTop : 0;
     last = key;
     var html = '';
-    // with nothing selected the pane describes what the canvas shows: the run in ⑤⑥, the case otherwise
-    var fr = !sel && s.subject === 'exec' ? HUB.model.focusRun(s, m) : null;
-    var fc = !sel && !fr && s.focus && s.focus.type === 'case' ? s.focus.id : null;
-    try { html = sel && BY_TYPE[sel.type] ? BY_TYPE[sel.type](m, s, a, sel.id) : fr ? run(m, s, a, fr.id) : fc ? kase(m, s, a, fc) + overviewTail() : overview(m, s, a); }
+    // with nothing selected the pane describes what the canvas shows: the open run or session, the case otherwise
+    var fr = dr && dr.kind === 'run' ? dr.run : null;
+    var fc = !sel && !dr && s.focus && s.focus.type === 'case' ? s.focus.id : null;
+    try { html = sel && BY_TYPE[sel.type] ? BY_TYPE[sel.type](m, s, a, sel.id) : dr && dr.kind === 'session' ? session(dr) : fr ? run(m, s, a, fr.id) : fc ? kase(m, s, a, fc) + overviewTail() : overview(m, s, a); }
     catch (e) { console.error('[obs.panel]', e); html = '<div class="sr-mt">这个对象的详情没画出来。</div>'; }
     if (sel && !html) html = overview(m, s, a);
     var back = sel ? '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="ds-l" style="margin:0">' + esc(TYPE_ZH[sel.type] || sel.type) + '</span><a class="ob-a" data-act="clear">回到案例概况</a></div>' : '';
@@ -395,6 +413,7 @@
     else if (act === 'run') HUB.store.set({ subject: 'exec', depth: { exec: 1 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: { type: 'run', id: t.getAttribute('data-id') }, selection: { type: 'run', id: t.getAttribute('data-id') }, present: 'graph' });
     else if (act === 'toggle') { var g = m.idx.group.get(t.getAttribute('data-id')); if (g) HUB.store.toggle('org', g.id, g.level); }
     else if (act === 'replay') { if (HUB.obsTimeline) HUB.obsTimeline.replay(t.getAttribute('data-id')); }
+    else if (act === 'tree') { if (HUB.obsSessions) HUB.obsSessions.openTree(t.getAttribute('data-id')); }
     else if (act === 'limit') {
       var li = host.querySelector('[data-limit]');
       var res2 = HUB.model.perform('set_limit', { target: { type: 'channel', id: t.getAttribute('data-id') }, text: li ? li.value.trim() : '' });

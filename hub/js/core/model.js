@@ -1,4 +1,7 @@
-/* HUB.model: assembles definition + facts + indexes, caches analysis per time cut, applies page actions. */
+/* HUB.model: assembles definition + facts + indexes, caches analysis per time cut, applies page actions.
+   Models come from sources: the simulator for the case templates, the local service for real sessions, and
+   later others (another collaboration hub, an orchestration folder). A source says which model ids it owns and
+   either builds a model at once or loads one; the views only ever see the model (hub/SPEC.md 5). */
 (function () {
   'use strict';
   var HUB = (window.HUB = window.HUB || {});
@@ -6,23 +9,60 @@
 
   var cache = new Map();
   var anCache = new Map();
+  var sources = [];
+
+  /* src: { id, label, owns(id), build(id) -> model | load(id) -> Promise<model> } */
+  function addSource(src) { sources = sources.filter(function (x) { return x.id !== src.id; }).concat([src]); }
+  function sourceOf(id) { return sources.find(function (x) { return x.owns(id); }) || null; }
+
+  // what every model gets from here, whatever made it: plan versions on the definition, the indexes
+  function finish(m) {
+    if (m.facts.versionEvents.length) {
+      m.facts.versionEvents.forEach(function (v) { m.def.versions.push({ id: v.version, at: v.at, note: v.note, by: v.by }); });
+      m.def.version = m.facts.versionEvents[m.facts.versionEvents.length - 1].version;
+    }
+    m.rev = m.rev || 0;
+    m.idx = HUB.analysis.buildIdx(m.def, m.facts);
+    return m;
+  }
 
   function build(caseId) {
     if (cache.has(caseId)) return cache.get(caseId);
-    var cd = HUB.casedef.build(caseId);
-    var facts = HUB.sim.simulate(cd);
-    var m = {
-      id: cd.id, name: cd.name, presetName: cd.presetName, summary: cd.summary, flowText: cd.flowText,
-      category: cd.category, size: cd.size, curated: cd.curated, synthetic: true,
-      def: cd.def, facts: facts, rev: 0
-    };
-    if (facts.versionEvents.length) {
-      facts.versionEvents.forEach(function (v) { m.def.versions.push({ id: v.version, at: v.at, note: v.note, by: v.by }); });
-      m.def.version = facts.versionEvents[facts.versionEvents.length - 1].version;
-    }
-    m.idx = HUB.analysis.buildIdx(m.def, m.facts);
+    var src = sourceOf(caseId);
+    if (!src || !src.build) throw new Error('model ' + caseId + ' is not loaded');
+    var m = finish(src.build(caseId));
     cache.set(caseId, m);
     return m;
+  }
+  // for a source that takes time (a server): resolves once the model is in the cache
+  function load(caseId) {
+    if (cache.has(caseId)) return Promise.resolve(cache.get(caseId));
+    var src = sourceOf(caseId);
+    if (!src) return Promise.reject(new Error('没有能打开“' + caseId + '”的数据来源'));
+    if (src.build) return Promise.resolve(build(caseId));
+    return src.load(caseId).then(function (m) { m = finish(m); cache.set(caseId, m); return m; });
+  }
+  function ready(caseId) { var src = sourceOf(caseId); return cache.has(caseId) || !!(src && src.build); }
+
+  addSource({
+    id: 'sim', label: '模拟案例',
+    owns: function (id) { return !!(HUB.base && HUB.base.presets[id]); },
+    build: function (caseId) {
+      var cd = HUB.casedef.build(caseId);
+      return {
+        id: cd.id, name: cd.name, presetName: cd.presetName, summary: cd.summary, flowText: cd.flowText,
+        category: cd.category, size: cd.size, curated: cd.curated, synthetic: true,
+        def: cd.def, facts: HUB.sim.simulate(cd), rev: 0, clock: null, source: { kind: 'sim' }
+      };
+    }
+  });
+
+  /* A run's detail in the trace contract: the source's own session when it has one (real sessions), else the
+     run converted (simulated cases, with their decisions as the coarse layer). turn: the turn to show first. */
+  function traceOf(m, run, cut) {
+    var ref = m.source && m.source.runs && m.source.runs[run.id];
+    if (ref) return { session: m.source.sessions.get(ref.session), layer: null, turn: ref.turn };
+    return HUB.toTrace.fromRun(m, run, cut);
   }
 
   function an(state, model) {
@@ -40,6 +80,7 @@
   function select(caseId) {
     var m = build(caseId);
     HUB.model.current = m;
+    U.setClock(m.clock);
     return m;
   }
 
@@ -190,7 +231,8 @@
 
   HUB.model = {
     current: null,
-    build: build, select: select, an: an, perform: perform,
+    build: build, load: load, ready: ready, owns: function (id) { return !!sourceOf(id); }, addSource: addSource,
+    select: select, an: an, perform: perform, traceOf: traceOf,
     visible: visible, instanceOf: instanceOf, latestRunOf: latestRunOf, focusRun: focusRun, name: name
   };
 })();

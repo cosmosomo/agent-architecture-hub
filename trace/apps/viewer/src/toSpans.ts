@@ -4,7 +4,7 @@
  * tab and the task list. Tree: session > turns > steps (> effects of a tool call).
  */
 import type { TokenUsage, TraceSpan, TraceSpanAttribute, TraceSpanCategory, TraceSpanStatus } from '@evilmartians/agent-prism-types';
-import type { Effect, EventStep, MessageStep, ModelStep, Session, SessionStatus, Step, ToolStep, Turn } from '@hub-trace/contract';
+import type { AnnotationSet, Effect, EventStep, MessageStep, ModelStep, Producer, Segment, Session, SessionStatus, Step, ToolStep, Turn } from '@hub-trace/contract';
 import { STATUS_LABEL, basename, cut } from './format.ts';
 
 const SESSION_STATUS: Record<SessionStatus, TraceSpanStatus> = {
@@ -23,7 +23,7 @@ const EVENT_LABEL: Record<EventStep['name'], string> = { compaction: '上下文�
 const EFFECT_LABEL: Record<Effect['kind'], string> = { command: '命令', file: '文件', mcp: 'MCP', subagent: '子智能体', web: '搜索', image: '图片' };
 
 export const SESSION_SPAN_ID = 'session';
-export const turnSpanId = (t: Turn) => 'turn:' + t.id;
+export const turnSpanId = (t: { id: string }) => 'turn:' + t.id;
 
 function attrs(pairs: [string, unknown][]): TraceSpanAttribute[] {
   const out: TraceSpanAttribute[] = [];
@@ -170,9 +170,59 @@ function stepSpan(s: Step, fallback: number): TraceSpan {
   }
 }
 
-function turnSpan(t: Turn, fallback: number): TraceSpan {
+const ACTION_LABEL: Record<NonNullable<Segment['action']>, string> = { deliver: '交付', request: '请求', yield: '让出', escalate: '上报', tool: '关键调用' };
+const PRODUCER_LABEL: Record<Producer['kind'], string> = { simulator: '模拟器', rules: '规则', agent: '摘要智能体', human: '人' };
+const FLAG_LABEL: Record<string, string> = { unsupported: '理由没有依据', 'repeat-read': '重复读取', 'missing-docs': '缺资料' };
+
+export const segmentSpanId = (g: { id: string }) => 'seg:' + g.id;
+
+const lines = (pairs: [string, string | string[] | undefined][]) =>
+  pairs.filter(([, v]) => (Array.isArray(v) ? v.length : v)).map(([k, v]) => k + '：' + (Array.isArray(v) ? v.join('、') : v)).join('\n');
+
+/** A coarse-grained segment over its steps: what started it and what it had on the way in, what it chose on the way out. */
+function segmentSpan(g: Segment, producer: Producer, children: TraceSpan[]): TraceSpan {
+  let start = Infinity, end = -Infinity;
+  for (const c of children) { start = Math.min(start, c.startTime.getTime()); end = Math.max(end, c.endTime.getTime()); }
+  const flags = (g.flags || []).map((f) => FLAG_LABEL[f] || f);
+  const input = lines([['因为', g.trigger], ['读到的', g.read], ['该知道但没读到', g.missed], ['运行中送进来的', g.injected], ['备选', g.alternatives]]);
+  const output = lines([['选了', g.choice], ['理由', g.reason], ['影响', g.impact], ['后来', g.outcome === 'overturned' ? '被推翻' : g.outcome === 'pending' ? '还在进行' : undefined]]);
+  return {
+    id: segmentSpanId(g),
+    title: g.title + (g.action ? ' · ' + ACTION_LABEL[g.action] : '') + (flags.length ? ' · ' + flags.join('、') : ''),
+    type: 'span',
+    metadata: { badge: '决策' },
+    status: children.some((c) => c.status === 'error') ? 'error' : g.outcome === 'pending' ? 'pending' : flags.length || g.outcome === 'overturned' ? 'warning' : 'success',
+    startTime: new Date(start),
+    endTime: new Date(Math.max(end, start)),
+    ...(input ? { input } : {}),
+    ...(output ? { output } : {}),
+    attributes: attrs([['segment.kind', g.kind], ['segment.action', g.action], ['segment.outcome', g.outcome], ['segment.flags', flags.length ? flags.join('、') : undefined],
+      ['segment.steps', g.steps.length], ['annotation.producer', PRODUCER_LABEL[producer.kind] + ' · ' + producer.name], ['annotation.at', producer.at]]),
+    raw: [JSON.stringify(g, null, 2)],
+    children,
+  };
+}
+
+/** Step spans of a turn, with the steps a segment covers moved under that segment. */
+function turnChildren(t: Turn, start: number, layer: AnnotationSet | null | undefined): TraceSpan[] {
+  const spans = t.steps.map((s) => stepSpan(s, start));
+  const segs = (layer?.segments || []).filter((g) => g.turn === t.id);
+  if (!segs.length) return spans;
+  const byStep = new Map<string, TraceSpan>(spans.map((x) => [x.id, x]));
+  const owner = new Map<string, Segment>();
+  for (const g of segs) for (const id of g.steps) owner.set(id, g);
+  const out: TraceSpan[] = [];
+  for (const s of t.steps) {
+    const g = owner.get(s.id);
+    if (!g) out.push(byStep.get(s.id)!);
+    else if (g.steps[0] === s.id) out.push(segmentSpan(g, layer!.producer, g.steps.map((id) => byStep.get(id)).filter((x): x is TraceSpan => Boolean(x))));
+  }
+  return out;
+}
+
+function turnSpan(t: Turn, fallback: number, layer?: AnnotationSet | null): TraceSpan {
   const start = ms(t.startedAt) ?? fallback;
-  const children = t.steps.map((s) => stepSpan(s, start));
+  const children = turnChildren(t, start, layer);
   let end = ms(t.endedAt) ?? start;
   for (const c of children) end = Math.max(end, c.endTime.getTime());
   const firstInput = t.steps.find((s): s is MessageStep => s.kind === 'message' && (s.role === 'user' || s.role === 'agent'));
@@ -194,9 +244,10 @@ function turnSpan(t: Turn, fallback: number): TraceSpan {
   };
 }
 
-export function toSpans(s: Session): TraceSpan[] {
+/** Session > turns > steps; with an annotation layer, the steps a segment covers sit under that segment. */
+export function toSpans(s: Session, layer?: AnnotationSet | null): TraceSpan[] {
   const start = ms(s.startedAt) ?? ms(s.turns[0]?.startedAt) ?? Date.now();
-  const turns = s.turns.map((t) => turnSpan(t, start));
+  const turns = s.turns.map((t) => turnSpan(t, start, layer));
   let end = ms(s.updatedAt) ?? start;
   for (const t of turns) end = Math.max(end, t.endTime.getTime());
   const last = s.turns[s.turns.length - 1];
@@ -252,5 +303,15 @@ export function initialExpanded(s: Session): string[] {
   s.turns.forEach((t, i) => {
     if (i === s.turns.length - 1 || t.status === 'failed') ids.push(turnSpanId(t));
   });
+  return ids;
+}
+
+/**
+ * Ids to expand for a granularity: 1 shows the segments of every turn (the decision chain),
+ * 2 opens them to their steps (the execution chain). Without segments both show the steps.
+ */
+export function expandedForDepth(s: Session, layer: AnnotationSet | null | undefined, depth: number): string[] {
+  const ids = [SESSION_SPAN_ID, ...s.turns.map(turnSpanId)];
+  if (depth >= 2 && layer) for (const g of layer.segments) ids.push(segmentSpanId(g));
   return ids;
 }

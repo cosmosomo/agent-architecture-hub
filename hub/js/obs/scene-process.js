@@ -16,6 +16,11 @@
   function build(m, s, a, view) {
     view = view || { w: 1300, h: 760 };
     var P = m.def.process, idx = m.idx;
+    // real sessions carry facts but no written process; say so instead of drawing just start and end
+    if (!P.stages.length) {
+      return { subject: 'process', frames: [], links: [], bbox: { x: 0, y: 0, w: 440, h: 96 },
+        cards: [{ key: 'x:noprocess', kind: 'note', x: 0, y: 0, w: 440, h: 96, data: { text: '这个来源没有写下业务流程：本机会话只有发生过的事实。流程要从编排文档里读出来，或者从多次运行里归纳出来。先用 ①②③ 看谁派了谁、各自做了什么。' } }] };
+    }
     var cards = [], frames = [], links = [];
     var focusCase = s.focus && s.focus.type === 'case' ? m.idx.case.get(s.focus.id) : null;
     var visits = {};

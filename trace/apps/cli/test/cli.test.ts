@@ -93,6 +93,12 @@ test('service: index, sessions, OTLP, static files, and its guards', async () =>
     assert.equal(JSON.parse(otel.body).resourceSpans[0].scopeSpans[0].spans.length, 16);
 
     assert.equal((await get(base, '/api/sessions/codex:nope')).status, 404);
+
+    const tree = JSON.parse((await get(base, '/api/sessions/' + encodeURIComponent('codex:' + MAIN_ID) + '/tree')).body);
+    assert.deepEqual(tree.sessions.map((s: { id: string }) => s.id), ['codex:' + MAIN_ID, 'codex:' + CHILD_ID], 'the main session, then the sub-agent it started');
+    for (const s of tree.sessions) assert.deepEqual(validateSessionDoc({ contract: tree.contract, session: s }), []);
+    assert.equal(JSON.parse((await get(base, '/api/sessions/' + encodeURIComponent('codex:' + CHILD_ID) + '/tree')).body).sessions.length, 1, 'a sub-agent alone');
+    assert.equal((await get(base, '/api/sessions/codex:nope/tree')).status, 404);
     assert.match((await get(base, '/')).body, /obs/);
     assert.equal((await get(base, '/hub/js/a.js')).body, 'var a = 1;');
     assert.match((await get(base, '/trace/some/route')).body, /trace/, 'viewer routes fall back to its page');

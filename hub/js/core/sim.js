@@ -298,7 +298,7 @@
         kinds.forEach(function (kd, ci) {
           var d = Math.max(400, Math.round(durs[ci] * scale));
           var kind = kd.split(':')[0], arg = kd.split(':')[1];
-          var call = { id: nid('c', 'c'), runId: run.id, decisionId: dec.id, parentId: null, kind: kind === 'model' ? 'model' : 'tool',
+          var call = { id: nid('c', 'c'), runId: run.id, decisionId: dec.id, parentId: null, kind: kind === 'model' ? 'model' : 'tool', tool: kind === 'model' ? null : kind,
             name: '', channelId: '', start: Math.round(t), end: Math.round(t + d), tokensIn: 0, tokensOut: 0, status: 'ok', repeat: false,
             input: '', output: '', context: null };
           if (kind === 'model') {
@@ -353,6 +353,7 @@
             var fnCh = !!cc && /^ch_fn_/.test(cc);
             if (cc && (fnCh ? kind !== 'bash' : ci % 2 === 0)) {
               call.channelId = cc;
+              call.tool = fnCh ? 'browser' : 'service';
               var cname = ((def.channels.find(function (c) { return c.id === cc; }) || {}).name || cc).replace(/^工具：/, '');
               call.name = fnCh ? (kind === 'search' ? '用 ' + cname + ' 搜索' : '用 ' + cname + ' 打开页面') : '调用 ' + cname;
               if (fnCh) { d = R.int(25, 80) * 1000; call.end = call.start + d; }

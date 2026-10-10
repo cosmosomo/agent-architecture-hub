@@ -43,10 +43,14 @@
     return el;
   }
 
-  // Simulated clock: ms since the start of the simulated span -> "第1天 09:42".
+  // Times are ms since the start of the model's span. A simulated model reads them on the simulated clock
+  // ("第1天 09:42"); a model of real sessions sets its start as the clock and reads real dates ("10月8日 14:05").
   var DAY = 24 * 3600 * 1000, START_HOUR = 9;
+  var clock = null;
+  function setClock(base) { clock = base == null ? null : base; }
   function fmtClock(t) {
     if (t == null || isNaN(t)) return '-';
+    if (clock != null) { var dt = new Date(clock + t); return (dt.getMonth() + 1) + '月' + dt.getDate() + '日 ' + pad2(dt.getHours()) + ':' + pad2(dt.getMinutes()); }
     var abs = t + START_HOUR * 3600 * 1000;
     var d = Math.floor(abs / DAY) + 1;
     var m = Math.floor((abs % DAY) / 60000);
@@ -54,6 +58,7 @@
   }
   function fmtTime(t) {
     if (t == null || isNaN(t)) return '-';
+    if (clock != null) { var dt = new Date(clock + t); return pad2(dt.getHours()) + ':' + pad2(dt.getMinutes()) + ':' + pad2(dt.getSeconds()); }
     var abs = t + START_HOUR * 3600 * 1000;
     var s = Math.floor((abs % DAY) / 1000);
     return pad2(Math.floor(s / 3600)) + ':' + pad2(Math.floor(s / 60) % 60) + ':' + pad2(s % 60);
@@ -145,7 +150,7 @@
   };
 
   HUB.util = {
-    esc: esc, h: h, svg: svg, fmtClock: fmtClock, fmtTime: fmtTime, fmtDur: fmtDur, fmtNum: fmtNum, pct: pct,
+    esc: esc, h: h, svg: svg, setClock: setClock, fmtClock: fmtClock, fmtTime: fmtTime, fmtDur: fmtDur, fmtNum: fmtNum, pct: pct,
     rng: rng, hashStr: hashStr, byId: byId, groupBy: groupBy, clamp: clamp, sum: sum, uniq: uniq, uid: uid,
     toolList: toolList, toolChannelId: toolChannelId, LABELS: LABELS, DAY: DAY
   };

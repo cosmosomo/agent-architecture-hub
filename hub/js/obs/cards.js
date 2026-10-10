@@ -171,5 +171,8 @@
   }
 
   // other subjects register their own card and frame kinds here (process stages, gates, decisions, ...)
-  HUB.obsCards = { card: card, frame: frame, extra: {}, extraFrame: { chframe: chframe }, agentIcon: agentIcon, agentColor: agentColor, phaseVar: phaseVar, ICON: ICON, CH_KIND: CH_KIND };
+  // a sentence on the canvas where a view has nothing to draw
+  function note(c) { return { cls: 'ob-card ob-note-card', html: esc(c.data.text), sized: true, sig: c.data.text }; }
+
+  HUB.obsCards = { card: card, frame: frame, extra: { note: note }, extraFrame: { chframe: chframe }, agentIcon: agentIcon, agentColor: agentColor, phaseVar: phaseVar, ICON: ICON, CH_KIND: CH_KIND };
 })();

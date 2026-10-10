@@ -10,7 +10,7 @@ import {
 import type { ReadonlyProps } from "../ReadonlyProps";
 
 import { PriceBadge } from "../PriceBadge";
-import { SpanBadge } from "../SpanBadge";
+import { SpanBadge, spanBadgeLabel } from "../SpanBadge";
 import { TokensBadge } from "../TokensBadge";
 
 type SpanCardBagdesProps = {
@@ -22,7 +22,7 @@ export const SpanCardBadges = ({
 }: ReadonlyProps<SpanCardBagdesProps>): ReactElement => {
   return (
     <div className="flex flex-wrap items-center justify-start gap-1">
-      <SpanBadge category={data.type} />
+      <SpanBadge category={data.type} label={spanBadgeLabel(data)} />
 
       {data.tokenUsage ? (
         <>

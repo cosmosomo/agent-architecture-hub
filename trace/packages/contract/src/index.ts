@@ -308,6 +308,113 @@ export function validateSessionDoc(doc: unknown): string[] {
 }
 
 /**
+ * The coarse-grained layer (hub/SPEC.md 17.5). Parsed turns and steps stay as they are; an
+ * annotation set cuts a session's steps into segments, such as the decisions of the decision
+ * chain, each covering consecutive steps of one turn and pointing back to them as evidence.
+ * Every producer (the simulator, a rule set, a summarising agent, a person) writes its own set,
+ * stored apart from the parsed session: re-running a producer replaces only its own set, and
+ * `basis` shows when the session has grown since. Sets carry their own version, so adding or
+ * changing a layer never invalidates parsed sessions.
+ */
+export const ANNOTATION_VERSION = '0.1';
+
+export type AnnotationSet = {
+  version: string;
+  /** Global session id. */
+  session: string;
+  producer: Producer;
+  /** The session as the producer saw it. */
+  basis: { steps: number; updatedAt?: Iso };
+  segments: Segment[];
+};
+
+export type ProducerKind = 'simulator' | 'rules' | 'agent' | 'human';
+
+export type Producer = {
+  kind: ProducerKind;
+  /** Producer id and version, e.g. 'hub-sim@1' or the summarising agent's name. */
+  name: string;
+  at: Iso;
+};
+
+/** Only decisions so far; stages, intents and the like can follow. */
+export type SegmentKind = 'decision';
+
+/** Consecutive steps of one turn. Everything besides the cut itself is derived, so any field may be missing. */
+export type Segment = {
+  id: string;
+  kind: SegmentKind;
+  /** Turn id. */
+  turn: string;
+  /** Ids of the steps it covers, in order. */
+  steps: string[];
+  title: string;
+  /** The visible action that ends a decision. */
+  action?: 'deliver' | 'request' | 'yield' | 'escalate' | 'tool';
+  trigger?: string;
+  /** What the agent read, what it should have known but did not get, what was sent in while it ran. */
+  read?: string[];
+  missed?: string[];
+  injected?: string[];
+  alternatives?: string[];
+  choice?: string;
+  reason?: string;
+  impact?: string;
+  /** Whether later steps confirmed or overturned it. */
+  outcome?: 'confirmed' | 'overturned' | 'pending';
+  /** Problems found, e.g. 'unsupported' (the reason points at no evidence), 'repeat-read', 'missing-docs'. */
+  flags?: string[];
+};
+
+export function stepCount(session: Session): number {
+  return session.turns.reduce((n, t) => n + t.steps.length, 0);
+}
+
+/** The session has steps the producer did not see; re-run the producer. */
+export function isStale(set: AnnotationSet, session: Session): boolean {
+  return set.basis.steps !== stepCount(session);
+}
+
+const PRODUCER_KINDS = new Set<ProducerKind>(['simulator', 'rules', 'agent', 'human']);
+const SEGMENT_KINDS = new Set<SegmentKind>(['decision']);
+
+/** Structural check of an annotation set, and against its session when given. Returns problems; an empty list means valid. */
+export function validateAnnotationSet(set: unknown, session?: Session): string[] {
+  const errs: string[] = [];
+  const a = set as AnnotationSet;
+  if (!a || typeof a !== 'object') return ['not an object'];
+  if (a.version !== ANNOTATION_VERSION) errs.push('annotation version ' + String(a.version) + ' is not ' + ANNOTATION_VERSION);
+  if (typeof a.session !== 'string') errs.push('session missing');
+  if (!a.producer || !PRODUCER_KINDS.has(a.producer.kind) || typeof a.producer.name !== 'string') errs.push('bad producer');
+  if (!a.basis || typeof a.basis.steps !== 'number') errs.push('basis missing');
+  if (!Array.isArray(a.segments)) return errs.concat('segments missing');
+  const ids = new Set<string>();
+  for (const g of a.segments) {
+    if (typeof g.id !== 'string' || ids.has(g.id)) errs.push('segment id missing or repeated: ' + String(g.id));
+    ids.add(g.id);
+    if (!SEGMENT_KINDS.has(g.kind)) errs.push('segment ' + g.id + ' bad kind ' + String(g.kind));
+    if (typeof g.title !== 'string') errs.push('segment ' + g.id + ' has no title');
+    if (!Array.isArray(g.steps) || !g.steps.length) errs.push('segment ' + g.id + ' covers no steps');
+  }
+  if (!session || errs.length) return errs;
+  if (a.session !== session.id) errs.push('annotations are for ' + a.session + ', not ' + session.id);
+  const order = new Map(session.turns.map((t) => [t.id, t.steps.map((s) => s.id)]));
+  const taken = new Set<string>();
+  for (const g of a.segments) {
+    const steps = order.get(g.turn);
+    if (!steps) { errs.push('segment ' + g.id + ' names missing turn ' + g.turn); continue; }
+    const at = g.steps.map((id) => steps.indexOf(id));
+    if (at.some((i) => i < 0)) { errs.push('segment ' + g.id + ' covers a step outside turn ' + g.turn); continue; }
+    if (at.some((i, k) => k > 0 && i !== at[k - 1] + 1)) errs.push('segment ' + g.id + ' steps are not consecutive');
+    for (const id of g.steps) {
+      if (taken.has(id)) errs.push('step ' + id + ' is in two segments');
+      taken.add(id);
+    }
+  }
+  return errs;
+}
+
+/**
  * Step search (the retrieval layer, hub/SPEC.md 17.4). Types only: the service builds
  * the index and answers, the viewer and the observatory ask. Kept here so both sides
  * read the same field names without importing the service's database code.
