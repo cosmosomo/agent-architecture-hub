@@ -63,6 +63,18 @@
     return { cls: cls, html: html, style: { '--ic': ic }, sig: JSON.stringify(d) };
   }
 
+  /* ---------- a quick-aggregate placeholder: several individuals collapsed into one card ---------- */
+  function merged(c) {
+    var d = c.data;
+    var cls = 'ob-card ob-merged' + (d.working ? ' ob-st-working' : '');
+    var html = '<div class="ob-merged-body" title="' + esc(d.name + '：' + d.count + ' 个智能体已聚合。点击展开') + '">' +
+      '<div class="ob-merged-icon">⬡</div>' +
+      '<div class="ob-merged-name">' + esc(d.name) + '</div>' +
+      '<div class="ob-merged-count">' + d.count + ' 个' + (d.working ? ' · ' + d.working + ' 在做' : '') + '</div>' +
+      '</div>';
+    return { cls: cls, html: html, sized: true, sig: JSON.stringify(d) };
+  }
+
   /* ---------- a folded group: a stacked card with the members' icons ---------- */
   function dept(c) {
     var d = c.data;
@@ -142,6 +154,7 @@
     switch (c.kind) {
       case 'dept': return dept(c);
       case 'channel': return channel(c);
+      case 'merged': return merged(c);
       default:
         if (HUB.obsCards.extra[c.kind]) return HUB.obsCards.extra[c.kind](c);
         return individual(c);

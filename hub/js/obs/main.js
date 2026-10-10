@@ -325,6 +325,14 @@
       els.ctrl.appendChild(h('span', { class: 'ob-sep' }));
     }
     if (HUB.obsTimeline && HUB.obsTimeline.replayButton) els.ctrl.appendChild(HUB.obsTimeline.replayButton(s));
+    // auto-group button: only in org subject with a real-session model
+    if (s.subject === 'org' && m.source && m.source.kind === 'sessions') {
+      var hasMerged = (s.merged || []).length > 0;
+      els.ctrl.appendChild(h('button', { type: 'button', class: 'ob-chip' + (hasMerged ? ' on' : ''), title: hasMerged ? '展开所有聚合' : '自动按父子会话分组聚合', onClick: function () {
+        if (hasMerged) { HUB.store.set({ merged: [] }); return; }
+        HUB.store.set({ merged: suggestMerge(m) });
+      } }, hasMerged ? '取消聚合' : '自动分组'));
+    }
     els.ctrl.appendChild(h('button', { type: 'button', class: 'ob-ibtn', title: '适应窗口（F）', onClick: fit }, '适应窗口'));
   }
 
@@ -376,6 +384,46 @@
     if (s.subject === 'process') HUB.store.toggle('process', id, 1);
     else { var g = m.idx.group.get(id); if (g) HUB.store.toggle('org', g.id, g.level); }
   }
+  /* ---------- suggest merge groups from a real-session model ----------
+     For sessions source: group by parent-session waves (same parent + same spawn turn).
+     For simulated: group by phase. Returns an array for s.merged.              */
+  function suggestMerge(m) {
+    if (!m || !m.def) return [];
+    var result = [], seen = new Set();
+    if (m.source && m.source.kind === 'sessions') {
+      // group individuals that share the same parent+turn (i.e. same wave)
+      var waveOf = new Map();
+      m.def.individuals.forEach(function (x) {
+        if (!x.groupId || x.kind !== 'agent' || x.id === 'human') return;
+        var g = m.idx.group.get(x.groupId);
+        if (g && g.members.length > 1) {
+          var key = x.groupId;
+          (waveOf.get(key) || waveOf.set(key, []).get(key)).push(x.id);
+        }
+      });
+      var seq = 0;
+      waveOf.forEach(function (ids, gid) {
+        if (ids.length < 2) return;
+        var g = m.idx.group.get(gid);
+        result.push({ id: 'mg_auto_' + (++seq), memberIds: ids, name: g ? g.name : '聚合 ' + seq });
+      });
+    } else {
+      // simulated: group by phase
+      var byPhase = new Map();
+      m.def.individuals.forEach(function (x) {
+        if (x.kind !== 'agent' || x.id === 'human' || !x.phase) return;
+        (byPhase.get(x.phase) || byPhase.set(x.phase, []).get(x.phase)).push(x.id);
+      });
+      var PHASE_ZH = { strategy: '策略', research: '研究', build: '开发', qa: '质检', hitl: '审批', planner: '规划', debate: '辩论' };
+      var seq2 = 0;
+      byPhase.forEach(function (ids, ph) {
+        if (ids.length < 2) return;
+        result.push({ id: 'mg_ph_' + (++seq2), memberIds: ids, name: (PHASE_ZH[ph] || ph) + '组' });
+      });
+    }
+    return result;
+  }
+
   function onOpen(obj) {
     if (obj.toggle) { onToggle(obj.toggle); return; }
     var sel = obj.sel;
@@ -384,6 +432,9 @@
     if (sel.type === 'individual') {
       var r = HUB.model.latestRunOf(sel.id, s, m);
       if (r) HUB.store.set({ subject: 'exec', depth: { exec: 1 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: { type: 'run', id: r.id }, selection: sel });
+    } else if (sel.type === 'merged') {
+      // click a merged placeholder: expand it (remove from merged list)
+      HUB.store.set({ merged: (s.merged || []).filter(function (mg) { return mg.id !== sel.id; }) });
     } else if (sel.type === 'run') {
       HUB.store.set({ subject: 'exec', depth: { exec: 1 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: { type: 'run', id: sel.id }, selection: sel });
     } else if (sel.type === 'stage') {

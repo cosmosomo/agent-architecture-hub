@@ -17,7 +17,8 @@
     overlays: { human: true, channels: false, delivery: false, lanes: true },
     present: 'graph',
     selection: null,
-    drawer: true
+    drawer: true,
+    merged: []   /* quick-aggregate: [{id, memberIds, name}]; view-only, never touches def/facts */
   };
   var MERGE_KEYS = ['depth', 'expanded', 'collapsed', 'lines', 'overlays'];
   var MAX_DEPTH = { org: 3, process: 2, exec: 2 };
@@ -135,6 +136,7 @@
     p.set('o', Object.keys(s.overlays).filter(function (k) { return s.overlays[k]; }).join(','));
     if (s.present !== 'graph') p.set('p', s.present);
     if (s.selection) p.set('sel', s.selection.type + ':' + s.selection.id);
+    if (s.merged && s.merged.length) p.set('mg', s.merged.map(function (mg) { return mg.id + ':' + mg.name.replace(/[|:;]/g, ' ') + '|' + mg.memberIds.join(','); }).join(';'));
     return '#' + p.toString();
   }
   function fromHash(hash) {
@@ -168,6 +170,15 @@
     }
     if (p.get('p')) out.present = p.get('p');
     if (p.get('sel')) { var s2 = p.get('sel').split(':'); out.selection = { type: s2[0], id: s2.slice(1).join(':') }; }
+    if (p.get('mg')) {
+      out.merged = p.get('mg').split(';').filter(Boolean).map(function (seg) {
+        var bar = seg.indexOf('|');
+        if (bar < 0) return null;
+        var head = seg.slice(0, bar), ids = seg.slice(bar + 1).split(',').filter(Boolean);
+        var colon = head.indexOf(':');
+        return colon < 0 ? null : { id: head.slice(0, colon), name: head.slice(colon + 1), memberIds: ids };
+      }).filter(Boolean);
+    }
     return out;
   }
   var hashTimer = null;

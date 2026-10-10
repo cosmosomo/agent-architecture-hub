@@ -566,3 +566,18 @@ body.obs-on .statbar > .ob-st { display: flex; }
 .ob-native-n { font-family: var(--hd); font-size: 13px; font-weight: 800; color: var(--t1); margin: 3px 0 4px; }
 .ob-native-s { font-family: var(--mn); font-size: 9.5px; color: var(--t2); margin-top: 4px; }
 [data-theme="light"] .ob-native-h, [data-theme="light"] .ob-host { color: #B45309; }
+
+/* ---------- merged / quick-aggregate placeholder card ---------- */
+.ob-card.ob-merged {
+  display: flex; align-items: stretch; justify-content: center;
+  background: linear-gradient(160deg, rgba(99,102,241,0.18), rgba(99,102,241,0.06));
+  border: 1.5px dashed rgba(99,102,241,0.55); border-radius: 14px;
+  cursor: pointer; position: relative;
+}
+.ob-card.ob-merged.ob-st-working { border-color: rgba(52,211,153,0.7); background: linear-gradient(160deg,rgba(52,211,153,0.18),rgba(52,211,153,0.04)); }
+.ob-merged-body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 8px; width: 100%; }
+.ob-merged-icon { font-size: 20px; line-height: 1; color: rgba(129,140,248,0.8); }
+.ob-merged-name { font-family: var(--hd); font-size: 11px; font-weight: 700; color: var(--t1); text-align: center; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ob-merged-count { font-family: var(--mn); font-size: 9.5px; color: var(--t2); }
+.ob-card.ob-merged:hover .ob-merged-icon { color: rgba(129,140,248,1); }
+[data-theme="light"] .ob-card.ob-merged { background: linear-gradient(160deg,rgba(99,102,241,0.12),rgba(99,102,241,0.03)); border-color: rgba(99,102,241,0.4); }

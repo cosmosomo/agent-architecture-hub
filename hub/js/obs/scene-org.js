@@ -152,6 +152,27 @@
           working: s.compare === 'def' ? 0 : gs.working || 0, cut: s.time != null } };
     };
 
+    /* ---------- quick-aggregate: replace merged groups with a single placeholder card ----------
+       s.merged = [{id, memberIds, name}]; view-only, stored in state not in def/facts.
+       All relations to/from any memberIds are redirected to the placeholder key 'mg:<id>'.    */
+    var mergedMap = new Map();   // individual id -> merged item
+    (s.merged || []).forEach(function (mg) {
+      mg.memberIds.forEach(function (mid) { if (idx.ind.has(mid)) mergedMap.set(mid, mg); });
+    });
+    var isMerged = function (id) { return mergedMap.has(id); };
+    var mgCard = function (mg) {
+      var count = mg.memberIds.filter(function (id) { return idx.ind.has(id); }).length;
+      var phases = mg.memberIds.map(function (id) { var x = idx.ind.get(id); return x && x.phase; }).filter(Boolean);
+      var ph = dominantPhase(mg.memberIds.filter(function (id) { return idx.ind.has(id); }), idx);
+      var statuses = mg.memberIds.map(function (id) { return (a.indStats[id] || {}).status; });
+      var working = statuses.filter(function (st) { return st === 'working'; }).length;
+      return { key: 'mg:' + mg.id, kind: 'merged', w: NW, h: NH,
+        sel: { type: 'merged', id: mg.id },
+        anchor: [],
+        data: { id: mg.id, name: mg.name, count: count, phase: ph, working: working,
+          memberIds: mg.memberIds, compare: s.compare } };
+    };
+
     /* one block per department, laid out in local coordinates */
     var tops = def.groups.filter(function (g) { return !g.parentId; }).sort(function (g1, g2) {
       var d = groupRank(g1) - groupRank(g2);
@@ -173,7 +194,16 @@
           items.push({ kind: 'sub', g: SG, inner: inner, w: lay.w + SP * 2, h: lay.h + ST + SP, r: rk[mem[0]] || 0 });
         } else items.push({ kind: 'subfold', g: SG, w: SW, h: SH, r: rk[mem[0]] || 0 });
       });
-      order(shown(G.members)).forEach(function (id) { items.push({ kind: 'ind', id: id, w: NW, h: NH, r: rk[id] || 0 }); });
+      order(shown(G.members)).forEach(function (id) {
+        if (isMerged(id)) {
+          // if any member of this group is merged, inject the placeholder once per unique merged group
+          var mg = mergedMap.get(id);
+          if (!items.some(function (it) { return it.kind === 'merged' && it.mg.id === mg.id; }))
+            items.push({ kind: 'merged', mg: mg, w: NW, h: NH, r: rk[mg.memberIds[0]] || 0 });
+        } else {
+          items.push({ kind: 'ind', id: id, w: NW, h: NH, r: rk[id] || 0 });
+        }
+      });
       items.sort(function (p, q) { return p.r - q.r; });
       var n = items.length;
       var cols = n <= COLS ? n : Math.ceil(n / Math.ceil(n / COLS));
@@ -184,6 +214,7 @@
       items.forEach(function (it) {
         var ox = FP + it.px, oy = FT + it.py;
         if (it.kind === 'ind') bl.cards.push(Object.assign(indCard(it.id), { x: ox, y: oy }));
+        else if (it.kind === 'merged') bl.cards.push(Object.assign(mgCard(it.mg), { x: ox, y: oy }));
         else if (it.kind === 'subfold') bl.cards.push(Object.assign(groupCard(it.g, SW, SH), { x: ox, y: oy }));
         else {
           bl.frames.push(Object.assign(frameOf(it.g, it.w, it.h, 2), { x: ox, y: oy }));
@@ -280,6 +311,8 @@
 
     /* which drawn card stands for an individual or a channel */
     var rep = function (id) {
+      // if this individual has been merged into a placeholder, redirect to it
+      if (mergedMap.has(id)) return 'mg:' + mergedMap.get(id).id;
       if (idx.ch.has(id)) {
         if (cardByKey.has('c:' + id)) return 'c:' + id;
         var cc = idx.ch.get(id);
