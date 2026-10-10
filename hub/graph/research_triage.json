@@ -1,0 +1,35 @@
+{
+  "format": "hub-graph",
+  "formatVersion": "1.0",
+  "meta": {
+    "id": "research_triage",
+    "name": "调研分诊：三路快扫一道审核",
+    "summary": "把一个模糊问题分诊成三路快扫（工具/社区/文档），审核员核对来源后给结论。hub-graph JSON 的最小活样例。",
+    "producer": "hand-written example",
+    "producedAt": "2026-10-10"
+  },
+  "objects": [
+    { "id": "lead", "type": "individual", "name": "分诊长", "tags": ["role/orchestrator", "phase/strategy", "hub"], "attributes": { "model": "claude-opus-5-5", "role": "拆问题、派三路快扫、汇总结论" } },
+    { "id": "r_tool", "type": "individual", "name": "工具快扫员", "tags": ["role/researcher", "phase/research", "group/scan"], "attributes": { "model": "claude-haiku-5-5", "role": "快扫工具功能与版本" } },
+    { "id": "r_comm", "type": "individual", "name": "社区快扫员", "tags": ["role/researcher", "phase/research", "group/scan"], "attributes": { "model": "claude-haiku-5-5", "role": "快扫社区讨论与踩坑" } },
+    { "id": "r_doc", "type": "individual", "name": "文档快扫员", "tags": ["role/researcher", "phase/research", "group/scan"], "attributes": { "model": "claude-haiku-5-5", "role": "快扫官方文档与变更记录" } },
+    { "id": "reviewer", "type": "individual", "name": "审核员", "tags": ["role/reviewer", "phase/qa"], "attributes": { "model": "claude-sonnet-5-5", "role": "核对三路来源的可信度，标注冲突" } },
+    { "id": "g_scan", "type": "group", "name": "并行快扫", "attributes": { "members": ["r_tool", "r_comm", "r_doc"], "level": 1 } },
+    { "id": "d_question", "type": "doc", "name": "问题与约束", "attributes": { "layer": "consensus", "owner": "lead", "audience": "all", "summary": "要回答的问题、边界和验收标准" } },
+    { "id": "K1", "type": "case", "name": "第一次分诊", "attributes": { "status": "done" } },
+    { "id": "d_lead_1", "type": "decision", "name": "要不要拆成三路", "attributes": { "agentId": "lead", "trigger": "收到模糊问题", "alternatives": ["整体丢给一个调研员", "拆成三路快扫再汇总", "直接凭经验回答"], "choice": "拆成三路快扫再汇总", "reason": "三路并行互相校验，比单路更不容易漏", "impact": "首答慢几分钟，但结论可复核", "action": "request" } },
+    { "id": "d_rev_1", "type": "decision", "name": "两路结论冲突怎么处理", "attributes": { "agentId": "reviewer", "trigger": "社区快扫与文档快扫的结论相反", "alternatives": ["采信文档", "采信社区", "标注冲突交分诊长"], "choice": "标注冲突交分诊长", "reason": "冲突本身就是要交付的信息", "impact": "结论里多了一个冲突区", "action": "escalate" } }
+  ],
+  "relations": [
+    { "id": "r1", "type": "task", "sub": "dispatch", "from": "lead", "to": "r_tool", "label": "派出" },
+    { "id": "r2", "type": "task", "sub": "dispatch", "from": "lead", "to": "r_comm", "label": "派出" },
+    { "id": "r3", "type": "task", "sub": "dispatch", "from": "lead", "to": "r_doc", "label": "派出" },
+    { "id": "r4", "type": "task", "sub": "deliver", "from": "r_tool", "to": "reviewer", "label": "交快扫结果" },
+    { "id": "r5", "type": "task", "sub": "deliver", "from": "r_comm", "to": "reviewer", "label": "交快扫结果" },
+    { "id": "r6", "type": "task", "sub": "deliver", "from": "r_doc", "to": "reviewer", "label": "交快扫结果" },
+    { "id": "r7", "type": "watch", "sub": "watch", "from": "lead", "to": "reviewer", "label": "盯结论" },
+    { "id": "r8", "type": "info", "sub": "read", "from": "r_tool", "to": "lead", "label": "读任务书" },
+    { "id": "r9", "type": "info", "sub": "read", "from": "r_comm", "to": "lead", "label": "读任务书" },
+    { "id": "r10", "type": "info", "sub": "read", "from": "r_doc", "to": "lead", "label": "读任务书" }
+  ]
+}
