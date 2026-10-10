@@ -9,7 +9,7 @@ HUB.base = {
    "cat": "DANE",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Trains, deploys, and monitors ML models on your data.",
+   "roleEn": "Trains, deploys, and monitors ML models on your data. Feature engineering, honest evaluation on a test set, deployment, and MLOps: drift monitoring, retraining, versioning. It trains your own model, not a prompt to a ready one. Works in Polish and English.",
    "tools": "Read, Write, Bash"
   },
   "data_engineer": {
@@ -18,7 +18,7 @@ HUB.base = {
    "cat": "DANE",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Designs and builds data pipelines (ingest, ETL, warehouse) with quality control that feed analytics and ML.",
+   "roleEn": "Designs and builds data pipelines (ingest, ETL, warehouse) with quality control that feed analytics and ML. Treats data as a product: versioned schemas, orchestration, tests and alerts. Does not train models or do business analysis. Works in Polish and English.",
    "tools": "Read, Write, Bash"
   },
   "ai_engineer": {
@@ -27,7 +27,7 @@ HUB.base = {
    "cat": "DANE",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Builds LLM-powered applications: RAG systems, assistants, prompt pipelines, and model API integrations.",
+   "roleEn": "Builds LLM-powered applications: RAG systems, assistants, prompt pipelines, and model API integrations. Combines retrieval (vector DB) with generation and balances cost, latency, and quality. Does not train models from scratch - it assembles systems from ready models and measures them with evaluation. Works in Polish and English.",
    "tools": "Read, Write, Bash, WebSearch, WebFetch"
   },
   "prompt_engineer": {
@@ -36,7 +36,7 @@ HUB.base = {
    "cat": "DANE",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Turns a vague requirement into a precise instruction: role, task, examples, and explicit output format.",
+   "roleEn": "Turns a vague requirement into a precise instruction: role, task, examples, and explicit output format. Treats a prompt like code - designs variants, tests them on a shared set, and picks the winner by metric, not hunch. Adds few-shot only where it raises quality. Works in Polish and English.",
    "tools": "Read, Write, WebSearch"
   },
   "devops_engineer": {
@@ -45,7 +45,7 @@ HUB.base = {
    "cat": "OPS",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Automates the path from commit to production: CI/CD pipelines, Infrastructure as Code (Terraform/Ansible), deployment strategies (blue-green, canary) with rollback, environment and secret management.",
+   "roleEn": "Automates the path from commit to production: CI/CD pipelines, Infrastructure as Code (Terraform/Ansible), deployment strategies (blue-green, canary) with rollback, environment and secret management. Shortens the delivery loop and ensures repeatability. Does not design cloud architecture or define SLOs. Works in Polish and English.",
    "tools": "Read, Write, Bash"
   },
   "cloud_architect": {
@@ -54,7 +54,7 @@ HUB.base = {
    "cat": "OPS",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Designs the target cloud architecture: service selection (compute, storage, network), network topology, cost, security, scalability, and disaster recovery.",
+   "roleEn": "Designs the target cloud architecture: service selection (compute, storage, network), network topology, cost, security, scalability, and disaster recovery. Draws the diagram and justifies trade-offs by well-architected principles. Does not build deployment pipelines or operate a Kubernetes cluster. Works in Polish and English.",
    "tools": "Read, Write, WebSearch, WebFetch"
   },
   "sre_engineer": {
@@ -63,7 +63,7 @@ HUB.base = {
    "cat": "OPS",
    "phase": "qa",
    "model": "sonnet",
-   "roleEn": "Guards production reliability: defines SLIs/SLOs and an error budget, designs monitoring and alerts around golden signals, runs incident response and blameless postmortems, reduces toil.",
+   "roleEn": "Guards production reliability: defines SLIs/SLOs and an error budget, designs monitoring and alerts around golden signals, runs incident response and blameless postmortems, reduces toil. Balances the pace of change with risk. Does not build CI/CD pipelines or design cloud architecture. Works in Polish and English.",
    "tools": "Read, Write, Bash"
   },
   "kubernetes_specialist": {
@@ -72,7 +72,7 @@ HUB.base = {
    "cat": "OPS",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Designs and operates Kubernetes clusters: manifests and Helm, requests/limits, autoscaling (HPA), networking (Ingress/Service), storage, RBAC, and security context.",
+   "roleEn": "Designs and operates Kubernetes clusters: manifests and Helm, requests/limits, autoscaling (HPA), networking (Ingress/Service), storage, RBAC, and security context. Packs applications into containers and deploys declaratively with self-healing. Does not design the whole cloud or define SLOs. Works in Polish and English.",
    "tools": "Read, Write, Bash"
   },
   "accessibility_tester": {
@@ -81,7 +81,7 @@ HUB.base = {
    "cat": "QA / AUDYT",
    "phase": "qa",
    "model": "sonnet",
-   "roleEn": "Audits WCAG conformance: contrast (ratio/APCA), keyboard navigation, focus visibility, semantics and ARIA, screen reader, touch targets.",
+   "roleEn": "Audits WCAG conformance: contrast (ratio/APCA), keyboard navigation, focus visibility, semantics and ARIA, screen reader, touch targets. Returns prioritized findings with fix recommendations, distinguishing automated from manual. Does not redesign visually or write application code. Works in Polish and English.",
    "tools": "Read, Bash"
   },
   "product_manager": {
@@ -90,7 +90,7 @@ HUB.base = {
    "cat": "PRODUKT",
    "phase": "strategy",
    "model": "sonnet",
-   "roleEn": "Defines the user problem and target group, prioritizes (RICE/MoSCoW), writes a PRD with scope, acceptance criteria, and success metrics, and manages trade-offs and roadmap.",
+   "roleEn": "Defines the user problem and target group, prioritizes (RICE/MoSCoW), writes a PRD with scope, acceptance criteria, and success metrics, and manages trade-offs and roadmap. Decides what and why to build. Does not write code, design UI, or do go-to-market. Works in Polish and English.",
    "tools": "Read, Write, WebSearch"
   },
   "ux_researcher": {
@@ -99,7 +99,7 @@ HUB.base = {
    "cat": "PRODUKT",
    "phase": "research",
    "model": "sonnet",
-   "roleEn": "Runs user research: interviews, surveys, usability tests, personas, JTBD, and journey maps.",
+   "roleEn": "Runs user research: interviews, surveys, usability tests, personas, JTBD, and journey maps. Turns user behavior into evidence-backed insights. Differs from the UX Researcher trend scout. Does not decide product priorities or design UI. Works in Polish and English.",
    "tools": "Read, Write, WebSearch"
   },
   "technical_writer": {
@@ -108,7 +108,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Creates developer documentation: API reference, how-to guides, tutorials, and explanations by the Diataxis framework, with tested code examples.",
+   "roleEn": "Creates developer documentation: API reference, how-to guides, tutorials, and explanations by the Diataxis framework, with tested code examples. Docs-as-code, versioned with the product. Does not write marketing content, articles, or in the author personal voice. Works in Polish and English.",
    "tools": "Read, Write, WebSearch"
   },
   "mobile_developer": {
@@ -117,7 +117,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Builds apps for iOS and Android: natively (Swift/Kotlin) or cross-platform (React Native/Flutter).",
+   "roleEn": "Builds apps for iOS and Android: natively (Swift/Kotlin) or cross-platform (React Native/Flutter). Offline-first, push notifications, native integrations (camera, GPS, biometrics), and store publishing. Does not build a web UI, backend, or the visual layer from scratch. Works in Polish and English.",
    "tools": "Read, Write, Bash"
   },
   "orchestrator": {
@@ -126,7 +126,7 @@ HUB.base = {
    "cat": "STRATEGIA",
    "phase": "strategy",
    "model": "opus",
-   "roleEn": "Central decision point of the entire agent system.",
+   "roleEn": "Central decision point of the entire agent system. Analyzes task, decomposes into subtasks and delegates to specialists. Controls gates between phases (GO/NO-GO) and synthesizes results. Does not generate content - manages workflow and resolves conflicts.",
    "tools": "Agent, Read/Write, Bash, TaskCreate"
   },
   "synthesizer": {
@@ -135,7 +135,7 @@ HUB.base = {
    "cat": "STRATEGIA",
    "phase": "strategy",
    "model": "sonnet",
-   "roleEn": "Cross-phase memory of the system - maintains MANIFEST.md as single source of truth.",
+   "roleEn": "Cross-phase memory of the system - maintains MANIFEST.md as single source of truth. Collects results from each phase, updates architectural decisions and stack.",
    "tools": "Read/Write (MANIFEST.md)"
   },
   "analyst": {
@@ -144,7 +144,7 @@ HUB.base = {
    "cat": "PLANOWANIE",
    "phase": "strategy",
    "model": "sonnet",
-   "roleEn": "Specialist in decomposing complex problems into independent subtasks.",
+   "roleEn": "Specialist in decomposing complex problems into independent subtasks. Identifies dependencies, estimates complexity (S/M/L/XL).",
    "tools": "Read, Write"
   },
   "planner": {
@@ -153,7 +153,7 @@ HUB.base = {
    "cat": "PLANOWANIE",
    "phase": "strategy",
    "model": "sonnet",
-   "roleEn": "Creates schedule based on Analyst's decomposition.",
+   "roleEn": "Creates schedule based on Analyst's decomposition. Determines parallel vs sequential tasks, identifies critical path.",
    "tools": "Read, Write"
   },
   "res_tech": {
@@ -162,7 +162,7 @@ HUB.base = {
    "cat": "RESEARCH",
    "phase": "research",
    "model": "haiku",
-   "roleEn": "Conducts technical research: compares frameworks, libraries, APIs and architecture.",
+   "roleEn": "Conducts technical research: compares frameworks, libraries, APIs and architecture. Analyzes minimum 3 options with pros/cons.",
    "tools": "WebSearch, WebFetch, Read"
   },
   "res_ux": {
@@ -171,7 +171,7 @@ HUB.base = {
    "cat": "RESEARCH",
    "phase": "research",
    "model": "haiku",
-   "roleEn": "Researches UI/UX trends, collects inspiration from Dribbble, Behance, Awwwards.",
+   "roleEn": "Researches UI/UX trends, collects inspiration from Dribbble, Behance, Awwwards. Checks WCAG 2.1 AA.",
    "tools": "WebSearch, WebFetch"
   },
   "res_reddit": {
@@ -198,7 +198,7 @@ HUB.base = {
    "cat": "RESEARCH",
    "phase": "research",
    "model": "sonnet",
-   "roleEn": "Searches open-source repositories similar to project.",
+   "roleEn": "Searches open-source repositories similar to project. Analyzes architecture, stack, README.",
    "tools": "WebSearch, WebFetch"
   },
   "res_forums": {
@@ -225,7 +225,7 @@ HUB.base = {
    "cat": "RESEARCH",
    "phase": "debate1",
    "model": "sonnet",
-   "roleEn": "Validates Researcher results looking for contradictions, bias and gaps.",
+   "roleEn": "Validates Researcher results looking for contradictions, bias and gaps. Evaluates source credibility.",
    "tools": "Read"
   },
   "backend": {
@@ -243,7 +243,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Implements client layer mobile-first.",
+   "roleEn": "Implements client layer mobile-first. Creates reusable components with state handling.",
    "tools": "Write, Edit, Bash, Read"
   },
   "feature": {
@@ -261,7 +261,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Creates complete visual layer from design tokens to animations.",
+   "roleEn": "Creates complete visual layer from design tokens to animations. CSS/SCSS with tokens.",
    "tools": "Write, Edit, Read"
   },
   "integrator": {
@@ -270,7 +270,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Connects workers' output into a cohesive project.",
+   "roleEn": "Connects workers' output into a cohesive project. Verifies API contracts, resolves conflicts.",
    "tools": "Read, Write, Edit, Bash"
   },
   "writer": {
@@ -288,7 +288,7 @@ HUB.base = {
    "cat": "RESEARCH",
    "phase": "research",
    "model": "haiku",
-   "roleEn": "Cuts one long researcher report 10x into a concise claim table (JSON): 15-30 atomic, citable facts plus conflict and gap sections.",
+   "roleEn": "Cuts one long researcher report 10x into a concise claim table (JSON): 15-30 atomic, citable facts plus conflict and gap sections. Pure extraction, not reasoning - runs in parallel (up to 7) in /deep-research-v2. Works in Polish and English.",
    "tools": "Read, Write"
   },
   "synthesizer_lean": {
@@ -297,7 +297,7 @@ HUB.base = {
    "cat": "STRATEGIA",
    "phase": "strategy",
    "model": "opus",
-   "roleEn": "A map-reduce-optimized Synthesizer: takes concise fact tables (extracts) instead of full reports and merges them into one decision-ready synthesis.",
+   "roleEn": "A map-reduce-optimized Synthesizer: takes concise fact tables (extracts) instead of full reports and merges them into one decision-ready synthesis. Faster and cheaper on large research swarms. Works in Polish and English.",
    "tools": "Read, Write, Edit"
   },
   "style_profiler": {
@@ -306,7 +306,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Analyzes samples of the author's text and builds a durable, reusable style profile (voice_profile.md): sentence rhythm, vocabulary, tone, formatting, hooks, and hard negative constraints.",
+   "roleEn": "Analyzes samples of the author's text and builds a durable, reusable style profile (voice_profile.md): sentence rhythm, vocabulary, tone, formatting, hooks, and hard negative constraints. Does not write content - it extracts language patterns. Bloomberry pattern: a large corpus rather than a few sentences.",
    "tools": "Read, Write, Edit, Grep, Glob"
   },
   "voice_qa": {
@@ -315,7 +315,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "haiku",
-   "roleEn": "Validates finished text against the author's style profile (voice_profile.md): whether it sounds like the author, detects AI slop markers, and catches broken negative constraints.",
+   "roleEn": "Validates finished text against the author's style profile (voice_profile.md): whether it sounds like the author, detects AI slop markers, and catches broken negative constraints. A separate step from writing, because one model's self-correction is unreliable. Returns a PASS/REVISE verdict with a concrete list of fixes. Works in Polish and English.",
    "tools": "Read, Write, Edit, Grep"
   },
   "social_strategist": {
@@ -324,7 +324,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Plans a post before the first sentence: picks the angle, opening hook, format and structure for a specific platform (LinkedIn / Facebook / X), and matches CTA and length to the channel's norms.",
+   "roleEn": "Plans a post before the first sentence: picks the angle, opening hook, format and structure for a specific platform (LinkedIn / Facebook / X), and matches CTA and length to the channel's norms. Does not write the final text - it creates a brief that Your Voice Writer fills in with the author's style. Knows platform differences and that LinkedIn penalizes generic AI slop. Works in Polish and English.",
    "tools": "Read, Write, WebSearch, WebFetch"
   },
   "career_document_builder": {
@@ -333,7 +333,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Builds a CV, cover letter, and LinkedIn profile tailored to a specific job opening, based on the author's REAL experience.",
+   "roleEn": "Builds a CV, cover letter, and LinkedIn profile tailored to a specific job opening, based on the author's REAL experience. Extracts keywords from the posting, maps them to actual achievements, and optimizes for ATS. Zero-fabrication rule: never invents positions, dates, or numbers. Works in Polish and English.",
    "tools": "Read, Write, Edit, WebSearch"
   },
   "interview_coach": {
@@ -342,7 +342,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Prepares you for a job interview through simulation: realistic role-specific questions, follow-ups like a real recruiter, feedback, and the STAR method.",
+   "roleEn": "Prepares you for a job interview through simulation: realistic role-specific questions, follow-ups like a real recruiter, feedback, and the STAR method. A TRAINING mode before the interview, not live cheating. Builds readiness on the author's real experience. Works in Polish and English.",
    "tools": "Read, Write, WebSearch"
   },
   "recipe_scout": {
@@ -351,7 +351,7 @@ HUB.base = {
    "cat": "RESEARCH",
    "phase": "research",
    "model": "sonnet",
-   "roleEn": "The first agent in the cooking pipeline.",
+   "roleEn": "The first agent in the cooking pipeline. Finds a pool of recipes matched to the dish category and your ingredients (from the fridge or with shopping), collects time and difficulty, and flags novelties and missing ingredients. Delivers a varied pool, it does not pick one dish. Works in Polish and English.",
    "tools": "WebSearch, WebFetch, Read"
   },
   "taste_recommender": {
@@ -360,7 +360,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "The middle agent in the cooking pipeline.",
+   "roleEn": "The middle agent in the cooking pipeline. Takes the recipe pool from the Scout and ranks it by your taste profile (profil_gustu.md), justifies the fit, adds at least one novelty, and strictly rejects dishes breaking allergies and exclusions. Learns from feedback. Works in Polish and English.",
    "tools": "Read, Write, Edit"
   },
   "recipe_filter": {
@@ -369,7 +369,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "haiku",
-   "roleEn": "The final, lightweight agent in the cook.",
+   "roleEn": "The final, lightweight agent in the cook. Takes recommendations from the Taste Advisor and filters them by difficulty, ingredient availability, and - the differentiator - ACTIVE work time separately from TOTAL time. Estimates active time when the source lacks it and honestly flags it. Works in Polish and English.",
    "tools": "Read, Write, Edit"
   },
   "decision_advisor": {
@@ -378,7 +378,7 @@ HUB.base = {
    "cat": "STRATEGIA",
    "phase": "strategy",
    "model": "sonnet",
-   "roleEn": "Turns collected community signal (Reddit/forums/X) into a clear decision verdict: a recommendation, key tradeoffs, a confidence level, and who it is and is not for.",
+   "roleEn": "Turns collected community signal (Reddit/forums/X) into a clear decision verdict: a recommendation, key tradeoffs, a confidence level, and who it is and is not for. Weighs a repeated signal over single loud opinions (n=1). Does not invent data beyond the sentiment. Works in Polish and English.",
    "tools": "Read, Write, Edit, Grep"
   },
   "voice_writer": {
@@ -387,7 +387,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Generates practical text (emails, LinkedIn/Facebook posts, CV fragments, messages) in the author's personal voice described in voice_profile.md.",
+   "roleEn": "Generates practical text (emails, LinkedIn/Facebook posts, CV fragments, messages) in the author's personal voice described in voice_profile.md. Faithfully applies the profile and negative constraints, learns from edits. Does not invent a style from scratch - avoids generic AI slop.",
    "tools": "Read, Write, Edit"
   },
   "qa_security": {
@@ -423,7 +423,7 @@ HUB.base = {
    "cat": "QA / AUDYT",
    "phase": "qa",
    "model": "sonnet",
-   "roleEn": "Collects and prioritizes QA reports.",
+   "roleEn": "Collects and prioritizes QA reports. GO/NO-GO decision on 1-10 scale.",
    "tools": "Read, Write"
   },
   "expert_pragmatist": {
@@ -432,7 +432,7 @@ HUB.base = {
    "cat": "FIVE MINDS",
    "phase": "debate1",
    "model": "opus",
-   "roleEn": "Five Minds: evaluates feasibility, costs, timeline, resources.",
+   "roleEn": "Five Minds: evaluates feasibility, costs, timeline, resources. Defends pragmatic perspective.",
    "tools": "Read"
   },
   "expert_innovator": {
@@ -441,7 +441,7 @@ HUB.base = {
    "cat": "FIVE MINDS",
    "phase": "debate1",
    "model": "opus",
-   "roleEn": "Five Minds: seeks best solutions, innovation, competitive advantage.",
+   "roleEn": "Five Minds: seeks best solutions, innovation, competitive advantage. Defends innovative perspective.",
    "tools": "Read"
   },
   "expert_analyst": {
@@ -450,7 +450,7 @@ HUB.base = {
    "cat": "FIVE MINDS",
    "phase": "debate1",
    "model": "opus",
-   "roleEn": "Five Minds: analyzes data, benchmarks, metrics, evidence.",
+   "roleEn": "Five Minds: analyzes data, benchmarks, metrics, evidence. Defends data-driven perspective.",
    "tools": "Read"
   },
   "expert_user": {
@@ -459,7 +459,7 @@ HUB.base = {
    "cat": "FIVE MINDS",
    "phase": "debate1",
    "model": "opus",
-   "roleEn": "Five Minds: represents end-user perspective.",
+   "roleEn": "Five Minds: represents end-user perspective. Defends UX, accessibility and user experience.",
    "tools": "Read"
   },
   "expert_devil": {
@@ -468,7 +468,7 @@ HUB.base = {
    "cat": "FIVE MINDS",
    "phase": "debate1",
    "model": "opus",
-   "roleEn": "Five Minds: questions EVERY decision, seeks risks and gaps.",
+   "roleEn": "Five Minds: questions EVERY decision, seeks risks and gaps. Has no domain loyalty.",
    "tools": "Read"
   },
   "decision_presenter": {
@@ -477,7 +477,7 @@ HUB.base = {
    "cat": "HITL",
    "phase": "hitl",
    "model": "haiku",
-   "roleEn": "Human-in-the-Loop gate between phases.",
+   "roleEn": "Human-in-the-Loop gate between phases. Collects proposals, identifies 2-3 options with trade-offs and presents them impartially. Waits for user decision.",
    "tools": "Read"
   },
   "db_architect": {
@@ -486,7 +486,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Specjalista projektowania baz danych: schemat, indeksy, migracje, strategia partycjonowania.",
+   "roleEn": "Specjalista projektowania baz danych: schemat, indeksy, migracje, strategia partycjonowania. Dobiera model danych (relacyjny/dokumentowy/kolumnowy), definiuje klucze, więzy integralności i plan migracji bezprzerwowych.",
    "tools": "Read, Write, Bash (psql/mysql/sqlite), WebSearch"
   },
   "observability_engineer": {
@@ -495,7 +495,7 @@ HUB.base = {
    "cat": "BUILD",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Instrumentuje system w metryki, logi i tracingi (trzy filary obserwowalności).",
+   "roleEn": "Instrumentuje system w metryki, logi i tracingi (trzy filary obserwowalności). Dobiera stack (OpenTelemetry, Prometheus, Grafana), definiuje SLI/SLO/SLA i projektuje dashboardy oraz alerty.",
    "tools": "Read, Write, Bash, WebSearch"
   },
   "gtm_strategist": {
@@ -504,7 +504,7 @@ HUB.base = {
    "cat": "PRODUKT",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Projektuje go-to-market: ICP, positioning, pricing, kanały akwizycji i plan launchu.",
+   "roleEn": "Projektuje go-to-market: ICP, positioning, pricing, kanały akwizycji i plan launchu. Łączy wynik badań użytkowników z mechanika wdrożenia produktu na rynek.",
    "tools": "Read, Write, WebSearch, WebFetch"
   },
   "statistician": {
@@ -513,7 +513,7 @@ HUB.base = {
    "cat": "DANE",
    "phase": "strategy",
    "model": "sonnet",
-   "roleEn": "Projektuje eksperymenty i analizy statystyczne.",
+   "roleEn": "Projektuje eksperymenty i analizy statystyczne. Dobiera testy hipotez, wielkość próby, moc testu i metode korekcji dla testów wielokrotnych. Pilnuje poprawności wnioskowania.",
    "tools": "Read, Write, Bash (R/Python)"
   },
   "eda_analyst": {
@@ -522,7 +522,7 @@ HUB.base = {
    "cat": "DANE",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Prowadzi eksploracyjna analize danych: profilowanie, wykrywanie anomalii, korelacje, wizualizacje.",
+   "roleEn": "Prowadzi eksploracyjna analize danych: profilowanie, wykrywanie anomalii, korelacje, wizualizacje. Opisuje dane zanim ktoś na nich buduje model.",
    "tools": "Read, Write, Bash (Python/pandas/matplotlib)"
   },
   "control_mapper": {
@@ -531,7 +531,7 @@ HUB.base = {
    "cat": "COMPLIANCE",
    "phase": "build",
    "model": "sonnet",
-   "roleEn": "Mapuje wymagania regulacyjne (GDPR, SOC2, ISO27001, HIPAA) na konkretne kontrole techniczne i procesowe.",
+   "roleEn": "Mapuje wymagania regulacyjne (GDPR, SOC2, ISO27001, HIPAA) na konkretne kontrole techniczne i procesowe. Buduje matryce kontroli, identyfikuje luki i dowody zgodności.",
    "tools": "Read, Write, WebSearch"
   },
   "telemetry_surfer": {
@@ -540,7 +540,7 @@ HUB.base = {
    "cat": "OPS",
    "phase": "research",
    "model": "sonnet",
-   "roleEn": "Przeszukuje istniejąca telemetrie (logi, metryki, traces) w poszukiwaniu wzorców, anomalii i incydentów.",
+   "roleEn": "Przeszukuje istniejąca telemetrie (logi, metryki, traces) w poszukiwaniu wzorców, anomalii i incydentów. Odpowiada na pytania co się stalo i co się dzieje teraz bazując na danych operacyjnych.",
    "tools": "Read, Bash (grep/jq/promtool/logcli), WebFetch"
   }
  },

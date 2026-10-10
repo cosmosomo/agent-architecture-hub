@@ -66,11 +66,11 @@ const MODEL_META = extract('MODEL_META');
 const PCAT = extract('PCAT');
 const I18N = extract('I18N_EN');
 
-const firstSentence = (s) => {
+// strip html tags and collapse whitespace; keep the full text — the v41 role
+// descriptions carry constraints the observatory detail views should not lose
+const cleanText = (s) => {
   if (!s) return '';
-  const clean = String(s).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-  const cut = clean.search(/[.!?](\s|$)/);
-  return cut > 0 ? clean.slice(0, cut + 1) : clean;
+  return String(s).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 };
 
 const agents = {};
@@ -81,7 +81,7 @@ AD.forEach((a) => {
     cat: a.cat,
     phase: a.phase || 'build',
     model: a.model,
-    roleEn: firstSentence((I18N.agentDescs && I18N.agentDescs[a.id]) || a.role),
+    roleEn: cleanText((I18N.agentDescs && I18N.agentDescs[a.id]) || a.role),
     tools: a.tools || '',
   };
 });
