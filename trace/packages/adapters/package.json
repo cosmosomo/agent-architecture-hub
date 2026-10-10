@@ -1,0 +1,13 @@
+{
+  "name": "@hub-trace/adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Source adapters: raw session records in, trace contract out. Pure code, runs in Node and in the browser.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@hub-trace/contract": "0.1.0"
+  }
+}

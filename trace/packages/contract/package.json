@@ -1,0 +1,10 @@
+{
+  "name": "@hub-trace/contract",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Trace contract: the only data shape the trace modules exchange.",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

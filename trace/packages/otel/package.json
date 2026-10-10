@@ -1,0 +1,18 @@
+{
+  "name": "@hub-trace/otel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Trace contract to an OpenTelemetry (OTLP/JSON) document with GenAI semantic conventions, for generic trace tools.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@hub-trace/contract": "0.1.0"
+  },
+  "devDependencies": {
+    "@evilmartians/agent-prism-data": "1.0.0",
+    "@evilmartians/agent-prism-types": "1.0.0",
+    "@hub-trace/adapters": "0.1.0"
+  }
+}

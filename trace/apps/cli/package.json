@@ -1,0 +1,16 @@
+{
+  "name": "@hub-trace/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local service: finds sessions on this machine, keeps a summary index, parses sessions on demand, serves them with the viewer and the observatory.",
+  "exports": {
+    "./store": "./src/store.ts",
+    "./server": "./src/server.ts"
+  },
+  "dependencies": {
+    "@hub-trace/adapters": "0.1.0",
+    "@hub-trace/contract": "0.1.0",
+    "@hub-trace/otel": "0.1.0"
+  }
+}

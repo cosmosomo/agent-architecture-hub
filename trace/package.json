@@ -1,0 +1,26 @@
+{
+  "name": "hub-trace",
+  "private": true,
+  "type": "module",
+  "description": "Session and trace parsing for the observatory: contract, source adapters, OpenTelemetry export, CLI and viewer. See hub/SPEC.md section 17.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "node --test --no-warnings=ExperimentalWarning \"packages/*/test/*.test.ts\" \"apps/cli/test/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json && npm run typecheck -w @hub-trace/viewer",
+    "scan": "node --no-warnings=ExperimentalWarning apps/cli/src/main.ts scan",
+    "serve": "node --no-warnings=ExperimentalWarning apps/cli/src/main.ts serve",
+    "cli": "node --no-warnings=ExperimentalWarning apps/cli/src/main.ts",
+    "dev": "npm run dev -w @hub-trace/viewer",
+    "build": "npm run build -w @hub-trace/viewer"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
