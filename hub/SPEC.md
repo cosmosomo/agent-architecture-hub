@@ -370,6 +370,8 @@ HUB.cases['feature_sprint'] = {
 
 - 10-10 晚三：面板按原页卡片语言重排（1.5px 边框、14px 圆角、顶部内高光、indigo 悬停色调、dtl 发丝分隔线、topbar 同款渐变发丝线）；组织视图按部门出入口汇合——端点都在组框内且框不同时，线走框边 36px 量化共享口岸，卡片端保留错道扇出，同框/无框/回退弧走原路由（deep_five_minds 个体层 184 条线中 153 条成束）。
 
+- 10-10 晚四：对照原 v41 预设补回 md 迁移时丢失的 agent——deep_research_v2 9→20 个（社区讨论/技术动态/技术论坛/官方文档四路调研员 + 提炼层 r_ex1~r_ex7，流程加 s_extract 长报告提炼阶段，调研质检关卡移到提炼之后），incident_war_room 8→10 个（代码取证员 forensics、质疑专家 devil）；extract_base.js 去掉角色文本截断（base.js 50 处恢复 v41 全文）；index.html 停载 4 个已归档的 data/cases/*.js（docs 源已接管这些 id）。
+
 还没做：
 - 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
 

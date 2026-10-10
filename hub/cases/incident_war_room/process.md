@@ -9,8 +9,8 @@ name: 事故声明与并行诊断启动
 executors: [ic, comms]
 
 # @s_diagnose [stage] #group/diagnose
-name: 三路并行诊断
-executors: [diag_infra, diag_app, diag_db]
+name: 多路并行诊断
+executors: [diag_infra, diag_app, diag_db, forensics]
 
 # @gt_rootcause [gate] #kind/human
 name: 根因确认关卡
@@ -20,7 +20,7 @@ decider_who: ic
 paths:
   - condition: 至少一路诊断给出置信度高的根因，其他路排除自身
     next: s_mitigate
-  - condition: 三路诊断结论分散，根因不明
+  - condition: 多路诊断结论分散，根因不明
     next: s_diagnose
     note: ic 指定重点方向，继续诊断
   - condition: 根因跨越多层（如应用层触发了数据库问题）
@@ -48,4 +48,4 @@ paths:
 
 # @s_postmortem [stage] #group/command
 name: 事故复盘
-executors: [postmortem]
+executors: [postmortem, devil]

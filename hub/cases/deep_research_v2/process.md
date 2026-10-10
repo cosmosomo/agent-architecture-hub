@@ -9,16 +9,20 @@ name: 任务分发
 executors: [leader]
 
 # @s_research [stage] #group/research
-name: 四路并行调研
-executors: [r_tools, r_oss, r_paper, r_ux]
+name: 多路并行调研
+executors: [r_tools, r_oss, r_paper, r_ux, r_reddit, r_x, r_forums, r_docs]
+
+# @s_extract [stage] #group/extract
+name: 长报告提炼
+executors: [r_ex1, r_ex2, r_ex3, r_ex4, r_ex5, r_ex6, r_ex7]
 
 # @gt_research [gate] #kind/agent
 name: 调研质检关卡
-after_stage: s_research
+after_stage: s_extract
 decider_type: agent
 decider_who: reviewer
 paths:
-  - condition: 四路材料覆盖完整，来源可信，无重大内部矛盾
+  - condition: 多路材料与论断表覆盖完整，来源可信，无重大内部矛盾
     next: s_debate
   - condition: 某路材料覆盖严重不足
     next: s_research

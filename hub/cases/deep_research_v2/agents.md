@@ -39,11 +39,39 @@ role: 调研从业者对现有工具的真实使用体验，挖掘痛点和缺�
 trigger: leader 下发调研包后启动（与其他调研员并行）
 watches: [brief]
 
+# @r_reddit [individual] #phase/research #role/researcher #group/research
+name: 调研员——社区讨论
+model: claude-sonnet-5-5
+role: 抓取 Reddit 上未经修饰的真实开发者意见和踩坑经验
+trigger: leader 下发调研包后启动（与其他调研员并行）
+watches: [brief]
+
+# @r_x [individual] #phase/research #role/researcher #group/research
+name: 调研员——技术动态
+model: claude-sonnet-5-5
+role: 盯 X/Twitter 上技术影响者关于多智能体可视化的讨论和风向
+trigger: leader 下发调研包后启动（与其他调研员并行）
+watches: [brief]
+
+# @r_forums [individual] #phase/research #role/researcher #group/research
+name: 调研员——技术论坛
+model: claude-sonnet-5-5
+role: 检索 StackOverflow、Dev.to、Medium、HN 上的教程与实践总结
+trigger: leader 下发调研包后启动（与其他调研员并行）
+watches: [brief]
+
+# @r_docs [individual] #phase/research #role/researcher #group/research
+name: 调研员——官方文档
+model: claude-sonnet-5-5
+role: 汇总各框架与工具官方文档中与可视化相关的能力和限制
+trigger: leader 下发调研包后启动（与其他调研员并行）
+watches: [brief]
+
 # @reviewer [individual] #phase/research #role/reviewer #group/core
 name: 审核员
 model: claude-opus-5-5
-role: 核查四路调研材料的可信度、覆盖范围和内部一致性
-trigger: 四路调研员均提交材料后启动
+role: 核查多路调研材料的可信度、覆盖范围和内部一致性
+trigger: 多路调研员均提交材料后启动
 watches: [brief, research_bundle]
 
 # @devil [individual] #phase/debate #role/challenger #group/debate
@@ -59,6 +87,55 @@ model: claude-sonnet-5-5
 role: 为调研结论辩护，回应质疑，必要时承认局限
 trigger: 与 devil 同时启动
 watches: [research_bundle, review_notes]
+
+# @r_ex1 [individual] #phase/research #role/extractor #group/extract
+name: 提炼员 1
+model: claude-haiku-5-5
+role: 把调研员的长报告切成简明论断表，供综合者直接归并
+trigger: 对应调研员提交报告后启动
+watches: [research_bundle]
+
+# @r_ex2 [individual] #phase/research #role/extractor #group/extract
+name: 提炼员 2
+model: claude-haiku-5-5
+role: 把调研员的长报告切成简明论断表，供综合者直接归并
+trigger: 对应调研员提交报告后启动
+watches: [research_bundle]
+
+# @r_ex3 [individual] #phase/research #role/extractor #group/extract
+name: 提炼员 3
+model: claude-haiku-5-5
+role: 把调研员的长报告切成简明论断表，供综合者直接归并
+trigger: 对应调研员提交报告后启动
+watches: [research_bundle]
+
+# @r_ex4 [individual] #phase/research #role/extractor #group/extract
+name: 提炼员 4
+model: claude-haiku-5-5
+role: 把调研员的长报告切成简明论断表，供综合者直接归并
+trigger: 对应调研员提交报告后启动
+watches: [research_bundle]
+
+# @r_ex5 [individual] #phase/research #role/extractor #group/extract
+name: 提炼员 5
+model: claude-haiku-5-5
+role: 把调研员的长报告切成简明论断表，供综合者直接归并
+trigger: 对应调研员提交报告后启动
+watches: [research_bundle]
+
+# @r_ex6 [individual] #phase/research #role/extractor #group/extract
+name: 提炼员 6
+model: claude-haiku-5-5
+role: 把调研员的长报告切成简明论断表，供综合者直接归并
+trigger: 对应调研员提交报告后启动
+watches: [research_bundle]
+
+# @r_ex7 [individual] #phase/research #role/extractor #group/extract
+name: 提炼员 7
+model: claude-haiku-5-5
+role: 把调研员的长报告切成简明论断表，供综合者直接归并
+trigger: 对应调研员提交报告后启动
+watches: [research_bundle]
 
 # @synthesizer [individual] #phase/synthesize #role/orchestrator #group/core
 name: 综合者
