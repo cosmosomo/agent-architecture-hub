@@ -516,6 +516,15 @@
   }
 
   function start() {
+    // 本地案例（hub/cases/ 目录、hub/graph/*.json）的发现是异步的：链接里的新案例要等
+    // owns() 就绪才能判定，预设列表也要等发现完成才能注入小节。先等扫描再应用启动状态。
+    Promise.all([
+      HUB.fromDocs && HUB.fromDocs.ready ? HUB.fromDocs.ready() : Promise.resolve(),
+      HUB.fromHubGraph && HUB.fromHubGraph.ready ? HUB.fromHubGraph.ready() : Promise.resolve()
+    ]).catch(function () {}).then(boot);
+  }
+
+  function boot() {
     var patch = HUB.store.fromHash(location.hash || '');
     var fromLink = !!patch.caseId;
     var pending = patch.caseId && !HUB.model.ready(patch.caseId) && HUB.model.owns(patch.caseId) ? Object.assign({}, patch) : null;
@@ -546,9 +555,46 @@
     try { mode = localStorage.getItem('hub.mode') || 'obs'; } catch (e) { /* storage blocked */ }
     setMode(fromLink || mode !== 'design', true);
     if (pending) later(pending);
+    // 预设列表的首次渲染发生在 hub 脚本加载之前，本地案例小节要靠这里补一次重画
+    if (typeof rPresety === 'function') rPresety();
   }
 
-  HUB.obs = { start: start, onPreset: onPreset, setMode: setMode, isOn: function () { return on; }, fit: fit, render: function () { renderAll(st(), st()); } };
+  /* ---------- 本地自动解析的案例（hub/cases/ 与 hub/graph/）----------
+     不在 62 个预设里的案例进不了设计器的预设列表（rPresety 只画 base.presets），
+     这里把发现到的本地案例作为独立小节注入列表；点击直接进观察模式。
+     boot() 在扫描完成后会重画一次 rPresety，本函数只负责出 HTML。 */
+  function localCases(q, noCat) {
+    if (!noCat) return '';   // 分类筛选生效时不混入：本地案例没有预设分类
+    var docs = (HUB.fromDocs && HUB.fromDocs.caseList()) || [];
+    var graph = (HUB.fromHubGraph && HUB.fromHubGraph.cases) || [];
+    var items = [];
+    docs.forEach(function (r) { if (!HUB.base.presets[r.id]) items.push({ id: r.id, title: r.title, src: 'md' }); });
+    graph.forEach(function (id) {
+      if (!HUB.base.presets[id] && !docs.some(function (r) { return r.id === id; })) items.push({ id: id, title: id, src: 'json' });
+    });
+    if (!items.length) return '';
+    if (q) {
+      var s = q.toLowerCase();
+      items = items.filter(function (x) { return (x.title + ' ' + x.id).toLowerCase().indexOf(s) >= 0; });
+      if (!items.length) return '';
+    }
+    var h = '<div class="pr-cat">本地自动解析 · hub/cases 与 hub/graph<span class="pr-cat-count">&middot; ' + items.length + '</span></div>';
+    items.forEach(function (x) {
+      h += '<div class="pr-item ph-build" tabindex="0" role="option" title="' + x.id + '"'
+        + ' onclick="HUB.obs.openCase(\'' + x.id + '\')"'
+        + ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();HUB.obs.openCase(\'' + x.id + '\')}">'
+        + '<div class="pr-orb">' + (x.src === 'md' ? '文' : '{ }') + '</div>'
+        + '<div class="pr-name"><span>' + x.title + '</span></div>'
+        + '<span class="pr-cnt" title="来源">' + x.src + '</span></div>';
+    });
+    return h;
+  }
+  function openCase(id) {
+    if (!on) setMode(true, true);
+    HUB.store.switchCase(id);
+  }
+
+  HUB.obs = { start: start, onPreset: onPreset, setMode: setMode, isOn: function () { return on; }, fit: fit, render: function () { renderAll(st(), st()); }, localCases: localCases, openCase: openCase };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

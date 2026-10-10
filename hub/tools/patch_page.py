@@ -16,7 +16,8 @@ SCRIPTS = [
     # hub/data/cases/*.js (archived v41 curated overrides) are no longer loaded:
     # the hub/cases/ Markdown source owns those case ids via HUB.model.addSource('docs')
     'hub/js/core/util.js', 'hub/js/core/store.js', 'hub/js/core/casedef.js', 'hub/js/core/sim.js',
-    'hub/js/core/analysis.js', 'hub/js/core/model.js', 'hub/js/core/to-trace.js', 'hub/js/core/from-trace.js', 'hub/js/core/views.js',
+    'hub/js/core/analysis.js', 'hub/js/core/model.js', 'hub/js/core/from-docs.js', 'hub/js/core/from-hub-graph.js',
+    'hub/js/core/to-trace.js', 'hub/js/core/from-trace.js', 'hub/js/core/views.js',
     'hub/js/obs/cards.js', 'hub/js/obs/stage.js', 'hub/js/obs/scene-org.js',
     'hub/js/obs/scene-process.js', 'hub/vendor/hub-trace.js',
     'hub/js/panels/panels.js', 'hub/js/obs/panel.js', 'hub/js/obs/side.js', 'hub/js/obs/timeline.js',
@@ -40,6 +41,10 @@ HOOKS = [
     # A stored choice (from the language toggle) is still honoured; only the fallback changes.
     ("return v})() || (function(){\n  try{\n    var n=(navigator.languages&&navigator.languages[0])||navigator.language||'';\n    return /^zh/i.test(n)?'zh':'pl';\n  }catch(e){return 'zh'}\n})();",
      "return v})() || 'zh'; /* hub: 中文用户的衍生版，缺省一律中文，原版非 zh 浏览器会落到波兰语 */"),
+    # locally auto-discovered cases (hub/cases/ dirs + hub/graph/*.json) are not among the 62
+    # presets, so rPresety never lists them; append a section of their own to the preset list.
+    ("if(_items===0){",
+     "/* hub */if(window.HUB&&HUB.obs&&HUB.obs.localCases){h+=HUB.obs.localCases(prSearch,prCatFilter.size===0);}\n  if(_items===0){"),
 ]
 
 

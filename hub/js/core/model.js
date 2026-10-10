@@ -85,10 +85,25 @@
   }
 
   function select(caseId) {
-    var m = build(caseId);
-    HUB.model.current = m;
-    U.setClock(m.clock);
-    return m;
+    var src = sourceOf(caseId);
+    if (cache.has(caseId)) {
+      HUB.model.current = cache.get(caseId);
+      U.setClock(HUB.model.current.clock);
+      return HUB.model.current;
+    }
+    if (src && src.load && !src.build) {
+      // 异步来源（文档目录、hub-graph JSON、会话）：先保持当前模型，加载完成再换上并重画
+      load(caseId).then(function (m) {
+        if (!HUB.store.get || HUB.store.get().caseId !== caseId) return;
+        HUB.model.current = m;
+        U.setClock(m.clock);
+        HUB.bus.emit('model', { model: m });
+      }).catch(function (e) { console.warn('model ' + caseId + ' 加载失败', e && e.message); });
+      return HUB.model.current;
+    }
+    HUB.model.current = build(caseId);
+    U.setClock(HUB.model.current.clock);
+    return HUB.model.current;
   }
 
   /* ---------- helpers other modules use ---------- */
