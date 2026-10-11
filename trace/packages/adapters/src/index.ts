@@ -7,12 +7,12 @@ import type { Session } from '@hub-trace/contract';
 import { codexAdapter } from './codex/index.ts';
 import { claudeCodeAdapter } from './claude-code/index.ts';
 import { opencodeAdapter } from './opencode/index.ts';
-import { zcodeAdapter } from './zcode/index.ts';
+import { zcodeAdapter, zcodeDbAdapter } from './zcode/index.ts';
 import { factoryAdapter } from './factory/index.ts';
 import { geminiAdapter } from './gemini/index.ts';
 import type { SourceAdapter, SourceFile } from './types.ts';
 
-export const ADAPTERS: readonly SourceAdapter[] = [codexAdapter, claudeCodeAdapter, opencodeAdapter, zcodeAdapter, factoryAdapter, geminiAdapter];
+export const ADAPTERS: readonly SourceAdapter[] = [codexAdapter, claudeCodeAdapter, opencodeAdapter, zcodeAdapter, zcodeDbAdapter, factoryAdapter, geminiAdapter];
 
 export function adapterByKind(kind: string): SourceAdapter | undefined {
   return ADAPTERS.find((a) => a.kind === kind);
@@ -31,7 +31,7 @@ export function parseText(adapter: SourceAdapter, text: string, file: SourceFile
 
 export type { FinishOptions, LineParser, SourceAdapter, SourceFile } from './types.ts';
 export { codexAdapter, createCodexParser, detectState, STALE_MS, toolFamily } from './codex/index.ts';
-export { zcodeAdapter } from './zcode/index.ts';
+export { zcodeAdapter, zcodeDbAdapter } from './zcode/index.ts';
 export { factoryAdapter } from './factory/index.ts';
 export { geminiAdapter } from './gemini/index.ts';
 export { claudeCodeAdapter, createClaudeParser, toolFamily as claudeToolFamily } from './claude-code/index.ts';

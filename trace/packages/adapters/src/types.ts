@@ -47,4 +47,15 @@ export type SourceAdapter = {
   parseBundle?(file: SourceFile, bundle: Bundle, opts: FinishOptions): Session;
   /** Which files, out of every file below the root, make up one marker file's session. */
   bundleMembers?(markerPath: string, allFiles: string[]): string[];
+  /**
+   * Database-backed sources (ZCode keeps one SQLite store for every session): the
+   * store opens the file read-only and hands the adapter a query surface, the
+   * adapter returns every session it finds. Like Bundle, this keeps adapters pure.
+   */
+  parseSqlite?(file: SourceFile, db: SqliteSource, opts: FinishOptions): Session[];
+};
+
+/** The read-only query surface the Node store injects into parseSqlite. */
+export type SqliteSource = {
+  all(sql: string, ...args: unknown[]): unknown[];
 };

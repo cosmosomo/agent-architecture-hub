@@ -5,6 +5,7 @@
  */
 import { createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { DatabaseSync } from 'node:sqlite';
 import { dirname, join, sep } from 'node:path';
 import { createInterface } from 'node:readline';
 import { ADAPTERS, type SourceAdapter } from '@hub-trace/adapters';
@@ -155,6 +156,12 @@ export class SessionStore {
   private parsedCache = new Map<string, { size: number; mtimeMs: number; session: Session }>();
   /** Marker path → the files its bundle adapter assembles. Filled by scan, lazily recomputed on demand. */
   private membersByMarker = new Map<string, string[]>();
+  /** Database sources: file → {size, mtime, adapter} of the last read. */
+  private dbStamp = new Map<string, { size: number; mtimeMs: number; adapter: string }>();
+  /** Database sources: file → virtual entry paths (file#sessionId). */
+  private dbSessions = new Map<string, string[]>();
+  /** Database sources: file → parsed sessions, for on-demand reads. */
+  private sqliteParsed = new Map<string, Session[]>();
 
   constructor(opts: StoreOptions = {}) {
     this.roots = opts.roots || defaultRoots();
@@ -241,8 +248,32 @@ export class SessionStore {
       } catch {
         continue;
       }
-      const old = this.entries.get(f.path);
       const adapterId = f.adapter.kind + '@' + f.adapter.version;
+      // Database sources: one file holds every session; each becomes its own
+      // virtual entry (path#sessionId) so the per-file cache and index stay as they are.
+      if (f.adapter.parseSqlite) {
+        const old = this.dbStamp.get(f.path);
+        if (old && old.size === st.size && old.mtimeMs === st.mtimeMs && old.adapter === adapterId) {
+          for (const p of this.dbSessions.get(f.path) || []) seen.add(p);
+          continue;
+        }
+        try {
+          const sessions = this.readSqliteSessions(f.adapter, f.path, st);
+          for (const s of sessions) {
+            const virtual = f.path + '#' + s.sourceId;
+            seen.add(virtual);
+            this.dbSessions.get(f.path)!.push(virtual);
+            this.entries.set(virtual, { path: virtual, kind: f.adapter.kind, adapter: adapterId, size: st.size, mtimeMs: st.mtimeMs, summary: s });
+          }
+          this.dbStamp.set(f.path, { size: st.size, mtimeMs: st.mtimeMs, adapter: adapterId });
+          report.parsed++;
+        } catch (err) {
+          report.failed++;
+          if (report.errors.length < 20) report.errors.push(f.path + ': ' + (err instanceof Error ? err.message : String(err)));
+        }
+        continue;
+      }
+      const old = this.entries.get(f.path);
       const open = old && (old.summary.state.status === 'working' || old.summary.state.status === 'waiting');
       if (old && old.size === st.size && old.mtimeMs === st.mtimeMs && old.adapter === adapterId && !open) {
         report.reused++;
@@ -266,6 +297,19 @@ export class SessionStore {
     this.lastScan = this.now();
     report.ms = Date.now() - t0;
     return report;
+  }
+
+  /** Open a database source read-only and keep its parsed sessions for on-demand reads. */
+  private readSqliteSessions(adapter: SourceAdapter, path: string, st: { size: number; mtimeMs: number }): Session[] {
+    const db = new DatabaseSync(path, { readOnly: true });
+    try {
+      const sessions = adapter.parseSqlite!({ path, size: st.size, mtimeMs: st.mtimeMs }, { all: (sql: string, ...args: unknown[]) => db.prepare(sql).all(...(args as never[])) }, { now: this.now() });
+      this.sqliteParsed.set(path, sessions);
+      this.dbSessions.set(path, []);
+      return sessions;
+    } finally {
+      db.close();
+    }
   }
 
   private rebuildIds() {
@@ -298,6 +342,12 @@ export class SessionStore {
 
   /** Parse one source file as it is now, without caching or linking. */
   parseSource(f: SourceFile): Promise<Session> {
+    // Database sessions resolve from the parsed store, not from the (virtual) path.
+    const hash = f.path.indexOf('#');
+    if (hash > 0) {
+      const fromDb = this.sqliteParsed.get(f.path.slice(0, hash))?.find((s) => s.id === 'zcode:' + f.path.slice(hash + 1) || s.sourceId === f.path.slice(hash + 1));
+      if (fromDb) return Promise.resolve(fromDb);
+    }
     const adapter = ADAPTERS.find((a) => a.kind === f.kind);
     if (!adapter) return Promise.reject(new Error('no adapter for ' + f.kind));
     return parsePath(adapter, f.path, this.now(), this.membersFor(adapter, f.path));
@@ -315,6 +365,27 @@ export class SessionStore {
     const e = this.byId.get(id)!;
     const adapter = ADAPTERS.find((a) => a.kind === e.kind);
     if (!adapter || !existsSync(e.path)) return undefined;
+    const hash = e.path.indexOf('#');
+    if (hash > 0) {
+      const real = e.path.slice(0, hash);
+      if (existsSync(real)) {
+        const st = statSync(real);
+        const hit = this.parsedCache.get(id);
+        if (hit && hit.size === st.size && hit.mtimeMs === st.mtimeMs) return hit.session;
+        let fromDb = this.sqliteParsed.get(real)?.find((s) => s.id === id);
+        if (!fromDb) {
+          const dbAdapter = ADAPTERS.find((a) => a.parseSqlite && a.matchFile(real));
+          if (dbAdapter) fromDb = this.readSqliteSessions(dbAdapter, real, st).find((s) => s.id === id);
+        }
+        if (!fromDb) return undefined;
+        const child = linkChildren([summarize(fromDb), ...this.index().sessions.filter((s) => s.links.some((l) => l.rel === 'parent' && l.id === id))])[0];
+        fromDb.links = child.links;
+        fromDb.stats = child.stats;
+        this.parsedCache.set(id, { size: st.size, mtimeMs: st.mtimeMs, session: fromDb });
+        if (this.parsedCache.size > 12) this.parsedCache.delete(this.parsedCache.keys().next().value!);
+        return fromDb;
+      }
+    }
     const st = statSync(e.path);
     const hit = this.parsedCache.get(id);
     if (hit && hit.size === st.size && hit.mtimeMs === st.mtimeMs) return hit.session;
