@@ -18,9 +18,41 @@ async function getJson<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+let indexEtag: string | null = null;
+let indexCache: SessionIndex | null = null;
+
+/** The session list. The service answers 304 while the index is unchanged, so the
+ *  viewer's 8-second poll costs ~nothing instead of 1.7MB of JSON every time. */
 export async function loadIndex(): Promise<SessionIndex> {
-  const idx = await getJson<SessionIndex>('/api/sessions');
+  let res: Response;
+  try {
+    res = await fetch('/api/sessions', {
+      cache: 'no-store',
+      ...(indexEtag ? { headers: { 'If-None-Match': indexEtag } } : {}),
+    });
+  } catch {
+    throw new ServiceError('连不上本地服务');
+  }
+  if (res.status === 304 && indexCache) return indexCache;
+  if (res.status === 304) return loadIndexFresh();
+  if (res.ok) {
+    const etag = res.headers.get('ETag');
+    if (etag) indexEtag = etag;
+    const idx = (await res.json()) as SessionIndex;
+    if (!isCompatible(idx.contract)) throw new ServiceError('本地服务的数据契约版本 ' + idx.contract + ' 和查看器不一致，请重新构建');
+    indexCache = idx;
+    return idx;
+  }
+  return loadIndexFresh();
+}
+
+async function loadIndexFresh(): Promise<SessionIndex> {
+  indexEtag = null;
+  const res = await fetch('/api/sessions', { cache: 'no-store' });
+  if (!res.ok) throw new ServiceError(res.status === 404 ? '找不到会话索引' : '本地服务出错（' + res.status + '）');
+  const idx = (await res.json()) as SessionIndex;
   if (!isCompatible(idx.contract)) throw new ServiceError('本地服务的数据契约版本 ' + idx.contract + ' 和查看器不一致，请重新构建');
+  indexCache = idx;
   return idx;
 }
 

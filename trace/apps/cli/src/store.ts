@@ -150,6 +150,8 @@ export class SessionStore {
   private loaded = false;
   private scanning: Promise<ScanReport> | null = null;
   private lastScan = 0;
+  /** Bumped whenever a scan changed anything: the ETag of /api/sessions. */
+  private rev = 0;
   private parsedCache = new Map<string, { size: number; mtimeMs: number; session: Session }>();
   /** Marker path → the files its bundle adapter assembles. Filled by scan, lazily recomputed on demand. */
   private membersByMarker = new Map<string, string[]>();
@@ -260,7 +262,7 @@ export class SessionStore {
       if (!seen.has(p)) { this.entries.delete(p); report.removed++; }
     }
     this.rebuildIds();
-    if (report.parsed || report.removed) this.save();
+    if (report.parsed || report.removed) { this.rev++; this.save(); }
     this.lastScan = this.now();
     report.ms = Date.now() - t0;
     return report;
@@ -273,6 +275,10 @@ export class SessionStore {
       // The same session can appear twice (e.g. sessions and archived_sessions): keep the newest copy.
       if (!prev || e.mtimeMs > prev.mtimeMs) this.byId.set(e.summary.id, e);
     }
+  }
+
+  revision(): number {
+    return this.rev;
   }
 
   index(): SessionIndex {

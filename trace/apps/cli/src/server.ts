@@ -78,13 +78,13 @@ const TYPES: Record<string, string> = {
   '.map': 'application/json; charset=utf-8',
 };
 
-function send(res: ServerResponse, code: number, body: string, type = 'text/plain; charset=utf-8') {
-  res.writeHead(code, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store' });
+function send(res: ServerResponse, code: number, body: string, type = 'text/plain; charset=utf-8', extra: Record<string, string> = {}) {
+  res.writeHead(code, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', ...extra });
   res.end(body);
 }
 
-function json(res: ServerResponse, code: number, value: unknown) {
-  send(res, code, JSON.stringify(value), 'application/json; charset=utf-8');
+function json(res: ServerResponse, code: number, value: unknown, headers: Record<string, string> = {}) {
+  send(res, code, JSON.stringify(value), 'application/json; charset=utf-8', headers);
 }
 
 /** A file under `dir`, or null when the path escapes it or does not exist. */
@@ -132,7 +132,10 @@ export function createService(opts: ServeOptions): Server {
         return json(res, 200, overview(store.index().sessions, roots, CONTRACT_VERSION));
       }
       if (path === '/api/sessions') {
-        return json(res, 200, store.index());
+        // The viewer polls this every few seconds; without a 304 it re-parses 1.7MB each time.
+        const etag = '"r' + store.revision() + '-' + store.index().sessions.length + '"';
+        if (req.headers['if-none-match'] === etag) { res.writeHead(304, { ETag: etag }); return res.end(); }
+        return json(res, 200, store.index(), { ETag: etag });
       }
       if (path === '/api/search') {
         if (!search) return json(res, 404, { error: 'search is off' });

@@ -20,18 +20,20 @@ import { initialExpanded, parentsOf, toSpans } from './toSpans.ts';
 
 const POLL_MS = 8000;
 
-function readHash(): { s: string | null; n: string | null; search: SearchRequest | null; sources: boolean; analytics: boolean } {
+type View = 'list' | 'search' | 'sources' | 'analytics';
+
+function readHash(): { s: string | null; n: string | null; view: View; search: SearchRequest | null } {
   const p = new URLSearchParams(location.hash.slice(1));
-  const search = p.get('view') === 'search' ? fromParams(p) : null;
-  return { s: p.get('s'), n: p.get('n'), search, sources: p.get('view') === 'sources', analytics: p.get('view') === 'analytics' };
+  const v = p.get('view');
+  const view: View = v === 'sources' ? 'sources' : v === 'analytics' ? 'analytics' : v === 'search' ? 'search' : 'list';
+  return { s: p.get('s'), n: p.get('n'), view, search: view === 'search' ? fromParams(p) : null };
 }
-function writeHash(s: string | null, n: string | null, search: SearchRequest | null, sources: boolean, analytics: boolean) {
+function writeHash(s: string | null, n: string | null, view: View, search: SearchRequest | null) {
   const p = new URLSearchParams();
-  if (sources) p.set('view', 'sources');
-  else if (analytics) p.set('view', 'analytics');
-  else if (search) {
+  if (view === 'sources' || view === 'analytics') p.set('view', view);
+  else if (view === 'search') {
     p.set('view', 'search');
-    for (const [k, v] of fromSearch(search)) p.set(k, v);
+    for (const [k, v] of fromSearch(search || {})) p.set(k, v);
   }
   if (s) p.set('s', s);
   if (n) p.set('n', n);
@@ -67,8 +69,7 @@ export function App() {
   const [dragging, setDragging] = useState(false);
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
   const [search, setSearch] = useState<SearchRequest | null>(() => readHash().search);
-  const [sources, setSources] = useState(() => readHash().sources);
-  const [analytics, setAnalytics] = useState(() => readHash().analytics);
+  const [view, setView] = useState<View>(() => readHash().view);
   const loadedKey = useRef<string>('');
 
   const known = useMemo(() => {
@@ -80,13 +81,14 @@ export function App() {
   // Index: first load, then poll while the tab is visible so live sessions update.
   useEffect(() => {
     let stop = false;
+    let warmed = false;
     const tick = async () => {
       if (document.hidden) return;
       try {
         const idx = await loadIndex();
         if (!stop) { setIndex(idx.sessions); setIndexError(null); }
-        // Warm the search cache for the browse view before anyone opens 检索.
-        fetch('/api/search?limit=50', { cache: 'no-store' }).catch(() => {});
+        // Warm the search cache for the browse view once, before anyone opens 检索.
+        if (!warmed) { warmed = true; fetch('/api/search?limit=50', { cache: 'no-store' }).catch(() => {}); }
       } catch (e) {
         if (!stop) setIndexError(e instanceof ServiceError ? e.message : String(e));
       } finally {
@@ -132,17 +134,18 @@ export function App() {
     setExpanded((prev) => (path.every((id) => prev.includes(id)) ? prev : Array.from(new Set([...prev, ...path]))));
   }, [spanId, parents]);
 
-  useEffect(() => { writeHash(selectedId, spanId, search, sources, analytics); }, [selectedId, spanId, search, sources, analytics]);
+  useEffect(() => { writeHash(selectedId, spanId, view, search); }, [selectedId, spanId, view, search]);
   useEffect(() => {
-    const onHash = () => { const h = readHash(); setSelectedId(h.s); setSpanId(h.n); setSearch(h.search); setSources(h.sources); setAnalytics(h.analytics); };
+    const onHash = () => { const h = readHash(); setSelectedId(h.s); setSpanId(h.n); setSearch(h.search); setView(h.view); };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  const open = useCallback((id: string) => { setSelectedId(id); setSpanId(null); setTreeQuery(''); }, []);
+  const open = useCallback((id: string) => { setSelectedId(id); setSpanId(null); setTreeQuery(''); setView('list'); }, []);
 
   const openHit = useCallback((h: SearchHit) => {
     setSearch(null);
+    setView('list');
     setSelectedId(h.session);
     setSpanId(h.step);
     setTreeQuery('');
@@ -215,22 +218,22 @@ export function App() {
         <span className="flex-1" />
         <nav className="hi-segment">
           <button
-            className={'hi-navbtn' + (sources ? ' on' : '')}
-            onClick={() => { setSources(!sources); setAnalytics(false); }}
+            className={'hi-navbtn' + (view === 'sources' ? ' on' : '')}
+            onClick={() => setView(view === 'sources' ? 'list' : 'sources')}
             title="哪些 CLI 有会话、各在哪些项目里干活"
           >
             <span className="flex items-center gap-1"><FolderOpen className="size-3.5" />来源</span>
           </button>
           <button
-            className={'hi-navbtn' + (analytics ? ' on' : '')}
-            onClick={() => { setAnalytics(!analytics); setSources(false); }}
+            className={'hi-navbtn' + (view === 'analytics' ? ' on' : '')}
+            onClick={() => setView(view === 'analytics' ? 'list' : 'analytics')}
             title="全部会话的全景：日活跃、工具、模型、项目"
           >
             <span className="flex items-center gap-1"><BarChart3 className="size-3.5" />统计</span>
           </button>
           <button
-            className={'hi-navbtn' + (search ? ' on' : '')}
-            onClick={() => setSearch(search ? null : {})}
+            className={'hi-navbtn' + (view === 'search' ? ' on' : '')}
+            onClick={() => { if (view === 'search') { setView('list'); } else { if (!search) setSearch({}); setView('search'); } }}
             title="在全部会话的每一步里找：命令、文件、错误、说的话"
           >
             <span className="flex items-center gap-1"><Search className="size-3.5" />检索</span>
@@ -242,17 +245,17 @@ export function App() {
         </button>
       </header>
 
-      {sources ? (
+      {view === 'sources' ? (
         <SourcesView />
-      ) : analytics ? (
+      ) : view === 'analytics' ? (
         <AnalyticsView sessions={index} />
       ) : (
       <div className="min-h-0 flex-1 p-2.5 pt-2">
       <PanelGroup direction="horizontal" autoSaveId="hub-trace-layout" className="min-h-0 flex-1">
         <Panel defaultSize={24} minSize={16}>
           <div className="hi-panel h-full">
-          {search ? (
-            <SearchView query={search} onChange={setSearch} onOpen={openHit} titles={titles} onClose={() => setSearch(null)} />
+          {view === 'search' && search ? (
+            <SearchView query={search} onChange={setSearch} onOpen={openHit} titles={titles} onClose={() => setView('list')} />
           ) : indexError && !index.length ? (
             <div className="text-agentprism-muted-foreground space-y-2 p-4 text-sm">
               <p>{indexError}。</p>
@@ -269,7 +272,7 @@ export function App() {
         <PanelResizeHandle className="w-2.5 cursor-col-resize" />
         <Panel defaultSize={44} minSize={25}>
           <div className="hi-panel h-full">
-          {search ? (
+          {view === 'search' ? (
             <div className="text-agentprism-secondary-foreground p-6 text-sm">
               左边每一条都能打开到它所在的步骤：树会展开到那一轮，右边显示这一步的输入输出、思考和属性。
             </div>
@@ -309,7 +312,7 @@ export function App() {
         <PanelResizeHandle className="w-2.5 cursor-col-resize" />
         <Panel defaultSize={32} minSize={20}>
           <div className="hi-panel h-full">
-          {search ? (
+          {view === 'search' ? (
             <div className="text-agentprism-secondary-foreground p-6 text-sm">
               筛选说明：类型和"出错"只留下要看的步骤，上面的次数是这个词在这些会话里各有多少步（不受类型筛选影响）。点目录能只看那个工作目录的会话。
             </div>
