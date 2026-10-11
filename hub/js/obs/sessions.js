@@ -153,5 +153,12 @@
     el.scrollTop = keep;
   }
 
+
+  /* The topbar Trace button (index.html #traceBtn): visible only when this page is served by
+     the local service, so the static GitHub Pages build never shows a dead link. */
+  fetch('/api/health', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    if (!j || !j.viewer) return;
+    ['traceBtn', 'traceEntry'].forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = id === 'traceBtn' ? '' : 'block'; });
+  }).catch(function () {});
   HUB.obsSessions = { render: render, openTree: openTree };
 })();

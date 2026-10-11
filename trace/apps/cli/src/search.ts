@@ -59,6 +59,8 @@ export class SearchIndex {
   private db: DatabaseSync;
   private progress = { done: 0, total: 0, running: false };
   private syncing: Promise<SyncReport> | null = null;
+  /** Answer cache: the same query is the same fold of the same index until a sync changes it. */
+  private results = new Map<string, SearchResult>();
 
   constructor(file: string) {
     this.file = file;
@@ -122,6 +124,7 @@ export class SearchIndex {
       }
       this.progress.done++;
     }
+    if (report.indexed || report.removed) this.results.clear();
     // A big sync is a rebuild (or first run): refresh the planner's statistics, it picks
     // the wrong side of the steps/files join without them (measured 712ms vs 139ms).
     if (report.indexed > 300) this.db.exec('ANALYZE');
@@ -159,6 +162,9 @@ export class SearchIndex {
   }
 
   search(q: SearchQuery): SearchResult {
+    const cacheKey = JSON.stringify([q.q, q.kinds, q.errors, q.sessions, q.cwd, q.role, q.since, q.until, q.limit, q.offset]);
+    const cached = this.results.get(cacheKey);
+    if (cached) return cached;
     const t0 = Date.now();
     const terms = (q.q || '').trim().split(/\s+/).filter(Boolean);
     const long = terms.filter((t) => [...t].length >= 3);
@@ -213,7 +219,7 @@ export class SearchIndex {
       ? this.db.prepare('SELECT f.cwd cwd, count(*) n FROM steps s JOIN files f ON f.session = s.session' + w(narrow) + ' GROUP BY f.cwd ORDER BY n DESC LIMIT 12').all(...args, ...nargs) as { cwd: string; n: number }[]
       : this.db.prepare('SELECT cwd, sum(n) n FROM (SELECT f.cwd cwd, (SELECT count(*) FROM steps s WHERE s.session = f.session' + (narrow.length ? ' AND ' + narrow.join(' AND ') : '') + ') n FROM files f) GROUP BY cwd ORDER BY n DESC LIMIT 12').all() as { cwd: string; n: number }[];
 
-    return {
+    const result: SearchResult = {
       total,
       hits: rows.map((r) => ({
         session: r.session,
@@ -230,6 +236,9 @@ export class SearchIndex {
       indexing: { ...this.progress },
       ms: Date.now() - t0,
     };
+    if (this.results.size > 200) this.results.delete(this.results.keys().next().value!);
+    this.results.set(cacheKey, result);
+    return result;
   }
 
   status() {

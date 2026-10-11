@@ -85,6 +85,8 @@ export function App() {
       try {
         const idx = await loadIndex();
         if (!stop) { setIndex(idx.sessions); setIndexError(null); }
+        // Warm the search cache for the browse view before anyone opens 检索.
+        fetch('/api/search?limit=50', { cache: 'no-store' }).catch(() => {});
       } catch (e) {
         if (!stop) setIndexError(e instanceof ServiceError ? e.message : String(e));
       } finally {

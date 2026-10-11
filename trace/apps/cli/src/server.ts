@@ -128,28 +128,23 @@ export function createService(opts: ServeOptions): Server {
         return json(res, 200, { ok: true, contract: CONTRACT_VERSION, sessions: store.index().sessions.length, viewer: existsSync(join(viewerDir, 'index.html')), search: search ? search.status() : null, roots: store.roots.map((r) => ({ kind: r.adapter.kind, dir: r.dir, exists: existsSync(r.dir) })) });
       }
       if (path === '/api/overview') {
-        await refresh();
         const roots: RootInfo[] = store.roots.map((r) => ({ kind: r.adapter.kind, label: r.adapter.label, dir: r.dir, exists: existsSync(r.dir) }));
         return json(res, 200, overview(store.index().sessions, roots, CONTRACT_VERSION));
       }
       if (path === '/api/sessions') {
-        await refresh();
         return json(res, 200, store.index());
       }
       if (path === '/api/search') {
         if (!search) return json(res, 404, { error: 'search is off' });
-        await refresh();
         return json(res, 200, search.search(searchQuery(url.searchParams)));
       }
       if (path === '/api/stats') {
         if (!search) return json(res, 404, { error: 'search is off' });
-        await refresh();
         return json(res, 200, search.stats(CONTRACT_VERSION));
       }
       // a session and every sub-agent it started, at any depth: what the observatory draws as one org graph
       const t = /^\/api\/sessions\/([^/]+)\/tree$/.exec(path);
       if (t) {
-        await refresh();
         const ids = subtree(store.index().sessions, t[1], TREE_MAX);
         if (!ids.length) return json(res, 404, { error: 'no such session' });
         const sessions = (await Promise.all(ids.map((id) => store.session(id)))).filter((s): s is Session => Boolean(s));
@@ -190,6 +185,12 @@ export function createService(opts: ServeOptions): Server {
     const addr = server.address();
     const port = typeof addr === 'object' && addr ? addr.port : opts.port;
     allowedHosts = new Set(['127.0.0.1:' + port, 'localhost:' + port, '[::1]:' + port]);
+    // Warm up before the first request, then rescan on a timer: no request ever waits
+    // for (or shares a thread with) a rescan any more. The cadence keeps the directory
+    // cache warm, which is what makes the rescan itself cheap.
+    refresh().catch(() => {});
+    const timer = setInterval(() => { refresh().catch(() => {}); }, 15000);
+    if (typeof timer.unref === 'function') timer.unref();
   });
   return server;
 }

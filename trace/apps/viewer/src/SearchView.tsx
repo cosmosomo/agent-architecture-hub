@@ -55,6 +55,10 @@ type Props = {
   onClose: () => void;
 };
 
+/** The last answer, kept across mounts: leaving the search view and coming back paints
+ *  instantly from here while a fresh request confirms it (the server caches too). */
+let lastAnswer: { key: string; result: SearchResult } | null = null;
+
 export function SearchView({ query, onChange, onOpen, titles, onClose }: Props) {
   const [text, setText] = useState(query.q || '');
   const [result, setResult] = useState<SearchResult | null>(null);
@@ -67,15 +71,19 @@ export function SearchView({ query, onChange, onOpen, titles, onClose }: Props) 
 
   // One request per settled query: typing waits a moment, changing a chip does not.
   const key = useMemo(() => JSON.stringify({ ...query, q: undefined }), [query]);
+  const fullKey = key + '|' + limit + '|' + (query.q || '');
   useEffect(() => {
+    if (lastAnswer && lastAnswer.key === fullKey && !result) setResult(lastAnswer.result);
     started.current = Date.now();
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       setBusy(true);
       try {
         const r = await runSearch({ ...query, limit }, ctrl.signal);
+        if (ctrl.signal.aborted) return;
         setResult(r);
         setError(null);
+        lastAnswer = { key: fullKey, result: r };
       } catch (e) {
         if (!ctrl.signal.aborted) setError(e instanceof Error ? e.message : String(e));
       } finally {

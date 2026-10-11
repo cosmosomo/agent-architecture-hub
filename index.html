@@ -2922,6 +2922,7 @@ button.chip:hover{
   <div class="tb-actions">
     <button class="btn btn-wzorce" id="wzorceBtn" onclick="toggleWzorce()" title="Wzorce architektury agentów" aria-label="Przełącz tryb Wzorce">&#128208; Wzorce</button>
     <button class="btn btn-hooki" id="hookiBtn" onclick="toggleHooki()" title="Hooki - kiedy Claude Code odpala Twój kod" aria-label="Przełącz tryb Hooki">&#129693; Hooki</button>
+    <button class="btn" id="traceBtn" onclick="window.open('/trace/','_blank','noopener')" title="本机会话的 Trace 查看器：会话列表、调用树、检索、统计" aria-label="打开 Trace 查看器" style="display:none">&#9719; Trace ↗</button>
     <!-- v41: przycisk samouczka. Latarka, nie biret ani kompas: samouczek SWIECI
          PUNKTOWO na jeden element, a nie uczy - Hooki i Wzorce maja wlasne lekcje.
          Kompas odpadl, bo uzywa go juz wzorzec Routing. Uzasadnienie: DD56.
@@ -2949,6 +2950,17 @@ button.chip:hover{
 </header>
 <main class="workspace">
   <aside class="side-l" id="sL" aria-label="Panel agentów i presetów">
+    <!-- HUB: duży, zawsze widoczny przycisk do Trace Viewer (drugi system, lokalne sesje).
+         Pojawia się tylko, gdy strona jest serwowana przez lokalną usługę (sessions.js). -->
+    <button type="button" id="traceEntry" onclick="window.open('/trace/','_blank','noopener')" title="另一个系统：本机真实智能体会话的调用记录——列表、调用树、全文检索、统计" style="display:none;margin:10px 10px 6px;width:calc(100% - 20px);box-sizing:border-box;padding:9px 12px;border-radius:12px;border:1px solid rgba(129,140,248,.45);background:linear-gradient(135deg,rgba(129,140,248,.14),rgba(245,158,11,.10));cursor:pointer;text-align:left;transition:transform .2s,box-shadow .2s,border-color .2s" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 0 18px rgba(129,140,248,.25)';this.style.borderColor='rgba(129,140,248,.8)'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='rgba(129,140,248,.45)'">
+      <span style="display:flex;align-items:center;gap:9px">
+        <span style="width:30px;height:30px;flex:none;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent1),var(--accent3));font-size:15px;color:#fff">&#9719;</span>
+        <span style="min-width:0">
+          <span style="display:block;font-family:var(--hd);font-size:13px;font-weight:800;letter-spacing:.02em;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">TRACE 查看器</span>
+          <span style="display:block;font-size:10px;color:var(--t3);margin-top:1px">本机会话 · 调用树 · 检索 · 统计 ↗</span>
+        </span>
+      </span>
+    </button>
     <div class="sl-tabs" role="tablist">
       <button class="sl-tab on" role="tab" aria-selected="true" onclick="zmienTab('ag',this)">Agenci</button>
       <button class="sl-tab" role="tab" aria-selected="false" onclick="zmienTab('pr',this)">Presety</button>
