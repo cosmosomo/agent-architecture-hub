@@ -11,6 +11,7 @@ export default {
       fontFamily: {
         sans: ['Inter', '"Segoe UI"', '"PingFang SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'Consolas', '"Cascadia Mono"', 'monospace'],
+        display: ['"Space Grotesk"', 'Inter', '"Segoe UI"', 'sans-serif'],
       },
     },
   },

@@ -1,7 +1,7 @@
 import { filterSpansRecursively, flattenSpans } from '@evilmartians/agent-prism-data';
 import type { TraceSpan } from '@evilmartians/agent-prism-types';
 import type { SearchHit, SearchRequest, Session, SessionSummary } from '@hub-trace/contract';
-import { FolderOpen, BarChart3, Moon, Search, Sun } from 'lucide-react';
+import { Activity, FolderOpen, BarChart3, Moon, Search, Sun } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { CollapseAllButton } from './components/agent-prism/CollapseAllButton';
@@ -10,7 +10,7 @@ import { ExpandAllButton } from './components/agent-prism/ExpandAllButton';
 import { TreeView } from './components/agent-prism/TreeView';
 import { ServiceError, loadIndex, loadSession, otelUrl, parseDropped } from './data.ts';
 import { AnalyticsView } from './AnalyticsView.tsx';
-import { cut, KIND_LABEL } from './format.ts';
+import { cut } from './format.ts';
 import { SessionHeader } from './SessionHeader.tsx';
 import { SourcesView } from './SourcesView.tsx';
 import { fromParams } from './search-data.ts';
@@ -170,12 +170,6 @@ export function App() {
     if (last) open(last);
   };
 
-  const kindNames = useMemo(() => {
-    const seen = new Set<string>();
-    for (const s of index) seen.add(s.source.kind);
-    return Array.from(seen).map((k) => KIND_LABEL[k] || k);
-  }, [index]);
-
   const titles = useMemo(() => {
     const m = new Map<string, { title: string; cwd?: string | undefined; role: string }>();
     for (const [id, s] of known) m.set(id, { title: s.title, cwd: s.cwd, role: s.agent.role });
@@ -207,49 +201,54 @@ export function App() {
 
   return (
     <div
-      className="bg-agentprism-background text-agentprism-foreground flex h-screen flex-col font-sans"
+      className="flex h-screen flex-col font-sans"
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
       onDragLeave={(e) => { if (e.currentTarget === e.target) setDragging(false); }}
       onDrop={onDrop}
     >
-      <header className="border-agentprism-border flex h-11 shrink-0 items-center gap-3 border-b px-4">
-        <span className="text-sm font-semibold">Trace 查看器</span>
-        <span className="text-agentprism-secondary-foreground text-xs">{'本机会话 ' + index.length + ' 个' + (kindNames.length ? ' · ' + kindNames.join(' + ') : '')}</span>
+      <header className="hi-topbar shrink-0">
+        <span className="hi-chip-ic" style={{ '--hi-accent': 'oklch(var(--agentprism-brand))' } as React.CSSProperties}><Activity className="size-4" /></span>
+        <span className="hi-brand">Trace 查看器</span>
+        <span className="hi-num text-agentprism-secondary-foreground text-[10px]">{'本机会话 ' + index.length + ' 个'}</span>
         <span className="flex-1" />
-        <button
-          className={'hi-navbtn' + (sources ? ' on' : '')}
-          onClick={() => { setSources(!sources); setAnalytics(false); }}
-          title="哪些 CLI 有会话、各在哪些项目里干活"
-        >
-          <span className="flex items-center gap-1"><FolderOpen className="size-3.5" />来源</span>
-        </button>
-        <button
-          className={'hi-navbtn' + (analytics ? ' on' : '')}
-          onClick={() => { setAnalytics(!analytics); setSources(false); }}
-          title="全部会话的折页：日活跃、工具、模型、项目"
-        >
-          <span className="flex items-center gap-1"><BarChart3 className="size-3.5" />统计</span>
-        </button>
-        <button
-          className={'hi-navbtn' + (search ? ' on' : '')}
-          onClick={() => setSearch(search ? null : {})}
-          title="在全部会话的每一步里找：命令、文件、错误、说的话"
-        >
-          <span className="flex items-center gap-1"><Search className="size-3.5" />检索</span>
-        </button>
-        <a className="text-agentprism-muted-foreground hover:text-agentprism-foreground text-xs" href="/" title="同一个本地服务上的观察台">观察台</a>
-        <button className="text-agentprism-muted-foreground hover:text-agentprism-foreground" onClick={toggleTheme} title={theme === 'light' ? '换成深色' : '换成浅色'}>
-          {theme === 'light' ? <Moon className="size-4" /> : <Sun className="size-4" />}
+        <nav className="hi-segment">
+          <button
+            className={'hi-navbtn' + (sources ? ' on' : '')}
+            onClick={() => { setSources(!sources); setAnalytics(false); }}
+            title="哪些 CLI 有会话、各在哪些项目里干活"
+          >
+            <span className="flex items-center gap-1"><FolderOpen className="size-3.5" />来源</span>
+          </button>
+          <button
+            className={'hi-navbtn' + (analytics ? ' on' : '')}
+            onClick={() => { setAnalytics(!analytics); setSources(false); }}
+            title="全部会话的全景：日活跃、工具、模型、项目"
+          >
+            <span className="flex items-center gap-1"><BarChart3 className="size-3.5" />统计</span>
+          </button>
+          <button
+            className={'hi-navbtn' + (search ? ' on' : '')}
+            onClick={() => setSearch(search ? null : {})}
+            title="在全部会话的每一步里找：命令、文件、错误、说的话"
+          >
+            <span className="flex items-center gap-1"><Search className="size-3.5" />检索</span>
+          </button>
+        </nav>
+        <a className="hi-navbtn" href="/" title="同一个本地服务上的观察台">观察台</a>
+        <button className="hi-navbtn" onClick={toggleTheme} title={theme === 'light' ? '换成深色' : '换成浅色'}>
+          {theme === 'light' ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
         </button>
       </header>
 
       {sources ? (
-        <SourcesView onClose={() => setSources(false)} />
+        <SourcesView />
       ) : analytics ? (
-        <AnalyticsView sessions={index} onClose={() => setAnalytics(false)} />
+        <AnalyticsView sessions={index} />
       ) : (
+      <div className="min-h-0 flex-1 p-2.5 pt-2">
       <PanelGroup direction="horizontal" autoSaveId="hub-trace-layout" className="min-h-0 flex-1">
-        <Panel defaultSize={24} minSize={16} className="border-agentprism-border border-r">
+        <Panel defaultSize={24} minSize={16}>
+          <div className="hi-panel h-full">
           {search ? (
             <SearchView query={search} onChange={setSearch} onOpen={openHit} titles={titles} onClose={() => setSearch(null)} />
           ) : indexError && !index.length ? (
@@ -263,9 +262,11 @@ export function App() {
           ) : (
             <SessionList sessions={index} local={Array.from(local.values())} selectedId={selectedId} onSelect={open} />
           )}
+          </div>
         </Panel>
-        <PanelResizeHandle className="hover:bg-agentprism-brand w-1 transition-colors" />
+        <PanelResizeHandle className="w-2.5 cursor-col-resize" />
         <Panel defaultSize={44} minSize={25}>
+          <div className="hi-panel h-full">
           {search ? (
             <div className="text-agentprism-secondary-foreground p-6 text-sm">
               左边每一条都能打开到它所在的步骤：树会展开到那一轮，右边显示这一步的输入输出、思考和属性。
@@ -301,20 +302,24 @@ export function App() {
               {sessionError || (selectedId ? '读取会话…' : '在左边选一个会话。')}
             </div>
           )}
+          </div>
         </Panel>
-        <PanelResizeHandle className="hover:bg-agentprism-brand w-1 transition-colors" />
+        <PanelResizeHandle className="w-2.5 cursor-col-resize" />
         <Panel defaultSize={32} minSize={20}>
+          <div className="hi-panel h-full">
           {search ? (
             <div className="text-agentprism-secondary-foreground p-6 text-sm">
-              筛选说明：类型和“出错”只留下要看的步骤，上面的次数是这个词在这些会话里各有多少步（不受类型筛选影响）。点目录能只看那个工作目录的会话。
+              筛选说明：类型和"出错"只留下要看的步骤，上面的次数是这个词在这些会话里各有多少步（不受类型筛选影响）。点目录能只看那个工作目录的会话。
             </div>
           ) : session && selectedSpan ? (
             <DetailsView key={session.id} className="h-full rounded-none border-0" data={selectedSpan} allSpans={spans} headerActions={(d) => childActions(d as TraceSpan)} />
           ) : (
             <div className="text-agentprism-secondary-foreground p-6 text-sm">选中树里的一项，这里显示输入输出、思考和属性。</div>
           )}
+          </div>
         </Panel>
       </PanelGroup>
+      </div>
       )}
 
       {dragging && (

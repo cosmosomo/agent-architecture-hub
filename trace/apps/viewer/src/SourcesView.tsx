@@ -6,7 +6,7 @@
  */
 import type { Overview, OverviewSource } from '@hub-trace/contract';
 import { KIND_LABEL, STATUS_DOT, STATUS_LABEL, ago, basename, tokens, usd } from './format.ts';
-import { FolderOpen, X } from 'lucide-react';
+import { FolderOpen } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { loadOverview, ServiceError } from './data.ts';
 
@@ -14,7 +14,7 @@ type Props = { onClose: () => void };
 
 const WINDOWS: [string, number][] = [['全部', 0], ['今天', 24], ['7 天', 24 * 7], ['30 天', 24 * 30]];
 
-export function SourcesView({ onClose }: Props) {
+export function SourcesView() {
   const [data, setData] = useState<Overview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [win, setWin] = useState(0); // hours; 0 = all time
@@ -32,17 +32,17 @@ export function SourcesView({ onClose }: Props) {
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-4xl space-y-5 p-6">
-        <div className="flex items-center gap-3">
-          <FolderOpen className="text-agentprism-brand size-4" />
-          <h1 className="text-base font-semibold">来源与项目</h1>
+      <div className="mx-auto max-w-6xl space-y-4 p-4 pb-10">
+        <div className="hi-card-head -mx-1 mb-1 flex-wrap" style={{ '--hi-accent': 'oklch(var(--agentprism-brand))' } as React.CSSProperties}>
+          <span className="hi-chip-ic"><FolderOpen className="size-3.5" /></span>
+          <h1 className="hi-display text-sm font-bold">来源与项目</h1>
           <span className="text-agentprism-secondary-foreground text-xs">哪些 CLI 在这台机器上有会话记录、各在哪些项目里干活</span>
           <span className="flex-1" />
-          <div className="flex gap-1">
+          <div className="hi-segment">
             {WINDOWS.map(([label, hours]) => (
               <button
                 key={label}
-                className={'rounded border px-2 py-0.5 text-xs ' + (win === hours ? 'border-agentprism-brand bg-agentprism-secondary text-agentprism-foreground' : 'border-agentprism-border text-agentprism-muted-foreground hover:border-agentprism-border-strong')}
+                className={'hi-navbtn h-6 ' + (win === hours ? 'on' : '')}
                 onClick={() => setWin(hours)}
                 title={hours ? '只看 ' + label + '内有活动的项目' : '全部时间'}
               >
@@ -50,7 +50,6 @@ export function SourcesView({ onClose }: Props) {
               </button>
             ))}
           </div>
-          <button className="text-agentprism-muted-foreground hover:text-agentprism-foreground" onClick={onClose} title="回到会话列表"><X className="size-4" /></button>
         </div>
 
         {error && (

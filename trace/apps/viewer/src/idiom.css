@@ -34,6 +34,7 @@
   opacity: .35;
 }
 .hi-card-title {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
   font-size: 11px; font-weight: 700; letter-spacing: .08em;
   text-transform: uppercase;
   color: oklch(var(--agentprism-muted-foreground));
@@ -46,7 +47,7 @@
   font-variant-numeric: tabular-nums;
 }
 .hi-metric-value { font-size: 22px; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
-.hi-metric-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: oklch(var(--agentprism-secondary-foreground)); }
+.hi-metric-label { font-family: 'Space Grotesk', 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: oklch(var(--agentprism-secondary-foreground)); }
 
 /* Icon chip: rounded square, tinted with the accent of the section. */
 .hi-chip-ic {
@@ -118,4 +119,87 @@
   border-color: color-mix(in oklab, oklch(var(--agentprism-brand)) 40%, transparent);
   background: color-mix(in oklab, oklch(var(--agentprism-brand)) 12%, transparent);
   box-shadow: 0 0 14px color-mix(in oklab, oklch(var(--agentprism-brand)) 18%, transparent);
+}
+
+/* ===== The observatory's page shell (dist/observatory.html), so /trace/ reads as the
+   same application: mesh-gradient canvas under everything, glass topbar with the
+   gradient brand and hairline, panels as floating cards on that canvas. ===== */
+
+/* The app canvas: darker than any panel, with the observatory's three ambient washes. */
+html.hi-app, html.hi-app body {
+  background: oklch(0.11 0.012 275);
+}
+html[data-theme='light'].hi-app, html[data-theme='light'].hi-app body {
+  background: oklch(0.97 0.004 275);
+}
+html.hi-app body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 60% at 20% 50%, oklch(var(--agentprism-brand) / 0.19) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 80% 18%, oklch(var(--agentprism-success) / 0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 45% at 50% 85%, oklch(var(--agentprism-error) / 0.11) 0%, transparent 70%);
+}
+html[data-theme='light'].hi-app body::before { opacity: .5; }
+html.hi-app #root { position: relative; z-index: 1; }
+
+/* Topbar: thin glass band with the accent hairline the panels use (pn-header::after). */
+.hi-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 14px;
+  border-bottom: 1px solid oklch(var(--agentprism-border));
+  background: color-mix(in oklab, oklch(var(--agentprism-background)) 55%, transparent);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  position: relative;
+}
+.hi-topbar::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, oklch(var(--agentprism-brand)), oklch(var(--agentprism-brand-secondary)) 55%, transparent);
+  opacity: .3;
+}
+
+/* Brand: Space Grotesk with the observatory's gradient text (tb-brand). */
+.hi-brand {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  background: linear-gradient(135deg, oklch(var(--agentprism-brand)), oklch(var(--agentprism-brand-secondary)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+}
+.hi-display { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+
+/* The ob-mode segment: one glass pill the nav buttons sit in. */
+.hi-segment {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border-radius: 10px;
+  border: 1px solid oklch(var(--agentprism-border));
+  background: oklch(var(--agentprism-secondary) / 0.5);
+}
+
+/* A floating workbench panel (the observatory draws its panels on the canvas; the
+   viewer's columns become the same kind of object instead of full-bleed IDE splits). */
+.hi-panel {
+  border-radius: 12px;
+  border: 1px solid oklch(var(--agentprism-border));
+  background: oklch(var(--agentprism-background) / 0.82);
+  box-shadow:
+    inset 0 1px 0 oklch(var(--agentprism-foreground) / 0.04),
+    0 10px 30px oklch(0 0 0 / 0.22);
+  overflow: hidden;
+  min-height: 0;
 }

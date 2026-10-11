@@ -7,7 +7,7 @@
  * shared through idiom.css.
  */
 import type { LucideIcon } from 'lucide-react';
-import { Activity, BarChart3, Bot, Cpu, Flame, Hash, MessageSquare, TrendingUp, Wrench, X } from 'lucide-react';
+import { Activity, BarChart3, Bot, Cpu, Flame, Hash, MessageSquare, TrendingUp, Wrench } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SessionSummary, StatsDoc } from '@hub-trace/contract';
 import { loadStats, ServiceError } from './data.ts';
@@ -15,7 +15,6 @@ import { basename, KIND_LABEL, tokens, usd } from './format.ts';
 
 type Props = {
   sessions: SessionSummary[];
-  onClose: () => void;
 };
 
 const ACCENT = {
@@ -27,7 +26,7 @@ const ACCENT = {
   red: 'oklch(var(--agentprism-error))',
 };
 
-export function AnalyticsView({ sessions, onClose }: Props) {
+export function AnalyticsView({ sessions }: Props) {
   const [stats, setStats] = useState<StatsDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,14 +68,10 @@ export function AnalyticsView({ sessions, onClose }: Props) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto max-w-6xl space-y-4 p-4 pb-10">
-        <div className="flex items-center gap-3">
-          <span className="hi-chip-ic" style={{ '--hi-accent': ACCENT.brand } as React.CSSProperties}><BarChart3 className="size-4" /></span>
-          <div className="min-w-0">
-            <div className="text-sm font-semibold">统计</div>
-            <div className="text-agentprism-secondary-foreground text-xs">{sessions.length + ' 个会话的全景：每天在做什么、哪些工具和模型最忙、哪个项目烧了最多的轮次'}</div>
-          </div>
-          <span className="flex-1" />
-          <button className="text-agentprism-muted-foreground hover:text-agentprism-foreground" onClick={onClose} title="回到会话列表"><X className="size-4" /></button>
+        <div className="hi-card-head -mx-1 mb-1" style={{ '--hi-accent': ACCENT.brand } as React.CSSProperties}>
+          <span className="hi-chip-ic"><BarChart3 className="size-3.5" /></span>
+          <h1 className="hi-display text-sm font-bold">统计</h1>
+          <span className="text-agentprism-secondary-foreground text-xs">{sessions.length + ' 个会话的全景：每天在做什么、哪些工具和模型最忙、哪个项目烧了最多的轮次'}</span>
         </div>
 
         {error && (
