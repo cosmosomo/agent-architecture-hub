@@ -69,9 +69,11 @@ export class SearchIndex {
       PRAGMA synchronous = NORMAL;
       CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
       CREATE TABLE IF NOT EXISTS files (session TEXT PRIMARY KEY, size INTEGER, mtime REAL, adapter TEXT, cwd TEXT, role TEXT);
-      CREATE TABLE IF NOT EXISTS steps (id INTEGER PRIMARY KEY, session TEXT, turn INTEGER, step TEXT, kind TEXT, facet TEXT, name TEXT, status TEXT, at TEXT);
+      CREATE INDEX IF NOT EXISTS files_cwd ON files (cwd);      CREATE TABLE IF NOT EXISTS steps (id INTEGER PRIMARY KEY, session TEXT, turn INTEGER, step TEXT, kind TEXT, facet TEXT, name TEXT, status TEXT, at TEXT);
       CREATE INDEX IF NOT EXISTS steps_session ON steps (session);
       CREATE INDEX IF NOT EXISTS steps_at ON steps (at);
+      CREATE INDEX IF NOT EXISTS steps_facet ON steps (facet);
+      CREATE INDEX IF NOT EXISTS steps_status ON steps (status);
       CREATE VIRTUAL TABLE IF NOT EXISTS steps_fts USING fts5 (body, tokenize = 'trigram');
     `);
     const v = this.db.prepare("SELECT v FROM meta WHERE k = 'version'").get() as { v: string } | undefined;
@@ -120,6 +122,9 @@ export class SearchIndex {
       }
       this.progress.done++;
     }
+    // A big sync is a rebuild (or first run): refresh the planner's statistics, it picks
+    // the wrong side of the steps/files join without them (measured 712ms vs 139ms).
+    if (report.indexed > 300) this.db.exec('ANALYZE');
     report.ms = Date.now() - t0;
     return report;
   }
@@ -185,7 +190,9 @@ export class SearchIndex {
     }
     if (q.errors) narrow.push("s.status = 'error'");
 
-    const from = 'FROM steps s JOIN files f ON f.session = s.session';
+    // files only joins in when its filters are on: the facet counts over every step
+    // otherwise pay for a join they never read (261k steps made that a second per query).
+    const from = q.cwd || q.role ? 'FROM steps s JOIN files f ON f.session = s.session' : 'FROM steps s';
     const w = (extra: string[]) => (where.length || extra.length ? ' WHERE ' + where.concat(extra).join(' AND ') : '');
     const limit = Math.min(Math.max(q.limit ?? 50, 1), 500);
     const offset = Math.max(q.offset ?? 0, 0);
@@ -199,7 +206,12 @@ export class SearchIndex {
     for (const r of this.db.prepare('SELECT s.facet, count(*) n ' + from + w([]) + ' GROUP BY s.facet').all(...args) as { facet: string; n: number }[]) kinds[r.facet] = r.n;
     const errors = (this.db.prepare('SELECT count(*) n ' + from + w(["s.status = 'error'"])).get(...args) as { n: number }).n;
     const sessions = (this.db.prepare('SELECT count(DISTINCT s.session) n ' + from + w(narrow)).get(...args, ...nargs) as { n: number }).n;
-    const cwd = this.db.prepare('SELECT f.cwd cwd, count(*) n ' + from + w(narrow) + ' GROUP BY f.cwd ORDER BY n DESC LIMIT 12').all(...args, ...nargs) as { cwd: string; n: number }[];
+    // The cwd facet from the steps side walks all 261k rows through a join; driven from
+    // files (1.5k sessions), each count is a covering-index lookup. Only without search
+    // conditions: a correlated FTS subquery would replay per session (32s measured).
+    const cwd = where.length || q.cwd || q.role
+      ? this.db.prepare('SELECT f.cwd cwd, count(*) n FROM steps s JOIN files f ON f.session = s.session' + w(narrow) + ' GROUP BY f.cwd ORDER BY n DESC LIMIT 12').all(...args, ...nargs) as { cwd: string; n: number }[]
+      : this.db.prepare('SELECT cwd, sum(n) n FROM (SELECT f.cwd cwd, (SELECT count(*) FROM steps s WHERE s.session = f.session' + (narrow.length ? ' AND ' + narrow.join(' AND ') : '') + ') n FROM files f) GROUP BY cwd ORDER BY n DESC LIMIT 12').all() as { cwd: string; n: number }[];
 
     return {
       total,
