@@ -9,7 +9,7 @@
   var STATUS = { working: '在做', waiting: '等待中', failed: '出错', aborted: '被打断', stale: '疑似已退出', idle: '空闲', empty: '空' };
   var DOT = { working: 'working', waiting: 'waiting', failed: 'error', aborted: 'waiting', stale: 'never', idle: '', empty: 'never' };
   var ORDER = ['working', 'waiting', 'failed', 'aborted', 'stale', 'idle', 'empty'];
-  var KIND = { codex: 'Codex', 'claude-code': 'Claude', opencode: 'OpenCode' };
+  var KIND = { codex: 'Codex', 'claude-code': 'Claude', opencode: 'OpenCode', zcode: 'ZCode', factory: 'Factory', gemini: 'Gemini CLI' };
   var PAGE = 80;
   var cache = null, error = null, loading = false, loadedAt = 0, filter = 'all', limit = PAGE, open = {};
   var bound = new WeakSet();
