@@ -8,7 +8,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
-import type { SearchHit, SearchRequest, SearchResult, Session, Step } from '@hub-trace/contract';
+import type { DayStats, ModelStat, SearchHit, SearchRequest, SearchResult, Session, StatsDoc, Step, ToolStat } from '@hub-trace/contract';
 import type { SourceFile } from './store.ts';
 
 /** Bump when what gets indexed changes: every session is indexed again. */
@@ -222,6 +222,38 @@ export class SearchIndex {
 
   status() {
     return { ...this.progress, steps: (this.db.prepare('SELECT count(*) n FROM steps').get() as { n: number }).n };
+  }
+
+  /** The analytics fold (17.8): daily activity, tool and model rankings, straight out of the index. */
+  stats(contract: string): StatsDoc {
+    const days = new Map<string, DayStats>();
+    for (const r of this.db.prepare(
+      "SELECT substr(at, 1, 10) d, kind, count(*) n, count(DISTINCT session) s FROM steps WHERE at IS NOT NULL GROUP BY d, kind",
+    ).all() as { d: string; kind: string; n: number; s: number }[]) {
+      let day = days.get(r.d);
+      if (!day) { day = { date: r.d, steps: 0, messages: 0, toolCalls: 0, modelCalls: 0, sessions: 0 }; days.set(r.d, day); }
+      day.steps += r.n;
+      day.sessions = Math.max(day.sessions, r.s);
+      if (r.kind === 'message') day.messages += r.n;
+      else if (r.kind === 'tool') day.toolCalls += r.n;
+      else if (r.kind === 'model') day.modelCalls += r.n;
+    }
+    const tools = (this.db.prepare(
+      "SELECT name, count(*) calls, sum(status = 'error') errors FROM steps WHERE kind = 'tool' AND name IS NOT NULL GROUP BY name ORDER BY calls DESC LIMIT 14",
+    ).all() as { name: string; calls: number; errors: number | null }[]).map<ToolStat>((r) => ({ name: r.name, calls: r.calls, errors: r.errors || 0 }));
+    const models = (this.db.prepare(
+      "SELECT name, count(*) calls FROM steps WHERE kind = 'model' AND name IS NOT NULL GROUP BY name ORDER BY calls DESC LIMIT 14",
+    ).all() as { name: string; calls: number }[]).map<ModelStat>((r) => ({ name: r.name, calls: r.calls }));
+    const toolErrors = (this.db.prepare("SELECT count(*) n FROM steps WHERE status = 'error'").get() as { n: number }).n;
+    return {
+      contract,
+      generatedAt: new Date().toISOString(),
+      days: Array.from(days.values()).sort((a, b) => (a.date < b.date ? -1 : 1)),
+      tools,
+      models,
+      steps: (this.db.prepare('SELECT count(*) n FROM steps').get() as { n: number }).n,
+      toolErrors,
+    };
   }
 }
 

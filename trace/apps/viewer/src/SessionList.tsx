@@ -131,7 +131,7 @@ function Row({ s, depth, childCount, dim, selected, onSelect, expanded, onToggle
   ].filter(Boolean);
   return (
     <div
-      className={cn('group border-agentprism-border-subtle flex cursor-pointer gap-2 border-b border-l-2 py-2 pr-3', selected ? 'border-l-agentprism-brand bg-agentprism-secondary' : 'border-l-transparent hover:bg-agentprism-muted', dim && 'opacity-60')}
+      className={cn('group border-agentprism-border-subtle flex cursor-pointer gap-2 border-b border-l-2 py-2 pr-3', selected ? 'border-l-agentprism-brand bg-agentprism-secondary' : 'border-l-transparent hi-row', dim && 'opacity-60')}
       style={{ paddingLeft: 10 + depth * 16 }}
       onClick={() => onSelect(s.id)}
       title={s.title}

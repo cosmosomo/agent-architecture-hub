@@ -141,6 +141,11 @@ export function createService(opts: ServeOptions): Server {
         await refresh();
         return json(res, 200, search.search(searchQuery(url.searchParams)));
       }
+      if (path === '/api/stats') {
+        if (!search) return json(res, 404, { error: 'search is off' });
+        await refresh();
+        return json(res, 200, search.stats(CONTRACT_VERSION));
+      }
       // a session and every sub-agent it started, at any depth: what the observatory draws as one org graph
       const t = /^\/api\/sessions\/([^/]+)\/tree$/.exec(path);
       if (t) {

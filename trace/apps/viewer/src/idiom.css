@@ -1,0 +1,121 @@
+/* The observatory's material language (hub/css/panels.css 的做法) as utility classes for
+   the trace viewer: glass cards with a gradient hairline, pill badges, mono numerals,
+   soft accent glows. Colors come from the same hub-theme.css tokens Tailwind uses, so
+   light/dark both hold. Class prefix hi-. */
+
+.hi-card {
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid oklch(var(--agentprism-border));
+  background:
+    linear-gradient(180deg, oklch(var(--agentprism-secondary) / 0.35), oklch(var(--agentprism-background))),
+    oklch(var(--agentprism-background));
+  box-shadow:
+    inset 0 1px 0 oklch(var(--agentprism-foreground) / 0.04),
+    0 8px 28px oklch(0 0 0 / 0.18);
+  transition: border-color .25s, box-shadow .25s, transform .25s;
+}
+.hi-card:hover {
+  border-color: oklch(var(--agentprism-border-strong));
+}
+.hi-card-quiet { box-shadow: none; background: oklch(var(--agentprism-muted) / 0.5); }
+
+/* Card header with the observatory's gradient hairline underneath (pn-header::after). */
+.hi-card-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px 9px;
+  border-bottom: 1px solid oklch(var(--agentprism-border));
+  position: relative;
+}
+.hi-card-head::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--hi-accent, oklch(var(--agentprism-brand))), oklch(var(--agentprism-brand-secondary)) 55%, transparent);
+  opacity: .35;
+}
+.hi-card-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase;
+  color: oklch(var(--agentprism-muted-foreground));
+}
+.hi-card-sub { margin-left: auto; font-size: 10px; color: oklch(var(--agentprism-secondary-foreground)); }
+
+/* Metric value block: mono, tabular, big but not loud. */
+.hi-num {
+  font-family: 'JetBrains Mono', Consolas, 'Cascadia Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.hi-metric-value { font-size: 22px; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+.hi-metric-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: oklch(var(--agentprism-secondary-foreground)); }
+
+/* Icon chip: rounded square, tinted with the accent of the section. */
+.hi-chip-ic {
+  width: 26px; height: 26px; border-radius: 8px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in oklab, var(--hi-accent, oklch(var(--agentprism-brand))) 16%, transparent);
+  color: var(--hi-accent, oklch(var(--agentprism-brand)));
+}
+
+/* Pill badge (ob-mark / ob-flag). */
+.hi-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 7px; border-radius: 999px;
+  font-size: 10px; font-weight: 700; line-height: 16px; white-space: nowrap;
+  border: 1px solid color-mix(in oklab, var(--hi-accent, oklch(var(--agentprism-brand))) 45%, transparent);
+  color: var(--hi-accent, oklch(var(--agentprism-brand)));
+  background: color-mix(in oklab, var(--hi-accent, oklch(var(--agentprism-brand))) 10%, transparent);
+}
+
+/* Ranked bar row: label left, value right, hairline progress under (CCHV ToolUsageChart, hub bars). */
+.hi-bar-track { height: 4px; border-radius: 999px; overflow: hidden; background: oklch(var(--agentprism-foreground) / 0.07); }
+.hi-bar-fill {
+  height: 100%; border-radius: 999px;
+  background: var(--hi-accent, oklch(var(--agentprism-brand)));
+  box-shadow: 0 0 8px color-mix(in oklab, var(--hi-accent, oklch(var(--agentprism-brand))) 45%, transparent);
+  transition: width .5s cubic-bezier(.2,.7,.2,1);
+}
+
+/* Status dot with the observatory's glow (ob-mini::after). */
+.hi-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: oklch(var(--agentprism-muted-foreground));
+}
+.hi-dot-working { background: oklch(var(--agentprism-success)); box-shadow: 0 0 6px oklch(var(--agentprism-success)); }
+.hi-dot-failed { background: oklch(var(--agentprism-error)); box-shadow: 0 0 6px oklch(var(--agentprism-error)); }
+.hi-dot-stale { background: oklch(var(--agentprism-warning)); }
+.hi-dot-waiting { background: oklch(var(--agentprism-pending)); }
+
+/* Heat map cell (CCHV ActivityHeatmap, recolored to the brand). */
+.hi-heat {
+  width: 13px; height: 13px; border-radius: 3px; flex: none;
+  background: oklch(var(--agentprism-foreground) / 0.06);
+  transition: transform .15s;
+}
+.hi-heat:hover { transform: scale(1.3); z-index: 1; position: relative; }
+
+/* Clickable row that belongs to this language: quiet until hovered, then a soft accent wash. */
+.hi-row {
+  border-radius: 10px;
+  transition: background .2s, border-color .2s, transform .2s;
+}
+.hi-row:hover {
+  background: oklch(var(--agentprism-foreground) / 0.04);
+}
+
+/* Header button in the viewer chrome: segment style like .ob-mode. */
+.hi-navbtn {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 26px; padding: 0 9px; border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 11px; font-weight: 600;
+  color: oklch(var(--agentprism-secondary-foreground));
+  cursor: pointer; background: transparent;
+  transition: color .2s, background .2s, border-color .2s, transform .2s;
+}
+.hi-navbtn:hover { color: oklch(var(--agentprism-foreground)); background: oklch(var(--agentprism-foreground) / 0.05); transform: translateY(-1px); }
+.hi-navbtn.on {
+  color: oklch(var(--agentprism-brand));
+  border-color: color-mix(in oklab, oklch(var(--agentprism-brand)) 40%, transparent);
+  background: color-mix(in oklab, oklch(var(--agentprism-brand)) 12%, transparent);
+  box-shadow: 0 0 14px color-mix(in oklab, oklch(var(--agentprism-brand)) 18%, transparent);
+}

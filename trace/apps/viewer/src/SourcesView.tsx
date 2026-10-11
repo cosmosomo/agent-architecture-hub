@@ -83,15 +83,14 @@ function SourceCard({ s, cut }: { s: OverviewSource; cut: number }) {
   ].filter(Boolean);
 
   return (
-    <section className="border-agentprism-border rounded border">
-      <header className="border-agentprism-border flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b px-4 py-3">
-        <h2 className="text-sm font-semibold">{s.label}</h2>
-        <span className={'rounded border px-1.5 py-0.5 text-xs ' + (s.exists === false ? 'border-agentprism-border text-agentprism-muted-foreground' : 'border-agentprism-brand text-agentprism-foreground')}>
-          {s.exists === false ? '目录不存在' : s.sessions + ' 个会话'}
-        </span>
+    <section className="hi-card" style={{ '--hi-accent': 'oklch(var(--agentprism-brand))' } as React.CSSProperties}>
+      <header className="hi-card-head">
+        <span className="hi-chip-ic"><FolderOpen className="size-3.5" /></span>
+        <h2 className="hi-card-title">{s.label}</h2>
+        {s.exists !== false && <span className="hi-pill">{s.sessions + ' 个会话'}</span>}
+        {s.exists === false && <span className="border-agentprism-border text-agentprism-muted-foreground rounded border px-1.5 py-0.5 text-xs">目录不存在</span>}
         {s.dir && <span className="text-agentprism-secondary-foreground truncate text-xs" title={s.dir}>{s.dir}</span>}
-        <span className="flex-1" />
-        {s.lastAt && <span className="text-agentprism-secondary-foreground text-xs">最后活动 {ago(s.lastAt)}</span>}
+        <span className="hi-card-sub">{s.lastAt ? '最后活动 ' + ago(s.lastAt) : ''}</span>
       </header>
 
       {s.exists === false ? (
@@ -106,8 +105,8 @@ function SourceCard({ s, cut }: { s: OverviewSource; cut: number }) {
               {topModels.map((m) => (
                 <div key={m.model} className="flex items-center gap-2 text-xs">
                   <span className="text-agentprism-secondary-foreground w-44 truncate" title={m.model}>{m.model}</span>
-                  <span className="bg-agentprism-border h-1.5 flex-1 overflow-hidden rounded"><span className="bg-agentprism-brand block h-full" style={{ width: Math.max(3, Math.round((100 * m.n) / maxModel)) + '%' }} /></span>
-                  <span className="text-agentprism-secondary-foreground w-14 text-right">{m.n} 个会话</span>
+                  <span className="hi-bar-track min-w-0 flex-1"><span className="hi-bar-fill block" style={{ width: Math.max(3, Math.round((100 * m.n) / maxModel)) + '%' }} /></span>
+                  <span className="text-agentprism-secondary-foreground w-[4.5rem] shrink-0 whitespace-nowrap text-right">{m.n} 个会话</span>
                 </div>
               ))}
             </div>
@@ -116,9 +115,9 @@ function SourceCard({ s, cut }: { s: OverviewSource; cut: number }) {
             <thead>
               <tr className="text-agentprism-secondary-foreground border-agentprism-border border-t text-left">
                 <th className="px-4 py-1.5 font-normal">项目（工作目录）</th>
-                <th className="px-2 py-1.5 text-right font-normal">会话</th>
-                <th className="px-2 py-1.5 text-right font-normal">轮次</th>
-                <th className="px-2 py-1.5 text-right font-normal">成本</th>
+                <th className="whitespace-nowrap px-2 py-1.5 text-right font-normal">会话</th>
+                <th className="whitespace-nowrap px-2 py-1.5 text-right font-normal">轮次</th>
+                {s.costUsd !== undefined && <th className="whitespace-nowrap px-2 py-1.5 text-right font-normal">成本</th>}
                 <th className="px-4 py-1.5 text-right font-normal">最后活动</th>
               </tr>
             </thead>
@@ -137,9 +136,9 @@ function SourceCard({ s, cut }: { s: OverviewSource; cut: number }) {
                       <span className="text-agentprism-foreground">{first}</span>
                       <span className="text-agentprism-secondary-foreground ml-2" >{p.cwd.length > 60 ? '…' + p.cwd.slice(-46) : p.cwd !== first ? p.cwd : ''}</span>
                     </td>
-                    <td className="text-agentprism-secondary-foreground px-2 py-1.5 text-right">{p.sessions}{p.subagents ? <span className="text-agentprism-muted-foreground">（{p.subagents} 子）</span> : ''}</td>
+                    <td className="text-agentprism-secondary-foreground whitespace-nowrap px-2 py-1.5 text-right">{p.sessions}{p.subagents ? <span className="text-agentprism-muted-foreground">（{p.subagents} 子）</span> : ''}</td>
                     <td className="text-agentprism-secondary-foreground px-2 py-1.5 text-right">{p.turns}</td>
-                    <td className="text-agentprism-secondary-foreground px-2 py-1.5 text-right">{p.costUsd !== undefined ? usd(p.costUsd) : ''}</td>
+                    {s.costUsd !== undefined && <td className="text-agentprism-secondary-foreground whitespace-nowrap px-2 py-1.5 text-right">{p.costUsd !== undefined ? usd(p.costUsd) : '—'}</td>}
                     <td className="px-4 py-1.5 text-right">
                       <span className="inline-flex items-center justify-end gap-1.5">
                         {p.lastStatus && <span className={'inline-block size-1.5 rounded-full ' + (STATUS_DOT[p.lastStatus as keyof typeof STATUS_DOT] || '')} title={STATUS_LABEL[p.lastStatus as keyof typeof STATUS_LABEL] || p.lastStatus} />}

@@ -133,6 +133,7 @@
     out.push('<div class="ob-chips" style="padding:2px 14px 6px;display:flex;flex-wrap:wrap;gap:4px">' + chips.join('') + '</div>');
     out.push('<a class="ob-si" style="text-decoration:none" href="/trace/" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">打开 Trace 查看器 ↗</span><span class="ob-meta">按会话看调用树</span></a>');
     out.push('<a class="ob-si" style="text-decoration:none" href="/trace/#view=sources" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">来源与项目 ↗</span><span class="ob-meta">哪些 CLI 有会话、各在哪些项目里干活</span></a>');
+    out.push('<a class="ob-si" style="text-decoration:none" href="/trace/#view=analytics" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">统计 ↗</span><span class="ob-meta">日活跃、最忙的工具和模型、项目榜</span></a>');
     out.push('<a class="ob-si" style="text-decoration:none" href="' + search('') + '" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">在全部会话里检索 ↗</span><span class="ob-meta">找命令、文件、错误、说过的话</span></a>');
     var ok = function (s) { return filter === 'all' || s.state.status === filter; };
     var rows = [];

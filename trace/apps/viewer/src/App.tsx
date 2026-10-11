@@ -1,7 +1,7 @@
 import { filterSpansRecursively, flattenSpans } from '@evilmartians/agent-prism-data';
 import type { TraceSpan } from '@evilmartians/agent-prism-types';
 import type { SearchHit, SearchRequest, Session, SessionSummary } from '@hub-trace/contract';
-import { FolderOpen, Moon, Search, Sun } from 'lucide-react';
+import { FolderOpen, BarChart3, Moon, Search, Sun } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { CollapseAllButton } from './components/agent-prism/CollapseAllButton';
@@ -9,6 +9,7 @@ import { DetailsView } from './components/agent-prism/DetailsView/DetailsView';
 import { ExpandAllButton } from './components/agent-prism/ExpandAllButton';
 import { TreeView } from './components/agent-prism/TreeView';
 import { ServiceError, loadIndex, loadSession, otelUrl, parseDropped } from './data.ts';
+import { AnalyticsView } from './AnalyticsView.tsx';
 import { cut, KIND_LABEL } from './format.ts';
 import { SessionHeader } from './SessionHeader.tsx';
 import { SourcesView } from './SourcesView.tsx';
@@ -19,14 +20,15 @@ import { initialExpanded, parentsOf, toSpans } from './toSpans.ts';
 
 const POLL_MS = 8000;
 
-function readHash(): { s: string | null; n: string | null; search: SearchRequest | null; sources: boolean } {
+function readHash(): { s: string | null; n: string | null; search: SearchRequest | null; sources: boolean; analytics: boolean } {
   const p = new URLSearchParams(location.hash.slice(1));
   const search = p.get('view') === 'search' ? fromParams(p) : null;
-  return { s: p.get('s'), n: p.get('n'), search, sources: p.get('view') === 'sources' };
+  return { s: p.get('s'), n: p.get('n'), search, sources: p.get('view') === 'sources', analytics: p.get('view') === 'analytics' };
 }
-function writeHash(s: string | null, n: string | null, search: SearchRequest | null, sources: boolean) {
+function writeHash(s: string | null, n: string | null, search: SearchRequest | null, sources: boolean, analytics: boolean) {
   const p = new URLSearchParams();
   if (sources) p.set('view', 'sources');
+  else if (analytics) p.set('view', 'analytics');
   else if (search) {
     p.set('view', 'search');
     for (const [k, v] of fromSearch(search)) p.set(k, v);
@@ -66,6 +68,7 @@ export function App() {
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
   const [search, setSearch] = useState<SearchRequest | null>(() => readHash().search);
   const [sources, setSources] = useState(() => readHash().sources);
+  const [analytics, setAnalytics] = useState(() => readHash().analytics);
   const loadedKey = useRef<string>('');
 
   const known = useMemo(() => {
@@ -127,9 +130,9 @@ export function App() {
     setExpanded((prev) => (path.every((id) => prev.includes(id)) ? prev : Array.from(new Set([...prev, ...path]))));
   }, [spanId, parents]);
 
-  useEffect(() => { writeHash(selectedId, spanId, search, sources); }, [selectedId, spanId, search, sources]);
+  useEffect(() => { writeHash(selectedId, spanId, search, sources, analytics); }, [selectedId, spanId, search, sources, analytics]);
   useEffect(() => {
-    const onHash = () => { const h = readHash(); setSelectedId(h.s); setSpanId(h.n); setSearch(h.search); setSources(h.sources); };
+    const onHash = () => { const h = readHash(); setSelectedId(h.s); setSpanId(h.n); setSearch(h.search); setSources(h.sources); setAnalytics(h.analytics); };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -214,14 +217,21 @@ export function App() {
         <span className="text-agentprism-secondary-foreground text-xs">{'本机会话 ' + index.length + ' 个' + (kindNames.length ? ' · ' + kindNames.join(' + ') : '')}</span>
         <span className="flex-1" />
         <button
-          className={sources ? 'text-agentprism-foreground text-xs' : 'text-agentprism-muted-foreground hover:text-agentprism-foreground text-xs'}
-          onClick={() => setSources(!sources)}
+          className={'hi-navbtn' + (sources ? ' on' : '')}
+          onClick={() => { setSources(!sources); setAnalytics(false); }}
           title="哪些 CLI 有会话、各在哪些项目里干活"
         >
           <span className="flex items-center gap-1"><FolderOpen className="size-3.5" />来源</span>
         </button>
         <button
-          className={search ? 'text-agentprism-foreground text-xs' : 'text-agentprism-muted-foreground hover:text-agentprism-foreground text-xs'}
+          className={'hi-navbtn' + (analytics ? ' on' : '')}
+          onClick={() => { setAnalytics(!analytics); setSources(false); }}
+          title="全部会话的折页：日活跃、工具、模型、项目"
+        >
+          <span className="flex items-center gap-1"><BarChart3 className="size-3.5" />统计</span>
+        </button>
+        <button
+          className={'hi-navbtn' + (search ? ' on' : '')}
           onClick={() => setSearch(search ? null : {})}
           title="在全部会话的每一步里找：命令、文件、错误、说的话"
         >
@@ -235,6 +245,8 @@ export function App() {
 
       {sources ? (
         <SourcesView onClose={() => setSources(false)} />
+      ) : analytics ? (
+        <AnalyticsView sessions={index} onClose={() => setAnalytics(false)} />
       ) : (
       <PanelGroup direction="horizontal" autoSaveId="hub-trace-layout" className="min-h-0 flex-1">
         <Panel defaultSize={24} minSize={16} className="border-agentprism-border border-r">

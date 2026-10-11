@@ -3,7 +3,7 @@
  * (/api) is one source; a dropped file parsed in the page by the same adapters is another.
  */
 import { adapterForFile, codexAdapter, parseText } from '@hub-trace/adapters';
-import { isCompatible, summarize, type Overview, type Session, type SessionDoc, type SessionIndex, type SessionSummary } from '@hub-trace/contract';
+import { isCompatible, summarize, type Overview, type Session, type SessionDoc, type SessionIndex, type SessionSummary, type StatsDoc } from '@hub-trace/contract';
 
 export class ServiceError extends Error {}
 
@@ -33,6 +33,10 @@ export const otelUrl = (id: string) => '/api/sessions/' + encodeURIComponent(id)
 
 export function loadOverview(): Promise<Overview> {
   return getJson<Overview>('/api/overview');
+}
+
+export function loadStats(): Promise<StatsDoc> {
+  return getJson<StatsDoc>('/api/stats');
 }
 
 /** Parse a dropped file in the page. Nothing is uploaded. */
