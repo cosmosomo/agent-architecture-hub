@@ -544,8 +544,13 @@
     if (pending) later(pending);
   }
 
-  // a click on a case of the directory tab
-  function openCase(id) { HUB.store.switchCase(id); }
+  // a click on a case in the sidebar.  A built-in sample team has no real facts, only simulated ones: it opens as the plain
+  // definition, the way the sample page showed it; the comparison is one click away.
+  function openCase(id) {
+    HUB.store.switchCase(id);
+    var m = model();
+    HUB.store.set({ compare: m && m.source && m.source.kind === 'sim' ? 'def' : 'both' }, { history: false });
+  }
 
   HUB.obs = { start: start, fit: fit, render: function () { renderAll(st(), st()); }, openCase: openCase };
 

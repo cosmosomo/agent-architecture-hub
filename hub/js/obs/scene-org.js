@@ -85,6 +85,35 @@
     return { w: W, h: Math.max(0, y - gapY) };
   }
 
+  /* items in flow order (each {w, h, r}): one row per tier, the rows centred on the widest.  A tier is the items of the same
+     rank, so parallel workers sit side by side and the next step sits under them; when there are more tiers than
+     MAXTIERS the neighbouring pair that stays smallest is merged, so a long chain does not become a tall column. */
+  var MAXTIERS = 4;
+  function tierPack(items, cols, gapX, gapY) {
+    var rows = [];
+    items.forEach(function (it) {
+      var last = rows[rows.length - 1];
+      if (last && last.r === it.r && last.items.length < cols) last.items.push(it); else rows.push({ r: it.r, items: [it] });
+    });
+    while (rows.length > MAXTIERS) {
+      var at = -1, size = Infinity;
+      for (var i = 0; i < rows.length - 1; i++) {
+        var n = rows[i].items.length + rows[i + 1].items.length;
+        if (n <= cols && n < size) { at = i; size = n; }
+      }
+      if (at < 0) break;
+      rows.splice(at, 2, { r: rows[at].r, items: rows[at].items.concat(rows[at + 1].items) });
+    }
+    var widths = rows.map(function (r) { return U.sum(r.items, function (it) { return it.w; }) + (r.items.length - 1) * gapX; });
+    var W = Math.max.apply(null, widths), y = 0;
+    rows.forEach(function (r, i) {
+      var rh = Math.max.apply(null, r.items.map(function (it) { return it.h; })), x = (W - widths[i]) / 2;
+      r.items.forEach(function (it) { it.px = x; it.py = y + (rh - it.h) / 2; x += it.w + gapX; });
+      y += rh + gapY;
+    });
+    return { w: W, h: Math.max(0, y - gapY) };
+  }
+
   function dominantPhase(ids, idx) {
     var c = {};
     ids.forEach(function (id) { var x = idx.ind.get(id); if (x && x.phase) c[x.phase] = (c[x.phase] || 0) + 1; });
@@ -212,10 +241,7 @@
       });
       if (!items.length) return;
       items.sort(function (p, q) { return p.r - q.r; });
-      var n = items.length;
-      var cols = n <= COLS ? n : Math.ceil(n / Math.ceil(n / COLS));
-      var maxW = Math.max(cols * (NW + GX) - GX, Math.max.apply(null, items.map(function (it) { return it.w; })));
-      var lay2 = pack(items, maxW, GX, GY);
+      var lay2 = tierPack(items, COLS, GX, GY);
       var bw = lay2.w + FP * 2, bh = lay2.h + FT + FP;
       var bl = { w: bw, h: bh, cards: [], frames: [Object.assign(frameOf(G, bw, bh, 1), { x: 0, y: 0 })] };
       items.forEach(function (it) {
@@ -237,48 +263,8 @@
     var peopleW = showHuman ? NW : 0;
     var x0 = peopleW ? peopleW + BLOCKGAP : 0;
 
-    /* rows of departments: try 1..n rows, keep the widest arrangement whose scale is close to the best */
-    var arrange = function (nRows) {
-      var per = Math.max(1, Math.ceil(blocks.length / nRows)), rows = [];
-      for (var i = 0; i < blocks.length; i += per) rows.push(blocks.slice(i, i + per));
-      var W = 0, H = 0;
-      rows.forEach(function (r) {
-        W = Math.max(W, U.sum(r, function (b) { return b.w; }) + (r.length - 1) * BLOCKGAP);
-        H += Math.max.apply(null, r.map(function (b) { return b.h; }));
-      });
-      H = Math.max(H + Math.max(0, rows.length - 1) * ROWGAP, peopleW ? NH * 2 + GY : 0);
-      W += x0;
-      return { rows: rows, W: W, H: H, k: Math.min(1, (view.w - 80) / Math.max(1, W), (view.h - 180) / Math.max(1, H)) };
-    };
-    var cands = [];
-    for (var nr = 1; nr <= Math.max(1, blocks.length); nr++) {
-      var cand = arrange(nr);
-      if (!cands.length || cand.rows.length !== cands[cands.length - 1].rows.length) cands.push(cand);
-    }
-    var kBest = Math.max.apply(null, cands.map(function (c) { return c.k; }));
-    var best = cands.find(function (c) { return c.k >= kBest * 0.9; }) || cands[0];
-    var ytop = 0, mids = [];
-    best.rows.forEach(function (r) {
-      var rh = Math.max.apply(null, r.map(function (b) { return b.h; }));
-      var rw = U.sum(r, function (b) { return b.w; }) + (r.length - 1) * BLOCKGAP;
-      var xx = x0 + Math.max(0, (best.W - x0 - rw) / 2);
-      r.forEach(function (b) {
-        var oy = ytop + (rh - b.h) / 2;
-        b.frames.forEach(function (f) { f.x += xx; f.y += oy; frames.push(f); });
-        b.cards.forEach(function (c) { c.x += xx; c.y += oy; cards.push(c); });
-        xx += b.w + BLOCKGAP;
-      });
-      mids.push(ytop + rh / 2);
-      ytop += rh + ROWGAP;
-    });
-    var firstMid = mids.length ? mids[0] : NH / 2;
-    if (showHuman) cards.push(Object.assign(indCard('human'), { x: 0, y: firstMid - NH / 2 }));
-
     /* the capability layer: every channel is a unit of the main graph (status, users, load against its limit),
        framed together with the maintainer that keeps them running */
-    var maxY = 0;
-    cards.forEach(function (c) { maxY = Math.max(maxY, c.y + c.h); });
-    frames.forEach(function (f) { maxY = Math.max(maxY, f.y + f.h); });
     var defOnly = s.compare === 'def';
     var chCard = function (c) {
       var cs = a.channelStats[c.id] || {};
@@ -307,6 +293,48 @@
           active: 0, waiting: 0, peak: 0, queued: 0, wait: 0, cut: s.time != null,
           calls: defOnly ? null : U.sum(locals, function (c) { return (a.channelStats[c.id] || {}).calls || 0; }) } });
     }
+    /* rows of departments: try 1..n rows, keep the widest arrangement whose scale is close to the best */
+    var arrange = function (nRows) {
+      var per = Math.max(1, Math.ceil(blocks.length / nRows)), rows = [];
+      for (var i = 0; i < blocks.length; i += per) rows.push(blocks.slice(i, i + per));
+      var W = 0, H = 0;
+      rows.forEach(function (r) {
+        W = Math.max(W, U.sum(r, function (b) { return b.w; }) + (r.length - 1) * BLOCKGAP);
+        H += Math.max.apply(null, r.map(function (b) { return b.h; }));
+      });
+      H = Math.max(H + Math.max(0, rows.length - 1) * ROWGAP, peopleW ? NH * 2 + GY : 0);
+      W += x0;
+      // the capability layer sits under the graph, as wide as it is: count its height too
+      if (chItems.length) H += ROWGAP + FT + FP + pack(chItems.map(function (it) { return { w: it.w, h: it.h }; }), Math.max(W - x0, CHW + FP * 2) - FP * 2, GX, GY).h;
+      return { rows: rows, W: W, H: H, k: Math.min(1, (view.w - 80) / Math.max(1, W), (view.h - 180) / Math.max(1, H)) };
+    };
+    var cands = [];
+    for (var nr = 1; nr <= Math.max(1, blocks.length); nr++) {
+      var cand = arrange(nr);
+      if (!cands.length || cand.rows.length !== cands[cands.length - 1].rows.length) cands.push(cand);
+    }
+    var kBest = Math.max.apply(null, cands.map(function (c) { return c.k; }));
+    var best = cands.find(function (c) { return c.k >= kBest * 0.9; }) || cands[0];
+    var ytop = 0, mids = [];
+    best.rows.forEach(function (r) {
+      var rh = Math.max.apply(null, r.map(function (b) { return b.h; }));
+      var rw = U.sum(r, function (b) { return b.w; }) + (r.length - 1) * BLOCKGAP;
+      var xx = x0 + Math.max(0, (best.W - x0 - rw) / 2);
+      r.forEach(function (b) {
+        var oy = ytop + (rh - b.h) / 2;
+        b.frames.forEach(function (f) { f.x += xx; f.y += oy; frames.push(f); });
+        b.cards.forEach(function (c) { c.x += xx; c.y += oy; cards.push(c); });
+        xx += b.w + BLOCKGAP;
+      });
+      mids.push(ytop + rh / 2);
+      ytop += rh + ROWGAP;
+    });
+    var firstMid = mids.length ? mids[0] : NH / 2;
+    if (showHuman) cards.push(Object.assign(indCard('human'), { x: 0, y: firstMid - NH / 2 }));
+
+    var maxY = 0;
+    cards.forEach(function (c) { maxY = Math.max(maxY, c.y + c.h); });
+    frames.forEach(function (f) { maxY = Math.max(maxY, f.y + f.h); });
     if (chItems.length) {
     var contentW = Math.max(best.W - x0, CHW + FP * 2);   // as wide as the graph above it, so the layer sits under it and not off to one side
     var chLay = pack(chItems, contentW - FP * 2, GX, GY);
