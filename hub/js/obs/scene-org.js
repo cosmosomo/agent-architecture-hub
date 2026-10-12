@@ -11,7 +11,7 @@
   var SW = 236, SH = 116;            // folded sub-team card
   var FP = 16, FT = 34;              // frame padding and title band
   var SP = 12, ST = 28;              // sub-frame padding and title band
-  var COLS = 4;                      // at most four cards in a row inside a department
+  var COLS_MIN = 4, COLS_MAX = 8;    // cards in a row inside a department: four, and more when the canvas is wide
   var BLOCKGAP = 72, ROWGAP = 96;
   var CHW = 188, CHH = 104;        // a channel card in the capability layer
 
@@ -95,6 +95,7 @@
 
   function build(m, s, a, view) {
     view = view || { w: 1300, h: 760 };
+    var COLS = Math.max(COLS_MIN, Math.min(COLS_MAX, Math.floor((view.w - 120) / ((NW + GX) * 1.3))));
     var idx = m.idx, def = m.def;
     var rk = computeRanks(m);
     var open = function (g) { return HUB.store.isOpen('org', g.id, g.level, s); };
@@ -137,7 +138,7 @@
       return { key: 'g:' + G.id, kind: 'dept', w: w, h: h, sel: { type: 'group', id: G.id }, toggle: G.id,
         anchor: (G.parentId ? HUB.obsSceneOrg.anchorsOf(G.parentId, idx) : []).concat(['b:' + G.id]),
         data: { id: G.id, name: G.name, level: G.level, phase: dominantPhase(mem, idx),
-          agents: order(mem).map(function (id) { var x = idx.ind.get(id); return { id: id, agentId: x.agentId, status: (a.indStats[id] || {}).status, native: (x.natives || []).length > 0 }; }),
+          agents: order(mem).map(function (id) { var x = idx.ind.get(id); return { id: id, name: x.name, agentId: x.agentId, status: (a.indStats[id] || {}).status, native: (x.natives || []).length > 0 }; }),
           natives: U.sum(mem, function (id) { return (idx.ind.get(id).natives || []).length; }),
           members: gs.members || 0, runs: s.compare === 'def' ? null : gs.runs || 0, never: s.compare === 'def' ? 0 : gs.never || 0,
           working: s.compare === 'def' ? 0 : gs.working || 0, cut: s.time != null, compare: s.compare } };
@@ -179,6 +180,9 @@
       return d !== 0 ? d : g1.order - g2.order;
     });
     var blocks = [];
+    // someone listed in two groups is drawn once, in the first block that takes them; a block left with nothing to draw is not drawn
+    var claimed = new Set();
+    var fresh = function (ids) { return ids.filter(function (id) { return !claimed.has(id); }); };
     tops.forEach(function (G) {
       if (!shown(idx.membersDeep.get(G.id) || []).length) return;
       if (!open(G)) { blocks.push({ w: DW, h: DH, cards: [Object.assign(groupCard(G, DW, DH), { x: 0, y: 0 })], frames: [] }); return; }
@@ -186,15 +190,17 @@
       G.children.forEach(function (cid) {
         var SG = idx.group.get(cid);
         if (!SG) return;
-        var mem = order(shown(idx.membersDeep.get(SG.id) || []));
+        var mem = order(fresh(shown(idx.membersDeep.get(SG.id) || [])));
         if (!mem.length) return;
+        mem.forEach(function (id) { claimed.add(id); });
         if (open(SG)) {
           var inner = mem.map(function (id) { return { id: id, w: NW, h: NH }; });
           var lay = pack(inner, Math.min(3, inner.length) * (NW + GX) - GX, GX, GY);
           items.push({ kind: 'sub', g: SG, inner: inner, w: lay.w + SP * 2, h: lay.h + ST + SP, r: rk[mem[0]] || 0 });
         } else items.push({ kind: 'subfold', g: SG, w: SW, h: SH, r: rk[mem[0]] || 0 });
       });
-      order(shown(G.members)).forEach(function (id) {
+      order(fresh(shown(G.members))).forEach(function (id) {
+        claimed.add(id);
         if (isMerged(id)) {
           // if any member of this group is merged, inject the placeholder once per unique merged group
           var mg = mergedMap.get(id);
@@ -204,6 +210,7 @@
           items.push({ kind: 'ind', id: id, w: NW, h: NH, r: rk[id] || 0 });
         }
       });
+      if (!items.length) return;
       items.sort(function (p, q) { return p.r - q.r; });
       var n = items.length;
       var cols = n <= COLS ? n : Math.ceil(n / Math.ceil(n / COLS));
@@ -280,34 +287,38 @@
         data: { id: c.id, name: c.name, chKind: c.kind, model: c.kind === 'model' ? c.id.replace(/^ch_/, '') : null, def: defOnly,
           unmeasured: !HUB.model.measured(m, 'channel'),
           status: defOnly ? 'ok' : cs.status || 'ok', limit: c.limit || null, users: users.length,
-          agents: users.slice(0, 6).map(function (u) { var y = idx.ind.get(u); return { id: u, agentId: y.agentId, kind: y.kind, on: !defOnly && (cs.activeUsers || []).indexOf(u) >= 0 }; }),
+          agents: users.slice(0, 6).map(function (u) { var y = idx.ind.get(u); return { id: u, name: y.name, agentId: y.agentId, kind: y.kind, on: !defOnly && (cs.activeUsers || []).indexOf(u) >= 0 }; }),
           active: defOnly ? 0 : cs.active || 0, waiting: defOnly ? 0 : cs.waiting || 0, peak: defOnly ? 0 : cs.peak || 0,
           queued: defOnly ? 0 : cs.queued || 0, wait: defOnly ? 0 : cs.waitTotal || 0, calls: defOnly ? null : cs.calls || 0, cut: s.time != null } };
     };
     var KIND_ORDER = { model: 0, function: 1, tool: 2 };
     var isLocal = function (c) { return c.tier === 'basic'; };
-    var chs = def.channels.filter(function (c) { return c.tier === 'shared'; }).sort(function (p, q) { return (KIND_ORDER[p.kind] || 1) - (KIND_ORDER[q.kind] || 1); });
+    // the capability layer is the layered tool systems (everyone's basics, the shared functions); a model is a property of the
+    // individual (its badge and its details), not a card, and the maintainer only appears when there is something to maintain
+    var chs = def.channels.filter(function (c) { return c.tier === 'shared' && c.kind !== 'model'; }).sort(function (p, q) { return (KIND_ORDER[p.kind] || 1) - (KIND_ORDER[q.kind] || 1); });
     var locals = def.channels.filter(isLocal);
-    var chItems = (maint ? [indCard('meta_maint')] : []).concat(chs.map(chCard));
+    var chItems = (maint && chs.length ? [indCard('meta_maint')] : []).concat(chs.map(chCard));
     if (locals.length) {
       var lusers = U.uniq([].concat.apply([], locals.map(function (c) { return c.users || []; }))).filter(function (u) { return idx.ind.has(u) && !hidden(u); });
       chItems.push({ key: 'c:__local', kind: 'channel', w: CHW, h: 58, sel: { type: 'channel', id: '__local' }, anchor: ['b:__channels'],
         data: { id: '__local', name: '基础能力', chKind: 'basic', def: defOnly, status: 'ok', limit: null, users: lusers.length,
           tools: locals.map(function (c) { return c.name.replace(/^工具：/, ''); }),
-          agents: lusers.slice(0, 6).map(function (u) { var y = idx.ind.get(u); return { id: u, agentId: y.agentId, kind: y.kind, on: false }; }),
+          agents: lusers.slice(0, 6).map(function (u) { var y = idx.ind.get(u); return { id: u, name: y.name, agentId: y.agentId, kind: y.kind, on: false }; }),
           active: 0, waiting: 0, peak: 0, queued: 0, wait: 0, cut: s.time != null,
           calls: defOnly ? null : U.sum(locals, function (c) { return (a.channelStats[c.id] || {}).calls || 0; }) } });
     }
-    var contentW = Math.max(best.W - x0, (CHW + GX) * 4);
+    if (chItems.length) {
+    var contentW = Math.max(best.W - x0, CHW + FP * 2);   // as wide as the graph above it, so the layer sits under it and not off to one side
     var chLay = pack(chItems, contentW - FP * 2, GX, GY);
     var fw = chLay.w + FP * 2, fh = chLay.h + FT + FP;
     var fx = x0 + Math.max(0, (contentW - fw) / 2), fy = maxY + ROWGAP;
     var bad = chs.filter(function (c) { var st = (a.channelStats[c.id] || {}).status; return !defOnly && st && st !== 'ok'; }).length;
     var full = chs.filter(function (c) { var cs = a.channelStats[c.id] || {}; return !defOnly && c.limit && (cs.waiting || cs.active >= c.limit); }).length;
     frames.push({ key: 'b:__channels', kind: 'chframe', x: fx, y: fy, w: fw, h: fh, sel: { type: 'channels', id: 'all' }, anchor: [],
-      data: { n: chs.length, bad: bad, full: full, def: defOnly, unmeasured: !HUB.model.measured(m, 'channel'),
+      data: { n: chItems.filter(function (it) { return it.kind === 'channel'; }).length, bad: bad, full: full, def: defOnly, unmeasured: !HUB.model.measured(m, 'channel'),
         queued: defOnly ? 0 : U.sum(chs, function (c) { return (a.channelStats[c.id] || {}).queued || 0; }) } });
     chItems.forEach(function (it) { it.x = fx + FP + it.px; it.y = fy + FT + it.py; if (it.key === 'i:meta_maint') it.anchor = ['b:__channels']; cards.push(it); });
+    }
 
     var cardByKey = new Map(cards.map(function (c) { return [c.key, c]; }));
 
@@ -417,7 +428,12 @@
     var bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
     cards.concat(frames).forEach(function (o) { bx0 = Math.min(bx0, o.x); by0 = Math.min(by0, o.y); bx1 = Math.max(bx1, o.x + o.w); by1 = Math.max(by1, o.y + o.h); });
     var bbox = isFinite(bx0) ? { x: bx0, y: by0, w: bx1 - bx0, h: by1 - by0 } : { x: 0, y: 0, w: 400, h: 200 };
-    return { subject: 'org', cards: cards, frames: frames, links: links, bbox: bbox, rows: best.rows.length, involved: involved };
+    // the departments in business order, with their sizes: the one-line summary the canvas shows on top
+    var strip = tops.map(function (G) {
+      var mem = shown(idx.membersDeep.get(G.id) || []);
+      return mem.length ? { id: G.id, name: G.name, members: mem.length, phase: dominantPhase(mem, idx) } : null;
+    }).filter(Boolean);
+    return { subject: 'org', cards: cards, frames: frames, links: links, bbox: bbox, rows: best.rows.length, involved: involved, strip: strip };
   }
 
   // the keys a member card can come from or go to: its own group's card/frame first, then the outer ones

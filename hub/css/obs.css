@@ -195,11 +195,12 @@ body.obs-on .zm-ctrl { bottom: 96px; }
 .ob-t-flow { --lc: var(--ob-flow); }
 .ob-t-fail { --lc: var(--ob-fail); }
 .ob-t-esc { --lc: var(--ob-esc); }
-.ob-p { fill: none; stroke: rgba(var(--lc), .6); stroke-linecap: round; }
+.ob-p { fill: none; stroke: rgba(var(--lc), .45); stroke-linecap: round; }
 .ob-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
-.ob-s-defonly .ob-p { stroke-dasharray: 5 5; stroke: rgba(var(--lc), .32); }
-.ob-s-def .ob-p { stroke: rgba(var(--lc), .5); }
-.ob-s-factonly .ob-p { stroke: rgba(var(--ob-factonly), .9); }
+.ob-s-defonly .ob-p { stroke-dasharray: 5 5; stroke: rgba(var(--lc), .26); }
+.ob-s-def .ob-p { stroke: rgba(var(--lc), .4); }
+.ob-s-factonly .ob-p { stroke: rgba(var(--ob-factonly), .8); }
+.ob-t-watch.ob-s-both .ob-p { stroke: rgba(var(--lc), .24); stroke-dasharray: 3 5; }
 .ob-link.ob-hl .ob-p { stroke: rgba(var(--ob-hl), .95); filter: drop-shadow(0 0 4px rgba(var(--ob-hl), .55)); }
 .ob-link.ob-ldim { opacity: .07; }
 .ob-link.ob-lsel .ob-p { stroke: rgba(var(--lc), 1); filter: drop-shadow(0 0 5px rgba(var(--lc), .7)); }
@@ -242,6 +243,12 @@ body.obs-on .zm-ctrl { bottom: 96px; }
 .ob-crumbs { top: 10px; left: 10px; max-width: calc(58% - 20px); min-width: 0; }
 .ob-crumbs .ob-crumb { min-width: 60px; }
 .ob-topctl { top: 10px; right: 10px; flex-wrap: wrap; justify-content: flex-end; max-width: calc(42% - 20px); }
+.ob-strip { top: 62px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 40px); overflow: hidden; gap: 5px; padding: 5px 10px; }
+.ob-sc { display: inline-flex; align-items: center; gap: 6px; padding: 3px 4px 3px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  border: 1px solid rgba(var(--pc), .5); background: rgba(var(--pc), .1); color: var(--t1); font-family: var(--hd); font-size: 11px; font-weight: 700; }
+.ob-sc:hover { background: rgba(var(--pc), .2); }
+.ob-sc b { min-width: 18px; text-align: center; padding: 0 5px; border-radius: 999px; background: rgba(var(--pc), .22); color: rgb(var(--pc)); font-size: 10px; font-weight: 800; }
+.ob-sa { color: var(--t3); font-size: 11px; }
 .ob-ctrl { bottom: 96px; left: 50%; transform: translateX(-50%); flex-wrap: wrap; justify-content: center; max-width: calc(100% - 140px); }
 .ob-lbl { font-family: var(--mn); font-size: 8.5px; letter-spacing: .06em; color: var(--t3); white-space: nowrap; }
 .ob-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--brd); flex-shrink: 0; }

@@ -52,7 +52,8 @@
     els.topctl = h('div', { class: 'ob-float ob-topctl ob-only' });
     els.ctrl = h('div', { class: 'ob-float ob-ctrl cv-ctrl ob-only' });
     els.tl = h('div', { class: 'ob-tl ob-only' });
-    cvA.append(els.crumbs, els.topctl, els.ctrl, els.tl);
+    els.strip = h('div', { class: 'ob-float ob-strip ob-only' });
+    cvA.append(els.crumbs, els.topctl, els.strip, els.ctrl, els.tl);
     if (HUB.obsTimeline) safe('timeline.mount', function () { HUB.obsTimeline.mount(els.tl); });
 
     // left sidebar: two more tabs that reuse the page's own tab switching
@@ -167,6 +168,7 @@
     HUB.obsStage.render(scene, { instant: caseChanged });
     HUB.obsStage.setSelection(s.selection);
     showPanelMode(s);
+    renderStrip(scene, s);
     if (HUB.obsTrace) safe('trace', function () { HUB.obsTrace.render(s, m); });
     if (HUB.obsCollab) safe('collab', function () { HUB.obsCollab.render(s, m); });
     var b = scene.bbox;
@@ -181,7 +183,7 @@
   function fitPad() {
     var cv = cvA.getBoundingClientRect();
     var top = 56, bottom = 120;
-    [els.crumbs, els.topctl].forEach(function (e) { if (e && e.offsetParent) top = Math.max(top, e.getBoundingClientRect().bottom - cv.top + 14); });
+    [els.crumbs, els.topctl, els.strip].forEach(function (e) { if (e && e.offsetParent) top = Math.max(top, e.getBoundingClientRect().bottom - cv.top + 14); });
     [els.ctrl, els.tl].forEach(function (e) { if (e && e.offsetParent && e.style.display !== 'none') bottom = Math.max(bottom, cv.bottom - e.getBoundingClientRect().top + 14); });
     return { top: top, right: 36, bottom: bottom, left: 36 };
   }
@@ -226,7 +228,28 @@
     els.tb.appendChild(h('button', { type: 'button', class: 'btn ob-mine', title: '这是什么、图例、六种视图、键盘（?）', onClick: function () { if (HUB.obsGuide) HUB.obsGuide.open(); } }, '说明'));
   }
 
+  /* ---------- canvas: the departments in a row, one line of summary on top of the org views ---------- */
+  function renderStrip(scene, s) {
+    var list = s.present !== 'panel' && scene.subject === 'org' && scene.strip && scene.strip.length > 1 ? scene.strip : [];
+    els.strip.style.display = list.length ? '' : 'none';
+    els.strip.innerHTML = '';
+    list.forEach(function (g, i) {
+      if (i) els.strip.appendChild(h('span', { class: 'ob-sa' }, '→'));
+      els.strip.appendChild(h('button', {
+        type: 'button', class: 'ob-sc', style: { '--pc': HUB.obsCards.phaseVar(g.phase) }, title: '选中“' + g.name + '”',
+        onClick: function () { HUB.store.set({ selection: { type: 'group', id: g.id } }, { history: false }); }
+      }, g.name, h('b', null, String(g.members))));
+    });
+  }
+
   /* ---------- canvas: breadcrumbs (top left) ---------- */
+  // a long English question after the case kind ("Who&When 失败归因案例：How much did I save…") is not a name:
+  // the crumb keeps the kind and the tail of the id; the whole title is in the tooltip and the right pane
+  function crumbName(m) {
+    var i = m.name.indexOf('：'), rest = i > 0 ? m.name.slice(i + 1) : '';
+    if (i > 0 && rest.length > 24 && rest.replace(/[^A-Za-z]/g, '').length / rest.length > 0.5) return m.name.slice(0, i) + ' · ' + String(m.id).split('_').pop();
+    return m.name.length > 44 ? m.name.slice(0, 44) + '…' : m.name;
+  }
   function renderCrumbs(s) {
     var m = model();
     els.crumbs.innerHTML = '';
@@ -234,7 +257,7 @@
     els.crumbs.appendChild(h('button', { type: 'button', class: 'ob-ibtn', title: '前进（Alt+→）', disabled: !HUB.store.canForward(), onClick: function () { HUB.store.forward(); } }, '→'));
     var c = h('div', { class: 'ob-crumb' });
     var gt = function () { return h('span', { class: 'ob-gt' }, '›'); };
-    c.appendChild(h('a', { title: m.summary || '', onClick: function () { zmienTab('pr', document.querySelectorAll('.sl-tabs .sl-tab')[1]); } }, m.name));
+    c.appendChild(h('a', { title: m.name + (m.summary ? '\n' + m.summary : ''), onClick: function () { zmienTab('pr', document.querySelectorAll('.sl-tabs .sl-tab')[1]); } }, crumbName(m)));
     c.appendChild(gt());
     var cur = HUB.views.current(s);
     var v = cur ? HUB.views.get(cur) : null;

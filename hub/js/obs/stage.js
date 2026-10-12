@@ -218,7 +218,7 @@
   function paintLink(rec, l, entering) {
     var cls = 'ob-link ob-t-' + l.type + ' ob-s-' + l.state + (l.hl ? ' ob-hl' : '') + (l.dim ? ' ob-ldim' : '') + (entering ? ' ob-entering' : '');
     rec.el.setAttribute('class', cls);
-    var w = l.state === 'def' ? 1.4 : l.state === 'defonly' ? 1.2 : 1.3 + 3.2 * (l.weight || 0);
+    var w = l.state === 'def' ? 1.4 : l.state === 'defonly' ? 1.2 : 1.3 + 1.5 * (l.weight || 0);
     rec.path.setAttribute('stroke-width', w.toFixed(2));
     var mk = l.hl ? 'hl' : l.state === 'defonly' ? 'muted' : l.type;
     rec.path.setAttribute('marker-end', 'url(#ob-arr-' + mk + ')');

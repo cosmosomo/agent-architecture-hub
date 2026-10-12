@@ -6,7 +6,6 @@
   var L = HUB.util.LABELS;
 
   var esc = function (s) { return HUB.util.esc(s); };
-  var has = function (name) { return typeof window[name] === 'function'; };
   var PH = { strategy: 'strategy', research: 'research', debate: 'debate', debate1: 'debate', debate2: 'debate', build: 'build', qa: 'qa', hitl: 'hitl' };
   var MODEL_CLS = { opus: 'b-op', sonnet: 'b-so', haiku: 'b-ha', fable: 'b-fa' };
   var ICON = {
@@ -17,19 +16,16 @@
   };
   var KIND_COLOR = { human: '#FBBF24', meta: '#22C4E6' };
 
-  function agentColor(agentId) { return has('KOLOR_IKONY_AGENTA') && agentId ? KOLOR_IKONY_AGENTA(agentId) : '#818CF8'; }
-  function agentIcon(agentId, size) { return has('svgAgenta') && agentId ? svgAgenta(agentId, size) : ''; }
-  function colorClass(agentId) {
-    var d = typeof AD_MAP !== 'undefined' && agentId ? AD_MAP.get(agentId) : null;
-    return d && typeof cMap !== 'undefined' ? (cMap[d.color] || 'c-mu') : 'c-mu';
-  }
+  function agentColor(agentId, name) { return HUB.obsAvatar.color(agentId, name); }
+  function agentIcon(agentId, size, name) { return HUB.obsAvatar.svg(agentId, name, size); }
+  function colorClass(agentId) { return HUB.obsAvatar.colorClass(agentId); }
   function phaseVar(ph) { return PH[ph] ? 'var(--ph-' + PH[ph] + '-rgb)' : 'var(--accent-rgb)'; }
 
   /* ---------- an individual: the original .nd card plus our status and delivery marks ---------- */
   function individual(c) {
     var d = c.data;
     var special = d.kind === 'human' || d.kind === 'meta';
-    var ic = special ? KIND_COLOR[d.kind] : agentColor(d.agentId);
+    var ic = special ? KIND_COLOR[d.kind] : agentColor(d.agentId, d.name);
     var st = d.status;
     var cls = 'nd ob-card ob-ind ' + (special ? 'ob-k-' + d.kind : colorClass(d.agentId) + (d.phase ? ' ph-' + d.phase : ''));
     if (st === 'working') cls += ' sim-active ob-st-working';
@@ -54,7 +50,7 @@
     var host = d.host ? '<span class="ob-host" title="这个个体接入的是' + esc(d.host) + '">' + esc(d.host) + '</span>' : '';
     var title = HUB.util.quietEval(d.name) + (st ? '：' + (L.indStatus[st] || st) : '') + (d.runs != null ? '，运行 ' + d.runs + ' 次' : '') + '。双击打开它最近一次运行';
     var html = '<div class="nd-body" title="' + esc(title) + '">' +
-      '<div class="nd-orb duo"' + (special ? ' style="color:' + ic + '"' : '') + '>' + (special ? ICON[d.kind] : agentIcon(d.agentId, 26)) + '</div>' +
+      '<div class="nd-orb duo"' + (special || !HUB.obsAvatar.has(d.agentId) ? ' style="color:' + ic + '"' : '') + '>' + (special ? ICON[d.kind] : agentIcon(d.agentId, 26, d.name)) + '</div>' +
       '<div class="nd-lbl" style="color:' + ic + '">' + esc(HUB.util.quietEval(d.name)) + '</div>' + badge +
       '<div class="nd-load"><div class="nd-load-bar" style="width:' + load + '%;background:' + lc + '"></div></div>' +
       '<div class="nd-sim-progress"><div class="nd-sim-progress-bar"></div></div>' +
@@ -80,8 +76,8 @@
     var d = c.data;
     var shown = d.agents.slice(0, 7);
     var orbs = shown.map(function (a) {
-      var col = agentColor(a.agentId);
-      return '<span class="ob-mini ob-ms-' + (d.compare === 'def' ? 'none' : a.status || 'standby') + (a.native ? ' ob-mini-native' : '') + '" style="--ic:' + col + '" title="' + esc(HUB.model.name('individual', a.id) + (a.native ? '（有专属能力）' : '')) + '">' + agentIcon(a.agentId, 15) + '</span>';
+      var col = agentColor(a.agentId, a.name);
+      return '<span class="ob-mini ob-ms-' + (d.compare === 'def' ? 'none' : a.status || 'standby') + (a.native ? ' ob-mini-native' : '') + '" style="--ic:' + col + '" title="' + esc(HUB.model.name('individual', a.id) + (a.native ? '（有专属能力）' : '')) + '">' + agentIcon(a.agentId, 15, a.name) + '</span>';
     }).join('') + (d.agents.length > shown.length ? '<span class="ob-mini-more">+' + (d.agents.length - shown.length) + '</span>' : '');
     var stats = d.members + ' 人';
     if (d.runs != null) stats += d.cut ? ' · ' + d.working + ' 在做' : ' · 运行 ' + d.runs + ' 次';
@@ -122,11 +118,10 @@
     if (d.limit === 1) kind += ' · 独占';
     else if (d.limit) kind += ' · 并发 ' + d.limit;
     else kind += ' · 不限并发';
-    if (d.unmeasured) kind += '（补写的声明）';
     // load: at a time cut the slots show who is in now; over the whole span they show the busiest moment
     var load = '';
     if (d.unmeasured) {
-      load = '<div class="ob-chc-load"><span class="ob-chc-txt">负载未采集</span></div>';
+      load = '';
     } else if (!d.def && d.limit) {
       var used = d.cut ? d.active : d.peak;
       var cells = '';
@@ -141,14 +136,14 @@
       load = '<div class="ob-chc-load"><span class="ob-chc-txt">' + (d.cut ? '在用 ' + d.active : '峰值 ' + d.peak) + '</span></div>';
     }
     var avatars = d.agents.map(function (a) {
-      var ac = a.kind === 'meta' ? '#22C4E6' : agentColor(a.agentId);
-      return '<span class="ob-mini' + (a.on && !d.unmeasured ? ' ob-ms-working' : ' ob-ms-none') + '" style="--ic:' + ac + '" title="' + esc(HUB.model.name('individual', a.id)) + (a.on && !d.unmeasured ? '（正在用）' : '') + '">' + (a.agentId ? agentIcon(a.agentId, 13) : '') + '</span>';
+      var ac = a.kind === 'meta' ? '#22C4E6' : agentColor(a.agentId, a.name);
+      return '<span class="ob-mini' + (a.on && !d.unmeasured ? ' ob-ms-working' : ' ob-ms-none') + '" style="--ic:' + ac + '" title="' + esc(HUB.model.name('individual', a.id)) + (a.on && !d.unmeasured ? '（正在用）' : '') + '">' + (a.kind === 'meta' ? '' : agentIcon(a.agentId, 13, a.name)) + '</span>';
     }).join('') + (d.users > d.agents.length ? '<span class="ob-mini-more">+' + (d.users - d.agents.length) + '</span>' : '');
     var html = '<div class="ob-chc-head"><span class="ob-ch-ic" style="color:' + col + '">' + (d.chKind === 'model' ? ICON.model : ICON.tool) + '</span>' +
       '<span class="ob-ch-name" title="' + esc(name) + '">' + esc(name) + '</span>' +
-      (d.unmeasured ? '<span class="ob-chs">健康未采集</span>' : bad ? '<span class="ob-chs bad">' + esc(L.channelStatus[d.status] || d.status) + '</span>' : d.def ? '' : '<span class="ob-chs ok">正常</span>') + '</div>' +
+      (d.unmeasured ? '' : bad ? '<span class="ob-chs bad">' + esc(L.channelStatus[d.status] || d.status) + '</span>' : d.def ? '' : '<span class="ob-chs ok">正常</span>') + '</div>' +
       '<div class="ob-chc-kind">' + esc(kind) + '</div>' + load +
-      '<div class="ob-chc-users"><span class="ob-chc-av">' + avatars + '</span><span class="ob-chc-n">' + d.users + (d.unmeasured ? ' 个声明使用者' : ' 人在用') + (d.calls != null ? ' · ' + d.calls + ' 次调用' : '') + '</span></div>';
+      '<div class="ob-chc-users"><span class="ob-chc-av">' + avatars + '</span><span class="ob-chc-n">' + d.users + (d.unmeasured ? ' 人用到' : ' 人在用') + (d.calls != null ? ' · ' + d.calls + ' 次调用' : '') + '</span></div>';
     var cls = 'ob-card ob-ch ob-chk-' + d.chKind + (bad ? ' ob-ch-bad' : '') + (!d.unmeasured && !d.def && d.limit && (d.cut ? d.active >= d.limit || d.waiting : d.queued) ? ' ob-ch-full' : '');
     return { cls: cls, html: html, sized: true, sig: JSON.stringify(d) };
   }
@@ -181,7 +176,7 @@
   function chframe(f) {
     var d = f.data;
     var meta = d.n + ' 条渠道' + (d.def ? '' : (d.bad ? ' · ' + d.bad + ' 条有故障' : '') + (d.full ? ' · ' + d.full + ' 条满载' : '') + (d.queued ? ' · 累计排队 ' + d.queued + ' 次' : ''));
-    if (d.unmeasured) meta = d.n + ' 条渠道 · 健康与负载未采集';
+    if (d.unmeasured) meta = d.n + ' 条渠道';
     var html = '<div class="ob-fh" title="能力层：模型渠道、功能渠道和本地工具。点标题打开渠道管理">' +
       '<span class="ob-fname">能力层 · 渠道</span><span class="ob-fmeta">' + esc(meta) + '</span></div>';
     return { cls: 'ob-fr-lv1 ob-fr-ch', html: html, style: { '--pc': '52, 211, 153' }, sig: JSON.stringify(d) };
