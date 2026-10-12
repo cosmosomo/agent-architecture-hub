@@ -1,6 +1,6 @@
-/* HUB.obs: the observation mode of the original page.
-   Adds the mode switch and the six view buttons to the top bar, floating controls to the canvas, two tabs to the
-   left sidebar and a details pane to the right sidebar; wires the observation state to the scene renderer. */
+/* HUB.obs: the observatory.
+   Puts the view buttons in the top bar, the floating controls on the canvas, the case / structure / health / session pages
+   in the left sidebar and the details pane in the right one; wires the observation state to the scene renderer. */
 (function () {
   'use strict';
   var HUB = (window.HUB = window.HUB || {});
@@ -8,8 +8,8 @@
   var h = U.h;
 
   var els = {};
-  var on = false;
-  var lastModelId = null, lastFitSig = '', lastSubject = null, syncing = false;
+  var cvA = null;
+  var lastModelId = null, lastFitSig = '', lastSubject = null;
   var rzTimer = null;
 
   var DEPTHS = {
@@ -40,102 +40,55 @@
 
   /* ================= build ================= */
   function inject() {
-    // top bar: the view buttons where the problem box sits
-    var prob = document.querySelector('.tb-problem');
-    els.tb = h('div', { class: 'tb-problem ob-tb ob-only' });
-    prob.parentNode.insertBefore(els.tb, prob.nextSibling);
+    // top bar: the view buttons
+    cvA = document.getElementById('cvA');
+    els.tb = document.getElementById('tbMain');
+    els.status = document.getElementById('statbar');
 
     // canvas: the layer and the floating controls
-    var cont = document.querySelector('#cvA .cv-container');
-    HUB.obsStage.mount(cont, { select: onSelect, toggle: onToggle, open: onOpen });
-    els.crumbs = h('div', { class: 'ob-float ob-crumbs ob-only' });
-    els.topctl = h('div', { class: 'ob-float ob-topctl ob-only' });
-    els.ctrl = h('div', { class: 'ob-float ob-ctrl cv-ctrl ob-only' });
-    els.tl = h('div', { class: 'ob-tl ob-only' });
-    els.strip = h('div', { class: 'ob-float ob-strip ob-only' });
+    HUB.obsStage.mount(document.getElementById('cvT'), { select: onSelect, toggle: onToggle, open: onOpen });
+    els.crumbs = h('div', { class: 'ob-float ob-crumbs' });
+    els.topctl = h('div', { class: 'ob-float ob-topctl' });
+    els.ctrl = h('div', { class: 'ob-float ob-ctrl' });
+    els.tl = h('div', { class: 'ob-tl' });
+    els.strip = h('div', { class: 'ob-float ob-strip' });
     cvA.append(els.crumbs, els.topctl, els.strip, els.ctrl, els.tl);
     if (HUB.obsTimeline) safe('timeline.mount', function () { HUB.obsTimeline.mount(els.tl); });
 
-    // left sidebar: two more tabs that reuse the page's own tab switching
-    var tabs = document.querySelector('.sl-tabs');
-    var allTabs = tabs.querySelectorAll('.sl-tab');
-    if (allTabs[0]) allTabs[0].setAttribute('data-ob-hide', '1');
-    if (allTabs[2]) allTabs[2].setAttribute('data-ob-hide', '1');
-    els.tabTree = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', onClick: function () { zmienTab('obtree', els.tabTree); renderSide(); } }, '结构');
-    els.tabHealth = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', onClick: function () { zmienTab('obhealth', els.tabHealth); renderSide(); } }, '体检');
-    els.tabSessions = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', title: '本机真实的智能体会话', onClick: function () { zmienTab('obsessions', els.tabSessions); renderSide(); } }, '会话');
-    els.tabCases = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', title: 'hub/cases 下找到的案例，按文件夹分层，可折叠', onClick: function () { zmienTab('obcases', els.tabCases); renderSide(); } }, '目录');
-    tabs.append(els.tabCases, els.tabTree, els.tabHealth, els.tabSessions);
-    var pans = document.querySelector('.sl-panels');
-    els.panCases = h('div', { class: 'sl-pan ob-pan', id: 'panObcases' });
-    els.panTree = h('div', { class: 'sl-pan ob-pan', id: 'panObtree' });
-    els.panHealth = h('div', { class: 'sl-pan ob-pan', id: 'panObhealth' });
-    els.panSessions = h('div', { class: 'sl-pan ob-pan', id: 'panObsessions' });
-    pans.append(els.panCases, els.panTree, els.panHealth, els.panSessions);
+    // left sidebar: one page per tab; the page is drawn when its tab is shown
+    var tabs = HUB.shell.tabs;
+    els.panPresets = tabs.add({ id: 'presets', label: '预设', title: '内置的样例团队：事实是模拟的' });
+    els.panCases = tabs.add({ id: 'cases', label: '目录', cls: 'ob-pan', title: 'hub/cases 下找到的案例，按文件夹分层，可折叠' });
+    els.panTree = tabs.add({ id: 'tree', label: '结构', cls: 'ob-pan' });
+    els.panHealth = tabs.add({ id: 'health', label: '体检', cls: 'ob-pan' });
+    els.panSessions = tabs.add({ id: 'sessions', label: '会话', cls: 'ob-pan', title: '本机真实的智能体会话' });
+    tabs.onChange(renderSide);
 
-    // right sidebar: our details pane in front of the page's own
-    var sr = G('sR');
-    els.sr = h('div', { id: 'obSr', class: 'ob-only' });
-    sr.insertBefore(els.sr, sr.firstChild);
+    // right sidebar: the details pane
+    var sr = document.getElementById('sR');
+    els.sr = document.getElementById('obSr');
     // a run's detail: the trace tree over the canvas, the selected step's details under our pane
     if (HUB.obsTrace) HUB.obsTrace.mount(cvA, sr, els.sr);
     // the trajectory of one case instance: its own layer over the canvas
     if (HUB.obsCollab) safe('collab.mount', function () { HUB.obsCollab.mount(cvA); });
 
-    // canvas mouse: in observation mode a drag on the background pans and a click clears the selection
-    var down = null;
-    cvA.addEventListener('mousedown', function (e) {
-      if (!on || e.button !== 0) return;
-      if (e.target.closest('.ob-float, .ob-tl, .zm-ctrl, .ob-card, .ob-fh, .ob-hit, .ob-tog, .ob-trace, .ob-collab')) return;
-      down = { x: e.clientX, y: e.clientY };
-      isPan = true; panSt = { x: e.clientX, y: e.clientY, px: panX, py: panY };
-      e.preventDefault(); e.stopImmediatePropagation();
-    }, true);
+    // a click on the empty canvas clears the selection (a drag that panned does not)
     cvA.addEventListener('click', function (e) {
-      if (!on) return;
       if (e.target.closest('.ob-float, .ob-tl, .zm-ctrl, .ob-card, .ob-fh, .ob-hit, .ob-tog, .ob-trace, .ob-collab')) return;
-      e.stopImmediatePropagation();
-      var moved = down && (Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y) > 4);
-      down = null;
-      if (!moved && st().selection) HUB.store.set({ selection: null }, { history: false });
-    }, true);
+      if (!HUB.camera.wasDrag() && st().selection) HUB.store.set({ selection: null }, { history: false });
+    });
     document.addEventListener('keydown', onKey, true);
     document.addEventListener('click', function (e) { if (els.pop && !els.pop.contains(e.target) && !e.target.closest('[data-pop]')) closePop(); });
     // the canvas can start at zero size (a background tab, a collapsed pane); refit as soon as it has room
-    var onResize = function () { clearTimeout(rzTimer); rzTimer = setTimeout(function () { if (on) renderAll(st(), st()); }, 160); };
+    var onResize = function () { clearTimeout(rzTimer); rzTimer = setTimeout(function () { renderAll(st(), st()); }, 160); };
     window.addEventListener('resize', onResize);
     if (window.ResizeObserver) new ResizeObserver(onResize).observe(cvA);
   }
 
-  /* ================= start of the observation layer ================= */
-  // There is one mode: the observatory. keepCase: the observed case stays (start-up from a link).
-  function enter(keepCase) {
-    on = true;
-    document.body.classList.add('obs-on');
-    HUB.obsStage.show(true);
-    // the page's own editor tabs are hidden: none of them may stay selected
-    var tabs = document.querySelectorAll('.sl-tabs .sl-tab');
-    var active = document.querySelector('.sl-tabs .sl-tab.on');
-    if (!active || active.hasAttribute('data-ob-hide')) zmienTab('pr', tabs[1]);
-    G('heroOverlay').classList.remove('show');
-    if (!keepCase && typeof actPr !== 'undefined' && actPr && actPr !== st().caseId && HUB.base.presets[actPr]) HUB.store.switchCase(actPr);
-    lastFitSig = '';
-    renderAll(st(), null);
-  }
-
-  // called by the page's ladujPreset (a one-line hook in index.html)
-  function onPreset(pid) {
-    if (syncing || !on || !HUB.base.presets[pid]) return;
-    if (pid !== st().caseId) HUB.store.switchCase(pid);
-  }
-
   /* ================= render ================= */
   function renderAll(s, prev) {
-    if (!on) return;
     var m = model();
-    if (!m) return;
-    // the designer underneath follows the observed template; real sessions have no template to load
-    if (typeof actPr !== 'undefined' && actPr !== s.caseId && HUB.base.presets[s.caseId]) { syncing = true; safe('ladujPreset', function () { ladujPreset(s.caseId); }); syncing = false; }
+    if (!m || !els.tb) return;
     renderTop(s);
     renderCrumbs(s);
     renderTopCtl(s);
@@ -145,7 +98,7 @@
     renderPanel(s);
     if (HUB.obsTimeline) safe('timeline.update', function () { HUB.obsTimeline.update(m, s); });
     renderStatus(s);
-    document.title = (m.presetName || m.name) + ' · 协作观察';
+    document.title = (m.presetName || m.name) + ' · Agent Architecture Hub';
   }
 
   function buildScene(m, s, a, view) {
@@ -174,7 +127,7 @@
     var b = scene.bbox;
     var sig = [m.id, scene.subject, Math.round(b.x / 8), Math.round(b.y / 8), Math.round(b.w / 8), Math.round(b.h / 8), Math.round(view.w / 24), Math.round(view.h / 24)].join('|');
     if (sig !== lastFitSig || lastSubject !== scene.subject) {
-      HUB.obsStage.fit(b, !caseChanged, fitPad());
+      HUB.camera.fit(b, !caseChanged, fitPad());
       lastFitSig = sig;
     }
     lastSubject = scene.subject;
@@ -187,13 +140,13 @@
     [els.ctrl, els.tl].forEach(function (e) { if (e && e.offsetParent && e.style.display !== 'none') bottom = Math.max(bottom, cv.bottom - e.getBoundingClientRect().top + 14); });
     return { top: top, right: 36, bottom: bottom, left: 36 };
   }
-  function fit(instant) { var sc = HUB.obsStage.scene; if (sc) HUB.obsStage.fit(sc.bbox, instant !== true, fitPad()); }
+  function fit(instant) { var sc = HUB.obsStage.scene; if (sc) HUB.camera.fit(sc.bbox, instant !== true, fitPad()); }
 
   function showPanelMode(s) {
     var panel = s.present === 'panel';
     if (!els.panelHost) {
-      els.panelHost = h('div', { class: 'ob-panelhost ob-only' });
-      // the page zooms the canvas on wheel and cancels the scroll; the panel sits inside the canvas, so keep its wheel to itself
+      els.panelHost = h('div', { class: 'ob-panelhost' });
+      // the canvas zooms on wheel and cancels the scroll; the panel sits inside the canvas, so keep its wheel to itself
       els.panelHost.addEventListener('wheel', function (e) { e.stopPropagation(); }, { passive: true });
       cvA.appendChild(els.panelHost);
     }
@@ -257,7 +210,7 @@
     els.crumbs.appendChild(h('button', { type: 'button', class: 'ob-ibtn', title: '前进（Alt+→）', disabled: !HUB.store.canForward(), onClick: function () { HUB.store.forward(); } }, '→'));
     var c = h('div', { class: 'ob-crumb' });
     var gt = function () { return h('span', { class: 'ob-gt' }, '›'); };
-    c.appendChild(h('a', { title: m.name + (m.summary ? '\n' + m.summary : ''), onClick: function () { zmienTab('pr', document.querySelectorAll('.sl-tabs .sl-tab')[1]); } }, crumbName(m)));
+    c.appendChild(h('a', { title: m.name + (m.summary ? '\n' + m.summary : ''), onClick: function () { HUB.shell.tabs.show('presets'); } }, crumbName(m)));
     c.appendChild(gt());
     var cur = HUB.views.current(s);
     var v = cur ? HUB.views.get(cur) : null;
@@ -366,28 +319,29 @@
   }
 
   /* ---------- left and right sidebars, status bar ---------- */
+  // only the page that is showing is drawn
   function renderSide() {
-    if (!HUB.obsSide) return;
-    var s = st();
-    if (els.panCases.classList.contains('on')) safe('side.cases', function () { HUB.obsSide.cases(els.panCases); });
-    if (els.panTree.classList.contains('on')) safe('side.tree', function () { HUB.obsSide.tree(els.panTree, model(), s); });
-    if (els.panHealth.classList.contains('on')) safe('side.health', function () { HUB.obsSide.health(els.panHealth, model(), s); });
-    if (els.panSessions.classList.contains('on') && HUB.obsSessions) safe('side.sessions', function () { HUB.obsSessions.render(els.panSessions); });
+    var s = st(), page = HUB.shell.tabs.current();
+    if (page === 'presets') safe('side.presets', function () { HUB.obsPresets.render(els.panPresets); });
+    else if (page === 'cases') safe('side.cases', function () { HUB.obsSide.cases(els.panCases); });
+    else if (page === 'tree') safe('side.tree', function () { HUB.obsSide.tree(els.panTree, model(), s); });
+    else if (page === 'health') safe('side.health', function () { HUB.obsSide.health(els.panHealth, model(), s); });
+    else if (page === 'sessions') safe('side.sessions', function () { HUB.obsSessions.render(els.panSessions); });
   }
   function renderPanel(s) {
     if (HUB.obsPanel) safe('panel', function () { HUB.obsPanel.render(els.sr, model(), s); });
   }
-  // one .st item per number, in the page's own status bar; the editor's items hide in observation mode
+  // the status bar: one item per number
   function renderStatus(s) {
     var m = model(), a = HUB.model.an(s, m), t = a.totals;
-    var bar = document.querySelector('.statbar');
-    bar.querySelectorAll('.ob-st').forEach(function (n) { n.remove(); });
+    var bar = els.status;
+    bar.innerHTML = '';
     [['个体', t.individuals], ['任务线', t.relations], ['案例', t.cases], ['运行', t.runs], ['调用', U.fmtNum(t.calls)], ['token', U.fmtTokens(t.tokens)],
       ['首次通过', U.pct(t.firstPassRate)], ['返工率', U.pct(t.reworkRate)], ['编排版本', m.def.version], ['时间', s.time == null ? '全部' : '截止 ' + cutText(s)]].forEach(function (x) {
-      bar.appendChild(h('div', { class: 'st ob-st' }, h('span', null, x[0] + ':'), h('span', { class: 'st-v' }, String(x[1]))));
+      bar.appendChild(h('div', { class: 'st' }, h('span', null, x[0] + ':'), h('span', { class: 'st-v' }, String(x[1]))));
     });
     var failed = m.factSource && m.factSource.kind === 'error';
-    bar.appendChild(h('div', { class: 'st ob-st', style: { border: 'none' } }, h('span', { class: failed ? 'ob-pill warn' : 'ob-tag-sim' },
+    bar.appendChild(h('div', { class: 'st', style: { border: 'none' } }, h('span', { class: failed ? 'ob-pill warn' : 'ob-tag-sim' },
       failed ? HUB.model.factLabel(m) : m.synthetic ? '事实为模拟数据' : '事实为' + HUB.model.factLabel(m))));
   }
 
@@ -493,7 +447,7 @@
         if (name === null) return;
         HUB.views.saveCurrent(name.trim());
         closePop();
-        pokazToast('已存为我的视图');
+        HUB.shell.toast('已存为我的视图');
       } }, '+ 把当前观察状态存下来'));
       var mine = HUB.views.mine();
       pop.appendChild(h('div', { class: 'ob-pop-h' }, mine.length ? '我的视图' : '还没有存过视图'));
@@ -507,11 +461,10 @@
 
   /* ================= keyboard ================= */
   function onKey(e) {
-    if (!on) return;
     // typing inside the trace view's shadow root reaches us retargeted to its host; look at the real target
     var tg = (e.composedPath && e.composedPath()[0]) || e.target;
     if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA' || tg.tagName === 'SELECT' || tg.isContentEditable)) return;
-    if (document.querySelector('.mo.show') || (G('wzOverlay') && G('wzOverlay').classList.contains('show')) || (G('hkOverlay') && G('hkOverlay').classList.contains('show')) || (typeof learnOpen !== 'undefined' && learnOpen)) return;
+    if (document.querySelector('.mo.show')) return;
     var k = e.key;
     var s = st();
     var handled = true;
@@ -530,10 +483,11 @@
     }
     else if (k === 'f' || k === 'F') fit();
     else if (k === 'Escape') { if (els.pop) closePop(); else if (s.subject === 'exec') leaveChain(); else if (s.selection) HUB.store.set({ selection: null }, { history: false }); else if (s.focus && s.subject !== 'collab') HUB.store.set({ focus: null }); }
-    else if (k === '?' || k === '/') { if (HUB.obsGuide) HUB.obsGuide.open(); else pokazSkroty(); }
-    else if (k === '=' || k === '+' || k === '-' || k === '0') handled = false;   // the page's own zoom keys
+    else if (k === '?' || k === '/') HUB.obsGuide.open();
+    else if (k === '=' || k === '+') HUB.camera.zoomBy(1.2);
+    else if (k === '-') HUB.camera.zoomBy(1 / 1.2);
+    else if (k === '0') fit();
     else if (k === ' ' && HUB.obsTimeline && HUB.obsTimeline.toggleReplay) HUB.obsTimeline.toggleReplay();
-    else if (['Delete', 'Backspace', 'c', 'l', 'd', 'e', 'k', 'p', ' '].indexOf(k) >= 0 || (e.ctrlKey && k === 'a')) handled = true;   // editor keys do nothing here
     else handled = false;
     if (handled) { e.preventDefault(); e.stopPropagation(); }
   }
@@ -546,10 +500,11 @@
       var rest = Object.assign({}, p);
       delete rest.caseId;
       HUB.store.set(rest);
-    }).catch(function (e) { if (typeof pokazToast === 'function') pokazToast('链接里的数据没打开：' + e.message); });
+    }).catch(function (e) { HUB.shell.toast('链接里的数据没打开：' + e.message); });
   }
 
   function start() {
+    HUB.shell.start();
     // The cases on disk are found by walking hub/cases/ (HUB.catalog), which takes a moment; a link into
     // the shelved reference corpus opens the folders it needs. Start-up waits for that, then applies the link.
     var want = HUB.store.fromHash(location.hash || '').caseId;
@@ -563,7 +518,7 @@
     var patch = HUB.store.fromHash(location.hash || '');
     var fromLink = !!patch.caseId;
     var pending = patch.caseId && !HUB.model.ready(patch.caseId) && HUB.model.owns(patch.caseId) ? Object.assign({}, patch) : null;
-    if (!patch.caseId || !HUB.model.ready(patch.caseId)) patch.caseId = (typeof actPr !== 'undefined' && actPr && HUB.base.presets[actPr]) ? actPr : HUB.store.DEFAULT.caseId;
+    if (!patch.caseId || !HUB.model.ready(patch.caseId)) patch.caseId = HUB.store.DEFAULT.caseId;
     HUB.store.init(patch);
     HUB.model.select(HUB.store.get().caseId);
     if (!patch.subject && !patch.depth) HUB.store.init(Object.assign({}, patch, HUB.views.get('v2').apply(HUB.store.get(), HUB.model.current)));
@@ -573,10 +528,9 @@
       renderAll(s, prev);
     });
     HUB.bus.on('model', function () { var s = st(); renderAll(s, s); });
-    HUB.bus.on('catalog', function () { if (els.panCases.classList.contains('on')) renderSide(); });
-    // re-render the trace component when the page theme changes so its shadow DOM picks up the new palette
-    new MutationObserver(function () { if (HUB.obsTrace && HUB.obsTrace.available()) { var s = st(); HUB.obsTrace.render(s, HUB.model.current); } })
-      .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    HUB.bus.on('catalog', function () { if (HUB.shell.tabs.current() === 'cases') renderSide(); });
+    // a new theme: colours that were drawn into the cards, and the trace view's shadow DOM, take the new palette
+    HUB.bus.on('theme', function () { renderAll(st(), st()); });
     // a pasted or edited link restores that observation state (our own writes use replaceState and fire nothing)
     window.addEventListener('hashchange', function () {
       if (location.hash === HUB.store.toHash(st())) return;
@@ -586,14 +540,14 @@
       delete p.caseId;
       HUB.store.set(p);
     });
-    enter(true);
+    renderAll(st(), null);
     if (pending) later(pending);
   }
 
   // a click on a case of the directory tab
   function openCase(id) { HUB.store.switchCase(id); }
 
-  HUB.obs = { start: start, isOn: function () { return on; }, fit: fit, render: function () { renderAll(st(), st()); }, openCase: openCase, onPreset: onPreset };
+  HUB.obs = { start: start, fit: fit, render: function () { renderAll(st(), st()); }, openCase: openCase };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

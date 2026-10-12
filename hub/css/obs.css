@@ -1,4 +1,4 @@
-/* Observation mode, laid over the original page. Prefix ob-. Colours come from the page's own variables. */
+/* The observatory: scenes, floating controls, side pages, panels. Prefix ob-. Colours come from the page's variables (shell.css). */
 
 :root {
   --ob-task: 129, 140, 248;
@@ -26,37 +26,8 @@
   --ob-seg-bg: rgba(255, 255, 255, 0.85);
 }
 
-/* ---------- what the observation mode hides from the editor ---------- */
-body.obs-on #cvT,
-body.obs-on #minimap,
-body.obs-on #cvI,
-body.obs-on #phaseBar,
-body.obs-on #simStatus,
-body.obs-on #dialogTimeline,
-body.obs-on #suggestBar,
-body.obs-on #heroOverlay,
-body.obs-on .cv-ctrl:not(.ob-ctrl),
-body.obs-on .tb-problem:not(.ob-tb),
-body.obs-on #tutBtn,
-body.obs-on #costHud,
-body.obs-on #srS,
-body.obs-on #srFoot,
-body.obs-on .sl-tab[data-ob-hide],
-body.obs-on #panAg,
-body.obs-on #panSv { display: none !important; }
-body:not(.obs-on) .ob-only { display: none !important; }
-body.obs-on .zm-ctrl { bottom: 96px; }
-
-/* ---------- top bar: mode switch and the six views ---------- */
-.ob-mode { display: inline-flex; flex-shrink: 0; padding: 2px; gap: 2px; border: 1px solid var(--brd); border-radius: 10px; background: var(--ob-seg-bg); }
-.ob-mode button {
-  height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; cursor: pointer;
-  font-family: var(--hd); font-size: 11px; font-weight: 600; color: var(--t2); white-space: nowrap;
-}
-.ob-mode button:hover { color: var(--t1); background: var(--state-hover, rgba(255,255,255,.06)); }
-.ob-mode button.on { color: var(--accent1); background: rgba(var(--ob-task), 0.16); box-shadow: inset 0 0 0 1px rgba(var(--ob-task), 0.35); }
-
-.tb-problem.ob-tb { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+/* ---------- top bar: the views ---------- */
+.tb-main { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
 .ob-views { display: flex; align-items: stretch; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; padding: 2px; }
 .ob-views::-webkit-scrollbar { display: none; }
 .ob-vbtn {
@@ -78,7 +49,7 @@ body.obs-on .zm-ctrl { bottom: 96px; }
 @media (max-width: 1600px) { .ob-vbtn .ob-vq { display: none; } .ob-vbtn { height: 34px; } .ob-vbtn:not(.on) .ob-vtx { display: none; } .ob-vbtn:not(.on) { padding: 0 6px; } }
 
 /* ---------- the layer inside the canvas ---------- */
-.ob-layer { pointer-events: none; z-index: 2; }
+.ob-layer { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; z-index: 2; }
 .ob-frames, .ob-cards { position: absolute; left: 0; top: 0; width: 0; height: 0; }
 .ob-svg { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 1; }
 .ob-cards { z-index: 2; }
@@ -249,6 +220,7 @@ body.obs-on .zm-ctrl { bottom: 96px; }
 .ob-sc:hover { background: rgba(var(--pc), .2); }
 .ob-sc b { min-width: 18px; text-align: center; padding: 0 5px; border-radius: 999px; background: rgba(var(--pc), .22); color: rgb(var(--pc)); font-size: 10px; font-weight: 800; }
 .ob-sa { color: var(--t3); font-size: 11px; }
+.ob-ctrl .btn { padding: 4px 10px; font-size: 9px; }
 .ob-ctrl { bottom: 96px; left: 50%; transform: translateX(-50%); flex-wrap: wrap; justify-content: center; max-width: calc(100% - 140px); }
 .ob-lbl { font-family: var(--mn); font-size: 8.5px; letter-spacing: .06em; color: var(--t3); white-space: nowrap; }
 .ob-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--brd); flex-shrink: 0; }
@@ -298,8 +270,7 @@ body.obs-on .zm-ctrl { bottom: 96px; }
 .ob-pop-i .ob-x:hover { color: var(--accent4); }
 
 /* ---------- left sidebar tabs and lists ---------- */
-.ob-pan { display: none; flex-direction: column; min-height: 0; flex: 1; overflow-y: auto; padding: 8px 0 16px; }
-.ob-pan.on { display: flex; }
+.ob-pan { padding: 8px 0 16px; }
 .ob-sh { padding: 10px 14px 4px; font-family: var(--mn); font-size: 9px; letter-spacing: .08em; color: var(--t3); }
 .ob-si { display: flex; align-items: center; gap: 8px; padding: 5px 14px; cursor: pointer; font-family: var(--hd); font-size: 11px; color: var(--t1); border-left: 2px solid transparent; min-width: 0; }
 .ob-si:hover { background: var(--state-hover, rgba(255,255,255,.04)); }
@@ -354,11 +325,6 @@ body.obs-on .zm-ctrl { bottom: 96px; }
 .ob-msg { padding: 7px 9px; border-radius: 9px; border: 1px solid var(--brd); background: var(--bg-card); font-size: 11px; line-height: 1.5; }
 .ob-msg.me { border-color: rgba(251,191,36,.35); }
 .ob-msg small { display: block; font-family: var(--mn); font-size: 8.5px; color: var(--t3); margin-bottom: 2px; }
-
-/* ---------- status bar ---------- */
-.ob-st { display: none; align-items: center; gap: 4px; }
-body.obs-on .statbar > .st:not(.ob-st), body.obs-on .statbar > .st-sp:not(.ob-st) { display: none; }
-body.obs-on .statbar > .ob-st { display: flex; }
 
 /* ---------- timeline strip and the panel presentation ---------- */
 .ob-tl {

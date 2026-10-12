@@ -71,6 +71,8 @@ test('service: index, sessions, OTLP, static files, and its guards', async () =>
   const repo = join(dir, 'repo');
   mkdirSync(join(repo, 'hub', 'js'), { recursive: true });
   writeFileSync(join(repo, 'index.html'), '<!doctype html><title>obs</title>');
+  mkdirSync(join(repo, 'concept'));
+  writeFileSync(join(repo, 'concept', 'index.html'), '<!doctype html><title>board</title>');
   writeFileSync(join(repo, 'hub', 'js', 'a.js'), 'var a = 1;');
   mkdirSync(join(repo, 'hub', 'cases', 'alpha'), { recursive: true });
   mkdirSync(join(repo, 'hub', 'cases', '_reference'), { recursive: true });
@@ -104,6 +106,8 @@ test('service: index, sessions, OTLP, static files, and its guards', async () =>
     assert.equal(JSON.parse((await get(base, '/api/sessions/' + encodeURIComponent('codex:' + CHILD_ID) + '/tree')).body).sessions.length, 1, 'a sub-agent alone');
     assert.equal((await get(base, '/api/sessions/codex:nope/tree')).status, 404);
     assert.match((await get(base, '/')).body, /obs/);
+    assert.match((await get(base, '/concept/')).body, /board/, 'the concept board is its own page');
+    assert.equal((await get(base, '/concept')).status, 302);
     assert.equal((await get(base, '/hub/js/a.js')).body, 'var a = 1;');
     assert.match((await get(base, '/trace/some/route')).body, /trace/, 'viewer routes fall back to its page');
     assert.equal((await get(base, '/hub/../secret.txt')).status, 404, 'no way out of hub/');

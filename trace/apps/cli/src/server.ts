@@ -3,7 +3,8 @@
  *   /api/...   the session index and sessions (contract JSON, or OTLP); a session with all its sub-agents
  *   /trace/    the Trace viewer (apps/viewer/dist)
  *   /          the observatory page (repo index.html)
- *   /hub/      its assets, with plain directory listings so the page finds cases and graphs by itself
+ *   /concept/  the concept board, a separate page (repo concept/index.html)
+ *   /hub/      the observatory's assets, with plain directory listings so the page finds cases and graphs by itself
  *              (the same listing a static server such as `python -m http.server` gives)
  * Everything is same-origin, so no CORS header is sent: other sites in the
  * browser cannot read the sessions. A Host check blocks DNS rebinding.
@@ -189,6 +190,11 @@ export function createService(opts: ServeOptions): Server {
       }
       if (path === '/' || path === '/index.html') {
         const file = fileUnder(repoRoot, 'index.html');
+        return file ? sendFile(res, file, head) : send(res, 404, 'not found');
+      }
+      if (path === '/concept') { res.writeHead(302, { Location: '/concept/' }); return res.end(); }
+      if (path === '/concept/' || path === '/concept/index.html') {
+        const file = fileUnder(join(repoRoot, 'concept'), 'index.html');
         return file ? sendFile(res, file, head) : send(res, 404, 'not found');
       }
       if (path.startsWith('/hub/')) {

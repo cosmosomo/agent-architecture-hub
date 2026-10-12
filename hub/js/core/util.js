@@ -187,8 +187,24 @@
     emit: function (evt, payload) { (listeners.get(evt) || []).slice().forEach(function (fn) { try { fn(payload); } catch (e) { console.error('[HUB.bus] ' + evt, e); } }); }
   };
 
+  /* run onFrame(p) for p easing from 0 to 1 over ms (ease-out); returns the function that stops it.
+     A hidden tab runs no frames: the move is finished at once, so nothing is left half-way. */
+  function tween(ms, onFrame, onDone) {
+    var t0 = null, id = null, stopped = false;
+    var step = function (ts) {
+      if (stopped) return;
+      if (t0 == null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / ms);
+      onFrame(p < 1 ? 1 - Math.pow(1 - p, 3) : 1);
+      if (p < 1) id = requestAnimationFrame(step); else if (onDone) onDone();
+    };
+    id = requestAnimationFrame(step);
+    var guard = setTimeout(function () { if (!stopped && t0 == null) { stopped = true; onFrame(1); if (onDone) onDone(); } }, ms + 400);
+    return function () { stopped = true; clearTimeout(guard); if (id) cancelAnimationFrame(id); };
+  }
+
   HUB.util = {
-    esc: esc, h: h, svg: svg, fmtClock: fmtClock, fmtTime: fmtTime, fmtDur: fmtDur, fmtNum: fmtNum, pct: pct,
+    esc: esc, h: h, svg: svg, tween: tween, fmtClock: fmtClock, fmtTime: fmtTime, fmtDur: fmtDur, fmtNum: fmtNum, pct: pct,
     rng: rng, hashStr: hashStr, byId: byId, groupBy: groupBy, clamp: clamp, sum: sum, uniq: uniq, uid: uid,
     toolList: toolList, toolChannelId: toolChannelId, LABELS: LABELS, DAY: DAY, fmtTokens: fmtTokens, sumTokens: sumTokens,
     cmpWord: cmpWord, cmpLevel: cmpLevel, quietEval: quietEval

@@ -16,14 +16,14 @@
 
   /* canvas: the element the tree covers; side: the right sidebar; after: the summary pane the details go under */
   function mount(canvas, side, after) {
-    els.host = h('div', { class: 'ob-tracehost ob-trace ob-only' });
+    els.host = h('div', { class: 'ob-tracehost ob-trace' });
     els.note = h('div', { class: 'ob-trace-note' });
     els.tree = h('div', { class: 'ob-trace-tree' });
     els.host.append(els.note, els.tree);
-    // the page zooms the canvas on wheel; the tree scrolls instead
+    // the canvas zooms on wheel; the tree scrolls instead
     els.host.addEventListener('wheel', function (e) { e.stopPropagation(); }, { passive: true });
     canvas.appendChild(els.host);
-    els.side = h('div', { class: 'ob-traceside ob-trace ob-only' });
+    els.side = h('div', { class: 'ob-traceside ob-trace' });
     side.insertBefore(els.side, after.nextSibling);
   }
 

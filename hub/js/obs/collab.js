@@ -57,7 +57,7 @@
   /* ================= mount ================= */
   function mount(canvas) {
     if (els.host) return;
-    els.host = h('div', { class: 'ob-collab ob-only' });
+    els.host = h('div', { class: 'ob-collab' });
     els.head = h('div', { class: 'obc-head obc-glass' });
     els.stage = h('div', { class: 'obc-stage' });
     els.svg = sv('svg', { class: 'obc-svg', role: 'img', 'aria-label': '协作轨迹图' }, els.stage);
@@ -899,7 +899,7 @@
     clearTimeout(V.timer);
     V.timer = setTimeout(function () {
       if (!V.playing) return;
-      if (!V.on || !document.body.classList.contains('obs-on') || V.cursor >= V.st.N) { pause(); return; }
+      if (!V.on || V.cursor >= V.st.N) { pause(); return; }
       step();
       var caps = capsAt(V.cursor);
       schedule(BEAT / V.speed + (V.story && caps.length ? 2400 + 900 * (caps.length - 1) : 0));

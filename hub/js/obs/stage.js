@@ -1,6 +1,6 @@
 /* HUB.obsStage: the observation layer inside the original canvas.
    Renders a scene (frames, cards, links) keyed by data-key, tweens everything from where it is to where it should be,
-   and moves the camera through the original page's own pan/zoom (scale, panX, panY, zastTransf). */
+   and hands the camera (HUB.camera) the box to frame. */
 (function () {
   'use strict';
   var HUB = (window.HUB = window.HUB || {});
@@ -8,10 +8,11 @@
   var SVGNS = 'http://www.w3.org/2000/svg';
   var LINK_COLORS = ['task', 'info', 'watch', 'channel', 'factonly', 'hl', 'flow', 'fail', 'esc', 'muted'];
 
+  var tween = HUB.util.tween;
   var S = {
     root: null, frameLayer: null, cardLayer: null, svg: null, gLinks: null, gParts: null,
     frames: new Map(), cards: new Map(), links: new Map(),
-    scene: null, cancel: null, camCancel: null, handlers: {}, hoverKey: null, uid: 0, sel: null
+    scene: null, cancel: null, handlers: {}, hoverKey: null, uid: 0, sel: null
   };
 
   function svgEl(t, at) { var e = document.createElementNS(SVGNS, t); if (at) Object.keys(at).forEach(function (k) { e.setAttribute(k, at[k]); }); return e; }
@@ -21,9 +22,7 @@
   function mount(container, handlers) {
     S.handlers = handlers || {};
     var root = document.createElement('div');
-    root.id = 'obsT';
-    root.className = 'cv-transform ob-layer';
-    root.style.transform = cvT.style.transform;
+    root.className = 'ob-layer';
     S.frameLayer = document.createElement('div'); S.frameLayer.className = 'ob-frames';
     S.svg = svgEl('svg', { class: 'ob-svg', width: '1', height: '1' });
     var defs = svgEl('defs');
@@ -458,41 +457,6 @@
     if (!to || !S.root.contains(to) || !to.closest('[data-key]')) setHover(null);
   }
 
-  /* ---------- camera: the original page's scale / panX / panY ---------- */
-  // pad: {top, right, bottom, left} screen pixels kept free for the floating controls
-  function fit(bbox, animate, pad) {
-    if (!bbox || !(bbox.w > 0)) return;
-    pad = pad || { top: 70, right: 40, bottom: 150, left: 40 };
-    var cw = cvA.clientWidth, ch = cvA.clientHeight;
-    if (!cw || !ch) return;
-    var aw = Math.max(80, cw - pad.left - pad.right), ah = Math.max(80, ch - pad.top - pad.bottom);
-    var k = Math.max(0.15, Math.min(1.15, aw / bbox.w, ah / bbox.h));
-    var tx = pad.left + aw / 2 - (bbox.x + bbox.w / 2) * k;
-    var ty = pad.top + ah / 2 - (bbox.y + bbox.h / 2) * k;
-    if (S.camCancel) { S.camCancel(); S.camCancel = null; }
-    if (!animate || reduced()) { scale = k; panX = tx; panY = ty; zastTransf(); return; }
-    var a = { k: scale || 1, x: panX, y: panY };
-    S.camCancel = tween(520, function (p) {
-      scale = a.k + (k - a.k) * p; panX = a.x + (tx - a.x) * p; panY = a.y + (ty - a.y) * p;
-      zastTransf();
-    }, function () { S.camCancel = null; });
-  }
-
-  function tween(ms, onFrame, onDone) {
-    var t0 = null, id = null, stopped = false;
-    var step = function (ts) {
-      if (stopped) return;
-      if (t0 == null) t0 = ts;
-      var p = Math.min(1, (ts - t0) / ms);
-      onFrame(p < 1 ? 1 - Math.pow(1 - p, 3) : 1);
-      if (p < 1) id = requestAnimationFrame(step); else if (onDone) onDone();
-    };
-    id = requestAnimationFrame(step);
-    // a hidden tab never runs frames; finish the move right away so nothing is left half-way
-    var guard = setTimeout(function () { if (!stopped && t0 == null) { stopped = true; onFrame(1); if (onDone) onDone(); } }, ms + 400);
-    return function () { stopped = true; clearTimeout(guard); if (id) cancelAnimationFrame(id); };
-  }
-
   function clear() {
     if (S.cancel) { S.cancel(); S.cancel = null; }
     [S.frames, S.cards].forEach(function (map) { map.forEach(function (rec) { rec.el.remove(); }); map.clear(); });
@@ -504,6 +468,6 @@
   function cardEl(key) { var r = S.cards.get(key); return r ? r.el : null; }
   function cardGeom(key) { return geomOf(key); }
 
-  HUB.obsStage = { mount: mount, render: render, fit: fit, clear: clear, show: show, setSelection: setSelection,
-    cardEl: cardEl, cardGeom: cardGeom, tween: tween, route: route, get scene() { return S.scene; } };
+  HUB.obsStage = { mount: mount, render: render, clear: clear, show: show, setSelection: setSelection,
+    cardEl: cardEl, cardGeom: cardGeom, route: route, get scene() { return S.scene; } };
 })();

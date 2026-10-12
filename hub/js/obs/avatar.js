@@ -41,17 +41,17 @@
   function colorClass(agentId) { var e = agent(agentId); return (e && CARD_CLASS[e.color]) || 'c-mu'; }
 
   /* filled shapes are drawn through a mask so that the cut-outs are transparent on any background */
-  function draw(inner, solid, c, size, strokeWidth, cls) {
+  function draw(inner, solid, c, size, strokeWidth, cls, solidCls) {
     if (solid) {
       var mid = 'avm' + (uid++);
-      return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" class="' + cls + ' ' + cls.replace('-svg', '-solid') + '" style="color:' + c + '" aria-hidden="true">' +
+      return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" class="' + cls + ' ' + solidCls + '" style="color:' + c + '" aria-hidden="true">' +
         '<mask id="' + mid + '" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">' + inner + '</mask><rect width="24" height="24" fill="' + c + '" mask="url(#' + mid + ')"/></svg>';
     }
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="' + c + '" stroke-width="' + strokeWidth + '" stroke-linecap="round" stroke-linejoin="round" class="' + cls + '" style="color:' + c + '" aria-hidden="true">' + inner + '</svg>';
   }
   function svg(agentId, name, size) {
     var e = agent(agentId);
-    if (e) return draw(e.svg, e.solid, color(agentId, name), size, 1.6, 'ag-svg');
+    if (e) return draw(e.svg, e.solid, color(agentId, name), size, 1.6, 'ag-svg', 'ag-solid');
     var k = key(name), hit = GLYPHS.filter(function (g) { return g[0].test(k); })[0];
     return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (hit ? hit[1] : GENERIC) + '</svg>';
   }
@@ -61,10 +61,11 @@
     var I = HUB.icons, e = I.presets[id], cat = e && e.cat && I.categories[e.cat];
     return cat ? cat[theme()] : (I.presetColors[theme()][id] || '#818CF8');
   }
+  function categoryColor(cat) { var c = HUB.icons.categories[cat]; return c ? c[theme()] : '#818CF8'; }
   function presetSvg(id, size) {
     var e = HUB.icons && HUB.icons.presets[id];
-    return e ? draw(e.svg, e.solid, presetColor(id), size, 2, 'pr-svg') : '';
+    return e ? draw(e.svg, e.solid, presetColor(id), size, 2, 'pr-svg', 'pr-solid') : '';
   }
 
-  HUB.obsAvatar = { has: has, color: color, colorClass: colorClass, svg: svg, presetSvg: presetSvg, presetColor: presetColor };
+  HUB.obsAvatar = { has: has, color: color, colorClass: colorClass, svg: svg, presetSvg: presetSvg, presetColor: presetColor, categoryColor: categoryColor };
 })();

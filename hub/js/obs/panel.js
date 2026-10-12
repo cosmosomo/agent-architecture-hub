@@ -71,7 +71,7 @@
   /* ================= per type ================= */
   function overview(m, s, a) {
     var t = a.totals;
-    var h = hero({ name: m.name, role: [m.presetName, m.flowText].filter(Boolean).join(' · '), icon: typeof svgPresetu === 'function' ? svgPresetu(m.id, 30) : '',
+    var h = hero({ name: m.name, role: [m.presetName, m.flowText].filter(Boolean).join(' · '), icon: HUB.obsAvatar.presetSvg(m.id, 30),
       chips: chip(s.time == null ? '全部时间' : '截止 ' + U.fmtClock(s.time)) +
         (m.factSource && m.factSource.kind === 'error' ? pill(HUB.model.factLabel(m), 'warn') : chip(HUB.model.factLabel(m))) });
     var intro = '<div class="ds"><div class="ds-who">' + esc(m.summary || '') + '</div></div>';
@@ -362,7 +362,7 @@
     // recorded facts can be read record by record in the trajectory view: the way in sits on top, like the decision chain of an individual
     var traj = HUB.obsCollab && !m.synthetic && s.subject !== 'collab' ? '<div class="ds"><button class="btn btn-p" type="button" data-act="traj" data-id="' + id + '">看协作轨迹</button>' +
       '<div class="ob-note" style="margin-top:5px">按记录先后，一条一条看谁把什么交给谁；键盘 T 也行。</div></div>' : '';
-    return hero({ name: c.id + ' ' + (evalsOn(s) ? c.name : shortName(c.name)), role: '案例实例 · ' + (res ? '记录的结局：' + res[0] : (L.caseStatus[c.status] || c.status)), icon: typeof svgPresetu === 'function' ? svgPresetu(m.id, 30) : '', chips: chip(U.fmtClock(c.start) + ' 开始') }) + traj +
+    return hero({ name: c.id + ' ' + (evalsOn(s) ? c.name : shortName(c.name)), role: '案例实例 · ' + (res ? '记录的结局：' + res[0] : (L.caseStatus[c.status] || c.status)), icon: HUB.obsAvatar.presetSvg(m.id, 30), chips: chip(U.fmtClock(c.start) + ' 开始') }) + traj +
       sec('概况', stats([['任务', tasks.length], ['运行', runs.length], ['返工', tasks.filter(function (t) { return (t.visit || 1) > 1 || t.status === 'rework'; }).length]])) +
       sec('走过的路', '<div class="ob-note">' + esc(path) + '</div>') +
       (res && c.note ? sec('结局', '<div class="ob-note">' + pill(res[0], res[1]) + ' ' + esc(c.note) + '</div>') : '') +
@@ -516,7 +516,7 @@
     else if (act === 'limit') {
       var li = host.querySelector('[data-limit]');
       var res2 = HUB.model.perform('set_limit', { target: { type: 'channel', id: t.getAttribute('data-id') }, text: li ? li.value.trim() : '' });
-      if (res2 && typeof pokazToast === 'function') pokazToast('已记为编排改动');
+      if (res2) HUB.shell.toast('已记为编排改动');
     }
     else if (act === 'health') {
       var hc = HUB.model.an(s, m).health.find(function (x) { return x.id === t.getAttribute('data-hid'); });
@@ -527,7 +527,7 @@
       var kind = t.getAttribute('data-kind');
       if ((kind === 'talk' || kind === 'interject') && !text) { if (input) { input.focus(); input.placeholder = '先写下要说的话'; } return; }
       var res = HUB.model.perform(kind, { target: { type: t.getAttribute('data-type'), id: t.getAttribute('data-id') }, text: text, docId: t.getAttribute('data-doc') || undefined });
-      if (res && typeof pokazToast === 'function') pokazToast(({ delivered: '已送达', pending: '已记下，等它下一次运行时送达', recorded: '已记录' })[res.status] || '已记录');
+      if (res) HUB.shell.toast(({ delivered: '已送达', pending: '已记下，等它下一次运行时送达', recorded: '已记录' })[res.status] || '已记录');
     }
   }
 

@@ -34,7 +34,7 @@
   }
   function viewer(id) { return '/trace/#s=' + encodeURIComponent(id) + '&theme=' + (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'); }
 
-  function toast(t) { if (typeof pokazToast === 'function') pokazToast(t); }
+  function toast(t) { HUB.shell.toast(t); }
   /* draw a session and its sub-agents as the org graph: one group per dispatch, opened one level */
   function openTree(sid) {
     var id = 'tree:' + sid;

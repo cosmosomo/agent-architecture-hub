@@ -17,12 +17,12 @@
 }
 .ob-collab.on { display: flex; }
 /* the view brings its own time axis and controls */
-body.obs-on.ob-collab-on .ob-ctrl,
-body.obs-on.ob-collab-on .ob-tl,
-body.obs-on.ob-collab-on .zm-ctrl { display: none !important; }
+body.ob-collab-on .ob-ctrl,
+body.ob-collab-on .ob-tl,
+body.ob-collab-on .zm-ctrl { display: none !important; }
 /* its breadcrumbs are short and its controls are three groups: give the controls the room to stay on one line */
-body.obs-on.ob-collab-on .ob-crumbs { max-width: calc(44% - 20px); }
-body.obs-on.ob-collab-on .ob-topctl { max-width: calc(56% - 20px); }
+body.ob-collab-on .ob-crumbs { max-width: calc(44% - 20px); }
+body.ob-collab-on .ob-topctl { max-width: calc(56% - 20px); }
 
 .obc-glass { background: var(--bg-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--brd); border-radius: 12px; }
 .obc-c-c1 { --nc: var(--oc-c1); } .obc-c-c2 { --nc: var(--oc-c2); } .obc-c-c3 { --nc: var(--oc-c3); }
@@ -243,7 +243,6 @@ body.obs-on.ob-collab-on .ob-topctl { max-width: calc(56% - 20px); }
 .obc-tip.show { opacity: 1; }
 .obc-tip b { font-weight: 600; }
 .obc-tip .m { font-size: 10.5px; color: var(--t3); }
-body:not(.obs-on) .obc-tip { display: none; }
 
 @keyframes obc-spin { to { transform: rotate(360deg); } }
 @keyframes obc-flow { to { stroke-dashoffset: -28; } }
