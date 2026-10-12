@@ -10,7 +10,7 @@
 const path = require('path');
 const { createContext, loadScripts, fsFetch, findCases, HUB_DIR } = require('./load.js');
 
-const ctx = loadScripts(createContext(), ['js/core/util.js', 'js/core/casedef.js', 'js/core/sim.js', 'js/core/from-docs.js']);
+const ctx = loadScripts(createContext(), ['js/core/util.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/sources/from-docs.js']);
 const HUB = ctx.HUB;
 
 const errors = [], warns = [];

@@ -5,7 +5,7 @@
 ## 这个衍生版加了什么
 
 - **观察模式**：原页面顶栏新增"观察｜设计"切换，六种视图（完整协作、组织架构、任务路由、业务流程、粗粒度决策链、细粒度 Trace），键盘 1~6 直接切换，原设计器不受影响。
-- **文档即数据源**：`hub/cases/` 下的 Markdown（hub-graph 方言）经 `hub/js/core/from-docs.js` 适配器编译成统一模型，页面只认统一模型。
+- **文档即数据源**：`hub/cases/` 下的 Markdown（hub-graph 方言）经 `hub/js/sources/from-docs.js` 适配器编译成统一模型，页面只认统一模型。
 - **hub-graph 通用格式 v1.0**：格式规范见 `hub/docs/hub-graph-format.md`，任何来源实现一个适配器并 `HUB.model.addSource` 注册即可接入。
 - **Trace / 真实会话模块**：`hub/js/obs/trace.js`、`sessions.js`，可打开本机真实会话的运行图。
 - **双击启动**：`启动观察台.bat` = 起本地静态服务器（127.0.0.1:8899）并打开浏览器。注意 file:// 直接双击 html 会因 fetch 被禁而看不到文档源案例，必须走 http。

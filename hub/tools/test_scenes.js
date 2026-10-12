@@ -11,7 +11,7 @@ const { createContext, loadScripts, HUB_DIR } = require('./load.js');
 
 const caseFiles = fs.readdirSync(path.join(HUB_DIR, 'data', 'cases')).filter((f) => f.endsWith('.js')).map((f) => 'data/cases/' + f);
 const ctx = loadScripts(createContext(), ['data/base.js', 'data/zh.js', ...caseFiles,
-  'js/core/util.js', 'js/core/store.js', 'js/core/casedef.js', 'js/core/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/views.js',
+  'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/views.js',
   'js/obs/cards.js', 'js/obs/scene-org.js', 'js/obs/scene-process.js']);
 const HUB = ctx.HUB;
 const ids = process.argv[2] ? [process.argv[2]] : Object.keys(HUB.base.presets);

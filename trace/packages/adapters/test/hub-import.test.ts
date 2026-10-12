@@ -1,6 +1,6 @@
 /**
  * Real sessions drawn as an org graph: parsed Codex sessions (the fixtures, a main session that starts a
- * sub-agent) go through hub/js/core/from-trace.js into the observatory's model, and the analysis and the
+ * sub-agent) go through hub/js/sources/from-trace.js into the observatory's model, and the analysis and the
  * org scene have to take it the way they take a simulated case.
  */
 import { test } from 'node:test';
@@ -31,7 +31,7 @@ const { createContext, loadScripts, HUB_DIR } = require(fileURLToPath(new URL('.
 function hub(): Hub {
   const cases = readdirSync(join(HUB_DIR, 'data', 'cases')).filter((f: string) => f.endsWith('.js')).map((f: string) => 'data/cases/' + f);
   return loadScripts(createContext(), ['data/base.js', 'data/zh.js', ...cases,
-    'js/core/util.js', 'js/core/store.js', 'js/core/casedef.js', 'js/core/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/from-trace.js',
+    'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/sources/from-trace.js',
     'js/core/views.js', 'js/obs/cards.js', 'js/obs/scene-org.js', 'js/obs/scene-process.js']).HUB;
 }
 

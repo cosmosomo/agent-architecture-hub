@@ -25,7 +25,7 @@ const { createContext, loadScripts, HUB_DIR } = require(fileURLToPath(new URL('.
 function hub(): Hub {
   const cases = readdirSync(join(HUB_DIR, 'data', 'cases')).filter((f: string) => f.endsWith('.js')).map((f: string) => 'data/cases/' + f);
   return loadScripts(createContext(), ['data/base.js', 'data/zh.js', ...cases,
-    'js/core/util.js', 'js/core/store.js', 'js/core/casedef.js', 'js/core/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/to-trace.js']).HUB;
+    'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/to-trace.js']).HUB;
 }
 
 // what the page hands the trace view travels as JSON

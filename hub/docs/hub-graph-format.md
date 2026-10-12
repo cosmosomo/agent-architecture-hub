@@ -241,13 +241,13 @@ HUB.model.addSource({
 
 | hub-graph 概念 | 代码位置 |
 |---------------|---------|
-| `objects` (individual/group/channel) | `hub/js/core/casedef.js` → `def` |
-| `objects` (run/call/handoff) | `hub/js/core/sim.js` → `facts` |
+| `objects` (individual/group/channel) | `hub/js/sources/casedef.js` → `def` |
+| `objects` (run/call/handoff) | `hub/js/sources/sim.js` → `facts` |
 | `relations` | `def.relations` |
 | `view` | `hub/js/core/store.js` state |
 | `merged[]` | `store.state.merged` |
 | 适配器注册 | `HUB.model.addSource` (`hub/js/core/model.js`) |
-| 格式 → 统一模型 | `hub/js/core/from-trace.js`（会话版），`from-hub-graph.js`（文件版） |
+| 格式 → 统一模型 | `hub/js/sources/from-trace.js`（会话版），`from-hub-graph.js`（文件版） |
 | type → 组件 | `hub/js/obs/cards.js` `HUB.obsCards.extra` |
 
 ---

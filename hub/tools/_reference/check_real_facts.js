@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * check_real_facts.js - every docs case whose traces/ a reader in js/core/from-traces.js knows: parse it with the
+ * check_real_facts.js - every docs case whose traces/ a reader in js/sources/from-traces.js knows: parse it with the
  * real facts, analyse it, and build the org and process scenes, the way the page does. Prints how much of the
  * recording landed on the written orchestration: speakers matched, handoffs on a declared task line, fact-only
  * lines, the case path laid on the declared process. Errors: a throw, empty facts, NaN geometry, a broken link.
@@ -11,8 +11,8 @@ const path = require('path');
 const { createContext, loadScripts, fsFetch, findCases, HUB_DIR } = require('../load.js');
 
 const ctx = loadScripts(createContext(), ['data/base.js', 'data/zh.js',
-  'js/core/util.js', 'js/core/store.js', 'js/core/casedef.js', 'js/core/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/views.js',
-  'js/core/from-traces.js', 'js/core/from-docs.js', 'js/obs/cards.js', 'js/obs/scene-org.js', 'js/obs/scene-process.js', 'js/panels/panels.js']);
+  'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/views.js',
+  'js/sources/from-traces.js', 'js/sources/from-docs.js', 'js/obs/cards.js', 'js/obs/scene-org.js', 'js/obs/scene-process.js', 'js/obs/panels.js']);
 const HUB = ctx.HUB;
 const fetchFn = fsFetch;
 

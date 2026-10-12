@@ -12,7 +12,7 @@ const caseFiles = fs.existsSync(path.join(HUB_DIR, 'data', 'cases'))
   : [];
 const zh = fs.existsSync(path.join(HUB_DIR, 'data', 'zh.js')) ? ['data/zh.js'] : [];
 const ctx = loadScripts(createContext(), ['data/base.js', ...zh, ...caseFiles,
-  'js/core/util.js', 'js/core/store.js', 'js/core/casedef.js', 'js/core/sim.js', 'js/core/analysis.js', 'js/core/model.js']);
+  'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js']);
 const HUB = ctx.HUB;
 const only = process.argv[2];
 const ids = only ? [only] : Object.keys(HUB.base.presets);
