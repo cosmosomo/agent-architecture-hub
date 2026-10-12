@@ -1,7 +1,7 @@
 /* HUB.model: assembles definition + facts + indexes, caches analysis per time cut, applies page actions.
    Models come from sources: the simulator for the case templates, the local service for real sessions, and
    later others (another collaboration hub, an orchestration folder). A source says which model ids it owns and
-   either builds a model at once or loads one; the views only ever see the model (hub/SPEC.md 5). */
+   either builds a model at once or loads one; the views only ever see the model (docs/SPEC.md 5). */
 (function () {
   'use strict';
   var HUB = (window.HUB = window.HUB || {});

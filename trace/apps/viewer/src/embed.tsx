@@ -1,5 +1,5 @@
 /**
- * The trace view as a part of another page (the observatory, hub/SPEC.md 17.6). Built by
+ * The trace view as a part of another page (the observatory, docs/SPEC.md 17.6). Built by
  * vite.embed.config.ts into one classic script that sets `window.HubTrace`, so a page without a
  * build step can load it, even from a file. Each part renders inside a shadow root: the page's CSS
  * and ours never meet. The tree and the details of the selected span go into two elements the host

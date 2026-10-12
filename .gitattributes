@@ -1,0 +1,6 @@
+# one line ending in the repository and in every checkout
+* text=auto eol=lf
+*.bat text eol=crlf
+
+# the concept board is kept byte for byte as it was received
+concept/index.html -text

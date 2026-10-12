@@ -1,5 +1,5 @@
 /**
- * Search index over the steps of every session: the retrieval layer (hub/SPEC.md 17.4).
+ * Search index over the steps of every session: the retrieval layer (docs/SPEC.md 17.4).
  * One SQLite file next to the summary index, built from the source files and safe to
  * delete. Each step keeps a shortened text in an FTS5 trigram table, so Chinese and
  * code substrings both match; filters and facets run on plain columns.

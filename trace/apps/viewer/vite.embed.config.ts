@@ -2,7 +2,7 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
-// The trace view for pages without a build step (hub/SPEC.md 17.6): src/embed.tsx as one classic
+// The trace view for pages without a build step (docs/SPEC.md 17.6): src/embed.tsx as one classic
 // script that sets window.HubTrace, React included, CSS inlined. It is written into the observatory's
 // vendor folder and committed with it, so the observatory works without building anything.
 export default defineConfig({

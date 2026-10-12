@@ -1,4 +1,4 @@
-/* HUB.fromHubGraph: hub-graph JSON（hub/docs/hub-graph-format.md §18.2）→ 统一模型。
+/* HUB.fromHubGraph: hub-graph JSON（docs/hub-graph-format.md §18.2）→ 统一模型。
    这是"任何来源接入可视化"的通用门票：JSON 描述 objects（个体/组/渠道/文档/案例/决策）
    与 relations（任务/信息/监督/渠道线），本适配器翻译成统一模型，页面零改动。
 

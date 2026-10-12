@@ -1,5 +1,5 @@
 /* HUB.obsSessions: the "会话" tab of the left sidebar. Lists the real agent sessions on this machine
-   (trace module, hub/SPEC.md 17) and opens one in the canvas (HUB.obsTrace). The list comes from the local
+   (trace module, docs/SPEC.md 17) and opens one in the canvas (HUB.obsTrace). The list comes from the local
    service (`npm start`), which is also what serves this page: same origin, so no CORS. If the page was not
    opened from it, the tab says how to start it. */
 (function () {

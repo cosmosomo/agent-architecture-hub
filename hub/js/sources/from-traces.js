@@ -1,5 +1,5 @@
 /* HUB.fromTraces: the real trajectories a docs case keeps in traces/ -> the facts layer of its unified model
-   (hub/SPEC.md 5; hub/cases_imported/PROPOSAL_lossless_adapter.md B and F). The definitions stay what the Markdown
+   (docs/SPEC.md 5; hub/cases_imported/PROPOSAL_lossless_adapter.md B and F). The definitions stay what the Markdown
    orchestration says; only the facts change from simulated to recorded, so every view compares the written
    orchestration with what really happened.
    - a reader per source format turns the files into episodes: one recorded run of the whole team, a list of turns
@@ -186,7 +186,7 @@
     def.relations.forEach(function (r) { if (r.type === 'task' && !taskRel[r.from + '>' + r.to]) taskRel[r.from + '>' + r.to] = r; });
 
     var F = { synthetic: false, ordinal: true, span: { start: 0, end: 0 }, cases: [], tasks: [], runs: [], decisions: [], calls: [], handoffs: [], deliveries: [],
-      turns: [],   // 记录：每条发言一项，案例内按 seq 排列；协作轨迹图画的就是它（hub/SPEC.md 5）
+      turns: [],   // 记录：每条发言一项，案例内按 seq 排列；协作轨迹图画的就是它（docs/SPEC.md 5）
       gateEvents: [], channelEvents: [], versionEvents: [], actions: [], messages: [] };
     var sessions = new Map(), runRef = {};
     var t0 = 0, n = 0;

@@ -1,5 +1,5 @@
-/* HUB.fromDocs: hub/cases/ 目录里的 Markdown 文档 → 统一模型（hub/SPEC.md §5）
-   格式规范见 hub/docs/hub-graph-format.md §18.6
+/* HUB.fromDocs: hub/cases/ 目录里的 Markdown 文档 → 统一模型（docs/SPEC.md §5）
+   格式规范见 docs/hub-graph-format.md §18.6
 
    解析规则：
    - frontmatter hub:"1.0" 是命名空间标识，缺失则跳过该文件

@@ -1,7 +1,7 @@
 /**
  * Codex session records (`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`) to the trace contract.
  *
- * Two formats (hub/SPEC.md 17.2):
+ * Two formats (docs/SPEC.md 17.2):
  * - envelope: every line is `{timestamp, type, payload}`; turns are framed by
  *   event_msg/task_started and task_complete | turn_aborted; a token_usage_record
  *   closes each model call; event_msg/item_completed reports what tools did.

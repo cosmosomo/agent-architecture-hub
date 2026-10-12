@@ -1,5 +1,0 @@
-node_modules/
-dist/
-# Parsed sessions are private: they stay on this machine (default ~/.agent-hub/trace, see hub/SPEC.md 17).
-trace-data/
-*.local.json

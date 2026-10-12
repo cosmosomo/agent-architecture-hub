@@ -1,5 +1,5 @@
 /**
- * Derived statistics for the analytics view (hub/SPEC.md 17.8). Everything here is
+ * Derived statistics for the analytics view (docs/SPEC.md 17.8). Everything here is
  * aggregated by the local service from the search index and session summaries; no
  * new truth, only folds of what the adapters already parsed.
  */

@@ -1,4 +1,4 @@
-/* hub/data/zh.js — 60 个智能体和 62 个案例模板的中文名与说明。见 SPEC.md §12.1。 */
+/* hub/data/zh.js — 60 个智能体和 62 个案例模板的中文名与说明。见 docs/SPEC.md §12.1。 */
 window.HUB = window.HUB || {};
 HUB.zh = {
   agents: {

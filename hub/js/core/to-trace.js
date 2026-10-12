@@ -1,5 +1,5 @@
 /* HUB.toTrace: one run of the model -> a session in the trace contract (trace/packages/contract) plus its
-   coarse-grained layer, the run's decisions (hub/SPEC.md 17.5). The run's detail is drawn by the trace view,
+   coarse-grained layer, the run's decisions (docs/SPEC.md 17.5). The run's detail is drawn by the trace view,
    so a simulated run and a parsed session look the same; the simulator is just the first producer of the layer.
    Pure: no DOM. trace/packages/contract/test/hub-export.test.ts checks the output against the contract. */
 (function () {

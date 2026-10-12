@@ -1,85 +1,24 @@
-# Personal research files (not for public repo)
-analizy-html/
-analizy-md/
-live-monitor-research/
-ikony/
-podcast/
-v12/
-v30/AGENT_TEAMS_CONFIGURATOR_v30_backup.html
-
-# Development history between the two published versions (v32 and v41).
-# Only the shipped versions are public; the intermediate work (research drops,
-# in-progress redesigns, frozen fallbacks) stays local.
-v33/
-v34/
-v35/
-v36/
-v37/
-v38/
-v39/
-v40/
-
-# Local debug screenshots (used to verify a fix, not project content)
-screen/
-
-# Personal/local documents
-TRAINING_CURRICULUM_AI_ENGINEER.md
-
-# Polish versions of docs (English versions are on GitHub)
-ROADMAP_pl.md
-MANIFEST_pl.md
-CLAUDE_pl.md
-v30/CHANGES_pl.md
-
-# Local .claude working files
-.claude/commands_pl/
-.claude/skills/
-
-# Claude Code local settings (may contain API keys)
-.claude/settings.local.json
-
-# OrgChart experiments (separate project)
-orgchart/
-orgchart-demo/
-
-# Vercel deploy experiments
-vercel-deploy/
-
-# Local working folders (raw screenshots, NotebookLM research materials)
-GIF i screens/
-notebookLM/
-
-# Generated scripts (icons already embedded in HTML)
-ikony/generate_all.js
-ikony/regenerate_fix.js
-ikony/generate_presets.js
-ikony/agent_img_data.js
-ikony/agent_img_entries.txt
-ikony/agent_img_block.txt
-ikony/preset_img_block.txt
-ikony/dp_entry.txt
-
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Node
+# dependencies and build output
 node_modules/
+dist/
 
-# Editor
-*.swp
-*.swo
-*~
-.vscode/
-.idea/
-
-# The reference corpus: about 250 MB of machine-written cases, generated on the author's machine
+# the reference corpus: about 250 MB of machine-written cases, generated on the author's machine
 # by hub/tools/_reference/import_*.js. Only its README is committed.
 hub/cases/_reference/*
 !hub/cases/_reference/README.md
 
-# Local tooling (machine-specific paths)
+# parsed sessions are private: they stay on the machine they came from
+trace-data/
+*.local.json
+
+# local tooling and editor files
 .mcp.json
 .code-review-graph/
 .claude/
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini

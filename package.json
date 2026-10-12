@@ -8,7 +8,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "setup": "npm ci --prefix trace",
+    "setup": "npm ci --prefix trace && npm run build --prefix trace",
     "start": "node --no-warnings=ExperimentalWarning trace/apps/cli/src/main.ts serve",
     "build": "npm run build --prefix trace",
     "typecheck": "npm run typecheck --prefix trace",

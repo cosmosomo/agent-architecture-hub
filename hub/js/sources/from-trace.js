@@ -1,5 +1,5 @@
 /* HUB.fromTrace: sessions in the trace contract (trace/packages/contract) -> the observatory's unified model
-   (hub/SPEC.md 5), so a real multi-agent run is drawn by the same org views as the simulated cases. It is the
+   (docs/SPEC.md 5), so a real multi-agent run is drawn by the same org views as the simulated cases. It is the
    other direction of HUB.toTrace. Sessions carry no orchestration, so the definitions are read off the facts:
    - every session is an individual; a session nobody started is the hub the person talks to;
    - sub-agents started in the same turn of their parent form a group, one dispatch, nested under the group of
