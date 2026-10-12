@@ -49,6 +49,7 @@
 @media (max-width: 1600px) { .ob-vbtn .ob-vq { display: none; } .ob-vbtn { height: 34px; } .ob-vbtn:not(.on) .ob-vtx { display: none; } .ob-vbtn:not(.on) { padding: 0 6px; } }
 
 /* ---------- the layer inside the canvas ---------- */
+body.ob-dragging, body.ob-dragging .ob-card, body.ob-dragging .ob-fh { cursor: grabbing; user-select: none; }
 .ob-layer { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; z-index: 2; }
 .ob-frames, .ob-cards { position: absolute; left: 0; top: 0; width: 0; height: 0; }
 .ob-svg { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 1; }

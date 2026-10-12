@@ -7,7 +7,7 @@
  */
 const { createContext, loadScripts, pageScripts } = require('./load.js');
 
-const ctx = loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/', 'js/obs/avatar.js', 'js/obs/cards.js', 'js/obs/scene-', 'js/obs/panels.js']));
+const ctx = loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/', 'js/obs/avatar.js', 'js/obs/cards.js', 'js/obs/scene-', 'js/obs/panels.js', 'js/obs/drag.js']));
 const HUB = ctx.HUB;
 const ids = process.argv[2] ? [process.argv[2]] : Object.keys(HUB.base.presets);
 const overlap = (p, q) => p.x < q.x + q.w - 0.5 && q.x < p.x + p.w - 0.5 && p.y < q.y + q.h - 0.5 && q.y < p.y + p.h - 0.5;
@@ -50,5 +50,28 @@ ids.forEach((id) => {
   if (errs.length) { failures += 1; console.log('FAIL ' + id + '\n  ' + errs.slice(0, 6).join('\n  ') + (errs.length > 6 ? '\n  ... ' + (errs.length - 6) + ' more' : '')); }
   else console.log('ok   ' + id);
 });
+// a hand-made move lies on top of the layout: the card and what sits in its frame move, nothing else does, the box stays
+(function () {
+  const id = 'security', m = HUB.model.select(id);
+  HUB.store.init({ caseId: id });
+  const s = Object.assign({}, HUB.store.get(), { subject: 'org', depth: { org: 3, process: 1, exec: 1 } });
+  const sc = HUB.obsSceneOrg.build(m, s, HUB.model.an(s, m), { w: 1300, h: 760 });
+  const frame = sc.frames.find((f) => f.kind === 'frame');
+  const inside = sc.cards.filter((c) => (c.anchor || []).includes(frame.key));
+  const outside = sc.cards.filter((c) => !(c.anchor || []).includes(frame.key) && c.key !== frame.key);
+  HUB.obsDrag.put(id, 'org', frame.key, 40, 25);
+  HUB.obsDrag.put(id, 'org', inside[0].key, 10, 0);
+  const moved = HUB.obsDrag.apply(sc, id, 'org');
+  const at = (o, k) => (o.cards.concat(o.frames)).find((x) => x.key === k);
+  const errs = [];
+  if (at(moved, frame.key).x !== frame.x + 40 || at(moved, frame.key).y !== frame.y + 25) errs.push('the frame did not move by its offset');
+  inside.forEach((c, i) => { const want = c.x + 40 + (i === 0 ? 10 : 0); if (at(moved, c.key).x !== want) errs.push(c.key + ' did not follow its frame'); });
+  outside.forEach((c) => { if (at(moved, c.key).x !== c.x || at(moved, c.key).y !== c.y) errs.push(c.key + ' moved but is not in the frame'); });
+  if (moved.bbox !== sc.bbox) errs.push('a move changed the box the camera frames');
+  if (at(sc, frame.key).x !== frame.x) errs.push('apply changed the scene it was given');
+  HUB.obsDrag.put(id, 'org', frame.key, 0, 0); HUB.obsDrag.reset();
+  if (HUB.obsDrag.count(id, 'org')) errs.push('reset left moves behind');
+  if (errs.length) { failures += 1; console.log('FAIL drag\n  ' + errs.join('\n  ')); } else console.log('ok   drag');
+})();
 console.log(failures ? failures + ' preset(s) failed' : 'all presets passed');
 process.exit(failures ? 1 : 0);

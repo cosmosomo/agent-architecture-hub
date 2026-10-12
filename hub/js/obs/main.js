@@ -46,7 +46,11 @@
     els.status = document.getElementById('statbar');
 
     // canvas: the layer and the floating controls
-    HUB.obsStage.mount(document.getElementById('cvT'), { select: onSelect, toggle: onToggle, open: onOpen });
+    var layer = HUB.obsStage.mount(document.getElementById('cvT'), { select: onSelect, toggle: onToggle, open: onOpen });
+    HUB.obsDrag.mount(layer, {
+      redraw: function (sc) { HUB.obsStage.render(sc, { instant: true }); },
+      changed: function () { renderCtrl(st()); }
+    });
     els.crumbs = h('div', { class: 'ob-float ob-crumbs' });
     els.topctl = h('div', { class: 'ob-float ob-topctl' });
     els.ctrl = h('div', { class: 'ob-float ob-ctrl' });
@@ -112,6 +116,7 @@
     var view = { w: cvA.clientWidth || 1200, h: cvA.clientHeight || 700 };
     var scene = safe('scene', function () { return buildScene(m, s, a, view); });
     if (!scene) return;
+    scene = HUB.obsDrag.apply(scene, m.id, s.subject);
     var caseChanged = lastModelId !== m.id;
     lastModelId = m.id;
     if (caseChanged) HUB.obsStage.clear();
@@ -311,6 +316,7 @@
         HUB.store.set({ merged: suggestMerge(m) });
       } }, hasMerged ? '取消聚合' : '自动分组'));
     }
+    if (HUB.obsDrag.count(model().id, s.subject)) els.ctrl.appendChild(h('button', { type: 'button', class: 'ob-ibtn', title: '把手动挪过的卡片和分组放回自动排好的位置', onClick: function () { HUB.obsDrag.reset(); } }, '还原布局'));
     els.ctrl.appendChild(h('button', { type: 'button', class: 'ob-ibtn', title: '适应窗口（F）', onClick: fit }, '适应窗口'));
   }
 
