@@ -4,7 +4,7 @@
  *   scan                         update the index; prints counts only
  *   list [--limit N] [--state S] list indexed sessions (titles included)
  *   show <id> [--otel] [--out F] one session as contract JSON (or OTLP)
- *   serve [--port P] [--host H]  local service: /api, /trace/ (viewer), / (observatory)
+ *   serve [--port P] [--host H]  the whole observatory on one address (default 127.0.0.1:8899): / page, /api, /trace/
  *   index                        build or update the step search index; prints counts only
  *
  *   --root DIR    search DIR instead of the default homes (repeatable)
@@ -20,6 +20,8 @@ import { SearchIndex } from './search.ts';
 import { createService, listen } from './server.ts';
 import { SessionStore, type Root } from './store.ts';
 
+/** The one address of the observatory: page, sessions API and Trace viewer. */
+const DEFAULT_PORT = 8899;
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TRACE_DIR = resolve(HERE, '..', '..', '..');
 const REPO_ROOT = resolve(TRACE_DIR, '..');
@@ -114,22 +116,26 @@ async function main() {
       return;
     }
     case 'serve': {
-      await scan(store);
+      // The page is up at once; sessions fill in while the first scan runs (the page polls the index).
       const search = new SearchIndex(searchFile(store));
-      search.sync(store.files(), (f) => store.parseSource(f)).then((r) => { if (r.indexed || r.removed) console.log('检索索引就绪：重建 ' + r.indexed + ' 个会话，用时 ' + (r.ms / 1000).toFixed(1) + ' 秒'); }).catch((err) => console.error('检索索引出错：' + (err instanceof Error ? err.message : err)));
       const server = createService({ store, search, repoRoot: REPO_ROOT, viewerDir: join(TRACE_DIR, 'apps', 'viewer', 'dist') });
-      const url = await listen(server, Number(flag(a, 'port') || 8790), flag(a, 'host') || '127.0.0.1');
-      console.log('本地服务 ' + url + '/   观察台');
-      console.log('         ' + url + '/trace/   Trace 查看器');
+      const url = await listen(server, Number(flag(a, 'port') || DEFAULT_PORT), flag(a, 'host') || '127.0.0.1');
+      console.log('观察台 ' + url + '/');
+      console.log('Trace  ' + url + '/trace/');
       console.log('按 Ctrl+C 停止');
+      scan(store)
+        .then(() => search.sync(store.files(), (f) => store.parseSource(f)))
+        .then((r) => { if (r.indexed || r.removed) console.log('检索索引就绪：重建 ' + r.indexed + ' 个会话，用时 ' + (r.ms / 1000).toFixed(1) + ' 秒'); })
+        .catch((err) => console.error('扫描出错：' + (err instanceof Error ? err.message : err)));
       return;
     }
     default:
-      console.log(['用法：node apps/cli/src/main.ts <scan|list|show|serve> [选项]', '  scan                     更新索引，只打印数量', '  list [--limit N] [--state S]', '  show <id> [--otel] [--out 文件]', '  serve [--port 8790] [--host 127.0.0.1]', '  index                    建立或更新检索索引', '  --root 目录   换搜索目录（可多次）', '  --cache 文件  索引缓存文件'].join('\n'));
+      console.log(['用法：node apps/cli/src/main.ts <scan|list|show|serve> [选项]', '  scan                     更新索引，只打印数量', '  list [--limit N] [--state S]', '  show <id> [--otel] [--out 文件]', '  serve [--port 8899] [--host 127.0.0.1]', '  index                    建立或更新检索索引', '  --root 目录   换搜索目录（可多次）', '  --cache 文件  索引缓存文件'].join('\n'));
   }
 }
 
 main().catch((err) => {
   console.error(err instanceof Error ? err.message : err);
+  if ((err as NodeJS.ErrnoException)?.code === 'EADDRINUSE') console.error('端口被占用：可能是旧的静态服务还开着。关掉它，或换一个：npm start -- --port 8900');
   process.exit(1);
 });

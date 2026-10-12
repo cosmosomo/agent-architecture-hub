@@ -79,3 +79,8 @@ hub/dist/
 
 # Imported case corpus (250MB, regenerable via hub/tools/import_*.js)
 hub/cases_imported/
+
+# Local tooling (machine-specific paths)
+.mcp.json
+.code-review-graph/
+.claude/

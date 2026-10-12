@@ -1,12 +1,14 @@
 /**
- * Local HTTP service. Serves, on 127.0.0.1 only:
+ * Local HTTP service: the whole observatory behind one address, on 127.0.0.1 only.
  *   /api/...   the session index and sessions (contract JSON, or OTLP); a session with all its sub-agents
  *   /trace/    the Trace viewer (apps/viewer/dist)
- *   /          the observatory page (repo index.html) and /hub/ its assets
+ *   /          the observatory page (repo index.html)
+ *   /hub/      its assets, with plain directory listings so the page finds cases and graphs by itself
+ *              (the same listing a static server such as `python -m http.server` gives)
  * Everything is same-origin, so no CORS header is sent: other sites in the
  * browser cannot read the sessions. A Host check blocks DNS rebinding.
  */
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readdirSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import { CONTRACT_VERSION, overview, type RootInfo, type Session, type SessionDoc, type SessionSummary } from '@hub-trace/contract';
@@ -87,16 +89,30 @@ function json(res: ServerResponse, code: number, value: unknown, headers: Record
   send(res, code, JSON.stringify(value), 'application/json; charset=utf-8', headers);
 }
 
-/** A file under `dir`, or null when the path escapes it or does not exist. */
-function fileUnder(dir: string, rel: string): string | null {
+/** A path of the given kind under `dir`, or null when it escapes `dir` or does not exist. */
+function under(dir: string, rel: string, kind: 'isFile' | 'isDirectory'): string | null {
   const base = resolve(dir);
   const p = resolve(base, '.' + sep + rel);
   if (p !== base && !p.startsWith(base + sep)) return null;
   try {
-    return statSync(p).isFile() ? p : null;
+    return statSync(p)[kind]() ? p : null;
   } catch {
     return null;
   }
+}
+const fileUnder = (dir: string, rel: string) => under(dir, rel, 'isFile');
+const dirUnder = (dir: string, rel: string) => under(dir, rel, 'isDirectory');
+
+const escHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+/** A directory as a page of links, directories with a trailing slash; dotfiles stay out. */
+function listing(dir: string, urlPath: string): string {
+  const names = readdirSync(dir, { withFileTypes: true })
+    .filter((e) => !e.name.startsWith('.'))
+    .map((e) => e.name + (e.isDirectory() ? '/' : ''))
+    .sort();
+  const rows = names.map((n) => '<li><a href="' + escHtml(encodeURI(n)) + '">' + escHtml(n) + '</a></li>').join('\n');
+  return '<!doctype html><meta charset="utf-8"><title>' + escHtml(urlPath) + '</title><h1>' + escHtml(urlPath) + '</h1><ul>\n' + rows + '\n</ul>\n';
 }
 
 function sendFile(res: ServerResponse, path: string, head: boolean) {
@@ -121,11 +137,12 @@ export function createService(opts: ServeOptions): Server {
       if (!allowedHosts.has(String(req.headers.host || '').toLowerCase())) return send(res, 403, 'host not allowed');
       if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'read only');
       const url = new URL(req.url || '/', 'http://local');
-      const path = decodeURIComponent(url.pathname);
+      let path: string;
+      try { path = decodeURIComponent(url.pathname); } catch { return send(res, 400, 'bad path'); }
       const head = req.method === 'HEAD';
 
       if (path === '/api/health') {
-        return json(res, 200, { ok: true, contract: CONTRACT_VERSION, sessions: store.index().sessions.length, viewer: existsSync(join(viewerDir, 'index.html')), search: search ? search.status() : null, roots: store.roots.map((r) => ({ kind: r.adapter.kind, dir: r.dir, exists: existsSync(r.dir) })) });
+        return json(res, 200, { ok: true, contract: CONTRACT_VERSION, scanning: store.isScanning(), sessions: store.index().sessions.length, viewer: existsSync(join(viewerDir, 'index.html')), search: search ? search.status() : null, roots: store.roots.map((r) => ({ kind: r.adapter.kind, dir: r.dir, exists: existsSync(r.dir) })) });
       }
       if (path === '/api/overview') {
         const roots: RootInfo[] = store.roots.map((r) => ({ kind: r.adapter.kind, label: r.adapter.label, dir: r.dir, exists: existsSync(r.dir) }));
@@ -175,8 +192,13 @@ export function createService(opts: ServeOptions): Server {
         return file ? sendFile(res, file, head) : send(res, 404, 'not found');
       }
       if (path.startsWith('/hub/')) {
-        const file = fileUnder(join(repoRoot, 'hub'), path.slice('/hub/'.length));
-        return file ? sendFile(res, file, head) : send(res, 404, 'not found');
+        const hubDir = join(repoRoot, 'hub'), rel = path.slice('/hub/'.length);
+        const file = fileUnder(hubDir, rel);
+        if (file) return sendFile(res, file, head);
+        const dir = dirUnder(hubDir, rel);
+        if (!dir) return send(res, 404, 'not found');
+        if (!path.endsWith('/')) { res.writeHead(301, { Location: path + '/' }); return res.end(); }
+        return send(res, 200, head ? '' : listing(dir, path), 'text/html; charset=utf-8');
       }
       return send(res, 404, 'not found');
     } catch (err) {

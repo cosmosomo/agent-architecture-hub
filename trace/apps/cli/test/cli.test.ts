@@ -72,6 +72,10 @@ test('service: index, sessions, OTLP, static files, and its guards', async () =>
   mkdirSync(join(repo, 'hub', 'js'), { recursive: true });
   writeFileSync(join(repo, 'index.html'), '<!doctype html><title>obs</title>');
   writeFileSync(join(repo, 'hub', 'js', 'a.js'), 'var a = 1;');
+  mkdirSync(join(repo, 'hub', 'cases', 'alpha'), { recursive: true });
+  mkdirSync(join(repo, 'hub', 'cases', '_reference'), { recursive: true });
+  writeFileSync(join(repo, 'hub', 'cases', '_index.md'), '');
+  writeFileSync(join(repo, 'hub', '.hidden'), 'x');
   writeFileSync(join(repo, 'secret.txt'), 'outside');
   const viewer = join(dir, 'viewer');
   mkdirSync(viewer);
@@ -105,6 +109,17 @@ test('service: index, sessions, OTLP, static files, and its guards', async () =>
     assert.equal((await get(base, '/hub/../secret.txt')).status, 404, 'no way out of hub/');
     assert.equal((await get(base, '/hub/%2e%2e/secret.txt')).status, 404);
     assert.equal((await get(base, '/secret.txt')).status, 404);
+
+    const ls = await get(base, '/hub/cases/');
+    assert.equal(ls.status, 200);
+    assert.match(String(ls.headers['content-type']), /text\/html/);
+    assert.match(ls.body, /href="alpha\/"/, 'a directory is listed with a trailing slash, as a static server does');
+    assert.match(ls.body, /href="_reference\/"/);
+    assert.match(ls.body, /href="_index\.md"/);
+    assert.doesNotMatch((await get(base, '/hub/')).body, /hidden/, 'dotfiles are not listed');
+    assert.equal((await get(base, '/hub/cases')).status, 301, 'a directory without the slash is sent to the one with it');
+    assert.equal((await get(base, '/hub/%252e%252e/')).status, 404, 'no listing outside hub/');
+    assert.equal((await get(base, '/api/health')).body.includes('"scanning":false'), true);
     assert.equal((await get(base, '/api/sessions', 'evil.example:80')).status, 403, 'foreign Host header is refused');
   } finally {
     server.close();

@@ -197,6 +197,11 @@ export class SessionStore {
     return this.scanning;
   }
 
+  /** True while a scan is running: the index is still filling. */
+  isScanning(): boolean {
+    return this.scanning !== null;
+  }
+
   /** Scan unless the last scan is younger than `maxAgeMs`. */
   async refresh(maxAgeMs: number): Promise<void> {
     if (this.now() - this.lastScan >= maxAgeMs) await this.scan();
