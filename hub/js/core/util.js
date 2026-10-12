@@ -46,9 +46,10 @@
   // Times are ms since the start of the model's span. A simulated model reads them on the simulated clock
   // ("第1天 09:42"); a model of real sessions sets its start as the clock and reads real dates ("10月8日 14:05").
   var DAY = 24 * 3600 * 1000, START_HOUR = 9;
-  var clock = null;   // null: simulated days; a number: real start time; 'ordinal': recorded order only (one minute a turn)
-  function setClock(base) { clock = base == null ? null : base; }
+  // the clock is a property of the model on screen: null = simulated days; a number = real start time; 'ordinal' = recorded order only (one minute a turn)
+  function clockOf() { var m = HUB.model && HUB.model.current; return m && m.clock != null ? m.clock : null; }
   function fmtClock(t) {
+    var clock = clockOf();
     if (t == null || isNaN(t)) return '-';
     if (clock === 'ordinal') return '第 ' + (Math.floor(t / 60000) + 1) + ' 条';
     if (clock != null) { var dt = new Date(clock + t); return (dt.getMonth() + 1) + '月' + dt.getDate() + '日 ' + pad2(dt.getHours()) + ':' + pad2(dt.getMinutes()); }
@@ -58,6 +59,7 @@
     return '第' + d + '天 ' + pad2(Math.floor(m / 60)) + ':' + pad2(m % 60);
   }
   function fmtTime(t) {
+    var clock = clockOf();
     if (t == null || isNaN(t)) return '-';
     if (clock === 'ordinal') return '第 ' + (Math.floor(t / 60000) + 1) + ' 条';
     if (clock != null) { var dt = new Date(clock + t); return pad2(dt.getHours()) + ':' + pad2(dt.getMinutes()) + ':' + pad2(dt.getSeconds()); }
@@ -67,6 +69,7 @@
   }
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
   function fmtDur(ms) {
+    var clock = clockOf();
     if (ms == null || isNaN(ms)) return '-';
     if (clock === 'ordinal') return Math.max(1, Math.round(ms / 60000)) + ' 条';
     if (ms < 1000) return Math.round(ms) + '毫秒';
@@ -150,8 +153,7 @@
 
   /* 能不能对照（HUB.analysis.comparability）决定页面上几处结论的说法；和顺序时钟一样，选中模型时设置一次。
      full：模拟案例、本机会话；written：真实轨迹对补写的编排；none：真实轨迹里只有发言先后。 */
-  var cmpLevel = 'full';
-  function setCompare(c) { cmpLevel = (c && c.level) || 'full'; }
+  function cmpLevel() { var m = HUB.model && HUB.model.current; return (m && m.cmp && m.cmp.level) || 'full'; }
   var CMP_WORDS = {
     never: { full: '从没派出过', written: '这份记录里没有出现' },
     neverShort: { full: '未派', written: '未出现' },
@@ -167,7 +169,7 @@
       written: '这个案例的事实是真实轨迹，定义是我们补写的编排。所以体检只说“这份记录里没有出现”“与补写的编排不一致”，不说对方系统设计了没用上，也不说它偏离了设计。点一条，图上会带你去看它。',
       none: '这个案例的真实轨迹只有发言先后，没有交接的依据；定义是我们补写的编排。体检不拿任务线去对照，只列出记录里没有出现的成员。' }
   };
-  function cmpWord(key) { var w = CMP_WORDS[key] || {}; return w[cmpLevel] || (cmpLevel === 'none' && w.written) || w.full || ''; }
+  function cmpWord(key) { var w = CMP_WORDS[key] || {}, lv = cmpLevel(); return w[lv] || (lv === 'none' && w.written) || w.full || ''; }
   // Evaluations (failure labels, outcomes) are a layer the person can switch off (store overlays.evals). Imported cases
   // also write them into names, in brackets ("本次失败的归因对象", "标注为失败"): with the layer off those remarks go too.
   // With the layer on, which is the default, the text comes back untouched.
@@ -186,9 +188,9 @@
   };
 
   HUB.util = {
-    esc: esc, h: h, svg: svg, setClock: setClock, fmtClock: fmtClock, fmtTime: fmtTime, fmtDur: fmtDur, fmtNum: fmtNum, pct: pct,
+    esc: esc, h: h, svg: svg, fmtClock: fmtClock, fmtTime: fmtTime, fmtDur: fmtDur, fmtNum: fmtNum, pct: pct,
     rng: rng, hashStr: hashStr, byId: byId, groupBy: groupBy, clamp: clamp, sum: sum, uniq: uniq, uid: uid,
     toolList: toolList, toolChannelId: toolChannelId, LABELS: LABELS, DAY: DAY, fmtTokens: fmtTokens, sumTokens: sumTokens,
-    setCompare: setCompare, cmpWord: cmpWord, cmpLevel: function () { return cmpLevel; }, quietEval: quietEval
+    cmpWord: cmpWord, cmpLevel: cmpLevel, quietEval: quietEval
   };
 })();

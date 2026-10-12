@@ -54,8 +54,8 @@ function geometry(st, tag, errs) {
     m.rev = 0;
     m.idx = HUB.analysis.buildIdx(m.def, m.facts);
     HUB.store.init({ caseId: id });
-    HUB.util.setClock(m.clock);
-    HUB.util.setCompare(HUB.analysis.comparability(m));
+    HUB.model.current = m;
+    m.cmp = HUB.analysis.comparability(m);
     const base = HUB.store.get();
     const f = m.facts;
     const src = HUB.collab.source(m);

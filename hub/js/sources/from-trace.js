@@ -8,7 +8,7 @@
    - each model is a channel, an MCP server a shared channel, shell, file edits and search are basic
      capabilities, and starting sub-agents is the starter's own (native) capability.
    Each turn is a run with its task; each model or tool step is a call. Times count from the first session's
-   start, which becomes the clock (HUB.util.setClock). Pure: no DOM, tested from trace/packages/contract/test. */
+   start, which becomes the model's clock. Pure: no DOM, tested from trace/packages/contract/test. */
 (function () {
   'use strict';
   var HUB = (window.HUB = window.HUB || {});

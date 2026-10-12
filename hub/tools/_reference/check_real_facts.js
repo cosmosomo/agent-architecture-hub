@@ -117,7 +117,7 @@ function counts(handoffs) {
     m.rev = 0;
     m.idx = HUB.analysis.buildIdx(m.def, m.facts);
     HUB.store.init({ caseId: id });
-    HUB.util.setClock(m.clock);
+    HUB.model.current = m;
     const base = HUB.store.get();
     const panel = HUB.panels._prepare(m, base);
     if (panel.overview.find((x) => x.key === 'tokens').value !== '未记录') errs.push('token total shown as number');

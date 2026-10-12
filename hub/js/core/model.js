@@ -23,6 +23,7 @@
     }
     m.rev = m.rev || 0;
     m.idx = HUB.analysis.buildIdx(m.def, m.facts);
+    m.cmp = HUB.analysis.comparability(m);   // what the health check may conclude (analysis.js)
     return m;
   }
 
@@ -101,8 +102,6 @@
     var src = sourceOf(caseId);
     if (cache.has(caseId)) {
       HUB.model.current = cache.get(caseId);
-      U.setClock(HUB.model.current.clock);
-      U.setCompare(HUB.analysis.comparability(HUB.model.current));
       return HUB.model.current;
     }
     if (src && src.load && !src.build) {
@@ -110,15 +109,11 @@
       load(caseId).then(function (m) {
         if (!HUB.store.get || HUB.store.get().caseId !== caseId) return;
         HUB.model.current = m;
-        U.setClock(m.clock);
-        U.setCompare(HUB.analysis.comparability(m));
         HUB.bus.emit('model', { model: m });
       }).catch(function (e) { console.warn('model ' + caseId + ' 加载失败', e && e.message); });
       return HUB.model.current;
     }
     HUB.model.current = build(caseId);
-    U.setClock(HUB.model.current.clock);
-    U.setCompare(HUB.analysis.comparability(HUB.model.current));
     return HUB.model.current;
   }
 
