@@ -96,10 +96,13 @@
         if (d.specified_task) turns.push({ speaker: 'task_specifier', kind: 'say', text: text(d.specified_task), sourceIndex: 0 });
         for (var i = 1; d['message_' + i]; i++) {
           var mm = d['message_' + i];
-          turns.push({ speaker: mm.role_type === 'USER' ? 'ai_user' : 'ai_assistant', kind: 'say', text: text(mm.content), sourceIndex: turns.length });
+          var flat = typeof mm !== 'object' || mm === null;   // 学科集（biology/chemistry/...）是平铺格式：message_N 为纯文本，奇数条=用户提问、偶数条=助手作答
+          var sp = flat ? (i % 2 === 1 ? 'ai_user' : 'ai_assistant') : (mm.role_type === 'USER' ? 'ai_user' : 'ai_assistant');
+          turns.push({ speaker: sp, kind: 'say', text: text(flat ? mm : mm.content), sourceIndex: turns.length });
         }
         var done = /done/i.test(d.termination_reason || '');
-        return { name: cut((d.role_1 || '') + ' × ' + (d.role_2 || ''), 40).replace(/_RoleType\.\w+/g, ''), outcome: done ? 'success' : 'unfinished',
+        var nm = cut((d.role_1 || '') + (d.role_2 ? ' × ' + d.role_2 : ''), 40).replace(/_RoleType\.\w+/g, '').trim();
+        return { name: nm, outcome: done ? 'success' : 'unfinished',
           note: '结束原因：' + (d.termination_reason || '未知'), turns: turns, mistake: null };
       });
     }

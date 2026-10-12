@@ -31,7 +31,7 @@ function records(reader, d) {
   if (reader === 'whowhen') return d.map((x) => txt(x.content));
   if (reader === 'taubench') return d.traj.map((x) => txt(x.content));
   const out = d.specified_task ? [txt(d.specified_task)] : [];
-  for (let i = 1; d['message_' + i]; i++) out.push(txt(d['message_' + i].content));
+  for (let i = 1; d['message_' + i]; i++) { const m = d['message_' + i]; out.push(txt(m != null && typeof m === 'object' ? m.content : m)); }
   return out;
 }
 function counts(handoffs) {
