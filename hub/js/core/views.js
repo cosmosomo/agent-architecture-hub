@@ -88,11 +88,16 @@
   HUB.views = { register: register, list: function () { return list.slice(); }, get: get, current: current, go: go,
     mine: loadMine, saveCurrent: saveCurrent, removeMine: removeMine, goMine: goMine };
 
-  /* Renderer registry: one renderer per subject ('org' | 'process' | 'exec'). */
-  HUB.render = HUB.render || {
-    _r: {},
-    register: function (subject, renderer) { this._r[subject] = renderer; },
-    get: function (subject) { return this._r[subject] || null; }
+  /* Renderers: one per subject of the observation state ('org', 'process', 'exec', 'collab', ...).  A renderer has
+       scene(model, state, analysis, view) -> scene   a pure description of cards, frames and links that the stage draws, and/or
+       layer {mount(ctx), render(state, model)}       an element of its own on the canvas, for a subject the stage cannot draw;
+     ctx is {canvas, side, pane}: the canvas, the right sidebar and the pane the right sidebar starts with.
+     A layer is asked to render on every change and hides itself when its subject is not the one on show. */
+  var renderers = {};
+  HUB.render = {
+    register: function (subject, renderer) { renderers[subject] = renderer; },
+    get: function (subject) { return renderers[subject] || null; },
+    all: function () { return Object.keys(renderers).map(function (k) { return renderers[k]; }); }
   };
 
   /* Which node stands for an individual in the org subject: the outermost closed group above it, else itself. */

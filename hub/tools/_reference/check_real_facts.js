@@ -8,7 +8,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { createContext, loadScripts, pageScripts, fsFetch, findCases, HUB_DIR } = require('../load.js');
+const { createContext, loadScripts, pageScripts, fsFetch, findCases, metaOf, HUB_DIR } = require('../load.js');
 
 const ctx = loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/', 'js/obs/avatar.js', 'js/obs/cards.js', 'js/obs/scene-', 'js/obs/panels.js']));
 const HUB = ctx.HUB;
@@ -18,8 +18,7 @@ const only = process.argv.slice(2);
 const root = path.join(HUB_DIR, 'cases', '_reference');
 const found = fs.existsSync(root) ? findCases(root, { shelved: true }).filter((c) => fs.existsSync(path.join(c.dir, 'traces', 'index.json'))) : [];
 const dirOf = new Map(found.map((c) => [c.id, c.dir]));
-const ids = found.map((c) => c.id)
-  .filter((d) => HUB.fromTraces.readers.some((r) => r.match(d)))
+const ids = found.filter((c) => HUB.fromTraces.readerFor(metaOf(c.dir))).map((c) => c.id)
   .filter((d) => !only.length || only.some((o) => d === o || d.startsWith(o)));
 
 // 直接比对原始文件，避免用 reader 自己的输出作为逐字保真的判据。

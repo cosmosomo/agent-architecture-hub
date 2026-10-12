@@ -2,7 +2,7 @@
    (docs/SPEC.md 5; hub/cases_imported/PROPOSAL_lossless_adapter.md B and F). The definitions stay what the Markdown
    orchestration says; only the facts change from simulated to recorded, so every view compares the written
    orchestration with what really happened.
-   - a reader per source format turns the files into episodes: one recorded run of the whole team, a list of turns
+   - a reader per source format (chosen by the `source:` line of the case's meta.md) turns the files into episodes: one recorded run of the whole team, a list of turns
      (who spoke, to whom, what), the outcome and any failure label the source gives;
    - a speaker is matched to an individual by id or name; one the orchestration does not have is added and marked
      factOnly, never dropped; tool output is a tool call of the agent that asked for it;
@@ -37,7 +37,7 @@
   // Algorithm-Generated runs name the expert; hand-crafted Magentic-One runs put it in role: 'Orchestrator (-> WebSurfer)'.
   var whowhen = {
     id: 'whowhen', label: 'Who&When 失败归因数据集', product: 'Who&When',
-    match: function (caseId) { return caseId.indexOf('imp_whowhen_') === 0; },
+    match: function (meta) { return /Agents_Failure_Attribution/.test(meta.source || ''); },
     episodes: function (files, parts) {
       var h = files[0] && Array.isArray(files[0].data) ? files[0].data : [];
       var k1 = (parts.scenarios.cases || [])[0] || {};
@@ -66,7 +66,7 @@
   // tau-bench: one dialog per file, traj = [{ role: system|user|assistant|tool, content }], reward 1 = success.
   var taubench = {
     id: 'taubench', label: 'τ-bench 对话轨迹', product: 'τ-bench', switchBasis: 'protocol',
-    match: function (caseId) { return caseId.indexOf('imp_taubench_') === 0; },
+    match: function (meta) { return /tau-bench|tau_bench|taubench/i.test(meta.source || ''); },
     episodes: function (files) {
       return files.filter(function (f) { return f.data && Array.isArray(f.data.traj); }).map(function (f) {
         var d = f.data, turns = [];
@@ -89,7 +89,7 @@
   // CAMEL role-playing: { original_task, specified_task, message_1..n: { role_type: USER|ASSISTANT, content }, termination_reason }.
   var camel = {
     id: 'camel', label: 'CAMEL 角色扮演对话', product: 'CAMEL', switchBasis: 'protocol',
-    match: function (caseId) { return caseId.indexOf('imp_camel_') === 0; },
+    match: function (meta) { return /camel-ai/i.test(meta.source || ''); },
     episodes: function (files) {
       return files.filter(function (f) { return f.data && f.data.message_1; }).map(function (f) {
         var d = f.data, turns = [];
@@ -109,6 +109,8 @@
   };
 
   var READERS = [whowhen, taubench, camel];
+  // the reader that knows a case's traces: the one whose product the case's meta.md names as its source
+  function readerFor(meta) { return READERS.find(function (r) { return r.match(meta || {}); }) || null; }
 
   /* ---------- speakers -> individuals ---------- */
   function resolver(def, reader) {
@@ -378,7 +380,7 @@
   /** get(path) -> Promise<string> relative to the case directory; parts are from-docs' parsed files.
       Resolves with the model, its facts replaced when a reader knows these traces; otherwise untouched. */
   function attach(model, get, parts) {
-    var reader = READERS.find(function (r) { return r.match(model.id); });
+    var reader = readerFor(parts && parts.meta);
     if (!reader) return Promise.resolve(model);
     return get('traces/index.json').then(function (t) {
       var idx = parse(t);
@@ -399,8 +401,8 @@
     });
   }
 
-  HUB.fromTraces = { attach: attach, build: build, readers: READERS };
+  HUB.fromTraces = { attach: attach, build: build, readers: READERS, readerFor: readerFor };
   if (HUB.facts) HUB.facts.register({ id: 'recorded-traces',
-    applies: function (model, ctx) { return !!ctx.get && READERS.some(function (r) { return r.match(model.id); }); },
+    applies: function (model, ctx) { return !!ctx.get && !!readerFor(ctx.parts && ctx.parts.meta); },
     provide: function (model, ctx) { return attach(model, ctx.get, ctx.parts); } });
 })();

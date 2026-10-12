@@ -67,10 +67,8 @@
     // right sidebar: the details pane
     var sr = document.getElementById('sR');
     els.sr = document.getElementById('obSr');
-    // a run's detail: the trace tree over the canvas, the selected step's details under our pane
-    if (HUB.obsTrace) HUB.obsTrace.mount(cvA, sr, els.sr);
-    // the trajectory of one case instance: its own layer over the canvas
-    if (HUB.obsCollab) safe('collab.mount', function () { HUB.obsCollab.mount(cvA); });
+    // the subjects the stage cannot draw have a layer of their own over the canvas (a run's trace tree, the trajectory of a case)
+    HUB.render.all().forEach(function (r) { if (r.layer) safe('layer.mount', function () { r.layer.mount({ canvas: cvA, side: sr, pane: els.sr }); }); });
 
     // a click on the empty canvas clears the selection (a drag that panned does not)
     cvA.addEventListener('click', function (e) {
@@ -103,10 +101,9 @@
 
   function buildScene(m, s, a, view) {
     if (s.present === 'panel') return { subject: 'panel', cards: [], frames: [], links: [], bbox: { x: 0, y: 0, w: 10, h: 10 } };
-    if (s.subject === 'process' && HUB.obsSceneProcess) return HUB.obsSceneProcess.build(m, s, a, view);
-    if (s.subject === 'org') return HUB.obsSceneOrg.build(m, s, a, view);
-    // exec: a run's detail is the trace view over the canvas (HUB.obsTrace), not a scene
-    return { subject: s.subject, cards: [], frames: [], links: [], bbox: { x: 0, y: 0, w: 10, h: 10 } };
+    var r = HUB.render.get(s.subject);
+    if (r && r.scene) return r.scene(m, s, a, view);
+    return { subject: s.subject, cards: [], frames: [], links: [], bbox: { x: 0, y: 0, w: 10, h: 10 } };   // a layer draws this subject
   }
 
   function renderScene(s, prev) {
@@ -122,8 +119,7 @@
     HUB.obsStage.setSelection(s.selection);
     showPanelMode(s);
     renderStrip(scene, s);
-    if (HUB.obsTrace) safe('trace', function () { HUB.obsTrace.render(s, m); });
-    if (HUB.obsCollab) safe('collab', function () { HUB.obsCollab.render(s, m); });
+    HUB.render.all().forEach(function (r) { if (r.layer) safe('layer.render', function () { r.layer.render(s, m); }); });
     var b = scene.bbox;
     var sig = [m.id, scene.subject, Math.round(b.x / 8), Math.round(b.y / 8), Math.round(b.w / 8), Math.round(b.h / 8), Math.round(view.w / 24), Math.round(view.h / 24)].join('|');
     if (sig !== lastFitSig || lastSubject !== scene.subject) {

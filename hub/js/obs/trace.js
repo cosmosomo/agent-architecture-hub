@@ -141,4 +141,5 @@
   }
 
   HUB.obsTrace = { mount: mount, render: render, target: target, current: current, available: available };
+  HUB.render.register('exec', { layer: { mount: function (ctx) { mount(ctx.canvas, ctx.side, ctx.pane); }, render: render } });
 })();

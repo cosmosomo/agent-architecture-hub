@@ -472,4 +472,5 @@
   }
 
   HUB.obsSceneOrg = { build: build, anchorsOf: anchorsOf, computeRanks: computeRanks, CARD: { w: NW, h: NH } };
+  HUB.render.register('org', { scene: build });
 })();

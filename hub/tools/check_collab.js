@@ -12,7 +12,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { createContext, loadScripts, pageScripts, fsFetch, findCases, HUB_DIR } = require('./load.js');
+const { createContext, loadScripts, pageScripts, fsFetch, findCases, metaOf, HUB_DIR } = require('./load.js');
 
 const ctx = loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/']));
 const HUB = ctx.HUB;
@@ -23,8 +23,7 @@ const refRoot = path.join(HUB_DIR, 'cases', '_reference');
 const traceCases = process.argv.includes('--all') && fs.existsSync(refRoot)
   ? findCases(refRoot, { shelved: true }).filter((c) => fs.existsSync(path.join(c.dir, 'traces', 'index.json'))) : [];
 const dirOf = new Map(traceCases.map((c) => [c.id, 'hub/' + path.relative(HUB_DIR, c.dir).split(path.sep).join('/')]));
-const traceIds = traceCases.map((c) => c.id)
-  .filter((d) => HUB.fromTraces.readers.some((r) => r.match(d)))
+const traceIds = traceCases.filter((c) => HUB.fromTraces.readerFor(metaOf(c.dir))).map((c) => c.id)
   .filter((d) => !only.length || only.some((o) => d === o || d.startsWith(o)));
 const presetIds = Object.keys(HUB.base.presets).filter((d) => !only.length || only.some((o) => d === o || d.startsWith(o)));
 

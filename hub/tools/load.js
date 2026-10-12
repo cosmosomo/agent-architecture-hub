@@ -64,4 +64,13 @@ function findCases(dir, opts) {
   return out;
 }
 
-module.exports = { createContext, loadScripts, pageScripts, fsFetch, findCases, HUB_DIR };
+/** the flat `key: value` lines of a case's meta.md frontmatter */
+function metaOf(dir) {
+  const txt = fs.readFileSync(path.join(dir, 'meta.md'), 'utf-8');
+  const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(txt);
+  const out = {};
+  (fm ? fm[1] : '').split(/\r?\n/).forEach((l) => { const m = /^([A-Za-z_]+):\s*(.*)$/.exec(l); if (m) out[m[1]] = m[2]; });
+  return out;
+}
+
+module.exports = { createContext, loadScripts, pageScripts, fsFetch, findCases, metaOf, HUB_DIR };

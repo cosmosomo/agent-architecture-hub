@@ -931,6 +931,7 @@
   function tipMove(e) { var t = els.tip, w = t.offsetWidth, hh = t.offsetHeight; t.style.left = clamp(e.clientX + 14, 8, window.innerWidth - w - 8) + 'px'; t.style.top = clamp(e.clientY + 14, 8, window.innerHeight - hh - 8) + 'px'; }
   function tipHide() { if (els.tip) els.tip.classList.remove('show'); }
 
+  HUB.render.register('collab', { layer: { mount: function (ctx) { mount(ctx.canvas); }, render: function (s, m) { render(s, m); } } });
   HUB.obsCollab = { mount: mount, render: render, key: key, play: play, pause: pause, cutLabel: cutLabel, isOn: function () { return V.on; },
     state: function () { return { cursor: V.cursor, playing: V.playing, n: V.st ? V.st.N : 0, k: V.k, vw: V.vw, vh: V.vh }; } };
 })();

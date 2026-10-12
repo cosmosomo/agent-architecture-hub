@@ -212,4 +212,5 @@
   };
 
   HUB.obsSceneProcess = { build: build };
+  HUB.render.register('process', { scene: build });
 })();
