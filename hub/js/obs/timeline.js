@@ -60,6 +60,7 @@
       (T.replay ? '<span class="ob-tl-rep">回放中 · ' + esc(T.replay.caseId || '全程') + '</span>' : '');
     var all = T.head.querySelector('[data-tl="all"]');
     if (all) all.onclick = function () { stopReplay(); HUB.store.set({ time: null }); };
+    if (!(sp && sp.b > 0)) return; // 零跨度（空模型）不画刻度，避免 NaN 坐标
     // row labels
     [['案例', 12], ['活动', 32], ['事件', 50]].forEach(function (r) { T.svg.appendChild(svg('text', { x: 10, y: r[1] + 3, class: 'ob-tl-rl' })).textContent = r[0]; });
     // day and six-hour ticks

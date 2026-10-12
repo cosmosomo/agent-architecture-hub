@@ -43,7 +43,10 @@
       if (location.protocol !== 'http:' && location.protocol !== 'https:') return Promise.reject(new Error('这个页面是直接用文件打开的，读不到本机会话'));
       return fetch('/api/sessions/' + encodeURIComponent(id.slice(5)) + '/tree', { cache: 'no-store' })
         .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? '本机没有这个会话' : '本地服务返回 ' + r.status); return r.json(); })
-        .then(function (doc) { return HUB.fromTrace.model(doc.sessions, { id: id }); });
+        .then(function (doc) {
+          if (!doc.sessions || !doc.sessions.length) throw new Error('这条会话现在读不到（可能正在写入），稍后再试');
+          return HUB.fromTrace.model(doc.sessions, { id: id });
+        });
     }
   });
   function toast(t) { if (typeof pokazToast === 'function') pokazToast(t); }
@@ -106,7 +109,7 @@
     load(el, false);
     var out = [];
     var kinds = {};
-    cache.forEach(function (s) { kinds[s.source.kind] = (kinds[s.source.kind] || 0) + 1; });
+    (cache || []).forEach(function (s) { kinds[s.source.kind] = (kinds[s.source.kind] || 0) + 1; });
     out.push('<div class="ob-sh">本机会话 · ' + (Object.keys(kinds).map(function (k) { return KIND[k] || k; }).join(' + ') || '—') + '</div>');
     if (error === 'file' || error === 'down') {
       out.push('<div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">' +
