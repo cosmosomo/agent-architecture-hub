@@ -262,4 +262,21 @@
   }
 
   HUB.fromTrace = { model: model };
+
+  /* The local service as a source of models: 'tree:<session id>' is that session and every sub-agent it started,
+     drawn by the org views like a case. The service is the one that serves this page, so the address is relative. */
+  if (HUB.model && HUB.model.addSource) {
+    HUB.model.addSource({
+      id: 'sessions', label: '本机会话',
+      owns: function (id) { return /^tree:/.test(id); },
+      load: function (id) {
+        return fetch('/api/sessions/' + encodeURIComponent(id.slice(5)) + '/tree', { cache: 'no-store' })
+          .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? '本机没有这个会话' : '本地服务返回 ' + r.status); return r.json(); })
+          .then(function (doc) {
+            if (!doc.sessions || !doc.sessions.length) throw new Error('这条会话现在读不到（可能正在写入），稍后再试');
+            return model(doc.sessions, { id: id });
+          });
+      }
+    });
+  }
 })();

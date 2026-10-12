@@ -8,23 +8,24 @@
  * Presets (simulated facts): the definition only, no records.
  * Runs without the record level (sessions of this machine are like that): one record a run. No such data is at hand
  * here, so a few presets stand in with their simulated mark taken off; that only proves the path, not a drawing.
- * Usage: node hub/tools/check_collab.js [caseId|prefix ...]
+ * Usage: node hub/tools/check_collab.js [--all] [caseId|prefix ...]   (--all adds the recorded traces of the shelved reference corpus)
  */
 const fs = require('fs');
 const path = require('path');
-const { createContext, loadScripts, HUB_DIR } = require('./load.js');
+const { createContext, loadScripts, fsFetch, findCases, HUB_DIR } = require('./load.js');
 
 const ctx = loadScripts(createContext(), ['data/base.js', 'data/zh.js',
   'js/core/util.js', 'js/core/store.js', 'js/core/casedef.js', 'js/core/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/views.js',
   'js/core/from-traces.js', 'js/core/from-docs.js', 'js/core/collab.js']);
 const HUB = ctx.HUB;
-const fetchFn = (u) => {
-  const p = path.join(HUB_DIR, u.replace(/^hub\//, ''));
-  return Promise.resolve(fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '');
-};
-const only = process.argv.slice(2);
-const root = path.join(HUB_DIR, 'cases_imported');
-const traceIds = fs.readdirSync(root).filter((d) => fs.existsSync(path.join(root, d, 'traces', 'index.json')))
+const fetchFn = fsFetch;
+const only = process.argv.slice(2).filter((s) => !s.startsWith('-'));
+// the recorded-trace cases live in the shelved reference corpus (not shipped): they are only checked with --all
+const refRoot = path.join(HUB_DIR, 'cases', '_reference');
+const traceCases = process.argv.includes('--all') && fs.existsSync(refRoot)
+  ? findCases(refRoot, { shelved: true }).filter((c) => fs.existsSync(path.join(c.dir, 'traces', 'index.json'))) : [];
+const dirOf = new Map(traceCases.map((c) => [c.id, 'hub/' + path.relative(HUB_DIR, c.dir).split(path.sep).join('/')]));
+const traceIds = traceCases.map((c) => c.id)
   .filter((d) => HUB.fromTraces.readers.some((r) => r.match(d)))
   .filter((d) => !only.length || only.some((o) => d === o || d.startsWith(o)));
 const presetIds = Object.keys(HUB.base.presets).filter((d) => !only.length || only.some((o) => d === o || d.startsWith(o)));
@@ -49,7 +50,7 @@ function geometry(st, tag, errs) {
   for (const id of traceIds) {
     const errs = [];
     let m;
-    try { m = await HUB.fromDocs.loadCase(fetchFn, 'hub/cases_imported/' + id, id); } catch (e) { console.log('FAIL ' + id + ' load threw ' + e.message); failures++; continue; }
+    try { m = await HUB.fromDocs.loadCase(fetchFn, dirOf.get(id), id); } catch (e) { console.log('FAIL ' + id + ' load threw ' + e.message); failures++; continue; }
     m.rev = 0;
     m.idx = HUB.analysis.buildIdx(m.def, m.facts);
     HUB.store.init({ caseId: id });

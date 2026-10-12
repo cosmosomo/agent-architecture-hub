@@ -74,11 +74,10 @@ node_modules/
 .vscode/
 .idea/
 
-# Built single-file page (node hub/tools/build_single.js)
-hub/dist/
-
-# Imported case corpus (250MB, regenerable via hub/tools/import_*.js)
-hub/cases_imported/
+# The reference corpus: about 250 MB of machine-written cases, generated on the author's machine
+# by hub/tools/_reference/import_*.js. Only its README is committed.
+hub/cases/_reference/*
+!hub/cases/_reference/README.md
 
 # Local tooling (machine-specific paths)
 .mcp.json

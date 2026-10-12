@@ -4,24 +4,23 @@
  * real facts, analyse it, and build the org and process scenes, the way the page does. Prints how much of the
  * recording landed on the written orchestration: speakers matched, handoffs on a declared task line, fact-only
  * lines, the case path laid on the declared process. Errors: a throw, empty facts, NaN geometry, a broken link.
- * Usage: node hub/tools/check_real_facts.js [caseId|prefix ...]
+ * Usage: node hub/tools/_reference/check_real_facts.js [caseId|prefix ...]   (needs the reference corpus in hub/cases/_reference)
  */
 const fs = require('fs');
 const path = require('path');
-const { createContext, loadScripts, HUB_DIR } = require('./load.js');
+const { createContext, loadScripts, fsFetch, findCases, HUB_DIR } = require('../load.js');
 
 const ctx = loadScripts(createContext(), ['data/base.js', 'data/zh.js',
   'js/core/util.js', 'js/core/store.js', 'js/core/casedef.js', 'js/core/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/views.js',
   'js/core/from-traces.js', 'js/core/from-docs.js', 'js/obs/cards.js', 'js/obs/scene-org.js', 'js/obs/scene-process.js', 'js/panels/panels.js']);
 const HUB = ctx.HUB;
-const fetchFn = (u) => {
-  const p = path.join(HUB_DIR, u.replace(/^hub\//, ''));
-  return Promise.resolve(fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '');
-};
+const fetchFn = fsFetch;
 
 const only = process.argv.slice(2);
-const root = path.join(HUB_DIR, 'cases_imported');
-const ids = fs.readdirSync(root).filter((d) => fs.existsSync(path.join(root, d, 'traces', 'index.json')))
+const root = path.join(HUB_DIR, 'cases', '_reference');
+const found = fs.existsSync(root) ? findCases(root, { shelved: true }).filter((c) => fs.existsSync(path.join(c.dir, 'traces', 'index.json'))) : [];
+const dirOf = new Map(found.map((c) => [c.id, c.dir]));
+const ids = found.map((c) => c.id)
   .filter((d) => HUB.fromTraces.readers.some((r) => r.match(d)))
   .filter((d) => !only.length || only.some((o) => d === o || d.startsWith(o)));
 
@@ -46,7 +45,7 @@ function counts(handoffs) {
   for (const id of ids) {
     const errs = [];
     let m;
-    try { m = await HUB.fromDocs.loadCase(fetchFn, 'hub/cases_imported/' + id, id); } catch (e) { console.log('FAIL ' + id + ' load threw ' + e.message); failures++; continue; }
+    try { m = await HUB.fromDocs.loadCase(fetchFn, 'hub/' + path.relative(HUB_DIR, dirOf.get(id)).split(path.sep).join('/'), id); } catch (e) { console.log('FAIL ' + id + ' load threw ' + e.message); failures++; continue; }
     tot.cases++;
     const fs0 = m.factSource || {};
     if (fs0.kind !== 'trace') { errs.push('facts stayed simulated' + (fs0.error ? ' (' + fs0.error + ')' : '')); }
@@ -81,7 +80,7 @@ function counts(handoffs) {
       if (c.tokensIn !== null || c.tokensOut !== null) errs.push(c.id + ' call tokens not null');
     });
     if (fs0.kind === 'trace') fs0.files.forEach((nm, ei) => {
-      const raw = fs.readFileSync(path.join(root, id, 'traces', nm), 'utf8');
+      const raw = fs.readFileSync(path.join(dirOf.get(id), 'traces', nm), 'utf8');
       const d = JSON.parse(raw);
       const original = records(fs0.reader, d);
       const k = f.cases[ei];

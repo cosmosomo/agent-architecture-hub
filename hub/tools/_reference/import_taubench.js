@@ -14,8 +14,8 @@ const argv = process.argv.slice(2);
 const arg = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
 const PER = parseInt(arg('per', '4'), 10);
 const DRY = argv.includes('--dry');
-const SRC = path.resolve(__dirname, '../../../case_library/cloud/academic/hf-data/tau-bench');
-const OUT = path.resolve(__dirname, '../cases_imported');
+const SRC = path.resolve(__dirname, '../../../../case_library/cloud/academic/hf-data/tau-bench');
+const OUT = path.resolve(__dirname, '../../cases/_reference/taubench');
 const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 20) || 'x';
 
 const files = fs.readdirSync(SRC).filter((f) => f.startsWith('historical_trajectories_') && f.endsWith('.json'));

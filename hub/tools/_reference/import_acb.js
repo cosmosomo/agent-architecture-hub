@@ -20,8 +20,8 @@ const argv = process.argv.slice(2);
 const arg = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
 const has = (k) => argv.includes('--' + k);
 
-const SRC = arg('src', path.resolve(__dirname, '../../../case_library/cloud/academic/AgentCollabBench/tasks'));
-const OUT = arg('out', path.resolve(__dirname, '../cases_imported'));
+const SRC = arg('src', path.resolve(__dirname, '../../../../case_library/cloud/academic/AgentCollabBench/tasks'));
+const OUT = arg('out', path.resolve(__dirname, '../../cases/_reference/agentcollabbench'));
 const SAMPLE = parseInt(arg('sample', '2'), 10);
 const TOPO = arg('topology', null);
 const DRY = has('dry');
@@ -60,7 +60,7 @@ for (const { j, topo } of chosen) {
   const short = TOPO_SHORT[topo] || slug(topo).slice(0, 5);
   const caseId = `imp_acb_${short}_${String(ordinal[j.task_id]).padStart(3, '0')}`;
   indexRows.push(`| ${caseId} | AgentCollabBench ${topo}·${j.domain} | ${caseId}/ |`);
-  const dir = path.join(OUT, caseId);
+  const dir = path.join(OUT, caseId.split('_')[2], caseId);
   if (fs.existsSync(dir)) { skipped++; continue; }   // 目录在即跳过；索引行由末尾追加逻辑去重
   if (DRY) { console.log(`will create ${caseId}  (${j.task_id}, ${topo})`); made++; continue; }
 

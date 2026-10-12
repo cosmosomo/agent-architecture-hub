@@ -17,7 +17,7 @@
 <meta name="twitter:image" content="https://thejacksoncode.github.io/Agent-Architecture/docs/screenshots/dark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<title>Agent Architecture Designer | 60 个智能体，62 个预设</title>
+<title>Agent Architecture Hub · 多智能体协作观察台</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* === RESET & ROOT -- V27 Unified Sidebars === */
@@ -2917,12 +2917,12 @@ button.chip:hover{
 <header class="topbar">
   <!-- v41 DD80: w rogu zostaje samo logo i nazwa. Plakietka z numerem wersji zniknela
        razem z pozostalymi wzmiankami o wersji (banery encyklopedii, stala APP_VER). -->
-  <div class="tb-brand"><span class="tb-logo" id="tbLogo" role="img" aria-label="Logo"></span><h1 style="margin:0">AGENT ARCHITECTURE DESIGNER</h1></div>
+  <div class="tb-brand"><span class="tb-logo" id="tbLogo" role="img" aria-label="Logo"></span><h1 style="margin:0">AGENT ARCHITECTURE HUB</h1></div>
   <div class="tb-problem"><textarea id="probIn" placeholder="Opisz projekt lub problem..." aria-label="Opis projektu"></textarea></div>
   <div class="tb-actions">
     <button class="btn btn-wzorce" id="wzorceBtn" onclick="toggleWzorce()" title="Wzorce architektury agentów" aria-label="Przełącz tryb Wzorce">&#128208; Wzorce</button>
     <button class="btn btn-hooki" id="hookiBtn" onclick="toggleHooki()" title="Hooki - kiedy Claude Code odpala Twój kod" aria-label="Przełącz tryb Hooki">&#129693; Hooki</button>
-    <button class="btn" id="traceBtn" onclick="window.open('/trace/','_blank','noopener')" title="本机会话的 Trace 查看器：会话列表、调用树、检索、统计" aria-label="打开 Trace 查看器" style="display:none">&#9719; Trace ↗</button>
+    <button class="btn" id="traceBtn" onclick="window.open('/trace/','_blank','noopener')" title="本机会话的 Trace 查看器：会话列表、调用树、检索、统计" aria-label="打开 Trace 查看器">&#9719; Trace ↗</button>
     <!-- v41: przycisk samouczka. Latarka, nie biret ani kompas: samouczek SWIECI
          PUNKTOWO na jeden element, a nie uczy - Hooki i Wzorce maja wlasne lekcje.
          Kompas odpadl, bo uzywa go juz wzorzec Routing. Uzasadnienie: DD56.
@@ -2952,7 +2952,7 @@ button.chip:hover{
   <aside class="side-l" id="sL" aria-label="Panel agentów i presetów">
     <!-- HUB: duży, zawsze widoczny przycisk do Trace Viewer (drugi system, lokalne sesje).
          Pojawia się tylko, gdy strona jest serwowana przez lokalną usługę (sessions.js). -->
-    <button type="button" id="traceEntry" onclick="window.open('/trace/','_blank','noopener')" title="另一个系统：本机真实智能体会话的调用记录——列表、调用树、全文检索、统计" style="display:none;margin:10px 10px 6px;width:calc(100% - 20px);box-sizing:border-box;padding:9px 12px;border-radius:12px;border:1px solid rgba(129,140,248,.45);background:linear-gradient(135deg,rgba(129,140,248,.14),rgba(245,158,11,.10));cursor:pointer;text-align:left;transition:transform .2s,box-shadow .2s,border-color .2s" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 0 18px rgba(129,140,248,.25)';this.style.borderColor='rgba(129,140,248,.8)'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='rgba(129,140,248,.45)'">
+    <button type="button" id="traceEntry" onclick="window.open('/trace/','_blank','noopener')" title="另一个系统：本机真实智能体会话的调用记录——列表、调用树、全文检索、统计" style="margin:10px 10px 6px;width:calc(100% - 20px);box-sizing:border-box;padding:9px 12px;border-radius:12px;border:1px solid rgba(129,140,248,.45);background:linear-gradient(135deg,rgba(129,140,248,.14),rgba(245,158,11,.10));cursor:pointer;text-align:left;transition:transform .2s,box-shadow .2s,border-color .2s" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 0 18px rgba(129,140,248,.25)';this.style.borderColor='rgba(129,140,248,.8)'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='rgba(129,140,248,.45)'">
       <span style="display:flex;align-items:center;gap:9px">
         <span style="width:30px;height:30px;flex:none;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent1),var(--accent3));font-size:15px;color:#fff">&#9719;</span>
         <span style="min-width:0">
@@ -32532,7 +32532,6 @@ function rPresety(){
       h+='</div>';
     });
   });
-  /* hub */if(window.HUB&&HUB.obs&&HUB.obs.localCases){h+=HUB.obs.localCases(prSearch,prCatFilter.size===0);}
   if(_items===0){
     let _msg,_hint='';
     if(prSearch){_msg=(currentLang==='zh'?'没有匹配的预设：':'Brak presetów dla ')+'"'+(G('prS')?G('prS').value:prSearch)+'"';_hint=prCatFilter.size?(currentLang==='zh'?'请尝试清除分类筛选或搜索条件。':'Sprobuj wyczyscić filtr kategorii lub wyszukiwanie.'):(currentLang==='zh'?'请尝试其他关键词。':'Sprobuj innego hasla.');}
@@ -39810,6 +39809,7 @@ if(typeof window!=='undefined'&&window.addEventListener){
 <script src="hub/js/core/sim.js"></script>
 <script src="hub/js/core/analysis.js"></script>
 <script src="hub/js/core/model.js"></script>
+<script src="hub/js/core/catalog.js"></script>
 <script src="hub/js/core/from-traces.js"></script>
 <script src="hub/js/core/from-docs.js"></script>
 <script src="hub/js/core/from-hub-graph.js"></script>

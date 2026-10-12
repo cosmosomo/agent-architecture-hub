@@ -625,13 +625,21 @@
         parts.relations = loadRelations(hubChecked(texts[4]));
         parts.scenarios = loadScenarios(hubChecked(texts[5]));
 
-        // decisions/ 里的文件（按 agents 里实际存在的个体逐个探测）
+        // decisions/<个体>.md：看目录里列了哪些再去读，不去逐个试探不存在的文件（没有列表的服务就当没有）
         var agentIds = parts.agents.filter(function (a) { return a.kind === 'agent'; }).map(function (a) { return a.id; });
-        return Promise.all(agentIds.map(function (aid) {
-          return get('decisions/' + aid + '.md').then(function (text) {
-            return loadDecisions(hubChecked(text), aid);
-          });
-        })).then(function (allDecisions) {
+        var names = function (html, ext, dirs) {
+          var out = {}, re = new RegExp('href="([^"?#/]+)' + (dirs ? '/' : ext.replace('.', '\\.')) + '"', 'g'), m;
+          while ((m = re.exec(html || ''))) { try { out[decodeURIComponent(m[1])] = true; } catch (e) { /* not a name */ } }
+          return out;
+        };
+        return get('').then(function (top) {
+          return names(top, '', true).decisions ? get('decisions/') : '';
+        }).then(function (html) {
+          var have = names(html, '.md');
+          return Promise.all(agentIds.filter(function (aid) { return have[aid]; }).map(function (aid) {
+            return get('decisions/' + aid + '.md').then(function (text) { return loadDecisions(hubChecked(text), aid); });
+          }));
+        }).then(function (allDecisions) {
           parts.decisions = [].concat.apply([], allDecisions);
           var model = assemble(parts, caseId);
           model.source.base = base;   // the case folder, so attached originals (prompt_file …) open from the details
@@ -651,69 +659,8 @@
     });
   }
 
-  /**
-   * 读取 hub/cases/_index.md，返回 [{id, title, dir}] 列表
-   */
-  function loadIndex(fetchFn, indexUrl) {
-    return fetchFn(indexUrl).then(function (res) {
-      var text = typeof res === 'string' ? res : '';
-      var rows = [];
-      text.split('\n').forEach(function (line) {
-        // 表格行：| id | 标题 | 目录 |
-        var m = line.match(/^\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|/);
-        if (!m || m[1].trim() === 'id' || /^-+$/.test(m[1].trim())) return;
-        rows.push({ id: m[1].trim(), title: m[2].trim(), dir: m[3].trim() });
-      });
-      return rows;
-    }).catch(function () { return []; });
-  }
-
-  /* ── 案例发现（浏览器注册块与 caseList 共用）────────────── */
-  var docsCases = null;                        // null=未加载, [{id, title, dir}]
-  var ensureDiscovery = function () { return Promise.resolve([]); };   // 无注册环境时的占位
-
-  /** 案例发现 = 各案例根的 _index.md 注册表 ∪ 主目录列表（仅第一个根）。
-      http 服务（python http.server 等）自带目录列表页，新目录免注册直接可用；
-      file:// 或纯静态托管拿不到列表时回退 _index.md。第二个根（hub/cases_imported/）
-      只走注册表，不扫目录列表——它是导入案例的独立命名空间。 */
-  function makeDiscovery(fetchFn, casesBases) {
-    var bases = Array.isArray(casesBases) ? casesBases : [casesBases];
-    return function () {
-      if (docsCases !== null) return Promise.resolve(docsCases);
-      var get = function (base, p) {
-        return fetchFn(base + p).then(function (r) {
-          return typeof r === 'string' ? r : (r.ok ? r.text() : '');
-        }).catch(function () { return ''; });
-      };
-      var byId = {};
-      var scan = function (casesBase, withListing) {
-        return loadIndex(function (p) { return get(casesBase, p); }, '_index.md').then(function (rows) {
-          rows.forEach(function (r) { r.base = casesBase; if (!byId[r.id]) byId[r.id] = r; });
-          if (!withListing) return null;
-          return get(casesBase, '').then(function (html) {
-            var re = /href="([A-Za-z0-9][A-Za-z0-9_.\-]*)\/"/g, m;
-            while ((m = re.exec(html || ''))) {
-              if (!byId[m[1]]) byId[m[1]] = { id: m[1], title: m[1], dir: m[1] + '/', base: casesBase };
-            }
-          });
-        });
-      };
-      return bases.reduce(function (chain, b, i) {
-        return chain.then(function () { return scan(b, i === 0); });
-      }, Promise.resolve())
-        .catch(function () { /* 都拿不到就只有空表 */ }).then(function () {
-          docsCases = Object.keys(byId).sort().map(function (k) { return byId[k]; });
-          return docsCases;
-        });
-    };
-  }
-
   HUB.fromDocs = {
     loadCase: loadCase,
-    loadIndex: loadIndex,
-    // 侧栏"本地案例"用：已发现的案例 [{id, title, dir}]（发现未完成时为 []）
-    caseList: function () { return docsCases ? docsCases.slice() : []; },
-    ready: function () { return ensureDiscovery(); },
     // 低级工具，供测试和脚本用
     parseFrontmatter: parseFrontmatter,
     parseHeading: parseHeading,
@@ -727,35 +674,21 @@
     loadScenarios: loadScenarios,
   };
 
-  /* ── 自动注册 docs source（当 HUB.model 已就绪时）────────── */
-  if (HUB.model && HUB.model.addSource) {
-    // 计算各案例根相对于当前页面的路径；hub/cases_imported/ 是导入案例的独立命名空间
-    var casesRoot = (function () {
-      var p = (typeof location !== 'undefined' ? location.pathname : '') || '';
-      var dist = p.indexOf('/hub/dist/') >= 0 || p.indexOf('%2Fhub%2Fdist%2F') >= 0;
-      return function (name) { return (dist ? '../../hub/' : 'hub/') + name + '/'; };
-    })();
-
-    function fetchText(url) {
+  /* ── 来源：含 meta.md 的文件夹就是一个 md 案例（目录发现见 HUB.catalog）──────────── */
+  if (HUB.catalog && HUB.model && HUB.model.addSource) {
+    var fetchText = function (url) {
       return fetch(url).then(function (r) { return r.ok ? r.text() : ''; }).catch(function () { return ''; });
-    }
-
-    ensureDiscovery = makeDiscovery(fetchText, [casesRoot('cases'), casesRoot('cases_imported')]);
-
+    };
+    HUB.catalog.recognize('md',
+      function (name, isDir, kids) { return isDir && kids.indexOf('meta.md') >= 0; },
+      function (e) {
+        return fetchText(e.path + 'meta.md').then(function (t) { var m = /^#\s+(.+)$/m.exec(t); return m ? m[1].trim() : e.id; });
+      });
     HUB.model.addSource({
       id: 'docs',
       label: '文档案例',
-      owns: function (id) { return !!(docsCases && docsCases.some(function (r) { return r.id === id; })); },
-      load: function (caseId) {
-        return ensureDiscovery().then(function (rows) {
-          var row = rows.find(function (r) { return r.id === caseId; });
-          if (!row) return Promise.reject(new Error('docs 案例未找到：' + caseId));
-          return loadCase(fetchText, (row.base || casesRoot('cases')) + row.dir, caseId);
-        });
-      },
+      owns: function (id) { var e = HUB.catalog.entry(id); return !!e && e.kind === 'md'; },
+      load: function (id) { return loadCase(fetchText, HUB.catalog.entry(id).path, id); }
     });
-
-    // 预加载索引，让 owns() 能在 hash-restore 时同步返回
-    ensureDiscovery();
   }
 })();

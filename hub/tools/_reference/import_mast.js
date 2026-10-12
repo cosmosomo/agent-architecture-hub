@@ -22,8 +22,8 @@ const argv = process.argv.slice(2);
 const arg = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
 const has = (k) => argv.includes('--' + k);
 
-const SRC = arg('src', path.resolve(__dirname, '../../../case_library/cloud/academic/hf-data/mascope/MAST-clean.jsonl'));
-const OUT = arg('out', path.resolve(__dirname, '../cases_imported'));
+const SRC = arg('src', path.resolve(__dirname, '../../../../case_library/cloud/academic/hf-data/mascope/MAST-clean.jsonl'));
+const OUT = arg('out', path.resolve(__dirname, '../../cases/_reference/mast'));
 const PER = parseInt(arg('per', '4'), 10);
 const FRAMES = arg('frameworks', null);
 const MAXF = parseInt(arg('max-frameworks', '6'), 10);

@@ -4,11 +4,11 @@
  * and checks the assembled model against SPEC.md §18.6: steps parsed, task lines
  * inferred, watch lines deduped, scenarios reaching the sim facts (cases/runs/
  * decisions), decisions keeping their alternatives.
- * Usage: node hub/tools/check_from_docs.js
+ * Usage: node hub/tools/check_from_docs.js [--all] [caseId ...]   (--all also walks the shelved reference corpus)
  * Exit code 1 when there are errors. Warnings do not fail.
  */
 const path = require('path');
-const { createContext, loadScripts, HUB_DIR } = require('./load.js');
+const { createContext, loadScripts, fsFetch, findCases, HUB_DIR } = require('./load.js');
 
 const ctx = loadScripts(createContext(), ['js/core/util.js', 'js/core/casedef.js', 'js/core/sim.js', 'js/core/from-docs.js']);
 const HUB = ctx.HUB;
@@ -17,22 +17,14 @@ const errors = [], warns = [];
 const err = (m) => errors.push(m), warn = (m) => warns.push(m);
 
 const fs = require('fs');
-const fetchFn = (url) => new Promise((res) => {
-  const p = path.join(HUB_DIR, url.replace(/^hub\//, ''));
-  res(fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '');
-});
+const fetchFn = fsFetch;
 
-// 可选 argv 过滤：node check_from_docs.js [caseId ...] 只校验指定的案例
+// 可选 argv 过滤：node check_from_docs.js [caseId ...] 只校验指定的案例；--all 连收起来的参考语料一起查
 const only = process.argv.slice(2).filter((s) => !s.startsWith('-'));
+const all = process.argv.includes('--all');
 
-// 案例根：hub/cases/（精编）+ hub/cases_imported/（导入，索引不存在则跳过）
-const ROOTS = [
-  { base: 'hub/cases/', index: 'cases', required: true },
-  { base: 'hub/cases_imported/', index: 'cases_imported', required: false },
-];
-
-async function checkCase(root, id) {
-  const m = await HUB.fromDocs.loadCase(fetchFn, root + id, id);
+async function checkCase(dir, id) {
+  const m = await HUB.fromDocs.loadCase(fetchFn, dir, id);
 
   const d = m.def, f = m.facts;
   const tag = `${id}:`;
@@ -73,23 +65,12 @@ async function checkCase(root, id) {
 
 (async () => {
   let total = 0;
-  for (const root of ROOTS) {
-    const indexPath = path.join(HUB_DIR, root.index, '_index.md');
-    if (!fs.existsSync(indexPath)) {
-      if (root.required) err(`${root.index}/_index.md: not found`);
-      continue;
-    }
-    const ids = [];
-    fs.readFileSync(indexPath, 'utf8').split('\n').forEach((line) => {
-      const m = line.match(/^\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|/);
-      if (m && m[1].trim() !== 'id' && !/^-+$/.test(m[1].trim())) ids.push(m[1].trim());
-    });
-    if (!ids.length && root.required) err(`${root.index}/_index.md: no cases registered`);
-    for (const id of ids) {
-      if (only.length && !only.includes(id)) continue;
-      total++;
-      await checkCase(root.base, id);
-    }
+  const found = findCases(path.join(HUB_DIR, 'cases'), { shelved: all });
+  if (!found.length) err('hub/cases: no cases found');
+  for (const c of found) {
+    if (only.length && !only.includes(c.id)) continue;
+    total++;
+    await checkCase('hub/' + path.relative(HUB_DIR, c.dir).split(path.sep).join('/'), c.id);
   }
 
   warns.forEach((w) => console.log('  warn: ' + w));

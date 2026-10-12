@@ -1,7 +1,7 @@
 /* HUB.obsSessions: the "会话" tab of the left sidebar. Lists the real agent sessions on this machine
    (trace module, hub/SPEC.md 17) and opens one in the canvas (HUB.obsTrace). The list comes from the local
-   service (`npm run serve` in trace/), which also serves this page: same origin, so no CORS. Opened as
-   a file, the page cannot reach it and the tab says how to start it. */
+   service (`npm start`), which is also what serves this page: same origin, so no CORS. If the page was not
+   opened from it, the tab says how to start it. */
 (function () {
   'use strict';
   var HUB = (window.HUB = window.HUB || {});
@@ -34,21 +34,6 @@
   }
   function viewer(id) { return '/trace/#s=' + encodeURIComponent(id) + '&theme=' + (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'); }
 
-  /* The local service as a source of models: 'tree:<session id>' is that session and every sub-agent it
-     started, drawn by the org views like a case (HUB.fromTrace builds the model). */
-  HUB.model.addSource({
-    id: 'sessions', label: '本机会话',
-    owns: function (id) { return /^tree:/.test(id); },
-    load: function (id) {
-      if (location.protocol !== 'http:' && location.protocol !== 'https:') return Promise.reject(new Error('这个页面是直接用文件打开的，读不到本机会话'));
-      return fetch('/api/sessions/' + encodeURIComponent(id.slice(5)) + '/tree', { cache: 'no-store' })
-        .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? '本机没有这个会话' : '本地服务返回 ' + r.status); return r.json(); })
-        .then(function (doc) {
-          if (!doc.sessions || !doc.sessions.length) throw new Error('这条会话现在读不到（可能正在写入），稍后再试');
-          return HUB.fromTrace.model(doc.sessions, { id: id });
-        });
-    }
-  });
   function toast(t) { if (typeof pokazToast === 'function') pokazToast(t); }
   /* draw a session and its sub-agents as the org graph: one group per dispatch, opened one level */
   function openTree(sid) {
@@ -62,7 +47,6 @@
 
   function load(el, force) {
     if (loading || (!force && cache && Date.now() - loadedAt < 15000)) return;
-    if (location.protocol !== 'http:' && location.protocol !== 'https:') { error = 'file'; return; }
     loading = true;
     fetch('/api/sessions', { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
@@ -111,11 +95,10 @@
     var kinds = {};
     (cache || []).forEach(function (s) { kinds[s.source.kind] = (kinds[s.source.kind] || 0) + 1; });
     out.push('<div class="ob-sh">本机会话 · ' + (Object.keys(kinds).map(function (k) { return KIND[k] || k; }).join(' + ') || '—') + '</div>');
-    if (error === 'file' || error === 'down') {
-      out.push('<div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">' +
-        (error === 'file' ? '这个页面是直接用文件打开的，读不到本机会话。' : '连不上本地服务。') +
-        '在 <code>trace</code> 目录运行 <code>npm run serve</code>，再打开 <code>http://127.0.0.1:8790/</code>：观察台和 Trace 查看器由同一个本地服务提供，只监听本机。</div>');
-      if (error === 'down') out.push('<div class="ob-si" data-act="reload"><span class="ob-nm" style="color:var(--accent1)">重试</span></div>');
+    if (error === 'down') {
+      out.push('<div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">没有会话：连不上本地服务。' +
+        '在仓库根目录运行 <code>npm start</code>，再打开 <code>http://127.0.0.1:8899/</code>：观察台、会话接口和 Trace 查看器是同一个本地服务，只监听本机。</div>');
+      out.push('<div class="ob-si" data-act="reload"><span class="ob-nm" style="color:var(--accent1)">重试</span></div>');
       el.innerHTML = out.join('');
       return;
     }
@@ -156,12 +139,5 @@
     el.scrollTop = keep;
   }
 
-
-  /* The topbar Trace button (index.html #traceBtn): visible only when this page is served by
-     the local service, so the static GitHub Pages build never shows a dead link. */
-  fetch('/api/health', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-    if (!j || !j.viewer) return;
-    ['traceBtn', 'traceEntry'].forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = id === 'traceBtn' ? '' : 'block'; });
-  }).catch(function () {});
   HUB.obsSessions = { render: render, openTree: openTree };
 })();

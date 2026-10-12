@@ -9,8 +9,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const SRC = path.resolve(__dirname, '../../../case_library/cloud/academic/hf-data/autogen');
-const OUT = path.resolve(__dirname, '../cases_imported');
+const SRC = path.resolve(__dirname, '../../../../case_library/cloud/academic/hf-data/autogen');
+const OUT = path.resolve(__dirname, '../../cases/_reference/frameworks');
 const DRY = process.argv.includes('--dry');
 const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 24) || 'agent';
 const FALLBACK = {

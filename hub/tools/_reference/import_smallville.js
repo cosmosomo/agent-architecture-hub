@@ -10,8 +10,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const SRC = path.resolve(__dirname, '../../../case_library/cloud/academic/hf-data/generative-agents');
-const OUT = path.resolve(__dirname, '../cases_imported');
+const SRC = path.resolve(__dirname, '../../../../case_library/cloud/academic/hf-data/generative-agents');
+const OUT = path.resolve(__dirname, '../../cases/_reference/smallville');
 const DRY = process.argv.includes('--dry');
 const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'persona';
 

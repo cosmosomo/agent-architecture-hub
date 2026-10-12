@@ -2,20 +2,21 @@
 /**
  * audit_corpus.js — 案例库质量审计：全量扫描导入案例的规模与覆盖分布，
  * 找出薄弱案例（角色过少 / 无关卡 / 无决策 / 无 trace 附件），指导后续增强。
- * 用法：node hub/tools/audit_corpus.js
+ * 用法：node hub/tools/_reference/audit_corpus.js
  */
 const fs = require('fs');
 const path = require('path');
 
-const BASE = path.resolve(__dirname, '../cases_imported');
-const dirs = fs.readdirSync(BASE).filter((d) => d.startsWith('imp_') && fs.statSync(path.join(BASE, d)).isDirectory()).sort();
+const { findCases } = require('../load.js');
+const BASE = path.resolve(__dirname, '../../cases/_reference');
+const dirs = findCases(BASE, { shelved: true }).sort((a, b) => (a.id < b.id ? -1 : 1));
 
 const stats = { agents: {}, stages: {}, gates: {}, decisions: {}, hasTraces: 0, hasPromptFiles: 0, hasPayload: 0 };
 const weak = [];
 let n = 0;
 
-for (const d of dirs) {
-  const dir = path.join(BASE, d);
+for (const c of dirs) {
+  const d = c.id, dir = c.dir;
   n++;
   const rd = (f) => (fs.existsSync(path.join(dir, f)) ? fs.readFileSync(path.join(dir, f), 'utf8') : '');
   if (!rd('agents.md') || !rd('process.md')) { weak.push(d + ': 文件不全（转换中？）'); continue; }

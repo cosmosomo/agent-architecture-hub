@@ -11,14 +11,14 @@
 const fs = require('fs');
 const path = require('path');
 
-const OUT = path.resolve(__dirname, '../cases_imported');
+const OUT = path.resolve(__dirname, '../../cases/_reference/camel');
 const ci = process.argv.indexOf('--corpus');
 const CORPUS = parseInt(ci >= 0 && process.argv[ci + 1] ? process.argv[ci + 1] : '50', 10) || 50;
 const DRY = process.argv.includes('--dry');
 /* --src 换源目录（相对 case_library/cloud/academic）、--tag 换案例后缀：
    node import_camel_society.js --src hf-data/camel-code --tag code */
 const si = process.argv.indexOf('--src');
-const SRC = path.resolve(__dirname, '../../../case_library/cloud/academic', si >= 0 && process.argv[si + 1] ? process.argv[si + 1] : 'hf-data/camel');
+const SRC = path.resolve(__dirname, '../../../../case_library/cloud/academic', si >= 0 && process.argv[si + 1] ? process.argv[si + 1] : 'hf-data/camel');
 const ti = process.argv.indexOf('--tag');
 const TAG = ti >= 0 && process.argv[ti + 1] ? '_' + process.argv[ti + 1] : '';
 const DOMAIN = TAG ? TAG.slice(1) : 'ai_society';

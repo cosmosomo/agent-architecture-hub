@@ -10,8 +10,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const HF = path.resolve(__dirname, '../../../case_library/cloud/academic/hf-data');
-const OUT = path.resolve(__dirname, '../cases_imported');
+const HF = path.resolve(__dirname, '../../../../case_library/cloud/academic/hf-data');
+const OUT = path.resolve(__dirname, '../../cases/_reference/mallm');
 const DRY = process.argv.includes('--dry');
 const indexPath = path.join(OUT, '_index.md');
 const indexText = fs.existsSync(indexPath) ? fs.readFileSync(indexPath, 'utf8') : '';

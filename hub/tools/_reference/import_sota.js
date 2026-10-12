@@ -10,8 +10,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const SRC = path.resolve(__dirname, '../../../sota_cases/data/snapshot');
-const OUT = path.resolve(__dirname, '../cases_imported');
+const SRC = path.resolve(__dirname, '../../../../sota_cases/data/snapshot');
+const OUT = path.resolve(__dirname, '../../cases/_reference/sota');
 const DRY = process.argv.includes('--dry');
 const caseId = 'imp_sota_prod';
 const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30) || 'x';

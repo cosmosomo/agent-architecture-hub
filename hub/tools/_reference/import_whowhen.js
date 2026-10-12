@@ -16,8 +16,8 @@ const argv = process.argv.slice(2);
 const arg = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
 const has = (k) => argv.includes('--' + k);
 
-const SRC = arg('src', path.resolve(__dirname, '../../../case_library/cloud/academic/WhoAndWhen/Who&When'));
-const OUT = arg('out', path.resolve(__dirname, '../cases_imported'));
+const SRC = arg('src', path.resolve(__dirname, '../../../../case_library/cloud/academic/WhoAndWhen/Who&When'));
+const OUT = arg('out', path.resolve(__dirname, '../../cases/_reference/whowhen'));
 const SAMPLE = parseInt(arg('sample', '4'), 10);
 const DRY = has('dry');
 

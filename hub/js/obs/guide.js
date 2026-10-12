@@ -57,7 +57,7 @@
       '<h3>术语</h3>' + table(TERMS) +
       '<h3>能做的操作（右栏）</h3>' + table(ACTIONS) + '<p class="ob-gnote">每个操作都会记成一条事实，分析重新算一遍，图上、时间轴上和体检里马上能看到。</p>' +
       '<h3>键盘</h3>' + table(KEYS) +
-      '</div><div class="mo-f"><button class="btn" type="button" data-design>切到原来的设计器</button><button class="btn btn-p" type="button" data-close>开始看</button></div></div>';
+      '</div><div class="mo-f"><button class="btn btn-p" type="button" data-close>开始看</button></div></div>';
     var mo = document.createElement('div');
     mo.className = 'mo';
     mo.id = 'moObs';
@@ -67,7 +67,6 @@
     mo.innerHTML = html;
     mo.addEventListener('click', function (e) {
       if (e.target === mo || e.target.closest('[data-close]')) close();
-      if (e.target.closest('[data-design]')) { close(); HUB.obs.setMode(false); }
     });
     document.body.appendChild(mo);
     return mo;

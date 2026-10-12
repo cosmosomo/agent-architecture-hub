@@ -1,5 +1,5 @@
-/* HUB.obsSide: the two extra tabs of the left sidebar. "结构" is the definition as a tree; "体检" lists what needs a person
-   and what the health check found. Clicking an entry selects it on the canvas. */
+/* HUB.obsSide: the extra tabs of the left sidebar. "目录" is the cases on disk as folders; "结构" is the definition as a
+   tree; "体检" lists what needs a person and what the health check found. Clicking an entry selects it on the canvas. */
 (function () {
   'use strict';
   var HUB = (window.HUB = window.HUB || {});
@@ -33,8 +33,52 @@
         if (hc && HUB.obsPanel) HUB.obsPanel.followHealth(hc);
       } else if (act === 'need') {
         HUB.store.set({ selection: { type: t.getAttribute('data-type'), id: t.getAttribute('data-id') } }, { history: false });
+      } else if (act === 'dir') {
+        toggleDir(el, t.getAttribute('data-path'));
+      } else if (act === 'opencase') {
+        HUB.obs.openCase(t.getAttribute('data-id'));
       }
     });
+  }
+
+  /* ---------- "目录": the cases found on disk, as the folders they sit in ---------- */
+  var KIND_MARK = { md: '文', graph: '{ }' };
+  var dirsOpen = (function () { try { return new Set(JSON.parse(localStorage.getItem('hub.dirs') || '[]')); } catch (e) { return new Set(); } })();
+  function toggleDir(el, path) {
+    if (dirsOpen.has(path)) dirsOpen.delete(path); else dirsOpen.add(path);
+    try { localStorage.setItem('hub.dirs', JSON.stringify(Array.from(dirsOpen))); } catch (e) { /* storage blocked */ }
+    var node = HUB.catalog.node(path);
+    cases(el);
+    // a shelved folder is read only now that someone opened it
+    if (node && dirsOpen.has(path) && !node.loaded) HUB.catalog.open(node).then(function () { cases(el); });
+  }
+  function caseRows(node, lv, cur, out) {
+    var pad = 'padding-left:' + (14 + lv * 14) + 'px';
+    node.entries.forEach(function (e) {
+      out.push('<div class="ob-si' + (e.id === cur ? ' on' : '') + '" data-act="opencase" data-id="' + esc(e.id) + '" style="' + pad + '" title="' + esc(e.id) + '">' +
+        '<span class="ob-tw">' + (KIND_MARK[e.kind] || '·') + '</span><span class="ob-nm">' + esc(e.title) + '</span></div>');
+    });
+    node.groups.forEach(function (g) {
+      var open = dirsOpen.has(g.path);
+      out.push('<div class="ob-si" data-act="dir" data-path="' + esc(g.path) + '" style="' + pad + '" title="' + esc(g.path) + '">' +
+        '<span class="ob-tw">' + (open ? '▾' : '▸') + '</span><b class="ob-nm">' + esc(g.name.replace(/^_+/, '')) + '</b>' +
+        (g.loaded ? '<span class="ob-meta">' + HUB.catalog.count(g) + '</span>' : '') + '</div>');
+      if (!open) return;
+      if (g.loaded) caseRows(g, lv + 1, cur, out);
+      else out.push('<div class="ob-si" style="cursor:default;padding-left:' + (14 + (lv + 1) * 14) + 'px"><span class="ob-nm" style="color:var(--t3)">读取中…</span></div>');
+    });
+  }
+  function cases(el) {
+    bind(el);
+    var root = HUB.catalog.root(), out = [];
+    out.push('<div class="ob-sh">本地案例 · hub/cases</div>');
+    if (!root.loaded) out.push('<div class="ob-si" style="cursor:default"><span class="ob-nm" style="color:var(--t3)">读取中…</span></div>');
+    else if (!root.entries.length && !root.groups.length) out.push('<div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">hub/cases 里还没有案例，或这个页面不是由本地服务打开的（npm start）。</div>');
+    else caseRows(root, 0, HUB.store.get().caseId, out);
+    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">这里列的是 hub/cases 下找到的案例：放进去就出现，不用登记。文件夹可以折叠；以下划线开头的文件夹（如 _reference，大模型整理的参考语料）默认收起，点开才去读。</div>');
+    var keep = el.scrollTop;
+    el.innerHTML = out.join('');
+    el.scrollTop = keep;
   }
   function isSel(s, type, id) { return s.selection && s.selection.type === type && s.selection.id === id; }
   function item(s, type, id, name, meta, lv, lead) {
@@ -113,5 +157,5 @@
     el.scrollTop = keep;
   }
 
-  HUB.obsSide = { tree: tree, health: health };
+  HUB.obsSide = { tree: tree, health: health, cases: cases };
 })();

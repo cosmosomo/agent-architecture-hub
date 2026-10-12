@@ -40,12 +40,7 @@
 
   /* ================= build ================= */
   function inject() {
-    // top bar: mode switch after the brand, the view buttons where the problem box sits
-    var brand = document.querySelector('.tb-brand');
-    els.mode = h('div', { class: 'ob-mode', role: 'tablist', 'aria-label': '模式' },
-      h('button', { type: 'button', 'data-mode': 'obs', title: '协作观察：用六种视图看一个团队怎么协作', onClick: function () { setMode(true); } }, '观察'),
-      h('button', { type: 'button', 'data-mode': 'design', title: '原来的团队设计器', onClick: function () { setMode(false); } }, '设计'));
-    brand.parentNode.insertBefore(els.mode, brand.nextSibling);
+    // top bar: the view buttons where the problem box sits
     var prob = document.querySelector('.tb-problem');
     els.tb = h('div', { class: 'tb-problem ob-tb ob-only' });
     prob.parentNode.insertBefore(els.tb, prob.nextSibling);
@@ -68,12 +63,14 @@
     els.tabTree = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', onClick: function () { zmienTab('obtree', els.tabTree); renderSide(); } }, '结构');
     els.tabHealth = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', onClick: function () { zmienTab('obhealth', els.tabHealth); renderSide(); } }, '体检');
     els.tabSessions = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', title: '本机真实的智能体会话', onClick: function () { zmienTab('obsessions', els.tabSessions); renderSide(); } }, '会话');
-    tabs.append(els.tabTree, els.tabHealth, els.tabSessions);
+    els.tabCases = h('button', { class: 'sl-tab ob-only', role: 'tab', 'aria-selected': 'false', title: 'hub/cases 下找到的案例，按文件夹分层，可折叠', onClick: function () { zmienTab('obcases', els.tabCases); renderSide(); } }, '目录');
+    tabs.append(els.tabCases, els.tabTree, els.tabHealth, els.tabSessions);
     var pans = document.querySelector('.sl-panels');
+    els.panCases = h('div', { class: 'sl-pan ob-pan', id: 'panObcases' });
     els.panTree = h('div', { class: 'sl-pan ob-pan', id: 'panObtree' });
     els.panHealth = h('div', { class: 'sl-pan ob-pan', id: 'panObhealth' });
     els.panSessions = h('div', { class: 'sl-pan ob-pan', id: 'panObsessions' });
-    pans.append(els.panTree, els.panHealth, els.panSessions);
+    pans.append(els.panCases, els.panTree, els.panHealth, els.panSessions);
 
     // right sidebar: our details pane in front of the page's own
     var sr = G('sR');
@@ -109,29 +106,20 @@
     if (window.ResizeObserver) new ResizeObserver(onResize).observe(cvA);
   }
 
-  /* ================= mode ================= */
-  // keepCase: the observed case stays (start-up from a link); otherwise switching from the designer follows its preset
-  function setMode(obs, keepCase) {
-    on = !!obs;
-    document.body.classList.toggle('obs-on', on);
-    els.mode.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', (b.getAttribute('data-mode') === 'obs') === on); });
-    HUB.obsStage.show(on);
-    try { localStorage.setItem('hub.mode', on ? 'obs' : 'design'); } catch (e) { /* storage blocked */ }
-    if (on) {
-      // the hidden editor tabs must not stay selected
-      var tabs = document.querySelectorAll('.sl-tabs .sl-tab');
-      var active = document.querySelector('.sl-tabs .sl-tab.on');
-      if (!active || active.hasAttribute('data-ob-hide')) zmienTab('pr', tabs[1]);
-      G('heroOverlay').classList.remove('show');
-      if (!keepCase && typeof actPr !== 'undefined' && actPr && actPr !== st().caseId && HUB.base.presets[actPr]) HUB.store.switchCase(actPr);
-      lastFitSig = '';
-      renderAll(st(), null);
-    } else {
-      // back to the designer: the canvas shows the same team the observer was looking at (when it is a designer template)
-      if (!HUB.base.presets[st().caseId]) { dopasujWidok(); }
-      else if (typeof actPr === 'undefined' || actPr !== st().caseId) { syncing = true; ladujPreset(st().caseId); syncing = false; }
-      else { dopasujWidok(); if (actPr) pokazInfoPr(actPr); }
-    }
+  /* ================= start of the observation layer ================= */
+  // There is one mode: the observatory. keepCase: the observed case stays (start-up from a link).
+  function enter(keepCase) {
+    on = true;
+    document.body.classList.add('obs-on');
+    HUB.obsStage.show(true);
+    // the page's own editor tabs are hidden: none of them may stay selected
+    var tabs = document.querySelectorAll('.sl-tabs .sl-tab');
+    var active = document.querySelector('.sl-tabs .sl-tab.on');
+    if (!active || active.hasAttribute('data-ob-hide')) zmienTab('pr', tabs[1]);
+    G('heroOverlay').classList.remove('show');
+    if (!keepCase && typeof actPr !== 'undefined' && actPr && actPr !== st().caseId && HUB.base.presets[actPr]) HUB.store.switchCase(actPr);
+    lastFitSig = '';
+    renderAll(st(), null);
   }
 
   // called by the page's ladujPreset (a one-line hook in index.html)
@@ -358,6 +346,7 @@
   function renderSide() {
     if (!HUB.obsSide) return;
     var s = st();
+    if (els.panCases.classList.contains('on')) safe('side.cases', function () { HUB.obsSide.cases(els.panCases); });
     if (els.panTree.classList.contains('on')) safe('side.tree', function () { HUB.obsSide.tree(els.panTree, model(), s); });
     if (els.panHealth.classList.contains('on')) safe('side.health', function () { HUB.obsSide.health(els.panHealth, model(), s); });
     if (els.panSessions.classList.contains('on') && HUB.obsSessions) safe('side.sessions', function () { HUB.obsSessions.render(els.panSessions); });
@@ -538,12 +527,13 @@
   }
 
   function start() {
-    // 本地案例（hub/cases/ 目录、hub/graph/*.json）的发现是异步的：链接里的新案例要等
-    // owns() 就绪才能判定，预设列表也要等发现完成才能注入小节。先等扫描再应用启动状态。
-    Promise.all([
-      HUB.fromDocs && HUB.fromDocs.ready ? HUB.fromDocs.ready() : Promise.resolve(),
-      HUB.fromHubGraph && HUB.fromHubGraph.ready ? HUB.fromHubGraph.ready() : Promise.resolve()
-    ]).catch(function () {}).then(boot);
+    // The cases on disk are found by walking hub/cases/ (HUB.catalog), which takes a moment; a link into
+    // the shelved reference corpus opens the folders it needs. Start-up waits for that, then applies the link.
+    var want = HUB.store.fromHash(location.hash || '').caseId;
+    HUB.catalog.ready()
+      .then(function () { return want && !HUB.base.presets[want] && !HUB.model.owns(want) ? HUB.catalog.find(want) : null; })
+      .catch(function () {})
+      .then(boot);
   }
 
   function boot() {
@@ -560,6 +550,7 @@
       renderAll(s, prev);
     });
     HUB.bus.on('model', function () { var s = st(); renderAll(s, s); });
+    HUB.bus.on('catalog', function () { if (els.panCases.classList.contains('on')) renderSide(); });
     // re-render the trace component when the page theme changes so its shadow DOM picks up the new palette
     new MutationObserver(function () { if (HUB.obsTrace && HUB.obsTrace.available()) { var s = st(); HUB.obsTrace.render(s, HUB.model.current); } })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -567,56 +558,19 @@
     window.addEventListener('hashchange', function () {
       if (location.hash === HUB.store.toHash(st())) return;
       var p = HUB.store.fromHash(location.hash);
-      if (!on) setMode(true, true);
       if (p.caseId && !HUB.model.ready(p.caseId)) { if (HUB.model.owns(p.caseId)) later(p); return; }
       if (p.caseId && p.caseId !== st().caseId) HUB.store.switchCase(p.caseId);
       delete p.caseId;
       HUB.store.set(p);
     });
-    var mode = 'obs';
-    try { mode = localStorage.getItem('hub.mode') || 'obs'; } catch (e) { /* storage blocked */ }
-    setMode(fromLink || mode !== 'design', true);
+    enter(true);
     if (pending) later(pending);
-    // 预设列表的首次渲染发生在 hub 脚本加载之前，本地案例小节要靠这里补一次重画
-    if (typeof rPresety === 'function') rPresety();
   }
 
-  /* ---------- 本地自动解析的案例（hub/cases/ 与 hub/graph/）----------
-     不在 62 个预设里的案例进不了设计器的预设列表（rPresety 只画 base.presets），
-     这里把发现到的本地案例作为独立小节注入列表；点击直接进观察模式。
-     boot() 在扫描完成后会重画一次 rPresety，本函数只负责出 HTML。 */
-  function localCases(q, noCat) {
-    if (!noCat) return '';   // 分类筛选生效时不混入：本地案例没有预设分类
-    var docs = (HUB.fromDocs && HUB.fromDocs.caseList()) || [];
-    var graph = (HUB.fromHubGraph && HUB.fromHubGraph.cases) || [];
-    var items = [];
-    docs.forEach(function (r) { if (!HUB.base.presets[r.id]) items.push({ id: r.id, title: r.title, src: 'md' }); });
-    graph.forEach(function (id) {
-      if (!HUB.base.presets[id] && !docs.some(function (r) { return r.id === id; })) items.push({ id: id, title: id, src: 'json' });
-    });
-    if (!items.length) return '';
-    if (q) {
-      var s = q.toLowerCase();
-      items = items.filter(function (x) { return (x.title + ' ' + x.id).toLowerCase().indexOf(s) >= 0; });
-      if (!items.length) return '';
-    }
-    var h = '<div class="pr-cat">本地自动解析 · hub/cases 与 hub/graph<span class="pr-cat-count">&middot; ' + items.length + '</span></div>';
-    items.forEach(function (x) {
-      h += '<div class="pr-item ph-build" tabindex="0" role="option" title="' + x.id + '"'
-        + ' onclick="HUB.obs.openCase(\'' + x.id + '\')"'
-        + ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();HUB.obs.openCase(\'' + x.id + '\')}">'
-        + '<div class="pr-orb">' + (x.src === 'md' ? '文' : '{ }') + '</div>'
-        + '<div class="pr-name"><span>' + x.title + '</span></div>'
-        + '<span class="pr-cnt" title="来源">' + x.src + '</span></div>';
-    });
-    return h;
-  }
-  function openCase(id) {
-    if (!on) setMode(true, true);
-    HUB.store.switchCase(id);
-  }
+  // a click on a case of the directory tab
+  function openCase(id) { HUB.store.switchCase(id); }
 
-  HUB.obs = { start: start, onPreset: onPreset, setMode: setMode, isOn: function () { return on; }, fit: fit, render: function () { renderAll(st(), st()); }, localCases: localCases, openCase: openCase };
+  HUB.obs = { start: start, isOn: function () { return on; }, fit: fit, render: function () { renderAll(st(), st()); }, openCase: openCase, onPreset: onPreset };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

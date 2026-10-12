@@ -153,66 +153,28 @@
     };
   }
 
-  HUB.fromHubGraph = { model: model, cases: [], ready: function () { return Promise.resolve(); } };
+  HUB.fromHubGraph = { model: model };
 
-  /* ── 自动注册：扫描 hub/graph/ 目录，每个 *.json 一个案例（免注册） ── */
-  if (HUB.model && HUB.model.addSource) {
-    var BASE = (function () {
-      var p = (typeof location !== 'undefined' ? location.pathname : '') || '';
-      if (p.indexOf('/hub/dist/') >= 0 || p.indexOf('%2Fhub%2Fdist%2F') >= 0) return '../../hub/graph/';
-      return 'hub/graph/';
-    })();
-
-    function fetchText(url) {
-      return fetch(url).then(function (r) { return r.ok ? r.text() : ''; }).catch(function () { return ''; });
-    }
-
-    var ids = null;
-    var ready = null;
-    function scan() {
-      if (ids !== null) return Promise.resolve(ids);
-      if (ready) return ready;
-      var fromListing = function (html) {
-        var out = [], re = /href="([A-Za-z0-9][A-Za-z0-9_.\-]*)\.json"/g, m;
-        while ((m = re.exec(html || ''))) out.push(m[1]);
-        return out;
-      };
-      // 纯静态托管（GitHub Pages 等）没有目录列表页，目录请求 404 → 列表为空：
-      // 回退到 hub/graph/_index.json 注册表（数组，元素是案例 id 或 {id, name}）。
-      var fromIndex = function () {
-        return fetch(BASE + '_index.json').then(function (r) {
-          return r.ok ? r.json() : [];
-        }).catch(function () { return []; }).then(function (list) {
-          return (list || []).map(function (x) { return typeof x === 'string' ? x : (x && x.id); })
-            .filter(function (x, i, a) { return x && a.indexOf(x) === i; });
-        });
-      };
-      ready = fetchText(BASE).then(function (html) {
-        var listed = fromListing(html);
-        return listed.length ? listed : fromIndex();
-      }).catch(function () { return fromIndex(); }).then(function (list) {
-        ids = list;
-        HUB.fromHubGraph.cases = ids.slice();
-        return ids;
+  /* ── 来源：hub/cases/ 下的 *.json 就是一个 hub-graph 案例（目录发现见 HUB.catalog）──────── */
+  if (HUB.catalog && HUB.model && HUB.model.addSource) {
+    HUB.catalog.recognize('graph',
+      function (name, isDir) { return !isDir && /\.json$/.test(name) && name.charAt(0) !== '_'; },
+      function (e) {
+        return fetch(e.path).then(function (r) { return r.json(); }).then(function (d) { return (d.meta && d.meta.name) || e.id; });
       });
-      return ready;
-    }
-
-    HUB.fromHubGraph.ready = scan;
     HUB.model.addSource({
       id: 'graph',
       label: 'hub-graph JSON',
-      owns: function (id) { return !!(ids && ids.indexOf(id) >= 0); },
-      load: function (caseId) {
-        return fetch(BASE + caseId + '.json').then(function (r) {
-          if (!r.ok) throw new Error('graph 案例未找到：' + caseId);
+      owns: function (id) { var e = HUB.catalog.entry(id); return !!e && e.kind === 'graph'; },
+      load: function (id) {
+        return fetch(HUB.catalog.entry(id).path).then(function (r) {
+          if (!r.ok) throw new Error('graph 案例未找到：' + id);
           return r.json();
         }).then(function (doc) {
-          doc.meta = Object.assign({ id: caseId }, doc.meta || {});
+          doc.meta = Object.assign({ id: id }, doc.meta || {});
           return model(doc);
         });
       }
     });
-    scan();
   }
 })();
