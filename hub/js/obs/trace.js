@@ -53,7 +53,18 @@
   function data(t, s, m) {
     if (t.kind === 'run') {
       var key = m.id + '|' + m.rev + '|' + t.run.id + '|' + (s.time == null ? '' : s.time);
-      if (last.key !== key) last = { key: key, data: HUB.model.traceOf(m, t.run, s.time) };
+      if (last.key !== key) {
+        var d = HUB.model.traceOf(m, t.run, s.time);
+        // 当前嵌入组件只认识 note；仅转换展示副本，事实契约仍保留 annotation。
+        if (d && d.session.turns.some(function (turn) { return turn.steps.some(function (step) { return step.name === 'annotation'; }); })) {
+          d.session = Object.assign({}, d.session, { turns: d.session.turns.map(function (turn) {
+            return Object.assign({}, turn, { steps: turn.steps.map(function (step) {
+              return step.kind === 'event' && step.name === 'annotation' ? Object.assign({}, step, { name: 'note' }) : step;
+            }) });
+          }) });
+        }
+        last = { key: key, data: d };
+      }
       return last.data;
     }
     if (!remote[t.id]) load(t.id);
@@ -65,6 +76,23 @@
     els.note.textContent = text;
     els.note.style.display = '';
     els.tree.style.display = 'none';
+  }
+
+  // 嵌入组件按时间戳计算耗时；顺序轨迹只隐藏这些读数，保留原文、树和选择行为。
+  function measuredStyle(el, ordinal) {
+    var root = el.shadowRoot;
+    if (!root) return;
+    var style = root.querySelector('style[data-hub-ordinal]');
+    if (!style) {
+      style = document.createElement('style');
+      style.setAttribute('data-hub-ordinal', '');
+      root.appendChild(style);
+    }
+    style.textContent = ordinal ?
+      '.hub-trace span.bg-agentprism-secondary.h-4.min-w-20,' +
+      '.hub-trace span.w-14.text-xs,' +
+      '.hub-trace div.flex.flex-wrap.items-center.gap-2 > span.text-agentprism-muted-foreground.text-xs + span.bg-agentprism-badge-default,' +
+      '.hub-trace div.flex.flex-wrap.items-center.gap-2 > span.text-agentprism-muted-foreground.text-xs { display:none !important; }' : '';
   }
 
   /* shows or hides the trace for the observation state; true while it covers the canvas */
@@ -97,6 +125,9 @@
     };
     if (handle) handle.update(props);
     else handle = window.HubTrace.mount({ tree: els.tree, details: els.side }, props);
+    var ordinal = t.kind === 'run' && !HUB.model.measured(m, 'duration');
+    measuredStyle(els.tree, ordinal);
+    measuredStyle(els.side, ordinal);
     return true;
   }
 

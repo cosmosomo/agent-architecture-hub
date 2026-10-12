@@ -8,11 +8,11 @@
   var host = null, last = null;
 
   var TYPE_ZH = { individual: '个体', group: '分组', relation: '一条定义的线', agg: '合并的线', factonly: '编排外的交接', channel: '能力渠道', channels: '能力层',
-    gate: '判断点', stage: '阶段', step: '步骤', case: '案例实例', run: '一次运行', decision: '决策', call: '调用', doc: '资料', flow: '流转' };
+    gate: '判断点', stage: '阶段', step: '步骤', case: '案例实例', run: '一次运行', decision: '决策', call: '调用', doc: '资料', flow: '流转', turn: '一条记录' };
   var KIND_ZH = { approval: '等你拍板', escalation: '上报给你', direction: '可以调整' };
   var DEC_ACTION_CLS = { deliver: 'good', request: 'info', yield: 'warn', escalate: 'bad', tool: 'info' };
 
-  function nm(type, id) { return esc(HUB.model.name(type, id)); }
+  function nm(type, id) { return esc(U.quietEval(HUB.model.name(type, id))); }
   function link(type, id, text) { return '<a class="ob-a" data-act="sel" data-type="' + type + '" data-id="' + esc(id) + '">' + (text != null ? text : nm(type, id)) + '</a>'; }
   function pill(text, cls) { return '<span class="ob-pill ' + (cls || '') + '">' + esc(text) + '</span>'; }
   function sec(title, body, extra) { return body ? '<div class="ds' + (extra ? ' ' + extra : '') + '"><div class="ds-l">' + esc(title) + '</div>' + body + '</div>' : ''; }
@@ -20,13 +20,33 @@
   function stats(items) { return '<div class="ob-stats">' + items.map(function (x) { return '<div class="ob-stat"><b>' + esc(x[1]) + '</b><span>' + esc(x[0]) + '</span></div>'; }).join('') + '</div>'; }
   function rowItem(attrs, name, meta, lead) { return '<div class="ob-row" ' + attrs + '>' + (lead || '') + '<span class="ob-nm">' + name + '</span>' + (meta ? '<span class="ob-meta">' + meta + '</span>' : '') + '</div>'; }
   function selAttrs(type, id) { return 'data-act="sel" data-type="' + type + '" data-id="' + esc(id) + '"'; }
+  // everything an orchestration object carried that the panel does not show elsewhere (SPEC 18.2: keys the page
+  // does not know go to the details, so nothing parsed stays invisible); *_file keys open the attached original
+  var SHOWN = { name: 1, role: 1, trigger: 1, model: 1, watches: 1 };
+  function rawFields(m, attrs, tags) {
+    var base = m.source && m.source.base;
+    var rows = Object.keys(attrs || {}).filter(function (k) { return !SHOWN[k]; }).map(function (k) {
+      var v = attrs[k];
+      if (/_file$/.test(k) && typeof v === 'string' && base) return [k, '<a class="ob-a" href="' + esc(base + v) + '" target="_blank" rel="noopener">' + esc(v) + ' ↗</a>'];
+      var t = typeof v === 'string' ? v : JSON.stringify(v);
+      return [k, t.length > 160 ? '<details><summary>' + esc(t.slice(0, 80)) + '…</summary>' + esc(t) + '</details>' : esc(t)];
+    });
+    if (tags && tags.length) rows.unshift(['标签', esc(tags.map(function (t) { return '#' + t; }).join(' '))]);
+    return rows.length ? sec('原始字段（编排文件里写的全部内容）', kv(rows)) : '';
+  }
   function statusCls(st) { return st === 'working' ? 'good' : st === 'error' ? 'bad' : st === 'waiting' ? 'warn' : st === 'never' ? '' : ''; }
+  function basis(x) { return x.basis ? pill(L.handoffBasis[x.basis], 'info') : ''; }
+  function comparison(m) { return m.factSource && m.factSource.kind === 'trace' ? '（对照的是我们补写的编排，不是对方系统的原始设计）' : ''; }
+  // evaluations (failure labels, outcomes) are a layer of their own: with it off, the pane keeps quiet about them too
+  function evalsOn(s) { return !(s && s.overlays && s.overlays.evals === false); }
+  // a name without its trailing note in brackets (imported orchestrations put remarks there, some of them evaluations)
+  function shortName(n) { return HUB.collab ? HUB.collab.shortName(n) : n; }
 
   function hero(o) {
     var ph = o.phase ? ' ph-' + o.phase : '';
     return '<div class="ds-hero-sticky' + ph + '"><div class="ds-hero-row">' +
       '<div class="ds-avatar-orb' + ph + '" style="width:40px;height:40px;flex-shrink:0;' + (o.color ? 'color:' + o.color : '') + '">' + (o.icon || '') + '</div>' +
-      '<div class="ds-hero-meta"><div class="ds-avatar-name">' + esc(o.name) + '</div><div class="ds-avatar-role">' + esc(o.role || '') + '</div>' +
+      '<div class="ds-hero-meta"><div class="ds-avatar-name">' + esc(U.quietEval(o.name)) + '</div><div class="ds-avatar-role">' + esc(o.role || '') + '</div>' +
       (o.chips ? '<div class="ds-hero-chips">' + o.chips + '</div>' : '') + '</div></div></div>';
   }
   function chip(text, cls) { return '<span class="ds-chip-micro' + (cls ? ' ' + cls : '') + '">' + esc(text) + '</span>'; }
@@ -42,33 +62,38 @@
       '<div class="ob-acts" style="margin-top:6px">' + kinds.map(function (k) {
         return '<button class="btn' + (k === 'approve' ? ' btn-sim' : k === 'talk' || k === 'interject' ? ' btn-p' : '') + '" type="button" data-act="do" data-kind="' + k + '" data-type="' + target.type + '" data-id="' + esc(target.id) + '">' + BTN[k] + '</button>';
       }).join('') + '</div>' +
-      '<div class="ob-note" style="margin-top:6px">操作会记成一条事实，送达后图上和时间轴上都看得到。现在连的是模拟数据，回复也是模拟的。</div>';
+      '<div class="ob-note" style="margin-top:6px">操作会记成一条事实，送达后图上和时间轴上都看得到。' +
+      (HUB.model.current && HUB.model.current.factSource && HUB.model.current.factSource.kind === 'trace'
+        ? '这是一次已经结束的真实运行的记录：操作只在这里记下，不会送回原系统。'
+        : '现在连的是模拟数据，回复也是模拟的。') + '</div>';
   }
 
   /* ================= per type ================= */
   function overview(m, s, a) {
     var t = a.totals;
-    var h = hero({ name: m.name, role: m.presetName + ' · ' + (m.flowText || ''), icon: typeof svgPresetu === 'function' ? svgPresetu(m.id, 30) : '',
-      chips: (m.curated ? chip('精选案例', 'm-op') : '') + chip(s.time == null ? '全部时间' : '截止 ' + U.fmtClock(s.time)) + chip('模拟数据') });
+    var h = hero({ name: m.name, role: [m.presetName, m.flowText].filter(Boolean).join(' · '), icon: typeof svgPresetu === 'function' ? svgPresetu(m.id, 30) : '',
+      chips: (m.curated ? chip('精选案例', 'm-op') : '') + chip(s.time == null ? '全部时间' : '截止 ' + U.fmtClock(s.time)) +
+        (m.factSource && m.factSource.kind === 'error' ? pill(HUB.model.factLabel(m), 'warn') : chip(HUB.model.factLabel(m))) });
     var intro = '<div class="ds"><div class="ds-who">' + esc(m.summary || '') + '</div></div>';
     var nh = a.needsHuman.map(function (x) {
       var act = x.kind === 'approval' ? '<button class="btn btn-sim" type="button" data-act="do" data-kind="approve" data-type="gate" data-id="' + esc(x.target.id) + '" style="height:24px">放行</button>' : '';
       return '<div class="ob-row" ' + selAttrs(x.target.type, x.target.id) + '>' + pill(KIND_ZH[x.kind] || x.kind, x.kind === 'approval' ? 'warn' : 'info') +
-        '<span class="ob-nm ob-wrap-text">' + esc(x.text) + '</span>' + act + '</div>';
+        '<span class="ob-nm ob-wrap-text">' + esc(U.quietEval(x.text)) + '</span>' + act + '</div>';
     }).join('');
     var cases = m.facts.cases.filter(function (c) { return HUB.model.visible(c.start, s); }).map(function (c) {
       var cls = c.status === 'done' ? 'good' : c.status === 'blocked' ? 'warn' : 'info';
-      return rowItem('data-act="focus" data-id="' + c.id + '"', '<b>' + c.id + '</b> ' + esc(c.name), U.fmtClock(c.start), pill(L.caseStatus[c.status] || c.status, cls));
+      var r = evalsOn(s) ? RESULT_ZH[c.result] : null;
+      return rowItem('data-act="focus" data-id="' + c.id + '"', '<b>' + c.id + '</b> ' + esc(evalsOn(s) ? c.name : shortName(c.name)), U.fmtClock(c.start), r ? pill(r[0], r[1]) : pill(L.caseStatus[c.status] || c.status, cls));
     }).join('');
     var health = a.health.slice(0, 6).map(function (x) {
-      return '<div class="ob-row" data-act="health" data-hid="' + x.id + '"><span class="ob-sev ' + x.severity + '">' + ({ high: '高', mid: '中', low: '低' })[x.severity] + '</span><span class="ob-nm ob-wrap-text">' + esc(x.text) + '</span></div>';
+      return '<div class="ob-row" data-act="health" data-hid="' + x.id + '"><span class="ob-sev ' + x.severity + '">' + ({ high: '高', mid: '中', low: '低' })[x.severity] + '</span><span class="ob-nm ob-wrap-text">' + esc(U.quietEval(x.text)) + '</span></div>';
     }).join('');
     var versions = (m.def.versions || []).slice().reverse().slice(0, 4).map(function (v) {
       return '<div class="ob-row" style="cursor:default">' + pill(v.id, 'info') + '<span class="ob-nm ob-wrap-text">' + esc(v.note || '') + '</span><span class="ob-meta">' + U.fmtClock(v.at) + '</span></div>';
     }).join('');
     return h + intro +
       sec('需要人处理的事', nh ? '<div class="ob-list">' + nh + '</div>' : '<div class="ob-note">现在没有等你处理的事。</div>') +
-      sec('概况', stats([['个体', t.individuals], ['任务线', t.relations], ['案例', t.cases], ['运行', t.runs], ['调用', U.fmtNum(t.calls)], ['token', U.fmtNum(t.tokens)],
+      sec('概况', stats([['个体', t.individuals], ['任务线', t.relations], ['案例', t.cases], ['运行', t.runs], ['调用', U.fmtNum(t.calls)], ['token', U.fmtTokens(t.tokens)],
         ['首次通过', U.pct(t.firstPassRate)], ['返工率', U.pct(t.reworkRate)], ['失败运行', t.failedRuns]])) +
       sec('案例实例（点一下聚焦它）', cases ? '<div class="ob-list">' + cases + '</div>' : '') +
       sec('架构体检', health ? '<div class="ob-list">' + health + '</div>' : '<div class="ob-note">没有发现问题。</div>') +
@@ -89,7 +114,8 @@
       x.watches && x.watches.length ? ['盯着', x.watches.map(function (w) { return link('individual', w); }).join('、')] : null]);
     var dv = a.delivery[id];
     var deliv = '';
-    if (dv) {
+    if (dv && !HUB.model.measured(m, 'delivery')) deliv = '<div class="ob-note">未采集</div>';
+    else if (dv) {
       var miss = dv.missing.map(function (d) {
         return '<div class="ob-row" style="cursor:default">' + pill('没送到', 'bad') + '<span class="ob-nm">' + nm('doc', d) + '</span>' +
           '<button class="btn btn-a" type="button" data-act="do" data-kind="redeliver" data-type="individual" data-id="' + esc(id) + '" data-doc="' + esc(d) + '" style="height:24px">补送</button></div>';
@@ -110,7 +136,8 @@
     var runs = (m.idx.runsByInd.get(id) || []).filter(function (r) { return HUB.model.visible(r.start, s); }).slice(-6).reverse().map(function (r) {
       var t = m.idx.task.get(r.taskId);
       var cls = r.outcome === 'failed' || r.outcome === 'interrupted' ? 'bad' : r.outcome === 'escalate' ? 'warn' : 'good';
-      return rowItem('data-act="run" data-id="' + r.id + '"', esc(t ? t.name : '运行'), (r.caseId || '') + ' · ' + U.fmtDur(r.end - r.start), pill(L.outcome[r.outcome] || r.outcome, cls));
+      return rowItem('data-act="run" data-id="' + r.id + '"', esc(t ? t.name : '运行'), (r.caseId || '') + ' · ' + U.fmtDur(r.end - r.start),
+        pill(L.outcome[r.outcome] || r.outcome, cls) + (r.mark && evalsOn(s) ? pill('标注失误', 'warn') : ''));
     }).join('');
     var msgs = m.facts.messages.filter(function (mm) { return (mm.from === id || mm.to === id) && HUB.model.visible(mm.at, s); }).slice(-6).map(function (mm) {
       return '<div class="ob-msg' + (mm.from === 'human' ? ' me' : '') + '"><small>' + nm('individual', mm.from) + ' → ' + nm('individual', mm.to) + ' · ' + U.fmtClock(mm.at) + '</small>' + esc(mm.text) + '</div>';
@@ -121,16 +148,18 @@
       var cs = a.channelStats[cid] || {};
       return '<div class="ob-native-card"><div class="ob-native-h">★ 专属能力 · ' + esc(c.host || '') + ' 自带</div><div class="ob-native-n">' + esc(c.name || cid) + '</div>' +
         '<div class="ob-note">' + esc(c.note || '') + '</div>' +
-        (s.compare === 'def' ? '' : '<div class="ob-native-s">用过 ' + (cs.calls || 0) + ' 次' + (cs.maxWidth ? ' · 最多同时 ' + cs.maxWidth + ' 个' : '') + (c.limit ? ' · 上限 ' + c.limit + ' 个' : '') + '</div>') + '</div>';
+        (s.compare === 'def' ? '' : '<div class="ob-native-s">用过 ' + (cs.calls || 0) + ' 次' +
+          (!HUB.model.measured(m, 'channel') ? ' · 并发未采集' : cs.maxWidth ? ' · 最多同时 ' + cs.maxWidth + ' 个' : '') +
+          (c.limit ? ' · 上限 ' + c.limit + ' 个' + (!HUB.model.measured(m, 'channel') ? '（补写的声明）' : '') : '') + '</div>') + '</div>';
     }).join('');
     var lastRun = s.compare !== 'def' ? HUB.model.latestRunOf(id, s, m) : null;
     var openChain = lastRun ? '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + lastRun.id + '">打开最近一次运行的决策链</button>'
       + '<div class="ob-note" style="margin-top:5px">在中间画布显示；双击个体也能打开，Esc 返回。</div></div>' : '';
-    return h + (natBlock ? '<div class="ds">' + natBlock + '</div>' : '') + openChain + '<div class="ds">' + info + '</div>' +
-      (s.compare !== 'def' && x.kind !== 'human' ? sec('运行', stats([['运行', st.runs || 0], ['任务', st.tasks || 0], ['token', U.fmtNum(st.tokens || 0)]])) : '') +
+    return h + (natBlock ? '<div class="ds">' + natBlock + '</div>' : '') + openChain + '<div class="ds">' + info + '</div>' + rawFields(m, x.attributes, x.tags) +
+      (s.compare !== 'def' && x.kind !== 'human' ? sec('运行', stats([['运行', st.runs || 0], ['任务', st.tasks || 0], ['token', U.fmtTokens(st.tokens)]])) : '') +
       (s.compare !== 'def' ? sec('送达：它该知道的有没有真的到它手里', deliv) : '') +
       sec('线', relRows ? '<div class="ob-list">' + relRows + '</div>' : '') +
-      (s.compare !== 'def' ? sec('最近的运行（点一下看决策链）', runs ? '<div class="ob-list">' + runs + '</div>' : '<div class="ob-note">' + (st.status === 'never' ? '从没被派过活：编排里有它，实际没用上。' : '这个时间点之前还没有运行。') + '</div>') : '') +
+      (s.compare !== 'def' ? sec('最近的运行（点一下看决策链）', runs ? '<div class="ob-list">' + runs + '</div>' : '<div class="ob-note">' + (st.status === 'never' ? esc(U.cmpWord('neverNote')) : '这个时间点之前还没有运行。') + '</div>') : '') +
       sec('和它说话', (msgs ? '<div class="ob-list">' + msgs + '</div>' : '') + acts);
   }
 
@@ -145,7 +174,7 @@
       var st = (a.indStats[mid] || {}).status;
       return rowItem(selAttrs('individual', mid), nm('individual', mid), s.compare === 'def' ? '' : (L.indStatus[st] || '') + ' · ' + ((a.indStats[mid] || {}).runs || 0) + ' 次', '<span class="ob-dot ' + (st || '') + '"></span>');
     }).join('');
-    return h + (s.compare !== 'def' ? sec('概况', stats([['成员', gs.members || 0], ['运行', gs.runs || 0], ['从没派出', gs.never || 0]])) : '') +
+    return h + (s.compare !== 'def' ? sec('概况', stats([['成员', gs.members || 0], ['运行', gs.runs || 0], [U.cmpWord('neverStat'), gs.never || 0]])) : '') +
       sec('成员', '<div class="ob-list">' + rows + '</div>') +
       '<div class="ds"><button class="btn btn-p" type="button" data-act="toggle" data-id="' + esc(id) + '">' + (open ? '折叠成一张卡' : '展开看成员') + '</button></div>';
   }
@@ -157,13 +186,14 @@
     var hand = m.facts.handoffs.filter(function (x) { return x.relationId === id && HUB.model.visible(x.at, s); });
     var h = hero({ name: HUB.model.name(m.idx.ch.has(r.from) ? 'channel' : 'individual', r.from) + ' → ' + HUB.model.name(m.idx.ch.has(r.to) ? 'channel' : 'individual', r.to),
       role: (L.lineType[r.type] || r.type) + ' · ' + (L.relSub[r.sub] || r.sub), icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h14M13 6l6 6-6 6"/></svg>', color: 'var(--accent1)',
-      chips: s.compare === 'def' ? '' : chip(rs.count ? '发生 ' + rs.count + ' 次' : '设计了没发生') });
+      chips: s.compare === 'def' ? '' : chip(rs.count ? '发生 ' + rs.count + ' 次' : U.cmpWord('unusedChip')) });
     var rows = hand.slice(-8).reverse().map(function (x) {
-      return rowItem('data-act="focus" data-id="' + esc(x.caseId) + '"', esc(x.caseId) + ' · ' + U.fmtClock(x.at), x.missing && x.missing.length ? '缺 ' + x.missing.length + ' 份' : (x.note || ''));
+      return rowItem('data-act="focus" data-id="' + esc(x.caseId) + '"', esc(x.caseId) + ' · ' + U.fmtClock(x.at),
+        (!HUB.model.measured(m, 'delivery') ? '送达未采集' : x.missing && x.missing.length ? '缺 ' + x.missing.length + ' 份' : esc(x.note || '')), basis(x));
     }).join('');
     return h + '<div class="ds">' + kv([['从', link(m.idx.ch.has(r.from) ? 'channel' : 'individual', r.from)], ['到', link(m.idx.ch.has(r.to) ? 'channel' : 'individual', r.to)],
       ['说明', esc(r.note || r.label || '-')], rs.first != null ? ['第一次', U.fmtClock(rs.first)] : null, rs.last != null ? ['最近一次', U.fmtClock(rs.last)] : null]) + '</div>' +
-      (s.compare !== 'def' ? sec('实际发生的交接', rows ? '<div class="ob-list">' + rows + '</div>' : '<div class="ob-note">编排里有这条线，但到现在一次也没走过。</div>') : '') +
+      (s.compare !== 'def' ? sec('实际发生的交接', rows ? '<div class="ob-list">' + rows + '</div>' : '<div class="ob-note">' + esc(U.cmpWord('unusedNote')) + '</div>') : '') +
       sec('调整', actions({ type: 'relation', id: id }, ['edit_rule']));
   }
 
@@ -183,10 +213,10 @@
     var f = a.factOnly.find(function (x) { return x.id === id; });
     if (!f) return '<div class="sr-mt">这条编排外的交接在当前时间点之前还没发生。</div>';
     var hand = f.handoffIds.map(function (hid) { return m.idx.handoff.get(hid); }).filter(Boolean);
-    var h = hero({ name: HUB.model.name('individual', f.from) + ' → ' + HUB.model.name('individual', f.to), role: '编排里没有这条线，实际发生了 ' + f.count + ' 次',
-      icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>', color: '#F97316', chips: chip('未声明') });
-    var rows = hand.slice(-8).reverse().map(function (x) { return rowItem('data-act="focus" data-id="' + esc(x.caseId) + '"', esc(x.caseId) + ' · ' + U.fmtClock(x.at), esc(x.note || '')); }).join('');
-    return h + '<div class="ds"><div class="ds-who">' + esc(f.note || '这类交接没写进编排：可能是编排漏了，也可能是个体自己找的捷径。') + '</div></div>' +
+    var h = hero({ name: HUB.model.name('individual', f.from) + ' → ' + HUB.model.name('individual', f.to), role: '编排里没有这条线，实际发生了 ' + f.count + ' 次' + comparison(m),
+      icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>', color: '#F97316', chips: chip(U.cmpWord('factTag')) });
+    var rows = hand.slice(-8).reverse().map(function (x) { return rowItem('data-act="focus" data-id="' + esc(x.caseId) + '"', esc(x.caseId) + ' · ' + U.fmtClock(x.at), esc(x.note || ''), basis(x)); }).join('');
+    return h + '<div class="ds"><div class="ds-who">' + esc(f.note || U.cmpWord('factNote')) + '</div></div>' +
       sec('发生在', '<div class="ob-list">' + rows + '</div>') +
       sec('处理', actions({ type: 'individual', id: f.from }, ['edit_rule']));
   }
@@ -203,9 +233,10 @@
     var c = m.idx.ch.get(id);
     if (!c) return '';
     var cs = a.channelStats[id] || {};
+    var measured = HUB.model.measured(m, 'channel');
     var ev = m.facts.channelEvents.filter(function (e) { return e.channelId === id && HUB.model.visible(e.at, s); }).slice(-8).reverse();
-    var h = hero({ name: c.name.replace(/^(模型|工具)：/, ''), role: chKindLabel(c) + ' · 维护者：' + HUB.model.name('individual', c.maintainer),
-      icon: chIcon(c), color: c.kind === 'function' ? 'var(--accent3)' : 'var(--accent2)', chips: chip(L.channelStatus[cs.status] || '正常') + (c.limit === 1 ? chip('不能并发') : '') });
+    var h = hero({ name: c.name.replace(/^(模型|工具)：/, ''), role: chKindLabel(c) + (measured ? '' : '（补写的声明）') + ' · 维护者：' + HUB.model.name('individual', c.maintainer),
+      icon: chIcon(c), color: c.kind === 'function' ? 'var(--accent3)' : 'var(--accent2)', chips: chip(measured ? L.channelStatus[cs.status] || '正常' : '健康未采集') + (c.limit === 1 ? chip(measured ? '不能并发' : '不能并发（补写的声明）') : '') });
     var people = function (ids) { return ids.length ? ids.map(function (u) { return link('individual', u); }).join('、') : '-'; };
     var unit = c.kind === 'model' ? '次运行' : '次调用';
     var load = s.compare === 'def' ? '' : sec(s.time == null ? '负载（整段时间）' : '负载（截止 ' + U.fmtClock(s.time) + '）',
@@ -214,11 +245,12 @@
         : [['此刻在用', cs.active || 0], ['峰值', cs.peak || 0], ['调用', U.fmtNum(cs.calls || 0)]]) +
       '<div class="ds" style="margin-top:8px">' + kv([['正在用的', people(cs.activeUsers || [])], ['在排队的', people(cs.waitingUsers || [])]]) + '</div>');
     var rows = ev.map(function (e) { return '<div class="ob-row" style="cursor:default"><span class="ob-meta">' + U.fmtClock(e.at) + '</span><span class="ob-nm ob-wrap-text">' + esc(e.note || e.kind) + '</span></div>'; }).join('');
+    if (!measured && s.compare !== 'def') load = sec('负载', stats([['峰值并发', '未采集'], ['排队', '未采集'], ['调用', U.fmtNum(cs.calls || 0)]]));
     var limitInput = '<div class="ob-say"><input type="number" min="1" max="64" data-limit value="' + (c.limit || '') + '" placeholder="不限" aria-label="并发上限" style="max-width:90px">' +
       '<button class="btn" type="button" data-act="limit" data-id="' + esc(id) + '">改并发上限</button></div>';
     return h + load +
-      '<div class="ds">' + kv([['容量', esc(c.capacity || '-')], ['额度', esc(c.quota || '-')], ['谁能用', people(c.users || [])]]) + '</div>' +
-      sec('故障和维护', rows ? '<div class="ob-list">' + rows + '</div>' : '<div class="ob-note">没有故障和维护记录。</div>') +
+      '<div class="ds">' + kv([['容量', esc(c.capacity || '-') + (measured ? '' : '（补写的声明）')], ['额度', esc(c.quota || '-') + (measured ? '' : '（补写的声明）')], ['谁能用', people(c.users || [])]]) + '</div>' +
+      sec('故障和维护', !measured ? '<div class="ob-note">未采集</div>' : rows ? '<div class="ob-list">' + rows + '</div>' : '<div class="ob-note">没有故障和维护记录。</div>') +
       sec('管理', limitInput + actions({ type: 'channel', id: id }, [cs.status === 'paused' ? 'resume_channel' : 'pause_channel', 'assign_maint']).replace(/<div class="ob-say">[\s\S]*?<\/div>/, '')) +
       '<div class="ds"><a class="ob-a" data-act="sel" data-type="channels" data-id="all">看全部渠道</a></div>';
   }
@@ -236,6 +268,7 @@
 
   // channel management: every channel in one table, with what needs attention first
   function channels(m, s, a) {
+    var measured = HUB.model.measured(m, 'channel');
     var list = m.def.channels.filter(function (c) { return c.tier === 'shared'; });
     var natives = m.def.channels.filter(function (c) { return c.tier === 'native'; });
     var score = function (c) { var cs = a.channelStats[c.id] || {}; return (cs.status !== 'ok' ? 100 : 0) + (cs.waiting || 0) * 10 + (cs.queued || 0); };
@@ -244,12 +277,13 @@
       var cs = a.channelStats[c.id] || {};
       var load = s.compare === 'def' ? (c.limit ? '上限 ' + c.limit : '不限') : c.limit ? (s.time == null ? '峰值 ' + cs.peak + '/' + c.limit : '在用 ' + cs.active + '/' + c.limit) + (cs.queued ? ' · 排队 ' + cs.queued : '') : '不限';
       var st = cs.status && cs.status !== 'ok' ? pill(L.channelStatus[cs.status] || cs.status, 'bad') : (cs.queued ? pill('有排队', 'warn') : pill('正常', 'good'));
+      if (!measured) { load = (c.limit ? '上限 ' + c.limit : '不限') + '（补写的声明）'; st = pill('健康未采集'); }
       return '<div class="ob-row" ' + selAttrs('channel', c.id) + '>' + st + '<span class="ob-nm">' + esc(c.name.replace(/^(模型|工具)：/, '')) + '</span><span class="ob-meta">' + esc(load) + ' · ' + (c.users || []).length + ' 人</span></div>';
     }).join('');
     var t = list.length, bad = list.filter(function (c) { var st = (a.channelStats[c.id] || {}).status; return st && st !== 'ok'; }).length;
     var q = U.sum(list, function (c) { return (a.channelStats[c.id] || {}).queued || 0; });
     return hero({ name: '渠道管理', role: '分三层：共享渠道（模型、功能）、专属能力（挂在个体上）、基础能力（人人都有）', icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent2)' }) +
-      (s.compare !== 'def' ? sec('概况', stats([['渠道', t], ['有故障', bad], ['累计排队', q]])) : '') +
+      (s.compare !== 'def' ? sec('概况', stats([['渠道', t], ['有故障', measured ? bad : '未采集'], ['累计排队', measured ? q : '未采集']])) : '') +
       sec('共享渠道（需要处理的在前）', '<div class="ob-list">' + rows + '</div>') +
       sec('专属能力（只属于某个个体，标在它的卡片上）', natives.length ? '<div class="ob-list">' + natives.map(function (c) {
         var cs = a.channelStats[c.id] || {};
@@ -266,8 +300,13 @@
     var who = g.decider.type === 'human' ? '人' : g.decider.type === 'rule' ? '规则' : HUB.model.name('individual', g.decider.who);
     var waiting = m.facts.cases.filter(function (c) { return c.waitingAt === id; });
     var h = hero({ name: g.name, role: '判断点 · 由' + who + '判断', icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 9-9 9-9-9z"/></svg>', color: 'var(--accent3)' });
+    var paths = (g.paths || []).map(function (p) {
+      var to = !p.next ? '-' : p.next === 'done' ? '完成' : HUB.model.name('stage', p.next);
+      return rowItem('style="cursor:default"', esc(p.condition || '-'), '→ ' + esc(to) + (p.note ? ' · ' + esc(p.note) : ''));
+    }).join('');
     return h + '<div class="ds">' + kv([['谁来判断', esc(who)], ['怎么判断', esc(g.decider.text || '-')], ['通过后', esc(g.pass === 'done' ? '完成' : HUB.model.name('stage', g.pass))],
       ['打回到', esc(g.fail ? HUB.model.name('stage', g.fail) : '-')], ['上报给', g.escalate ? '人' : '-']]) + '</div>' +
+      (paths ? sec('全部出路（编排里写的）', '<div class="ob-list">' + paths + '</div>') : '') +
       (s.compare !== 'def' ? sec('结果', stats([['通过', gs.pass || 0], ['打回', gs.fail || 0], ['上报', gs.escalate || 0]])) : '') +
       (waiting.length ? sec('正在这里等的案例', '<div class="ob-list">' + waiting.map(function (c) { return rowItem('data-act="focus" data-id="' + c.id + '"', c.id + ' ' + esc(c.name), '等待中'); }).join('') + '</div>' +
         (g.decider.type === 'human' ? actions({ type: 'gate', id: id }, ['approve']) : '')) : '');
@@ -291,6 +330,9 @@
       (s.compare !== 'def' ? sec('统计', stats([['任务', ss.tasks || 0], ['完成', ss.done || 0], ['返工', ss.rework || 0]])) : '');
   }
 
+  // the outcome a recorded run carries (from-traces.js); simulated cases have none
+  var RESULT_ZH = { success: ['成功', 'good'], failure: ['失败', 'warn'], unfinished: ['未完成', 'info'] };
+
   function kase(m, s, a, id) {
     var c = m.idx.case.get(id);
     if (!c) return '';
@@ -300,12 +342,67 @@
       return p.node === 'start' ? '开始' : p.node === 'done' ? '完成' : m.idx.stage.has(p.node) ? HUB.model.name('stage', p.node) : m.idx.gate.has(p.node) ? '◇' + HUB.model.name('gate', p.node) : p.node;
     }).join(' → ');
     var focused = s.focus && s.focus.type === 'case' && s.focus.id === id;
-    return hero({ name: c.id + ' ' + c.name, role: '案例实例 · ' + (L.caseStatus[c.status] || c.status), icon: typeof svgPresetu === 'function' ? svgPresetu(m.id, 30) : '', chips: chip(U.fmtClock(c.start) + ' 开始') }) +
+    var res = evalsOn(s) ? RESULT_ZH[c.result] : null;
+    var annotation = '';
+    if (c.mistake && evalsOn(s)) {
+      var mk = c.mistake, mr = (m.idx.runsByCase.get(id) || []).find(function (r) { return r.mark === 'mistake'; });
+      var label = '数据集标注：失误在' + HUB.model.name('individual', mk.individualId);
+      if (mk.consistent) label += '第 ' + (mk.turnIndex + 1) + ' 条';
+      else {
+        label += '，步号指向第 ' + (mk.turnIndex + 1) + ' 条，该条发言者是' + (mk.actualSpeaker || '未记录') + '，与标注不一致';
+      }
+      annotation = sec('数据集评价', '<div class="ob-note">' + (mr ? link('run', mr.id, esc(label)) : esc(label)) + '</div>');
+    }
+    var hands = (m.idx.handoffsByCase.get(id) || []).filter(function (x) { return HUB.model.visible(x.at, s); }).map(function (x) {
+      var tr = x.toTask ? (m.idx.runsByTask.get(x.toTask) || [])[0] : null;   // the task handed over may not have run
+      return rowItem(tr ? selAttrs('run', tr.id) : 'style="cursor:default"',
+        nm('individual', x.from) + ' → ' + nm('individual', x.to), U.fmtClock(x.at), basis(x));
+    }).join('');
+    if (c.path.length > 14) path = path.split(' → ').slice(0, 8).concat(['…（共 ' + c.path.length + ' 段，中间省略）…'], path.split(' → ').slice(-4)).join(' → ');
+    // recorded facts can be read record by record in the trajectory view: the way in sits on top, like the decision chain of an individual
+    var traj = HUB.obsCollab && !m.synthetic && s.subject !== 'collab' ? '<div class="ds"><button class="btn btn-p" type="button" data-act="traj" data-id="' + id + '">看协作轨迹</button>' +
+      '<div class="ob-note" style="margin-top:5px">按记录先后，一条一条看谁把什么交给谁；键盘 T 也行。</div></div>' : '';
+    return hero({ name: c.id + ' ' + (evalsOn(s) ? c.name : shortName(c.name)), role: '案例实例 · ' + (res ? '记录的结局：' + res[0] : (L.caseStatus[c.status] || c.status)), icon: typeof svgPresetu === 'function' ? svgPresetu(m.id, 30) : '', chips: chip(U.fmtClock(c.start) + ' 开始') }) + traj +
       sec('概况', stats([['任务', tasks.length], ['运行', runs.length], ['返工', tasks.filter(function (t) { return (t.visit || 1) > 1 || t.status === 'rework'; }).length]])) +
       sec('走过的路', '<div class="ob-note">' + esc(path) + '</div>') +
+      (res && c.note ? sec('结局', '<div class="ob-note">' + pill(res[0], res[1]) + ' ' + esc(c.note) + '</div>') : '') +
+      annotation + sec('事实交接', hands ? '<div class="ob-list">' + hands + '</div>' : '') +
       (c.waitingAt ? sec('卡在', '<div class="ob-list">' + rowItem(selAttrs('gate', c.waitingAt), nm('gate', c.waitingAt), '等待中') + '</div>') : '') +
       '<div class="ds ob-acts">' + (focused ? '' : '<button class="btn btn-p" type="button" data-act="focus" data-id="' + id + '">在图上点亮这个案例</button>') +
-      (HUB.obsTimeline ? '<button class="btn btn-sim" type="button" data-act="replay" data-id="' + id + '">回放</button>' : '') + '</div>';
+      (HUB.obsTimeline && s.subject !== 'collab' ? '<button class="btn btn-sim" type="button" data-act="replay" data-id="' + id + '">回放</button>' : '') +
+      '</div>';
+  }
+
+  // one recorded turn of a real trajectory (协作轨迹图): its text, what it hands off and what it catches
+  var TURN_KIND = { say: '发言', think: '思考', tool: '工具返回', context: '上下文' };
+  function turn(m, s, a, id) {
+    var t = (m.facts.turns || []).find(function (x) { return x.id === id; });
+    if (!t) return '';
+    var x = m.idx.ind.get(t.individualId), c = m.idx.case.get(t.caseId);
+    var sn = function (iid) { return esc(shortName(HUB.model.name('individual', iid))); };
+    var tid = function (seq) { return t.caseId + '.r' + seq; };
+    var hs = m.idx.handoffsByCase.get(t.caseId) || [];
+    var out = hs.filter(function (hh) { return hh.sentSeq === t.seq; }).map(function (hh) {
+      return rowItem(hh.gotSeq != null && hh.gotSeq !== t.seq ? selAttrs('turn', tid(hh.gotSeq)) : 'style="cursor:default"', '交给 ' + sn(hh.to),
+        hh.gotSeq == null ? '对方在这份记录里没有再发言' : '第 ' + hh.gotSeq + ' 条接住', basis(hh));
+    }).join('');
+    var got = hs.filter(function (hh) { return hh.gotSeq === t.seq && hh.sentSeq !== t.seq; }).map(function (hh) {
+      return rowItem(selAttrs('turn', tid(hh.sentSeq)), '接住 ' + sn(hh.from) + ' 的交接', '第 ' + hh.sentSeq + ' 条发出', basis(hh));
+    }).join('');
+    var calls = (t.calls || []).map(function (cc) { return '<div class="ob-note" style="font-family:var(--mn);overflow-wrap:anywhere">' + esc(cc.name) + '(' + esc(cc.args || '') + ')</div>'; }).join('');
+    var text = t.text || '', LIMIT = 6000;
+    var body = text ? '<div class="ob-note" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:46vh;overflow:auto">' + esc(text.slice(0, LIMIT)) + '</div>' +
+      (text.length > LIMIT ? '<div class="ob-note" style="margin-top:4px">原文共 ' + text.length + ' 字，这里显示前 ' + LIMIT + ' 字。</div>' : '') : '<div class="ob-note">这条记录没有文字。</div>';
+    var mk = c && c.mistake, marked = !!mk && evalsOn(s) && mk.turnIndex === t.sourceIndex;
+    var failed = t.kind === 'tool' && /^\s*error\b\s*[:：]/i.test(text);
+    return hero({ name: '第 ' + t.seq + ' 条记录', role: (TURN_KIND[t.kind] || t.kind) + ' · ' + shortName(x ? x.name : t.individualId) + ' · 案例实例 ' + t.caseId, icon: iconFor(x),
+      chips: (t.kind === 'tool' ? chip(failed ? '工具返回了错误（执行时的事实）' : '工具返回') : '') + (marked ? pill('数据集标注：失误在这一条', 'warn') : '') }) +
+      sec('原文', body) +
+      (calls ? sec('这一条发起的工具调用（渠道线，不是交接）', calls) : '') +
+      sec('交接', out || got ? '<div class="ob-list">' + out + got + '</div>' : '<div class="ob-note">这一条没有发出、也没有接住有依据的交接；和前后的记录只是先后相邻，不算交接。</div>') +
+      (marked && mk.reason ? sec('数据集评价', '<div class="ob-note">' + esc(mk.reason) + '</div>') : '') +
+      '<div class="ds ob-acts">' + '<button class="btn" type="button" data-act="sel" data-type="individual" data-id="' + esc(t.individualId) + '">看这个个体</button>' +
+      (t.runId ? '<button class="btn btn-p" type="button" data-act="run" data-id="' + esc(t.runId) + '">打开它那次运行的决策链</button>' : '') + '</div>';
   }
 
   function run(m, s, a, id) {
@@ -317,8 +414,8 @@
     var cov = r.coverage || {};
     var open = s.subject === 'exec' && s.focus && s.focus.id === id;
     return hero({ name: HUB.model.name('individual', r.individualId) + ' 的一次运行', role: (t ? t.name : '') + (r.caseId ? ' · ' + r.caseId : ''), icon: iconFor(x), phase: x && x.phase,
-      chips: chip(L.outcome[r.outcome] || r.outcome) + chip(U.fmtDur(r.end - r.start)) }) +
-      '<div class="ds">' + kv([['开始', U.fmtClock(r.start)], ['结束', U.fmtClock(r.end)], ['编排版本', esc(r.version || '-')], ['token', U.fmtNum(r.tokens || 0)],
+      chips: chip(L.outcome[r.outcome] || r.outcome) + chip(U.fmtDur(r.end - r.start)) + (r.mark && evalsOn(s) ? pill('标注失误', 'warn') : '') }) +
+      '<div class="ds">' + kv([['开始', U.fmtClock(r.start)], ['结束', U.fmtClock(r.end)], ['编排版本', esc(r.version || '-')], ['token', U.fmtTokens(r.tokens)],
         ['会话覆盖', '读全 ' + (cov.indexed || 0) + ' · 只看元信息 ' + (cov.metaOnly || 0) + ' · 截断 ' + (cov.truncated || 0)]]) + '</div>' +
       // open in the canvas, the decisions are the tree itself and the details of a step show below this pane
       (open ? '<div class="ob-note">中间是这次运行的决策链：粒度选“决策”看每个决定，选“调用”展开到每一步。选中一项，下面显示它的输入输出和属性。</div>'
@@ -361,14 +458,15 @@
     var ctx = c.context;
     return hero({ name: c.name || c.kind, role: (c.kind === 'model' ? '模型调用' : '工具调用') + ' · ' + HUB.model.name('channel', c.channelId), icon: c.kind === 'model' ? HUB.obsCards.ICON.model.replace(/16/g, '26') : HUB.obsCards.ICON.tool.replace(/16/g, '26'), color: 'var(--accent2)',
       chips: chip(c.status === 'ok' ? '成功' : c.status) + (c.repeat ? chip('重复读取') : '') }) +
-      '<div class="ds">' + kv([['开始', U.fmtTime(c.start)], ['用时', U.fmtDur(c.end - c.start)], c.kind === 'model' ? ['token', U.fmtNum(c.tokensIn) + ' 进 / ' + U.fmtNum(c.tokensOut) + ' 出'] : null,
+      '<div class="ds">' + kv([['开始', U.fmtTime(c.start)], [m.clock === 'ordinal' ? '发言条数' : '用时', U.fmtDur(c.end - c.start)],
+        c.kind === 'model' ? ['token', c.tokensIn == null && c.tokensOut == null ? '未记录' : U.fmtTokens(c.tokensIn) + ' 进 / ' + U.fmtTokens(c.tokensOut) + ' 出'] : null,
         ['输入', esc(c.input || '-')], ['输出', esc(c.output || '-')]]) + '</div>' +
       (ctx ? sec('上下文组成', stats([['任务', U.fmtNum(ctx.task)], ['共识', U.fmtNum(ctx.consensus)], ['工具结果', U.fmtNum(ctx.tools)]])) : '');
   }
 
   function overviewTail() { return '<div class="ds"><a class="ob-a" data-act="unfocus">取消聚焦，回到整个案例模板</a></div>'; }
 
-  var BY_TYPE = { individual: individual, group: group, relation: relation, agg: agg, factonly: factonly, channel: channel, channels: channels, gate: gate, stage: stage, step: step, case: kase, run: run, decision: decision, call: call };
+  var BY_TYPE = { individual: individual, group: group, relation: relation, agg: agg, factonly: factonly, channel: channel, channels: channels, gate: gate, stage: stage, step: step, case: kase, run: run, decision: decision, call: call, turn: turn };
 
   /* ================= render + events ================= */
   function render(el, m, s) {
@@ -378,7 +476,7 @@
     // a step selected in the trace tree shows its details under this pane (HUB.obsTrace); the pane keeps the summary
     var sel = s.selection && s.selection.type !== 'span' ? s.selection : null;
     var dr = !sel && HUB.obsTrace ? HUB.obsTrace.current(s, m) : null;
-    var key = m.id + '|' + m.rev + '|' + (sel ? sel.type + ':' + sel.id : '-') + '|' + s.time + '|' + s.compare + '|' + s.subject + '|' + (s.focus ? s.focus.id : '') + '|' + (dr && dr.kind === 'session' ? !!dr.session + (dr.error || '') : '');
+    var key = m.id + '|' + m.rev + '|' + (sel ? sel.type + ':' + sel.id : '-') + '|' + s.time + '|' + s.compare + '|' + s.subject + '|' + (s.focus ? s.focus.id : '') + '|' + (dr && dr.kind === 'session' ? !!dr.session + (dr.error || '') : '') + '|' + (evalsOn(s) ? '' : 'noeval');
     if (key === last) return;
     var keepScroll = last && last.split('|').slice(0, 3).join('|') === key.split('|').slice(0, 3).join('|') ? el.scrollTop : 0;
     last = key;
@@ -413,6 +511,7 @@
     else if (act === 'run') HUB.store.set({ subject: 'exec', depth: { exec: 1 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: { type: 'run', id: t.getAttribute('data-id') }, selection: { type: 'run', id: t.getAttribute('data-id') }, present: 'graph' });
     else if (act === 'toggle') { var g = m.idx.group.get(t.getAttribute('data-id')); if (g) HUB.store.toggle('org', g.id, g.level); }
     else if (act === 'replay') { if (HUB.obsTimeline) HUB.obsTimeline.replay(t.getAttribute('data-id')); }
+    else if (act === 'traj') HUB.store.set({ subject: 'collab', focus: { type: 'case', id: t.getAttribute('data-id') }, instanceId: t.getAttribute('data-id'), depth: { org: 3 }, present: 'graph', time: null, selection: null });
     else if (act === 'tree') { if (HUB.obsSessions) HUB.obsSessions.openTree(t.getAttribute('data-id')); }
     else if (act === 'limit') {
       var li = host.querySelector('[data-limit]');

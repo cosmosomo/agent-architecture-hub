@@ -1,0 +1,254 @@
+/* The collaboration-trajectory view (协作轨迹图), js/obs/collab.js. Prefix obc-. Lines and marks take the page's own
+   meanings: task lines --ob-task, outside the definition --ob-factonly, tool channel --ob-channel, evaluation --ob-fail,
+   the cursor and the selection --ob-hl. The colours of the members (--oc-c1..6) keep clear of those. */
+
+.ob-collab {
+  --oc-c1: #7dd3fc; --oc-c2: #c4b5fd; --oc-c3: #f9a8d4; --oc-c4: #5eead4; --oc-c5: #bef264; --oc-c6: #a5b4fc;
+  --oc-human: #fbbf24; --oc-ghost: #64748b; --oc-def: #94a3b8;
+  --oc-pit: #060914; --oc-veil: rgba(7, 9, 22, .64); --oc-spark: #ffffff;
+  position: absolute; left: 10px; right: 10px; top: 58px; bottom: 10px; z-index: 55;
+  display: none; flex-direction: column; gap: 8px; min-height: 0;
+  color: var(--t1); font-family: var(--bd);
+}
+[data-theme="light"] .ob-collab {
+  --oc-c1: #0284c7; --oc-c2: #7c3aed; --oc-c3: #db2777; --oc-c4: #0d9488; --oc-c5: #65a30d; --oc-c6: #4f46e5;
+  --oc-human: #d97706; --oc-ghost: #94a3b8; --oc-def: #64748b;
+  --oc-pit: #ffffff; --oc-veil: rgba(255, 255, 255, .7); --oc-spark: #ffffff;
+}
+.ob-collab.on { display: flex; }
+/* the view brings its own time axis and controls */
+body.obs-on.ob-collab-on .ob-ctrl,
+body.obs-on.ob-collab-on .ob-tl,
+body.obs-on.ob-collab-on .zm-ctrl { display: none !important; }
+/* its breadcrumbs are short and its controls are three groups: give the controls the room to stay on one line */
+body.obs-on.ob-collab-on .ob-crumbs { max-width: calc(44% - 20px); }
+body.obs-on.ob-collab-on .ob-topctl { max-width: calc(56% - 20px); }
+
+.obc-glass { background: var(--bg-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--brd); border-radius: 12px; }
+.obc-c-c1 { --nc: var(--oc-c1); } .obc-c-c2 { --nc: var(--oc-c2); } .obc-c-c3 { --nc: var(--oc-c3); }
+.obc-c-c4 { --nc: var(--oc-c4); } .obc-c-c5 { --nc: var(--oc-c5); } .obc-c-c6 { --nc: var(--oc-c6); }
+.obc-c-human { --nc: var(--oc-human); } .obc-c-ghost { --nc: var(--oc-ghost); } .obc-c-def { --nc: var(--oc-def); }
+
+/* ---------- the strip above the stage ---------- */
+.obc-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 8px 0 12px; min-width: 0; overflow: hidden; }
+.obc-hk { flex-shrink: 0; font: 9px var(--mn); letter-spacing: .08em; color: var(--t3); white-space: nowrap; }
+.obc-ht { flex-shrink: 0; max-width: 34%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 12px var(--hd); color: var(--t1); }
+.obc-hq { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 11.5px var(--bd); color: var(--t2); }
+.obc-head .ob-pill { flex-shrink: 0; }
+/* the evaluation: a judgement made afterwards. Its badge is neutral; the colour around it follows the outcome it reports */
+.obc-eval {
+  --ec: var(--ob-fail);
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 3px; cursor: pointer; white-space: nowrap;
+  border-radius: 999px; border: 1px solid rgba(var(--ec), .5); background: rgba(var(--ec), .09); color: var(--t1); font: 600 10.5px var(--hd);
+}
+.obc-eval.good { --ec: var(--ob-channel); }
+.obc-eval.mid { --ec: var(--ob-watch); }
+.obc-eval:hover { background: rgba(var(--ec), .18); }
+.obc-eval .k, .obc-caption > div.eval::before { padding: 2px 7px; border-radius: 999px; background: var(--t2); color: var(--oc-pit); font: 700 9px var(--hd); letter-spacing: .08em; }
+
+/* ---------- the stage ---------- */
+.obc-stage {
+  position: relative; flex: 1 1 auto; min-height: 96px; overflow: hidden; border-radius: 14px; border: 1px solid var(--brd);
+  background: radial-gradient(120% 95% at 50% -12%, #18214d 0%, #0b1027 46%, #070a18 100%);
+}
+.obc-stage::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .75;
+  background-image:
+    radial-gradient(1.2px 1.2px at 7% 16%, rgba(255,255,255,.75) 50%, transparent 52%), radial-gradient(1px 1px at 16% 71%, rgba(255,255,255,.5) 50%, transparent 52%),
+    radial-gradient(1px 1px at 24% 34%, rgba(196,181,253,.7) 50%, transparent 52%), radial-gradient(1.4px 1.4px at 33% 86%, rgba(255,255,255,.45) 50%, transparent 52%),
+    radial-gradient(1px 1px at 41% 12%, rgba(255,255,255,.55) 50%, transparent 52%), radial-gradient(1px 1px at 48% 58%, rgba(125,211,252,.55) 50%, transparent 52%),
+    radial-gradient(1.2px 1.2px at 57% 28%, rgba(255,255,255,.6) 50%, transparent 52%), radial-gradient(1px 1px at 63% 78%, rgba(255,255,255,.4) 50%, transparent 52%),
+    radial-gradient(1px 1px at 71% 9%, rgba(196,181,253,.6) 50%, transparent 52%), radial-gradient(1.4px 1.4px at 78% 47%, rgba(255,255,255,.5) 50%, transparent 52%),
+    radial-gradient(1px 1px at 86% 22%, rgba(255,255,255,.65) 50%, transparent 52%), radial-gradient(1px 1px at 92% 66%, rgba(125,211,252,.5) 50%, transparent 52%),
+    radial-gradient(1px 1px at 96% 91%, rgba(255,255,255,.45) 50%, transparent 52%), radial-gradient(1px 1px at 3% 92%, rgba(255,255,255,.4) 50%, transparent 52%);
+}
+[data-theme="light"] .obc-stage { background: radial-gradient(120% 95% at 50% -12%, #ffffff 0%, #f4f6ff 52%, #e9edfb 100%); }
+[data-theme="light"] .obc-stage::before { opacity: .5; filter: invert(1) hue-rotate(180deg); }
+.obc-svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.obc-stage.wide { overflow-x: auto; scrollbar-width: thin; scrollbar-color: rgba(var(--ob-task), .45) transparent; }
+
+/* members */
+.obc-node { cursor: pointer; transition: opacity .25s; }
+.obc-node .halo { opacity: 0; transition: opacity .35s; pointer-events: none; }
+.obc-node.active .halo { opacity: 1; }
+.obc-node .body { stroke: var(--nc); stroke-width: 1.6; transition: stroke-width .15s; }
+.obc-node:hover .body { stroke-width: 2.6; }
+.obc-node .orbit { fill: none; stroke: var(--nc); stroke-opacity: .28; stroke-width: 1; stroke-dasharray: 2 5; pointer-events: none; transform-box: fill-box; transform-origin: center; }
+.obc-node.active .orbit { stroke-opacity: .85; animation: obc-spin 9s linear infinite; }
+.obc-node .icon { fill: none; stroke: var(--nc); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.obc-node .nlabel { font: 600 12.5px var(--hd); fill: var(--t1); paint-order: stroke; stroke: var(--oc-pit); stroke-width: 3.5px; stroke-linejoin: round; }
+.obc-node .nsub { font: 10px var(--mn); fill: var(--t3); paint-order: stroke; stroke: var(--oc-pit); stroke-width: 3px; stroke-linejoin: round; }
+.obc-node.ghost .body { stroke-dasharray: 4 4; stroke-opacity: .75; fill-opacity: .45; }
+.obc-node.ghost .icon { stroke-opacity: .6; }
+.obc-node.ghost .nlabel { fill: var(--t3); font-weight: 500; }
+.obc-node.later .body, .obc-node.later .icon { opacity: .45; }
+.obc-node.later .nlabel { fill: var(--t2); }
+.obc-node.dim { opacity: .26; }
+.obc-node.sel .body { stroke: rgb(var(--ob-hl)); stroke-width: 2.6; filter: drop-shadow(0 0 6px rgba(var(--ob-hl), .7)); }
+.obc-node .runring path { fill: none; stroke: var(--nc); stroke-width: 2.6; stroke-linecap: round; }
+.obc-node .runring .todo { stroke-opacity: .22; }
+
+/* task lines of the definition: rails */
+.obc-rail { cursor: pointer; transition: opacity .25s; }
+.obc-rail path { fill: none; stroke: rgba(var(--ob-task), .4); stroke-width: 1; }
+.obc-rail path.hit { stroke: transparent; stroke-width: 14; }
+.obc-rail path.chev { fill: rgba(var(--ob-task), .55); stroke: none; }
+.obc-rail:hover path:not(.hit):not(.chev) { stroke: rgba(var(--ob-task), .95); }
+.obc-rail.warm path:not(.hit):not(.chev) { stroke: rgba(var(--ob-task), .5); }
+.obc-rail.cold path:not(.hit):not(.chev) { stroke: var(--t3); stroke-opacity: .75; stroke-dasharray: 5 4; }
+.obc-rail.cold path.chev { fill: var(--t3); }
+.obc-rail.dim { opacity: .18; }
+
+/* handoffs: a wedge when the record says so, dots when the protocol does */
+.obc-edge { cursor: pointer; }
+.obc-edge .band { fill: rgb(var(--ob-task)); }
+.obc-edge .aura { fill: rgb(var(--ob-task)); pointer-events: none; }
+.obc-edge .hit { fill: none; stroke: transparent; stroke-width: 14; }
+.obc-edge .flow { fill: none; stroke: var(--oc-spark); stroke-opacity: .55; stroke-width: 1; stroke-linecap: round; stroke-dasharray: 2 12; animation: obc-flow 1.6s linear infinite; pointer-events: none; }
+.obc-edge.fo .band, .obc-edge.fo .aura { fill: rgb(var(--ob-factonly)); }
+.obc-edge.dim { opacity: .12; }
+.obc-tag rect { fill: var(--oc-pit); fill-opacity: .9; stroke-width: 1; }
+.obc-tag text { font: 600 10px var(--hd); }
+.obc-tag.cold rect { stroke: var(--t3); stroke-opacity: .7; stroke-dasharray: 3 3; }
+.obc-tag.cold text { fill: var(--t2); }
+.obc-tag.fo rect { stroke: rgba(var(--ob-factonly), .85); }
+.obc-tag.fo text { fill: rgb(var(--ob-factonly)); }
+.obc-tag { pointer-events: none; }
+.elabel { font: 700 11px var(--mn); fill: rgb(var(--ob-task)); paint-order: stroke; stroke: var(--oc-pit); stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; }
+.elabel.fo { fill: rgb(var(--ob-factonly)); }
+.elab.dim { opacity: .18; }
+
+/* the tool channel */
+.obc-chan .cl { fill: none; stroke: rgba(var(--ob-channel), .6); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.obc-chan .body { fill: var(--oc-pit); fill-opacity: .82; stroke: rgba(var(--ob-channel), .7); stroke-width: 1.2; }
+.obc-chan text { font: 600 10.5px var(--hd); fill: rgb(var(--ob-channel)); }
+.obc-chan text.sub { font: 9.5px var(--mn); fill: var(--t3); }
+
+/* the evaluation layer */
+.obc-flag { pointer-events: none; }
+.obc-flag line { stroke: rgb(var(--ob-fail)); stroke-width: 1.6; }
+.obc-flag path { fill: rgb(var(--ob-fail)); }
+.obc-flag text { font: 600 10.5px var(--hd); fill: rgb(var(--ob-fail)); paint-order: stroke; stroke: var(--oc-pit); stroke-width: 3.5px; stroke-linejoin: round; }
+
+/* lights */
+.obc-dock { animation: obc-pulse 1.8s ease-in-out infinite; }
+.obc-dock .halo { fill: var(--nc); opacity: .55; }
+.obc-dock .core { fill: var(--nc); stroke: var(--oc-spark); stroke-width: .7; }
+.obc-dock .core.hollow { fill: var(--oc-pit); stroke: var(--nc); stroke-width: 1.6; }
+.obc-dock.never { animation: none; opacity: .6; }
+.obc-part { pointer-events: none; }
+.obc-part .halo { fill: var(--nc); opacity: .7; }
+.obc-part .tail { fill: var(--nc); }
+.obc-part .core { fill: var(--oc-spark); stroke: var(--nc); stroke-width: 1.6; }
+.obc-part .core.hollow { fill: var(--oc-pit); stroke: var(--nc); stroke-width: 2; }
+.obc-part .plabel { font: 10px var(--bd); fill: var(--t2); paint-order: stroke; stroke: var(--oc-pit); stroke-width: 3px; stroke-linejoin: round; }
+.obc-part.tool .halo, .obc-part.tool .core { fill: rgb(var(--ob-channel)); stroke: none; }
+.obc-part.tool.err .halo, .obc-part.tool.err .core { fill: rgb(var(--ob-fail)); }
+.obc-bloom { fill: none; stroke: var(--nc); stroke-width: 2; pointer-events: none; }
+
+/* what floats over the stage */
+.obc-note {
+  position: absolute; z-index: 2; top: 8px; left: 12px; max-width: calc(100% - 24px); box-sizing: border-box; padding-left: 16px;
+  font: 10.5px/1.5 var(--bd); color: var(--t2); text-shadow: 0 0 4px var(--oc-pit), 0 0 4px var(--oc-pit);
+}
+.obc-note::before { content: ''; position: absolute; left: 2px; top: 4px; width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid rgba(var(--ob-task), .9); box-sizing: border-box; }
+.obc-caption { position: absolute; z-index: 2; left: 50%; bottom: 10px; transform: translateX(-50%); width: max-content; max-width: min(780px, calc(100% - 36px)); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+.obc-caption > div {
+  padding: 5px 13px; border-radius: 10px; text-align: center; font: 12px/1.5 var(--bd); color: var(--t1);
+  background: color-mix(in srgb, var(--oc-pit) 82%, transparent); border: 1px solid var(--brd); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.obc-caption > div.eval { border-style: dashed; border-color: var(--t3); }
+.obc-caption > div.eval::before { content: '评价'; margin-right: 7px; vertical-align: 1px; }
+.obc-bubble { position: absolute; z-index: 3; width: max-content; max-width: 300px; box-sizing: border-box; padding: 7px 10px; border-radius: 10px; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .18s, transform .18s; }
+.obc-bubble.show { opacity: 1; transform: none; }
+.obc-stage.small .obc-bubble { max-width: 250px; padding: 5px 9px; }
+.obc-stage.small .obc-caption { bottom: 6px; max-width: calc(100% - 20px); }
+.obc-stage.small .obc-caption > div { max-width: 100%; box-sizing: border-box; padding: 3px 10px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.obc-bubble .role { display: flex; align-items: baseline; gap: 6px; font: 700 11px var(--hd); color: var(--t1); white-space: nowrap; }
+.obc-bubble .rr, .obc-bubble .rn { font: 9.5px var(--mn); color: var(--t3); }
+.obc-bubble .rn { margin-left: auto; padding-left: 8px; }
+.obc-bubble .txt { margin-top: 3px; font: 11.5px/1.5 var(--bd); color: var(--t2); overflow-wrap: anywhere; }
+.obc-bubble.tool { border-color: rgba(var(--ob-channel), .5); }
+.obc-bubble.tool .txt { font: 10.5px/1.5 var(--mn); }
+.obc-bubble.err { border-color: rgba(var(--ob-fail), .6); }
+.obc-bubble.err .txt { color: rgb(var(--ob-fail)); font: 10.5px/1.5 var(--mn); }
+
+.obc-legend { position: absolute; z-index: 4; right: 10px; bottom: 10px; width: 344px; max-width: calc(100% - 20px); max-height: calc(100% - 20px); box-sizing: border-box; overflow: auto; padding: 10px 12px; }
+.obc-legend h4 { margin: 0 0 6px; font: 700 12px var(--hd); color: var(--t1); }
+.obc-legend .row { display: flex; align-items: flex-start; gap: 8px; padding: 3px 0; font: 11px/1.5 var(--bd); color: var(--t2); }
+.obc-legend .row svg { flex-shrink: 0; margin-top: 1px; }
+.obc-legend .row b { color: var(--t1); font-weight: 600; }
+.obc-legend .foot { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--brd); font: 10.5px/1.55 var(--bd); color: var(--t3); }
+.lg-task { fill: rgb(var(--ob-task)); }
+.lg-core { fill: var(--oc-spark); stroke: var(--oc-c1); stroke-width: 1.5; }
+.lg-hollow { fill: none; stroke: var(--oc-c1); stroke-width: 1.8; }
+.lg-none { stroke: var(--t3); stroke-width: 1; stroke-dasharray: 1 6; opacity: .7; }
+.lg-rail { fill: none; stroke: rgba(var(--ob-task), .65); stroke-width: 1; }
+.lg-fo { fill: rgb(var(--ob-factonly)); }
+.lg-cold { fill: none; stroke: var(--t3); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.lg-ghost { fill: none; stroke: var(--oc-ghost); stroke-width: 1.4; stroke-dasharray: 3 3; }
+.lg-chan { fill: rgb(var(--ob-channel)); }
+.lg-err, .lg-evalf { fill: rgb(var(--ob-fail)); }
+.lg-eval { stroke: rgb(var(--ob-fail)); stroke-width: 1.6; }
+.lg-halo { fill: var(--oc-c1); opacity: .4; }
+
+/* ---------- the bar and the full chart ---------- */
+.obc-foot { flex: 0 0 auto; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.obc-bar { display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.obc-ib { width: 28px; min-width: 28px; padding: 0; }
+.obc-ib svg { fill: currentColor; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.obc-ib.play { width: 38px; color: var(--accent1); border-color: rgba(var(--ob-task), .5); background: rgba(var(--ob-task), .12); }
+.obc-pos { flex-shrink: 0; min-width: 108px; text-align: center; font: 11px var(--mn); color: var(--t2); }
+.obc-pos b { font-size: 13px; color: var(--t1); }
+.obc-barnote { flex: 0 1 auto; min-width: 0; margin-left: auto; overflow: hidden; text-overflow: ellipsis; font: 10px var(--bd); color: var(--t3); }
+.obc-barnote.left { flex: 1 1 auto; margin-left: 0; font-size: 11px; color: var(--t2); }
+.obc-scorewrap { border-top: 1px solid var(--brd); max-height: 38vh; overflow-x: hidden; overflow-y: auto; }
+.obc-score { display: block; cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; }
+.obc-score .lane { fill: rgba(var(--ob-task), .05); }
+.obc-score .lane.alt { fill: rgba(var(--ob-task), .095); }
+.obc-score text { font: 10.5px var(--bd); fill: var(--t2); }
+.obc-score .lname { fill: var(--nc, var(--t1)); font-weight: 600; }
+.obc-score .lname.ghost { fill: var(--t3); font-weight: 400; }
+.obc-score .lsub { fill: var(--t3); font: 9px var(--mn); }
+.obc-score .run { fill: var(--nc); fill-opacity: .13; stroke: var(--nc); stroke-opacity: .5; stroke-width: .8; }
+.obc-score .rec { fill: var(--nc); }
+.obc-score .rec.quiet { fill-opacity: .38; }
+.obc-score .rec.sent { stroke: var(--t1); stroke-width: .8; }
+.obc-score .tool { fill: rgb(var(--ob-channel)); }
+.obc-score .terr { fill: rgb(var(--ob-fail)); }
+.obc-score .hand { stroke: rgba(var(--ob-task), .8); stroke-width: 1.1; }
+.obc-score .hand.protocol { stroke-dasharray: 1.5 2.6; stroke-linecap: round; }
+.obc-score .hand.fo { stroke: rgba(var(--ob-factonly), .95); }
+.obc-score .hand.never { stroke-opacity: .5; }
+.obc-score .hand-end { fill: none; stroke: rgba(var(--ob-task), .9); stroke-width: 1; }
+.obc-score .hand-end.fo { stroke: rgb(var(--ob-factonly)); }
+.obc-score .eflag { stroke: rgb(var(--ob-fail)); stroke-width: 1.4; fill: rgb(var(--ob-fail)); }
+.obc-score .axis line { stroke: var(--t3); stroke-opacity: .6; }
+.obc-score .axis text { font: 9px var(--mn); fill: var(--t3); }
+.obc-score .axis text.ttl { font: 9px var(--bd); }
+.obc-score .selrec { fill: none; stroke: rgb(var(--ob-hl)); stroke-width: 1.5; pointer-events: none; }
+.obc-score .fut { fill: var(--oc-veil); pointer-events: none; }
+.obc-score .ph { pointer-events: none; }
+.obc-score .ph line { stroke: rgb(var(--ob-hl)); stroke-width: 1.4; }
+.obc-score .ph line.glow { stroke-width: 6; stroke-opacity: .22; }
+.obc-score .ph rect { fill: rgb(var(--ob-hl)); }
+.obc-score .ph text { font: 700 9.5px var(--mn); fill: #1b1204; }
+[data-theme="light"] .obc-score .ph text { fill: #ffffff; }
+
+.obc-tip {
+  position: fixed; z-index: 4000; max-width: 340px; padding: 7px 10px; border-radius: 9px; pointer-events: none; opacity: 0; transition: opacity .12s;
+  background: var(--bg-panel); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--brd); box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  font: 11.5px/1.55 var(--bd); color: var(--t1); overflow-wrap: anywhere;
+}
+.obc-tip.show { opacity: 1; }
+.obc-tip b { font-weight: 600; }
+.obc-tip .m { font-size: 10.5px; color: var(--t3); }
+body:not(.obs-on) .obc-tip { display: none; }
+
+@keyframes obc-spin { to { transform: rotate(360deg); } }
+@keyframes obc-flow { to { stroke-dashoffset: -28; } }
+@keyframes obc-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) {
+  .obc-edge .flow, .obc-dock, .obc-node.active .orbit { animation: none; }
+  .obc-bubble { transition: none; }
+}

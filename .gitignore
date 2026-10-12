@@ -76,3 +76,6 @@ node_modules/
 
 # Built single-file page (node hub/tools/build_single.js)
 hub/dist/
+
+# Imported case corpus (250MB, regenerable via hub/tools/import_*.js)
+hub/cases_imported/

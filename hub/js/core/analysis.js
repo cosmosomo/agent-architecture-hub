@@ -44,6 +44,17 @@
 
   function within(t, cut) { return cut == null || t <= cut; }
 
+  /* 能不能对照：定义和事实各自从哪来，决定体检能下什么结论（设计总览 9.4；任务书 2 的事实边界）。
+     full    两边都是自己的（模拟案例、本机会话）：可以说“设计了没用上”“编排里没有这条线”。
+     written 事实是真实轨迹，定义是我们补写的编排：只说“这份记录里没有出现”“与补写的编排不一致”。
+     none    真实轨迹里没有任何有依据的交接，只有发言先后：任务线不对照。 */
+  function comparability(model) {
+    var fs = model && model.factSource;
+    if (!fs || fs.kind !== 'trace') return { level: 'full', written: false, orderOnly: false };
+    var based = ((model.facts && model.facts.handoffs) || []).some(function (h) { return h.basis === 'explicit' || h.basis === 'protocol'; });
+    return { level: based ? 'written' : 'none', written: true, orderOnly: !based };
+  }
+
   function analyze(model, cut) {
     var def = model.def, F = model.facts, idx = model.idx;
     var runs = F.runs.filter(function (r) { return within(r.start, cut); });
@@ -131,7 +142,7 @@
         }
       }
       if (x.kind === 'human' && F.cases.some(function (c) { var g = c.waitingAt && idx.gate.get(c.waitingAt); return g && g.decider.type === 'human'; })) status = 'waiting';
-      indStats[x.id] = { runs: rs.length, tasks: tasks.length, status: status, lastRunId: rs.length ? rs[rs.length - 1].id : null, tokens: U.sum(rs, function (r) { return r.tokens || 0; }) };
+      indStats[x.id] = { runs: rs.length, tasks: tasks.length, status: status, lastRunId: rs.length ? rs[rs.length - 1].id : null, tokens: U.sumTokens(rs) };
       if (status === 'never' && x.kind !== 'human') neverDispatched.push(x.id);
     });
 
@@ -231,14 +242,20 @@
     var health = [], hid = 0;
     var addH = function (kind, severity, text, target) { hid += 1; health.push({ id: 'hc' + hid, kind: kind, severity: severity, text: text, target: target }); };
     var nm = function (id) { var x = idx.ind.get(id); return x ? x.name : id; };
+    // 先判断能不能对照，再下结论：定义是补写的，或记录只有先后时，不说“设计了没用上”
+    var cmp = comparability(model);
     neverDispatched.filter(function (id) { return idx.ind.get(id).kind === 'agent'; }).forEach(function (id) {
-      addH('never_dispatched', 'high', nm(id) + '从没被派过活，设计了但没用上', { type: 'individual', id: id });
+      if (cmp.level === 'full') addH('never_dispatched', 'high', nm(id) + '从没被派过活，设计了但没用上', { type: 'individual', id: id });
+      else addH('never_dispatched', 'low', nm(id) + '：这份记录里没有出现（定义是我们补写的编排，不下“没用上”的结论）', { type: 'individual', id: id });
     });
     factOnly.forEach(function (f) {
-      addH('fact_only', 'high', nm(f.from) + ' → ' + nm(f.to) + '：发生了 ' + f.count + ' 次，编排里没有这条线' + (f.note ? '（' + f.note + '）' : ''), { type: 'factonly', id: f.id });
+      if (cmp.level === 'full') addH('fact_only', 'high', nm(f.from) + ' → ' + nm(f.to) + '：发生了 ' + f.count + ' 次，编排里没有这条线' + (f.note ? '（' + f.note + '）' : ''), { type: 'factonly', id: f.id });
+      else addH('fact_only', 'mid', nm(f.from) + ' → ' + nm(f.to) + '：这份记录里有 ' + f.count + ' 次，补写的编排里没有这条线（与补写的编排不一致，不是对方系统偏离了设计）' +
+        (f.note ? '（' + f.note + '）' : ''), { type: 'factonly', id: f.id });
     });
     var dn = function (d) { return (idx.doc.get(d) || {}).name || d; };
     Object.keys(delivery).forEach(function (id) {
+      if (!HUB.model.measured(model, 'delivery')) return;
       var dv = delivery[id];
       if (dv.missing.length) {
         addH('missing_info', 'high', nm(id) + '最近一次运行没拿到：' + dv.missing.map(dn).join('、'), { type: 'individual', id: id });
@@ -255,13 +272,16 @@
       if (s.queueNow) addH('queue', 'mid', '“' + g.name + '”前有 ' + s.queueNow + ' 个案例在等', { type: 'gate', id: g.id });
     });
     def.channels.forEach(function (ch) {
+      if (!HUB.model.measured(model, 'channel')) return;
       var s = channelStats[ch.id];
       if (s.status !== 'ok') addH('channel_down', 'high', ch.name + '：' + (HUB.util.LABELS.channelStatus[s.status] || s.status), { type: 'channel', id: ch.id });
       else if (s.incidents) addH('channel_down', 'low', ch.name + '：出过 ' + s.incidents + ' 次故障，已恢复', { type: 'channel', id: ch.id });
       if (s.queued) addH('channel_busy', s.waitTotal > 30 * 60000 ? 'mid' : 'low', ch.name + '：' + (s.limit === 1 ? '独占' : '并发上限 ' + s.limit) + '，' + s.queued + (ch.kind === 'model' ? ' 次运行' : ' 次调用') + '排队，共等了 ' + U.fmtDur(s.waitTotal), { type: 'channel', id: ch.id });
     });
     var unusedTask = unusedRelations.filter(function (rid) { var r = idx.rel.get(rid); return r.type === 'task'; });
-    if (unusedTask.length) addH('unused_relation', 'mid', unusedTask.length + ' 条任务线设计了但从没走过', { type: 'relations', id: 'unused' });
+    if (cmp.level === 'none') addH('unused_relation', 'low', '这份记录只有发言先后，没有交接的依据，不和任务线对照', { type: 'relations', id: 'unused' });
+    else if (unusedTask.length) addH('unused_relation', cmp.level === 'full' ? 'mid' : 'low', unusedTask.length +
+      (cmp.level === 'full' ? ' 条任务线设计了但从没走过' : ' 条补写的任务线在这份记录里没有对应的交接'), { type: 'relations', id: 'unused' });
     var sevOrder = { high: 0, mid: 1, low: 2 };
     health.sort(function (a, b) { return sevOrder[a.severity] - sevOrder[b.severity]; });
 
@@ -289,7 +309,7 @@
       individuals: def.individuals.filter(function (x) { return x.kind === 'agent'; }).length,
       relations: def.relations.filter(function (r) { return r.type === 'task'; }).length,
       cases: F.cases.filter(function (c) { return within(c.start, cut); }).length,
-      runs: runs.length, calls: calls.length, tokens: U.sum(runs, function (r) { return r.tokens || 0; }),
+      runs: runs.length, calls: calls.length, tokens: U.sumTokens(runs),
       firstPassRate: ft.length ? ft.filter(function (k) { return firstTry[k]; }).length / ft.length : null,
       reworkRate: judged.length ? judged.filter(function (e) { return e.result === 'fail'; }).length / judged.length : null,
       failedRuns: runs.filter(function (r) { return r.outcome === 'failed' || r.outcome === 'interrupted'; }).length
@@ -299,9 +319,9 @@
       t: cut, now: now, relStats: relStats, factOnly: factOnly, factOnlyFlows: Object.keys(factOnlyFlows).map(function (k) { return factOnlyFlows[k]; }),
       unusedRelations: unusedRelations, neverDispatched: neverDispatched, indStats: indStats, groupStats: groupStats,
       stepStats: stepStats, gateStats: gateStats, flowStats: flowStats, delivery: delivery, channelStats: channelStats,
-      health: health, needsHuman: needsHuman, totals: totals
+      health: health, needsHuman: needsHuman, totals: totals, comparability: cmp
     };
   }
 
-  HUB.analysis = { buildIdx: buildIdx, analyze: analyze };
+  HUB.analysis = { buildIdx: buildIdx, analyze: analyze, comparability: comparability };
 })();

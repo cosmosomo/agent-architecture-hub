@@ -46,10 +46,11 @@
   // Times are ms since the start of the model's span. A simulated model reads them on the simulated clock
   // ("第1天 09:42"); a model of real sessions sets its start as the clock and reads real dates ("10月8日 14:05").
   var DAY = 24 * 3600 * 1000, START_HOUR = 9;
-  var clock = null;
+  var clock = null;   // null: simulated days; a number: real start time; 'ordinal': recorded order only (one minute a turn)
   function setClock(base) { clock = base == null ? null : base; }
   function fmtClock(t) {
     if (t == null || isNaN(t)) return '-';
+    if (clock === 'ordinal') return '第 ' + (Math.floor(t / 60000) + 1) + ' 条';
     if (clock != null) { var dt = new Date(clock + t); return (dt.getMonth() + 1) + '月' + dt.getDate() + '日 ' + pad2(dt.getHours()) + ':' + pad2(dt.getMinutes()); }
     var abs = t + START_HOUR * 3600 * 1000;
     var d = Math.floor(abs / DAY) + 1;
@@ -58,6 +59,7 @@
   }
   function fmtTime(t) {
     if (t == null || isNaN(t)) return '-';
+    if (clock === 'ordinal') return '第 ' + (Math.floor(t / 60000) + 1) + ' 条';
     if (clock != null) { var dt = new Date(clock + t); return pad2(dt.getHours()) + ':' + pad2(dt.getMinutes()) + ':' + pad2(dt.getSeconds()); }
     var abs = t + START_HOUR * 3600 * 1000;
     var s = Math.floor((abs % DAY) / 1000);
@@ -66,6 +68,7 @@
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
   function fmtDur(ms) {
     if (ms == null || isNaN(ms)) return '-';
+    if (clock === 'ordinal') return Math.max(1, Math.round(ms / 60000)) + ' 条';
     if (ms < 1000) return Math.round(ms) + '毫秒';
     var s = Math.round(ms / 1000);
     if (s < 60) return s + '秒';
@@ -80,6 +83,8 @@
     return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
   function pct(x) { return x == null || isNaN(x) ? '-' : Math.round(x * 100) + '%'; }
+  function fmtTokens(n) { return n == null ? '未记录' : fmtNum(n); }
+  function sumTokens(rs) { return rs.some(function (r) { return r.tokens != null; }) ? sum(rs, function (r) { return r.tokens || 0; }) : null; }
 
   // Deterministic PRNG (mulberry32) seeded from a string.
   function hashStr(s) {
@@ -125,7 +130,7 @@
   function toolChannelId(t) { return 'ch_tool_' + String(t).toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
   var LABELS = {
-    subject: { org: '组织', process: '流程', exec: '执行' },
+    subject: { org: '组织', process: '流程', exec: '执行', collab: '协作轨迹' },
     compare: { def: '定义', fact: '事实', both: '对照' },
     lineType: { task: '任务线', info: '信息线', watch: '监督线', channel: '渠道线' },
     relSub: { dispatch: '派发', deliver: '交付', roundtrip: '往返', report: '汇报', read: '读产出', watch: '盯着', use: '使用', maintain: '维护' },
@@ -139,8 +144,39 @@
     gateResult: { pass: '通过', fail: '打回', escalate: '上报给人' },
     channelStatus: { ok: '正常', degraded: '降级', down: '中断', paused: '已暂停' },
     deliveryStatus: { delivered: '已送达', missing: '没送到', pending: '待送达' },
-    deliveryKind: { context: '上下文', instruction: '新指令', feedback: '反馈' }
+    deliveryKind: { context: '上下文', instruction: '新指令', feedback: '反馈' },
+    handoffBasis: { explicit: '记录里明写', protocol: '按来源协议推出', adjacent: '只凭相邻发言' }
   };
+
+  /* 能不能对照（HUB.analysis.comparability）决定页面上几处结论的说法；和顺序时钟一样，选中模型时设置一次。
+     full：模拟案例、本机会话；written：真实轨迹对补写的编排；none：真实轨迹里只有发言先后。 */
+  var cmpLevel = 'full';
+  function setCompare(c) { cmpLevel = (c && c.level) || 'full'; }
+  var CMP_WORDS = {
+    never: { full: '从没派出过', written: '这份记录里没有出现' },
+    neverShort: { full: '未派', written: '未出现' },
+    neverStat: { full: '从没派出', written: '记录里没出现' },
+    neverNote: { full: '从没被派过活：编排里有它，实际没用上。', written: '这份记录里没有出现。定义来自我们补写的编排，不下“没用上”的结论。' },
+    unusedChip: { full: '设计了没发生', written: '这份记录里没有对应的交接', none: '只有发言先后，不对照' },
+    unusedNote: { full: '编排里有这条线，但到现在一次也没走过。', written: '补写的编排里有这条线，这份记录里没有对应的交接。',
+      none: '这份记录只有发言先后，没有交接的依据，不和任务线对照。' },
+    factTag: { full: '未声明', written: '补写的编排里没有' },
+    factNote: { full: '这类交接没写进编排：可能是编排漏了，也可能是个体自己找的捷径。',
+      written: '这类交接没写进我们补写的编排。多半是补写时漏了，不能据此说对方系统走了设计之外的路。' },
+    healthHow: { full: '体检比较的是编排（定义）和实际发生的事（事实）：设计了没用上、实际发生了编排里却没有、该送到的资料没送到、判断点反复打回、渠道出故障。点一条，图上会带你去看它。',
+      written: '这个案例的事实是真实轨迹，定义是我们补写的编排。所以体检只说“这份记录里没有出现”“与补写的编排不一致”，不说对方系统设计了没用上，也不说它偏离了设计。点一条，图上会带你去看它。',
+      none: '这个案例的真实轨迹只有发言先后，没有交接的依据；定义是我们补写的编排。体检不拿任务线去对照，只列出记录里没有出现的成员。' }
+  };
+  function cmpWord(key) { var w = CMP_WORDS[key] || {}; return w[cmpLevel] || (cmpLevel === 'none' && w.written) || w.full || ''; }
+  // Evaluations (failure labels, outcomes) are a layer the person can switch off (store overlays.evals). Imported cases
+  // also write them into names, in brackets ("本次失败的归因对象", "标注为失败"): with the layer off those remarks go too.
+  // With the layer on, which is the default, the text comes back untouched.
+  function quietEval(text) {
+    var s = HUB.store && HUB.store.get ? HUB.store.get() : null;
+    if (!s || !s.overlays || s.overlays.evals !== false) return text;
+    return String(text == null ? '' : text).replace(/\s*[（(][^（）()]*(失败|失误|归因|标注|成功)[^（）()]*[）)]/g, '');
+  }
+  Object.defineProperty(LABELS.indStatus, 'never', { enumerable: true, get: function () { return cmpWord('never'); } });
 
   var listeners = new Map();
   HUB.bus = {
@@ -152,6 +188,7 @@
   HUB.util = {
     esc: esc, h: h, svg: svg, setClock: setClock, fmtClock: fmtClock, fmtTime: fmtTime, fmtDur: fmtDur, fmtNum: fmtNum, pct: pct,
     rng: rng, hashStr: hashStr, byId: byId, groupBy: groupBy, clamp: clamp, sum: sum, uniq: uniq, uid: uid,
-    toolList: toolList, toolChannelId: toolChannelId, LABELS: LABELS, DAY: DAY
+    toolList: toolList, toolChannelId: toolChannelId, LABELS: LABELS, DAY: DAY, fmtTokens: fmtTokens, sumTokens: sumTokens,
+    setCompare: setCompare, cmpWord: cmpWord, cmpLevel: function () { return cmpLevel; }, quietEval: quietEval
   };
 })();

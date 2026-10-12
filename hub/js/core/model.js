@@ -72,6 +72,19 @@
     return HUB.toTrace.fromRun(m, run, cut);
   }
 
+  // where the facts of a model come from, in one short phrase for the status bar and the panels
+  function factLabel(m) {
+    var fs = m && m.factSource;
+    if (fs && fs.kind === 'error') return '真实轨迹读取失败，下面显示的是模拟数据：' + fs.error;
+    if (fs && fs.kind === 'trace') return '真实轨迹 · ' + fs.label + (fs.total > fs.files.length ? '（载入 ' + fs.files.length + '/' + fs.total + ' 个文件）' : '');
+    return m && m.synthetic ? '模拟数据' : '本机真实会话';
+  }
+
+  function measured(m, quantity) {
+    return !(m && m.factSource && m.factSource.kind === 'trace' && m.clock === 'ordinal' &&
+      ['tokens', 'duration', 'delivery', 'channel'].indexOf(quantity) >= 0);
+  }
+
   function an(state, model) {
     var m = model || HUB.model.current;
     if (!m) return null;
@@ -89,6 +102,7 @@
     if (cache.has(caseId)) {
       HUB.model.current = cache.get(caseId);
       U.setClock(HUB.model.current.clock);
+      U.setCompare(HUB.analysis.comparability(HUB.model.current));
       return HUB.model.current;
     }
     if (src && src.load && !src.build) {
@@ -97,12 +111,14 @@
         if (!HUB.store.get || HUB.store.get().caseId !== caseId) return;
         HUB.model.current = m;
         U.setClock(m.clock);
+        U.setCompare(HUB.analysis.comparability(m));
         HUB.bus.emit('model', { model: m });
       }).catch(function (e) { console.warn('model ' + caseId + ' 加载失败', e && e.message); });
       return HUB.model.current;
     }
     HUB.model.current = build(caseId);
     U.setClock(HUB.model.current.clock);
+    U.setCompare(HUB.analysis.comparability(HUB.model.current));
     return HUB.model.current;
   }
 
@@ -255,6 +271,6 @@
     current: null,
     build: build, load: load, ready: ready, owns: function (id) { return !!sourceOf(id); }, addSource: addSource,
     select: select, an: an, perform: perform, traceOf: traceOf,
-    visible: visible, instanceOf: instanceOf, latestRunOf: latestRunOf, focusRun: focusRun, name: name
+    visible: visible, instanceOf: instanceOf, latestRunOf: latestRunOf, focusRun: focusRun, name: name, factLabel: factLabel, measured: measured
   };
 })();

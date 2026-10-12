@@ -29,6 +29,7 @@ index.html            原页面。只加：顶栏的“观察｜设计”切换�
 hub/
   SPEC.md             本文
   css/obs.css         观察模式的全部样式（前缀 ob-），用原页面的变量
+  css/collab.css      协作轨迹图的样式（前缀 obc-），线和标记用 obs.css 里已有的含义色
   data/base.js        由 tools/extract_base.js 从原页面生成（测试也用）
   data/zh.js          中文名与说明
   data/cases/*.js     精选案例的覆盖数据
@@ -40,6 +41,8 @@ hub/
   js/obs/scene-org.js ①②③ 的布局（纯函数，可在 node 里测）
   js/obs/scene-process.js ④
   js/obs/trace.js     ⑤⑥：一次运行的明细交给 Trace 视图画（树在中间，选中项的细节在右栏），见 17.6
+  js/core/collab.js   协作轨迹图的数据（纯函数，可在 node 里测）：一个案例实例的成员、任务线、有依据的交接、按先后排的记录
+  js/obs/collab.js    协作轨迹图：星图加下方按记录先后排开的全图，盖在画布上，自带逐条回放，见 7.2
   vendor/hub-trace.js Trace 视图的构建产物（trace/apps/viewer 的 npm run build 生成，随仓库提交，不手改）
   js/obs/panel.js     右侧详情和操作（写进原页面的右栏）
   js/obs/side.js      左栏的“结构”“体检”页
@@ -124,6 +127,11 @@ model = {
       // kind: 'model'|'tool'；status: 'ok'|'error'|'retry'；context（仅模型调用）: { task, consensus, tools, dialog } 单位 token
     handoffs:  [{ id, caseId, from, to, fromTask, toTask, at, relationId, carried: [docId], missing: [docId] }],
       // relationId 为 null 表示编排里没有这条线（只有事实）
+      // 真实轨迹（from-traces）的交接另带 basis: 'explicit'|'protocol'（记录里明写 / 按来源协议推出）。
+      // 只凭相邻发言的不生成交接（10-12 起）。还带两端的记录序号 sentSeq、gotSeq；gotSeq 为 null 表示接收者在这份记录里没有再发言
+    turns:     [{ id, caseId, seq, individualId, kind, to, text, tool, calls, sourceIndex, runId, at }],
+      // 只有真实轨迹有：每个案例实例里按先后排的原始记录，seq 从 1 起，id 是 '<案例实例>.r<seq>'。
+      // kind: 'say'|'think'|'tool'|'context'；calls 是这条记录发起的工具调用 [{ name, args }]。协作轨迹图和“一条记录”的详情用它
     deliveries:[{ id, runId, individualId, docId, kind, text, at, status, confirmed, by }],
       // kind: 'context'|'instruction'|'feedback'；status: 'delivered'|'missing'|'pending'
     gateEvents:[{ id, caseId, gateId, at, result, by, queue }],          // result: 'pass'|'fail'|'escalate'
@@ -142,6 +150,12 @@ model = {
 ```
 
 分析结果按时间窗计算：`HUB.model.an(state)`，同一个时间窗会缓存。
+
+对照之前先看能不能对照（10-12）：`HUB.analysis.comparability(model)` 返回 `{ level, written, orderOnly }`，分析结果里也带一份（`an.comparability`）。
+- `full`：定义和事实各有来源（模拟案例、本机会话）。结论照旧：从没被派出过、设计了没发生、未声明。
+- `written`：事实是真实轨迹，定义是我们补写的编排，记录里有带依据的交接。只说“与补写的编排一致或不一致”“这份记录里没有出现”，不说对方系统偏离了设计。
+- `none`：记录只有发言先后，没有任何带依据的交接。不和任务线对照。
+页面上这一类结论的措辞集中在 `HUB.util.cmpWord(key)`，选中模型时由 `HUB.util.setCompare` 设一次。
 
 ```js
 an = {
@@ -171,7 +185,7 @@ an = {
 state = {
   caseId: 'deep_five_minds',   // 案例模板
   instanceId: null,            // 当前案例实例 'K1'…，null 时视图自动选第一个
-  subject: 'org',              // 'org'|'process'|'exec'
+  subject: 'org',              // 'org'|'process'|'exec'|'collab'（协作轨迹图；它画的是组织里的个体和分组，粒度用 depth.org）
   depth: { org: 1, process: 1, exec: 1 },
   expanded:  { org: [], process: [], exec: [] },   // 比 depth 多展开的编号
   collapsed: { org: [], process: [], exec: [] },   // 比 depth 少展开的编号
@@ -179,9 +193,10 @@ state = {
   time: null,                  // 截止时刻（毫秒），null = 全部
   compare: 'both',             // 'def'|'fact'|'both'
   lines: { task: true, info: false, watch: true, channel: false },
-  overlays: { human: true, channels: false, delivery: false, lanes: true },
+  overlays: { human: true, channels: false, delivery: false, lanes: true, evals: true },
+    // evals：评价这一层（失误标注、结局），和执行事实分开。默认开；关掉时链接里写 noeval，旧链接读出来是开的
   present: 'graph',            // 'graph'|'panel'
-  selection: null,             // null | { type, id }
+  selection: null,             // null | { type, id }；type 里的 'turn' 是真实轨迹的一条记录（facts.turns 的 id）
   drawer: true
 }
 ```
@@ -220,8 +235,11 @@ HUB.views.go(id)           // 套用预设
 | v4 | 业务流程图 | process | 保持 | 保持案例 | 看清系统按什么规则运转 |
 | v5 | 粗粒度决策链 | exec | 1 | 运行 | 看清做了哪些决定、依据是什么 |
 | v6 | 细粒度执行链 | exec | 2 | 运行 | 看清每一步实际做了什么 |
+| vc | 协作轨迹图 | collab | 3（模拟案例保持原粒度） | 案例实例（模拟案例不聚焦） | 看清一次协作里谁把什么交给谁 |
 
 新视图只需要再注册一个对象，顶栏的按钮自动出现。用户也可以把当前状态存成“我的视图”（localStorage）。
+
+`vc` 不占数字（⑤⑥ 的编号不动），顶栏排在 ④ 之后，快捷键 T；视图对象多一个可选字段 `key`，顶栏按钮据此显示快捷键。
 
 ### 7.1 视图的定义方式（10-10 用户补充）
 
@@ -234,6 +252,28 @@ HUB.views.go(id)           // 套用预设
 | ④ 业务流程图 | process.md 的 stages+gates（steps 列表或扁平 `executors` 两种写法）；关卡 `pass/fail` 双路或多路 `paths`；无编排文档时按分组与阶段自动生成（`casedef.defaultProcess`） |
 
 单案例路由图是定义方式最多的一个，因为它的本质是“事实从哪来”：加一种新来源 = 写一个产出 handoffs 的适配器，视图本身不改。
+
+### 7.2 协作轨迹图（10-12，任务书 2）
+
+层次上在 ③ 和决策链之间：③ 看一个案例在组织图上走过哪里，协作轨迹图把同一个案例实例按记录先后一条一条排开，双击其中一个个体或一条记录进入 ⑤。它不走场景（第 8 节），和 ⑤⑥ 一样在画布上盖一层自己画：`HUB.collab.build(model, state)`（纯函数，`tools/check_collab.js` 全量跑）给出数据，`HUB.obsCollab.render(state, model)` 画。
+
+和观察状态的对应：
+- 实例：`instanceId`（没有就是 `focus` 的案例，再没有就是第一个）。面包屑里的实例选择在这个视图里列出全部实例，没有“不聚焦”。
+- 成员：和 ①②③ 相同的代表（`HUB.orgRep`）：个体，或折起的分组。粒度 `depth.org`、单独展开折叠 `expanded.org`/`collapsed.org` 照常生效。
+- 游标：`time`。`HUB.collab.cursorOf(st, time)` 是“到第几条为止”，`HUB.collab.timeOf(st, n)` 反过来。面包屑和状态栏的“截止”在这个视图里写本实例的记录序号。
+- 对照：`compare`。“定义”只画定义里的成员和任务线，全图和回放收起；“事实”只画出现过的成员和有依据的交接；“对照”两者都画，并按 `comparability` 的三种情况措辞。
+- 评价：`overlays.evals`。关掉后图上的旗子、标题栏的结局、讲解里的评价、右栏的结局和失误标注、名字里属于评价的括注（`HUB.util.quietEval`）一起不显示。
+- 选中：成员是 `individual`/`group`，线是 `relation` 或 `factonly`，一条记录是 `turn`，右栏照常显示详情。
+
+画法（事实边界）：
+- 记录里明写的交接是实线楔形（宽的一端是发出者）和实心光；按来源协议推出的是点线和空心光；只凭相邻发言的不连线，只在下方全图里看得出先后。
+- 一拍一条记录。数据只有先后，没有时间：节拍、光点的速度、全图里的间距都不表示时长、等待或并发。发出后接收者还没有发言的交接，光停在接收者边上，它发言时被接住。
+- 编排里的任务线是双细线。对照时，不在任务线上的交接是橙色并标次数；合并到分组以后只有一部分不在任务线上的，标“其中 ×N”。
+- 定义里有、这份记录里既没有发言也不是任何交接一端的成员画成虚线圈，只说“这份记录里没有出现”。
+- 工具调用是渠道线上的事实，不是交接；工具返回的错误是执行时的事实，不是评价。
+- 没采集的量写“未采集”。
+- 事实是模拟数据的案例只显示定义，写明“这里不画”，并指向 ③；不把模拟出来的事实画成记录。
+- 有真实运行但没有逐条记录的模型（本机会话）：一次运行一格；同一时刻开始的几次运行，游标一次走过。
 
 ## 8. 场景与渲染（`HUB.obsStage`、`HUB.obsScene*`）
 
@@ -259,11 +299,11 @@ scene = {
 ## 9. 加载顺序（根目录 index.html 末尾，由 `tools/patch_page.py` 维护）
 
 ```
-hub/css/obs.css, hub/css/panels.css,
+hub/css/obs.css, hub/css/panels.css, hub/css/collab.css,
 hub/data/base.js, hub/data/zh.js, hub/data/cases/*.js,
-hub/js/core/util.js, store.js, casedef.js, sim.js, analysis.js, model.js, to-trace.js, views.js,
+hub/js/core/util.js, store.js, casedef.js, sim.js, analysis.js, model.js, to-trace.js, views.js, collab.js,
 hub/js/obs/cards.js, stage.js, scene-org.js, scene-process.js, hub/vendor/hub-trace.js,
-hub/js/panels/panels.js, hub/js/obs/panel.js, side.js, timeline.js, guide.js, sessions.js, trace.js, main.js
+hub/js/panels/panels.js, hub/js/obs/panel.js, side.js, timeline.js, guide.js, sessions.js, trace.js, collab.js, main.js
 ```
 
 `python hub/tools/patch_page.py` 重复执行也安全：钩子已在就跳过，只刷新这一段脚本列表。`node hub/tools/build_single.js` 把它们内联成 `hub/dist/observatory.html` 单文件。
@@ -366,6 +406,7 @@ HUB.cases['feature_sprint'] = {
 - 任一个体、渠道、判断点、运行都能在抽屉里看到详情和可用操作；操作后图上能看到变化。
 - 全部 62 个案例模板都能打开，没有报错；精选案例的内容更丰富。
 - 浅色、深色两套主题都清楚可读。
+- 协作轨迹图（10-12）：所有带真实轨迹的案例都能打开；没有依据的地方不连线；事实是模拟数据的案例只显示定义；评价能整层关掉。`node hub/tools/check_collab.js` 全过。
 
 ## 14. 进度
 
@@ -398,13 +439,36 @@ HUB.cases['feature_sprint'] = {
 
 - 10-11 七：**检索提速 + /trace/ 与观察台的壳级统一**。①检索卡顿根因：打开检索页的空查询在服务端要跑 7 次聚合扫描，26 万步全量无条件 JOIN 会话表、cwd 分面逐行 JOIN 分组（1.2 秒同步 SQLite 堵死单线程服务，页面所有轮询跟着冻）；组合筛选（词+类型+出错）更踩中 FTS 子查询进相关子查询逐会话重放的坑（实测 32.6 秒）。修复：steps 补 facet/status 索引、files 补 cwd 索引；无 cwd/role 筛选时不 JOIN files；cwd 分面在无搜索条件时改由 files 侧驱动（1516 会话各走覆盖索引计数再按目录 SUM，与旧查询逐值核对一致）；大重建后自动 ANALYZE（规划器无统计时选错 JOIN 方向：712ms vs 139ms）。空查询 1.2s→0.1s，组合 32.6s→0.17s。②割裂感解剖（视觉模型逐像素对比四页 + 代码归因）：主工作台是第三方 AgentPrism 的扁平 shadcn 语言（1px 描边/4px 圆角/零辉光/无彩色文字），与观察台的玻璃+发丝线+辉光体系是两套设计系统同处一应用。③壳级统一落地：/trace/ 接入观察台三件套——字体同链（Space Grotesk/Inter/JetBrains Mono，tailwind 加 display 字族）、画布换成深底+三团彩色网格辉光（body::before 径向渐变，观察台 mesh 的移植）、顶栏换玻璃带（渐变字品牌 + accent 发丝线 + hi-segment 分段导航，来源/统计/检索/观察台入口全在）、三栏从通栏 IDE 分割改成画布上的三块圆角玻璃浮卡（hi-panel）；来源/统计页去掉对话框感（X 和窄列），页头统一 hi-card-head + 显示字体。视觉门禁并排评审（观察台为基准）：顶栏/材料/字体/颜色四维高相似，割裂感判定消除，4/4 pass；补了一笔把网格辉光调亮（统计/来源页卡片盖住大半后底色读作纯黑）。DOM 探针：零溢出、最小字 10px、对比 5.07。49 测试绿。
 
+- 10-11 八：**导入案例接上真实轨迹（提案 B+F 的第一批）**。新模块 `js/core/from-traces.js`：案例目录 `traces/` 里有认得的格式时，事实层从模拟换成实测，定义层仍是 md 编排，两边第一次各有独立来源，对照（实线/虚线/橙色“未声明”、体检）建立在真实记录上。①读取器按来源格式各一个：Who&When（184 个案例，含 Magentic-One 手工集的 `Orchestrator (-> WebSurfer)` 定向发言和数据集标注的失误步）、τ-bench（2 个案例，每个对话一个案例实例，reward=1 记成功，单案例最多载入 80 个文件并在状态栏注明 80/N）、CAMEL（7 个案例，结束原因决定成功/未完成）；②发言人按编号或名字对到 md 里的个体，对不上的不丢，作为“编排里没有”的个体加进来（这批里为 0）；同一人连续发言是一次运行，换人是一次交接，落在编排的任务线上就是实线，否则是“未声明”；工具输出是提问者的一次工具调用，工具成渠道（τ-bench 的业务 API 出现在基础能力里）；人说的话不是运行，是下一次运行的输入；③案例路径按发言人所在阶段铺在 md 的流程上，经过的关卡插进去，④ 能看到编排没写的回环（如 Magentic-One 从执行回到计划 28 次，编排者与网页浏览者往返 27 次）；④ 记录里没有时钟，时间按发言顺序（一条一分钟），`clock='ordinal'`，时间统一显示“第 N 条”；⑤ 录下的发言同时存成契约会话（`m.source.sessions/runs`），⑤⑥ 打开的是原文，不是模拟；md 里的决策记录保留，标“〔编排文档〕”；⑥ 状态栏、概况、操作说明按事实来源显示（`HUB.model.factLabel`），案例列表和案例详情显示记录的结局（成功/失败/未完成及依据），过长的路径折叠。`tools/check_real_facts.js`：193 个案例全部走实测事实，解析、分析、①～④ 场景、运行打开原文全通过；交接落在编排任务线上的比例：Who&When 60%、τ-bench 51%、CAMEL 14%（来回对话只声明了单向）。`check_from_docs.js` 1140 个案例、`test_scenes.js` 62 个预设照常通过；浏览器实测 Who&When/τ-bench 三个视图与运行下钻 0 脚本错误。MAST、aarch、Smallville、SOTA 的轨迹格式各异，还没有读取器，仍走模拟。
+
 - 10-11 九：**检索最终提速 + 主页一眼可见的 Trace 入口**。①上一轮后空闲首击仍慢：请求路径触发重扫（1516 个文件的 stat 在 Windows 上 ~600ms），void refresh 只是改了等待为同线程争抢（空闲后新词查询实测 1514ms）。本轮：请求一律服务当前索引，重扫改由 15 秒定时器驱动（监听时先预热一次；节奏化让目录缓存常热，重扫本身变便宜），检索层加查询结果缓存（全参作键，同步真正变更才清空，上限 200 条 LRU）。②客户端：SearchView 结果存模块级变量——切走再切回先用上一次答案立即渲染（SWR，后台确认），App 加载索引后顺手预热默认浏览查询。实测：启动首查 90ms、缓存命中 7ms、空闲 20 秒后浏览视图即时（缓存）；重词首查 ~330ms 属该词聚合的真实成本，重复即时。③入口：主页顶栏加 ◷ Trace ↗ 小按钮，左栏最上方加渐变大按钮 TRACE 查看器（图标块+副标题），仅本地服务在线时显示（探针/health 检查，Pages 静态部署自动隐藏）——用户两轮反馈在主页找不到 /trace/。视觉验收：大入口醒目、与渐变字/玻璃语言协调、无遮挡；顺带发现 pre-existing 的右栏标题下偶发字面量 undefined（依赖选中案例的数据状态，本轮未动该代码，已记录）。49 测试绿。
 
 - 10-11 十：**检索切换卡顿的最后一层（用户流实测驱动）**。用户报告"点检索→来源→再点检索又要重新加载"，端到端复现后找到三个叠加原因：①导航是三个布尔状态各管各的——切到来源时检索状态没清，再点检索第一次点击实际在"关闭"检索（页面无反应），第二次才切换，且每次都当新挂载重新拉取；②列表轮询每 8 秒全量拉 /api/sessions（1303 会话摘要，1.7MB JSON），客户端主线程反复解析兆级 JSON，输入和点击周期性卡顿——这才是"怎么优化查询都还卡"的主犯；③浏览器标签长期不刷新时跑的是旧 bundle（新修复不生效）。修复：①单一 view 状态机（list/search/sources/analytics，一次点击到位，hash 路由同步重写）；②store 维护 revision 计数（扫描真正变更才 +1），/api/sessions 带 ETag、If-None-Match 命中回 304——未变更轮询从 1.7MB 降到 0 字节；③客户端 loadIndex 走 ETag+本地缓存，预热只做一次。真实点击流实测（无头 Edge）：检索首开命中列表 0ms（预热缓存接住）、切来源 25ms、切回检索 25ms（模块级答案缓存立即渲染）、再切回列表一次到位。49 测试绿。
 
+- 10-11 十一：**细节看得见 + 关卡分支补全**（用户：“我怕有些信息不会被解析然后看不出来”）。
+  - ①**原始字段进详情页**：个体详情新增“原始字段”一节，显示编排文件里写的、页面别处没显示的全部内容（标签、`source_model` 等）。`*_file` 字段是到原文的链接，1046 个导入案例的提示词原文从此能点开看。`from-docs` 在模型上记下案例目录 `source.base`。这是 §18.2 早就约定的“不认识的进详情页”，此前一直没实现。
+  - ②**关卡分支 bug**：只用 `paths:` 写的关卡，“不通过”的去向被算成和“通过”一样（拿了没写的 `a.pass` 去比），打回线不画，模拟器里也永远不打回。改为用实际的“通过”去向计算。
+  - ③**`casedef.finishProcess` 画出全部出路**：三路以上的路由不再只画两路；往回走的是回环（“打回”），往前走的是分支，线上写条件。
+  - ④**关卡详情列出“全部出路”**：每条出路的条件、去向、说明。
+  - 全库关卡出路 2554 条，未画出的从 1273 降到 21。剩下的 21 条都是 ACB 导入时同一阶段后面挂了两个关卡（与阶段编号重复同源），属于导入产物。
+  - `check_from_docs` 1140、`test_scenes` 62、`check_real_facts` 193 全过；浏览器实测 AWS 路由三条出路、Who&When 个体的提示词原文链接（200）、0 脚本错误。
+  - 同日的接入原则见设计文档目录的 `核心设计总览_20261011.md` 第 9.4 节（当天先写的《通用接入抽象》已作废）；真实数据怎样解析成我们的语义见研究任务书 7，读取器以原始数据集为准重做见任务书 5。
+
 还没做：
 - 回放和补间在后台标签页里不跑（浏览器暂停动画帧），需要在前台看。
+- 真实轨迹的第二批读取器：MAST（7 个框架的轨迹是日志文本，要按框架切发言人）、aarch 的 notebook、Smallville 回放、SOTA 生产账本。按 10-11 的接入设计，改为以原始数据集为准、经通用核心接入（任务书 5）。
+- 并行超过 3 人丢线、中枢可选、工具进能力层、结局最小版、标签能用、基础读数（核心议题第 10.3 节“先做”里剩下的几项）。
 
+
+- 10-12：**过渡读取器保真修正**。交接记 explicit/protocol/adjacent，明写对象优先，相邻发言只有补写的任务线存在才生成；Who&When 失误改为 human-label 评价与警示标记，不制造执行失败（178 条一致、6 条不一致，保留数据集分歧）；正文与带入消息逐字保留、步骤记 sourceIndex、正文截断计数为 0；token 未记录，顺序时钟按发言条数显示，送达与渠道健康/负载未采集，容量/额度注明补写声明；⑤⑥在 Hub 嵌入端隐藏时间条、耗时和合成日期，annotation 仅在展示副本映射为备注，未改 trace 包；读取失败明确警示，超过 80 文件等间隔取样。193 案例增强断言全部通过，指定 hc_08cae58d 明写派发 WebSurfer 29/Assistant 1、标注 WebSurfer 原始下标 4；τ-bench gpt_4o 取样成功 34/失败 46。check_from_docs 1140、test_scenes 全预设、check_real_facts 193 全过；无头 Edge 实测标注选择与⑤⑥隐藏、失败请求警示，无脚本错误。仍以合成 ISO 承载顺序，嵌入隐藏样式依赖当前组件 DOM，升级时须复验。
+
+- 10-12 二：**协作轨迹图接入（任务书 2）**。在 ③ 和决策链之间加一个视图 `vc`（主体 `collab`，顶栏排在 ④ 之后，不占数字，快捷键 T），画法和它与观察状态的对应见 7.2。上面是星图，成员就是 ①②③ 的个体或折起的分组；下面是按记录先后排开的全图，兼作时间轴，自带逐条回放。
+  - 读取器口径（用户 10-12 定）：只凭相邻一律不生成交接，补写的编排里有对应任务线也不生成；来源里没有“人”就不补“人 → 第一个智能体”。`facts.turns` 保留每条原始记录，交接带两端的记录序号 `sentSeq`/`gotSeq`，τ-bench 的工具调用名和参数读进记录。交接数因此变了：Who&When 1791 → 1376（相邻 289 → 0；协议 813 → 687，少的 126 条是没有人发言的案例里默认补的“人”；明写 689 不变），τ-bench 2065 → 1905（160 个对话各少一条默认补的“人”），CAMEL 1518 → 1288（230 个对话各少一条）。落在任务线上的比例现在是 57% / 47% / 9%。
+  - 体检先判断能不能对照（第 5 节的 `comparability`）：193 个真实轨迹案例里 written 63 个、none 130 个。written 不再下“从没被派出过”“设计了没发生”，改说“这份记录里没有出现”“与补写的编排不一致，不是对方系统偏离了设计”；none 不和任务线对照。页面各处这类措辞集中到 `HUB.util.cmpWord`。
+  - 新文件：`js/core/collab.js`、`js/obs/collab.js`、`css/collab.css`、`tools/check_collab.js`。其余都是增量：`views.js` 注册，`store.js` 评价开关，`main.js` 挂载、键盘、实例选择、“截止”的说法，`panel.js` “一条记录”的详情和案例详情里的入口，`side.js`、`cards.js`、`guide.js`、`util.js`、`analysis.js`、`model.js`、`from-traces.js`、`check_real_facts.js`、`patch_page.py`。
+  - 检查：`check_collab.js` 193 个真实轨迹案例 220 个实例 4468 条记录、62 个预设、8 个“有运行没有逐条记录”的顶替模型全过；`check_real_facts` 193、`test_scenes` 62、`check_from_docs` 1140 照常通过。无头 Chromium 在真实页面里把 193 个真实轨迹案例、62 个预设和抽样的 63 个其余导入案例各打开一遍，2524 个画面逐项核对全过；49 项交互逐项通过；0 脚本错误。
+  - 顺带修了一处：右栏案例实例详情里，交接指向的任务没有任何运行时取 `.id` 报错，62 个预设里有 53 个在 ③ 聚焦案例时会碰到。
+  - 还没做：`hub/dist/observatory.html` 单文件没有重建。本机真实会话没有逐条记录这一层，按“一次运行一格”画，这条路只用顶替数据验证过，没有在真实会话上看过。读图测试要找真人做。CAMEL 四个学科集的所有发言被读成一个人（读取器的问题，没改）。导入脚本把评价写进了个体和案例实例的名字，本视图用短名并跟随评价开关，根子在导入。
 
 ## 15. 待思考：侧栏和其他区域的信息重复（10-10 记录，暂不改）
 

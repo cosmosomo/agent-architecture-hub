@@ -14,7 +14,7 @@
     time: null,
     compare: 'both',
     lines: { task: true, info: false, watch: true, channel: false },
-    overlays: { human: true, channels: false, delivery: false, lanes: true },
+    overlays: { human: true, channels: false, delivery: false, lanes: true, evals: true },   /* evals: after-the-fact judgements (failure labels, outcomes), a layer apart from the facts */
     present: 'graph',
     selection: null,
     drawer: true,
@@ -133,7 +133,8 @@
     if (s.time != null) p.set('t', String(Math.round(s.time)));
     if (s.compare !== 'both') p.set('m', s.compare);
     p.set('l', Object.keys(s.lines).filter(function (k) { return s.lines[k]; }).join(','));
-    p.set('o', Object.keys(s.overlays).filter(function (k) { return s.overlays[k]; }).join(','));
+    // the evaluation layer is on unless a link says "noeval", so links written before it existed read the same
+    p.set('o', Object.keys(s.overlays).filter(function (k) { return k !== 'evals' && s.overlays[k]; }).concat(s.overlays.evals === false ? ['noeval'] : []).join(','));
     if (s.present !== 'graph') p.set('p', s.present);
     if (s.selection) p.set('sel', s.selection.type + ':' + s.selection.id);
     if (s.merged && s.merged.length) p.set('mg', s.merged.map(function (mg) { return mg.id + ':' + mg.name.replace(/[|:;]/g, ' ') + '|' + mg.memberIds.join(','); }).join(';'));
@@ -166,7 +167,7 @@
     }
     if (p.has('o')) {
       var o = p.get('o').split(',');
-      out.overlays = { human: o.indexOf('human') >= 0, channels: o.indexOf('channels') >= 0, delivery: o.indexOf('delivery') >= 0, lanes: o.indexOf('lanes') >= 0 };
+      out.overlays = { human: o.indexOf('human') >= 0, channels: o.indexOf('channels') >= 0, delivery: o.indexOf('delivery') >= 0, lanes: o.indexOf('lanes') >= 0, evals: o.indexOf('noeval') < 0 };
     }
     if (p.get('p')) out.present = p.get('p');
     if (p.get('sel')) { var s2 = p.get('sel').split(':'); out.selection = { type: s2[0], id: s2.slice(1).join(':') }; }

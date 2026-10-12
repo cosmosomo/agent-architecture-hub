@@ -129,7 +129,7 @@
           status: s.compare === 'def' ? null : st.status, runs: s.compare === 'def' ? null : st.runs || 0, maxRuns: maxRuns,
           host: x.host && x.host !== 'Claude Code' ? x.host : null,
           natives: (x.natives || []).map(function (cid) { var c = idx.ch.get(cid) || {}; return { id: cid, name: c.name, short: c.short || c.name, host: c.host }; }),
-          delivery: s.overlays.delivery && s.compare !== 'def' ? a.delivery[id] || null : null } };
+          delivery: s.overlays.delivery && s.compare !== 'def' && HUB.model.measured(m, 'delivery') ? a.delivery[id] || null : null } };
     };
     var groupCard = function (G, w, h) {
       var mem = idx.membersDeep.get(G.id) || [];
@@ -278,6 +278,7 @@
       var users = (c.users || []).filter(function (u) { return idx.ind.has(u) && !hidden(u); });
       return { key: 'c:' + c.id, kind: 'channel', w: CHW, h: CHH, sel: { type: 'channel', id: c.id }, anchor: ['b:__channels'],
         data: { id: c.id, name: c.name, chKind: c.kind, model: c.kind === 'model' ? c.id.replace(/^ch_/, '') : null, def: defOnly,
+          unmeasured: !HUB.model.measured(m, 'channel'),
           status: defOnly ? 'ok' : cs.status || 'ok', limit: c.limit || null, users: users.length,
           agents: users.slice(0, 6).map(function (u) { var y = idx.ind.get(u); return { id: u, agentId: y.agentId, kind: y.kind, on: !defOnly && (cs.activeUsers || []).indexOf(u) >= 0 }; }),
           active: defOnly ? 0 : cs.active || 0, waiting: defOnly ? 0 : cs.waiting || 0, peak: defOnly ? 0 : cs.peak || 0,
@@ -304,7 +305,8 @@
     var bad = chs.filter(function (c) { var st = (a.channelStats[c.id] || {}).status; return !defOnly && st && st !== 'ok'; }).length;
     var full = chs.filter(function (c) { var cs = a.channelStats[c.id] || {}; return !defOnly && c.limit && (cs.waiting || cs.active >= c.limit); }).length;
     frames.push({ key: 'b:__channels', kind: 'chframe', x: fx, y: fy, w: fw, h: fh, sel: { type: 'channels', id: 'all' }, anchor: [],
-      data: { n: chs.length, bad: bad, full: full, def: defOnly, queued: defOnly ? 0 : U.sum(chs, function (c) { return (a.channelStats[c.id] || {}).queued || 0; }) } });
+      data: { n: chs.length, bad: bad, full: full, def: defOnly, unmeasured: !HUB.model.measured(m, 'channel'),
+        queued: defOnly ? 0 : U.sum(chs, function (c) { return (a.channelStats[c.id] || {}).queued || 0; }) } });
     chItems.forEach(function (it) { it.x = fx + FP + it.px; it.y = fy + FT + it.py; if (it.key === 'i:meta_maint') it.anchor = ['b:__channels']; cards.push(it); });
 
     var cardByKey = new Map(cards.map(function (c) { return [c.key, c]; }));
@@ -381,7 +383,7 @@
       var focus = focusCount[g.key] || 0;
       var label = '';
       if (focusCase && focus) label = String(focus);
-      else if (g.type === 'factonly') label = '未声明 ' + g.count;
+      else if (g.type === 'factonly') label = U.cmpWord('factTag') + ' ' + g.count;
       else if (s.compare !== 'def' && g.rels.length > 1 && g.count) label = String(g.count);
       links.push({ key: g.key, from: g.from, to: g.to, type: g.type, state: state, count: g.count, unused: g.unused,
         rels: g.rels, ids: g.ids, subs: Object.keys(g.subs), focus: focus, label: label,

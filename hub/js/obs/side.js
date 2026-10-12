@@ -19,11 +19,14 @@
         var patch = { selection: sel };
         // a process object is easier to see in the process view, a case in its own route view
         if ((sel.type === 'stage' || sel.type === 'gate' || sel.type === 'step') && s.subject !== 'process') patch.subject = 'process';
-        if ((sel.type === 'individual' || sel.type === 'group' || sel.type === 'channel') && s.subject !== 'org') patch.subject = 'org';
+        // the trajectory view draws individuals and groups too: selecting one there stays there
+        if ((sel.type === 'individual' || sel.type === 'group' || sel.type === 'channel') && s.subject !== 'org' && !(s.subject === 'collab' && sel.type !== 'channel')) patch.subject = 'org';
         if (sel.type === 'channel') { patch.overlays = { channels: true }; patch.lines = { channel: true }; }
         if (patch.subject) HUB.store.set(patch); else HUB.store.set(patch, { history: false });
       } else if (act === 'case') {
-        HUB.store.set({ focus: { type: 'case', id: t.getAttribute('data-id') }, instanceId: t.getAttribute('data-id'), subject: 'org', depth: { org: Math.max(2, s.depth.org) },
+        // in the trajectory view a case instance is what the view shows: picking another one stays there and shows it whole
+        if (s.subject === 'collab') HUB.store.set({ focus: { type: 'case', id: t.getAttribute('data-id') }, instanceId: t.getAttribute('data-id'), time: null, selection: { type: 'case', id: t.getAttribute('data-id') }, present: 'graph' });
+        else HUB.store.set({ focus: { type: 'case', id: t.getAttribute('data-id') }, instanceId: t.getAttribute('data-id'), subject: 'org', depth: { org: Math.max(2, s.depth.org) },
           selection: { type: 'case', id: t.getAttribute('data-id') }, present: 'graph' });
       } else if (act === 'health') {
         var hc = HUB.model.an(s, m).health.find(function (x) { return x.id === t.getAttribute('data-id'); });
@@ -36,7 +39,7 @@
   function isSel(s, type, id) { return s.selection && s.selection.type === type && s.selection.id === id; }
   function item(s, type, id, name, meta, lv, lead) {
     return '<div class="ob-si' + (isSel(s, type, id) ? ' on' : '') + '" style="padding-left:' + (14 + (lv || 0) * 14) + 'px" data-act="sel" data-type="' + type + '" data-id="' + esc(id) + '">' +
-      (lead || '') + '<span class="ob-nm">' + esc(name) + '</span>' + (meta ? '<span class="ob-meta">' + esc(meta) + '</span>' : '') + '</div>';
+      (lead || '') + '<span class="ob-nm">' + esc(U.quietEval(name)) + '</span>' + (meta ? '<span class="ob-meta">' + esc(meta) + '</span>' : '') + '</div>';
   }
 
   function tree(el, m, s) {
@@ -85,7 +88,7 @@
     out.push('<div class="ob-sh">案例实例</div>');
     m.facts.cases.filter(function (c) { return HUB.model.visible(c.start, s); }).forEach(function (c) {
       var on = s.focus && s.focus.type === 'case' && s.focus.id === c.id;
-      out.push('<div class="ob-si' + (on ? ' on' : '') + '" data-act="case" data-id="' + c.id + '"><span class="ob-tw"></span><span class="ob-nm"><b>' + c.id + '</b> ' + esc(c.name) + '</span><span class="ob-meta">' + esc(L.caseStatus[c.status] || c.status) + '</span></div>');
+      out.push('<div class="ob-si' + (on ? ' on' : '') + '" data-act="case" data-id="' + c.id + '"><span class="ob-tw"></span><span class="ob-nm"><b>' + c.id + '</b> ' + esc(U.quietEval(c.name)) + '</span><span class="ob-meta">' + esc(L.caseStatus[c.status] || c.status) + '</span></div>');
     });
     el.innerHTML = out.join('');
     el.scrollTop = keep;
@@ -99,13 +102,13 @@
     out.push('<div class="ob-sh">需要人处理（' + a.needsHuman.length + '）</div>');
     if (!a.needsHuman.length) out.push('<div class="ob-si" style="cursor:default"><span class="ob-nm" style="color:var(--t3)">现在没有</span></div>');
     a.needsHuman.forEach(function (x) {
-      out.push('<div class="ob-si" data-act="need" data-type="' + x.target.type + '" data-id="' + esc(x.target.id) + '"><span class="ob-sev mid">' + ({ approval: '拍板', escalation: '上报', direction: '调整' })[x.kind] + '</span><span class="ob-nm ob-wrap-text">' + esc(x.text) + '</span></div>');
+      out.push('<div class="ob-si" data-act="need" data-type="' + x.target.type + '" data-id="' + esc(x.target.id) + '"><span class="ob-sev mid">' + ({ approval: '拍板', escalation: '上报', direction: '调整' })[x.kind] + '</span><span class="ob-nm ob-wrap-text">' + esc(U.quietEval(x.text)) + '</span></div>');
     });
     out.push('<div class="ob-sh">架构体检（' + a.health.length + '）</div>');
     a.health.forEach(function (x) {
-      out.push('<div class="ob-si" data-act="health" data-id="' + x.id + '"><span class="ob-sev ' + x.severity + '">' + ({ high: '高', mid: '中', low: '低' })[x.severity] + '</span><span class="ob-nm ob-wrap-text">' + esc(x.text) + '</span></div>');
+      out.push('<div class="ob-si" data-act="health" data-id="' + x.id + '"><span class="ob-sev ' + x.severity + '">' + ({ high: '高', mid: '中', low: '低' })[x.severity] + '</span><span class="ob-nm ob-wrap-text">' + esc(U.quietEval(x.text)) + '</span></div>');
     });
-    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">体检比较的是编排（定义）和实际发生的事（事实）：设计了没用上、实际发生了编排里却没有、该送到的资料没送到、判断点反复打回、渠道出故障。点一条，图上会带你去看它。</div>');
+    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">' + esc(U.cmpWord('healthHow')) + '</div>');
     el.innerHTML = out.join('');
     el.scrollTop = keep;
   }

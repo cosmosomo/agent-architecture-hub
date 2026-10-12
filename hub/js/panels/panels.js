@@ -44,6 +44,8 @@
       caseName: m.name,
       timeText: st.time == null ? '全部时间' : ('截止 ' + U.fmtClock(st.time)),
       synthetic: !!m.synthetic,
+      deliveryMeasured: HUB.model.measured(m, 'delivery'), channelMeasured: HUB.model.measured(m, 'channel'),
+      ordinal: m.clock === 'ordinal', factLabel: HUB.model.factLabel(m), factError: m.factSource && m.factSource.kind === 'error',
       scope: scopeGroup ? { id: scopeGroup.id, name: scopeGroup.name } : null
     };
 
@@ -55,7 +57,7 @@
       { key: 'cases', label: '案例数', value: U.fmtNum(t.cases) },
       { key: 'runs', label: '运行数', value: U.fmtNum(t.runs) },
       { key: 'calls', label: '调用数', value: U.fmtNum(t.calls) },
-      { key: 'tokens', label: 'Token', value: U.fmtNum(t.tokens) },
+      { key: 'tokens', label: 'Token', value: U.fmtTokens(t.tokens) },
       { key: 'firstPassRate', label: '首次通过率', value: U.pct(t.firstPassRate) },
       { key: 'reworkRate', label: '返工率', value: U.pct(t.reworkRate) },
       { key: 'failedRuns', label: '失败运行数', value: U.fmtNum(t.failedRuns) }
@@ -76,7 +78,7 @@
         modelLabel: modelLabel(idx, x.model),
         status: s.status, statusLabel: L.indStatus[s.status] || s.status,
         runs: s.runs, tokens: s.tokens,
-        missing: dv ? dv.missing.length : null
+        missing: header.deliveryMeasured && dv ? dv.missing.length : null
       };
     });
 
@@ -136,7 +138,7 @@
 
     /* 8. 运行统计 */
     var runsCut = F.runs.filter(function (r) { return vis(r.start); });
-    var sumTokens = function (rs) { return U.sum(rs, function (r) { return r.tokens || 0; }); };
+    var sumTokens = U.sumTokens;
     var failCount = function (rs) { return rs.filter(function (r) { return r.outcome === 'failed' || r.outcome === 'interrupted'; }).length; };
     var byGroup;
     if (scopeGroup) {
@@ -245,7 +247,7 @@
     rows.sort(function (a, b) {
       var av = a[key], bv = b[key];
       if (typeof av === 'string' || typeof bv === 'string') return dir * String(av || '').localeCompare(String(bv || ''), 'zh');
-      av = av == null ? -Infinity : av; bv = bv == null ? -Infinity : bv;
+      av = av == null ? 0 : av; bv = bv == null ? 0 : bv;
       return dir * (av - bv);
     });
 
@@ -270,8 +272,8 @@
         U.h('td', null, r.modelLabel),
         U.h('td', null, U.h('span', { class: 'pn-dot', 'data-s': r.status }), r.statusLabel),
         U.h('td', { class: 'pn-num' }, U.fmtNum(r.runs)),
-        U.h('td', { class: 'pn-num' }, U.fmtNum(r.tokens)),
-        U.h('td', { class: 'pn-num' + (r.missing > 0 ? ' pn-bad' : '') }, r.missing == null ? '-' : U.fmtNum(r.missing)));
+        U.h('td', { class: 'pn-num' }, U.fmtTokens(r.tokens)),
+        U.h('td', { class: 'pn-num' + (r.missing > 0 ? ' pn-bad' : '') }, !data.header.deliveryMeasured ? '未采集' : r.missing == null ? '-' : U.fmtNum(r.missing)));
     }) : [U.h('tr', null, U.h('td', { colspan: 7, class: 'pn-empty-cell' }, '没有匹配的个体'))];
 
     var searchBox = U.h('input', {
@@ -295,7 +297,8 @@
     var docRows = t.docs.map(function (d) {
       return U.h('tr', { 'data-key': 'doc:' + d.id },
         U.h('td', null, d.layerLabel), U.h('td', null, d.name), U.h('td', null, d.ownerName),
-        U.h('td', { class: 'pn-num' }, U.fmtNum(d.expected)), U.h('td', { class: 'pn-num' }, U.fmtNum(d.received)));
+        U.h('td', { class: 'pn-num' }, data.header.deliveryMeasured ? U.fmtNum(d.expected) : '未采集'),
+        U.h('td', { class: 'pn-num' }, data.header.deliveryMeasured ? U.fmtNum(d.received) : '未采集'));
     });
     return card('tasks', '任务与信息', '每个案例实例的完成情况，以及文档在团队里的送达广度。', U.h('div', null,
       tableOf(['名称', '状态', '任务数', '返工任务数', '开始时间', '结束时间'], caseRows),
@@ -305,6 +308,8 @@
 
   function cardDelivery(data) {
     var rows = data.delivery.length ? data.delivery.map(function (x) {
+      if (!data.header.deliveryMeasured) return U.h('tr', { 'data-key': 'dv:' + x.id }, U.h('td', null, x.name),
+        [1, 2, 3, 4].map(function () { return U.h('td', null, '未采集'); }));
       var missingEls = x.missing.length ? x.missing.map(function (d) {
         return U.h('span', { class: 'pn-tag pn-bad', 'data-key': 'missdoc:' + x.id + ':' + d.id },
           d.name,
@@ -332,8 +337,9 @@
         U.h('td', null, ch.name), U.h('td', null, ch.kindLabel),
         U.h('td', { class: 'pn-num' }, U.fmtNum(ch.userCount)), U.h('td', { class: 'pn-num' }, U.fmtNum(ch.calls)),
         U.h('td', { class: 'pn-num' }, U.fmtNum(ch.errors)),
-        U.h('td', null, U.h('span', { class: 'pn-ch-status', 'data-s': ch.status }, ch.statusLabel)),
-        U.h('td', null, ch.capacity), U.h('td', null, ch.quota), U.h('td', null, ch.maintainerName),
+        U.h('td', null, data.header.channelMeasured ? U.h('span', { class: 'pn-ch-status', 'data-s': ch.status }, ch.statusLabel) : '未采集'),
+        U.h('td', null, ch.capacity + (data.header.channelMeasured ? '' : '（补写的声明）')),
+        U.h('td', null, ch.quota + (data.header.channelMeasured ? '' : '（补写的声明）')), U.h('td', null, ch.maintainerName),
         U.h('td', null, U.h('button', { class: 'pn-btn', type: 'button', onClick: function () {
           HUB.model.perform(ch.action, { target: { type: 'channel', id: ch.id } });
         } }, ch.actionLabel)));
@@ -369,7 +375,7 @@
     var rs = data.runStats;
     var groupRows = rs.byGroup.map(function (g) {
       return U.h('tr', null, U.h('td', null, g.name), U.h('td', { class: 'pn-num' }, U.fmtNum(g.runs)),
-        U.h('td', { class: 'pn-num' }, U.fmtNum(g.tokens)), U.h('td', { class: 'pn-num' }, U.fmtNum(g.failedRuns)));
+        U.h('td', { class: 'pn-num' }, U.fmtTokens(g.tokens)), U.h('td', { class: 'pn-num' }, U.fmtNum(g.failedRuns)));
     });
     var stepRows = rs.steps.length ? rs.steps.map(function (s) {
       return U.h('tr', null, U.h('td', null, s.stageName), U.h('td', null, s.name),
@@ -382,7 +388,7 @@
     return card('run-stats', '运行统计', '按分组、流程步骤、判断点汇总的运行与质量数据。' + scopeSuffix(data), U.h('div', null,
       tableOf(['分组', '运行数', 'token', '失败运行数'], groupRows),
       U.h('h4', { class: 'pn-sub-title' }, '按步骤'),
-      tableOf(['阶段', '步骤', '任务数', '平均时长', '返工数'], stepRows),
+      tableOf(['阶段', '步骤', '任务数', data.header.ordinal ? '平均发言条数' : '平均时长', '返工数'], stepRows),
       U.h('h4', { class: 'pn-sub-title' }, '按判断点'),
       tableOf(['判断点', '通过', '打回', '排队', '上报'], gateRows)));
   }
@@ -391,14 +397,14 @@
     var rows = data.maintenance;
     var body = rows.length ? tableOf(['时间', '渠道', '事件', '说明'], rows.map(function (e) {
       return U.h('tr', { 'data-key': 'ce:' + e.id }, U.h('td', null, e.atText), U.h('td', null, e.channelName), U.h('td', null, e.kindLabel), U.h('td', null, e.note));
-    })) : U.h('p', { class: 'pn-empty' }, '目前没有渠道维护记录');
+    })) : U.h('p', { class: 'pn-empty' }, data.header.channelMeasured ? '目前没有渠道维护记录' : '未采集');
     return card('maintenance', '维护情况', '渠道故障、额度、维护任务与恢复记录，按时间顺序。', body);
   }
 
   function buildHeader(data) {
     var h = data.header;
     var left = [U.h('span', { class: 'pn-tag-plain' }, h.caseName), U.h('span', { class: 'pn-tag-plain' }, h.timeText)];
-    if (h.synthetic) left.push(U.h('span', { class: 'pn-badge-sim' }, '模拟数据'));
+    left.push(U.h('span', { class: h.factError ? 'ob-pill warn' : 'pn-tag-plain' }, h.factLabel));
     var row = U.h('div', { class: 'pn-header' }, U.h('div', { class: 'pn-header-left' }, left));
     if (h.scope) {
       row.appendChild(U.h('span', { class: 'pn-scope-chip' }, '只看：' + h.scope.name + ' ',

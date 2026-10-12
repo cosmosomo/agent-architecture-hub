@@ -49,6 +49,18 @@
     },
     test: function (s) { return s.subject === 'process'; }
   });
+  // The trajectory of one case instance (HUB.obsCollab): its records in order and the handoffs that have a basis.
+  // In depth it sits between ③ (one case on the org chart) and the decision chain of one run. It takes no number
+  // (⑤⑥ keep theirs) and opens with T. Recorded facts only: a case of simulated facts shows its definition, no focus.
+  register({
+    id: 'vc', num: 4.5, key: 'T', name: '协作轨迹图', short: '协作轨迹', question: '看清一次协作里谁把什么交给谁', subject: 'collab',
+    apply: function (st, m) {
+      var f = m && !m.synthetic ? caseFocus(st, m) : null;
+      // records are read individual by individual; a definition alone keeps the granularity the person was looking at
+      return { subject: 'collab', focus: f, instanceId: f ? f.id : st.instanceId, depth: { org: f ? 3 : st.depth.org }, present: 'graph' };
+    },
+    test: function (s) { return s.subject === 'collab'; }
+  });
 
   /* ---------- user views ---------- */
   function loadMine() {

@@ -308,6 +308,8 @@
       } else if (o.type === 'gate') {
         var deciderType = a.decider_type || 'rule';
         var rawPaths = Array.isArray(a.paths) ? a.paths : parsePaths(slices[o.id] || '');
+        // a gate written only with paths: the first one is the way through, the first other target is the way back
+        var passTo = a.pass || (rawPaths[0] && rawPaths[0].next) || 'done';
         gates.push({
           id: o.id,
           name: a.name || o.id,
@@ -317,8 +319,8 @@
             who: a.decider_who || (deciderType === 'human' ? 'human' : null),
             text: a.decider_text || '',
           },
-          pass: a.pass || (rawPaths[0] && rawPaths[0].next) || 'done',
-          fail: a.fail || (rawPaths.find(function (p) { return p.next && p.next !== (a.pass || ''); }) || {}).next || null,
+          pass: passTo,
+          fail: a.fail || (rawPaths.find(function (p) { return p.next && p.next !== passTo; }) || {}).next || null,
           paths: rawPaths,
           escalate: a.escalate || (deciderType === 'human' ? 'human' : null),
           tags: o.tags,
@@ -632,6 +634,7 @@
         })).then(function (allDecisions) {
           parts.decisions = [].concat.apply([], allDecisions);
           var model = assemble(parts, caseId);
+          model.source.base = base;   // the case folder, so attached originals (prompt_file …) open from the details
           // 事实层：和 v41 精编案例同一条模拟流水线，scenario/decisions 作为覆盖
           if (HUB.sim && HUB.sim.simulate) {
             var decByAgent = {};
@@ -640,6 +643,8 @@
           } else {
             model.facts = { synthetic: true, span: { start: 0, end: 0 }, cases: [], tasks: [], runs: [], decisions: parts.decisions, calls: [], handoffs: [], deliveries: [], gateEvents: [], channelEvents: [], versionEvents: [], actions: [], messages: [] };
           }
+          // 案例目录里有真实轨迹（traces/）且有对应的读取器时，事实层换成实测的（from-traces.js）
+          if (HUB.fromTraces) return HUB.fromTraces.attach(model, get, parts);
           return model;
         });
       });
@@ -667,29 +672,39 @@
   var docsCases = null;                        // null=未加载, [{id, title, dir}]
   var ensureDiscovery = function () { return Promise.resolve([]); };   // 无注册环境时的占位
 
-  /** 案例发现 = _index.md 注册表 ∪ 目录列表。http 服务（python http.server 等）自带
-      目录列表页，新目录免注册直接可用；file:// 或纯静态托管拿不到列表时回退 _index.md。 */
-  function makeDiscovery(fetchFn, casesBase) {
+  /** 案例发现 = 各案例根的 _index.md 注册表 ∪ 主目录列表（仅第一个根）。
+      http 服务（python http.server 等）自带目录列表页，新目录免注册直接可用；
+      file:// 或纯静态托管拿不到列表时回退 _index.md。第二个根（hub/cases_imported/）
+      只走注册表，不扫目录列表——它是导入案例的独立命名空间。 */
+  function makeDiscovery(fetchFn, casesBases) {
+    var bases = Array.isArray(casesBases) ? casesBases : [casesBases];
     return function () {
       if (docsCases !== null) return Promise.resolve(docsCases);
-      var get = function (p) {
-        return fetchFn(casesBase + p).then(function (r) {
+      var get = function (base, p) {
+        return fetchFn(base + p).then(function (r) {
           return typeof r === 'string' ? r : (r.ok ? r.text() : '');
         }).catch(function () { return ''; });
       };
       var byId = {};
-      return loadIndex(get, '_index.md').then(function (rows) {
-        rows.forEach(function (r) { byId[r.id] = r; });
-        return get('').then(function (html) {
-          var re = /href="([A-Za-z0-9][A-Za-z0-9_.\-]*)\/"/g, m;
-          while ((m = re.exec(html || ''))) {
-            if (!byId[m[1]]) byId[m[1]] = { id: m[1], title: m[1], dir: m[1] + '/' };
-          }
+      var scan = function (casesBase, withListing) {
+        return loadIndex(function (p) { return get(casesBase, p); }, '_index.md').then(function (rows) {
+          rows.forEach(function (r) { r.base = casesBase; if (!byId[r.id]) byId[r.id] = r; });
+          if (!withListing) return null;
+          return get(casesBase, '').then(function (html) {
+            var re = /href="([A-Za-z0-9][A-Za-z0-9_.\-]*)\/"/g, m;
+            while ((m = re.exec(html || ''))) {
+              if (!byId[m[1]]) byId[m[1]] = { id: m[1], title: m[1], dir: m[1] + '/', base: casesBase };
+            }
+          });
         });
-      }).catch(function () { /* 都拿不到就只有空表 */ }).then(function () {
-        docsCases = Object.keys(byId).sort().map(function (k) { return byId[k]; });
-        return docsCases;
-      });
+      };
+      return bases.reduce(function (chain, b, i) {
+        return chain.then(function () { return scan(b, i === 0); });
+      }, Promise.resolve())
+        .catch(function () { /* 都拿不到就只有空表 */ }).then(function () {
+          docsCases = Object.keys(byId).sort().map(function (k) { return byId[k]; });
+          return docsCases;
+        });
     };
   }
 
@@ -714,19 +729,18 @@
 
   /* ── 自动注册 docs source（当 HUB.model 已就绪时）────────── */
   if (HUB.model && HUB.model.addSource) {
-    // 计算 hub/cases/ 相对于当前页面的路径
-    var CASES_BASE = (function () {
+    // 计算各案例根相对于当前页面的路径；hub/cases_imported/ 是导入案例的独立命名空间
+    var casesRoot = (function () {
       var p = (typeof location !== 'undefined' ? location.pathname : '') || '';
-      // observatory.html 在 hub/dist/，需要向上两级
-      if (p.indexOf('/hub/dist/') >= 0 || p.indexOf('%2Fhub%2Fdist%2F') >= 0) return '../../hub/cases/';
-      return 'hub/cases/';
+      var dist = p.indexOf('/hub/dist/') >= 0 || p.indexOf('%2Fhub%2Fdist%2F') >= 0;
+      return function (name) { return (dist ? '../../hub/' : 'hub/') + name + '/'; };
     })();
 
     function fetchText(url) {
       return fetch(url).then(function (r) { return r.ok ? r.text() : ''; }).catch(function () { return ''; });
     }
 
-    ensureDiscovery = makeDiscovery(fetchText, CASES_BASE);
+    ensureDiscovery = makeDiscovery(fetchText, [casesRoot('cases'), casesRoot('cases_imported')]);
 
     HUB.model.addSource({
       id: 'docs',
@@ -736,7 +750,7 @@
         return ensureDiscovery().then(function (rows) {
           var row = rows.find(function (r) { return r.id === caseId; });
           if (!row) return Promise.reject(new Error('docs 案例未找到：' + caseId));
-          return loadCase(fetchText, CASES_BASE + row.dir, caseId);
+          return loadCase(fetchText, (row.base || casesRoot('cases')) + row.dir, caseId);
         });
       },
     });

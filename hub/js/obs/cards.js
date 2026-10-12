@@ -52,10 +52,10 @@
     var natives = (d.natives || []);
     var ribbon = natives.length ? '<span class="ob-native" title="' + esc('专属能力：' + natives.map(function (n) { return n.name + (n.host ? '（' + n.host + '自带）' : ''); }).join('；')) + '">★ ' + esc(natives[0].short) + (natives.length > 1 ? ' +' + (natives.length - 1) : '') + '</span>' : '';
     var host = d.host ? '<span class="ob-host" title="这个个体接入的是' + esc(d.host) + '">' + esc(d.host) + '</span>' : '';
-    var title = d.name + (st ? '：' + (L.indStatus[st] || st) : '') + (d.runs != null ? '，运行 ' + d.runs + ' 次' : '') + '。双击打开它最近一次运行';
+    var title = HUB.util.quietEval(d.name) + (st ? '：' + (L.indStatus[st] || st) : '') + (d.runs != null ? '，运行 ' + d.runs + ' 次' : '') + '。双击打开它最近一次运行';
     var html = '<div class="nd-body" title="' + esc(title) + '">' +
       '<div class="nd-orb duo"' + (special ? ' style="color:' + ic + '"' : '') + '>' + (special ? ICON[d.kind] : agentIcon(d.agentId, 26)) + '</div>' +
-      '<div class="nd-lbl" style="color:' + ic + '">' + esc(d.name) + '</div>' + badge +
+      '<div class="nd-lbl" style="color:' + ic + '">' + esc(HUB.util.quietEval(d.name)) + '</div>' + badge +
       '<div class="nd-load"><div class="nd-load-bar" style="width:' + load + '%;background:' + lc + '"></div></div>' +
       '<div class="nd-sim-progress"><div class="nd-sim-progress-bar"></div></div>' +
       '</div>' + marks + (flags ? '<div class="ob-flags">' + flags + '</div>' : '') + runs + host + ribbon;
@@ -85,7 +85,7 @@
     }).join('') + (d.agents.length > shown.length ? '<span class="ob-mini-more">+' + (d.agents.length - shown.length) + '</span>' : '');
     var stats = d.members + ' 人';
     if (d.runs != null) stats += d.cut ? ' · ' + d.working + ' 在做' : ' · 运行 ' + d.runs + ' 次';
-    if (d.never) stats += ' · ' + d.never + ' 未派';
+    if (d.never) stats += ' · ' + d.never + ' ' + HUB.util.cmpWord('neverShort');
     if (d.natives) stats += ' · ★ 专属 ' + d.natives;
     var bar = '';
     if (d.runs != null && d.members) {
@@ -115,16 +115,19 @@
         html: '<div class="ob-chc-head"><span class="ob-ch-ic" style="color:var(--t2)">' + ICON.tool + '</span><span class="ob-ch-name">基础能力</span><span class="ob-chc-kind">人人都有 · 不用维护</span></div>' +
           '<div class="ob-chc-tools" title="' + esc(d.tools.join('、')) + '">' + esc(tl) + (d.calls != null ? ' · ' + d.calls + ' 次' : '') + '</div>' };
     }
-    var bad = d.status && d.status !== 'ok';
+    var bad = !d.unmeasured && d.status && d.status !== 'ok';
     var col = d.model ? 'var(--mc-' + d.model + ', var(--accent1))' : d.chKind === 'function' ? 'var(--accent3)' : 'var(--accent2)';
     var name = String(d.name).replace(/^(模型|工具)：/, '');
     var kind = CH_KIND[d.chKind] || '渠道';
     if (d.limit === 1) kind += ' · 独占';
     else if (d.limit) kind += ' · 并发 ' + d.limit;
     else kind += ' · 不限并发';
+    if (d.unmeasured) kind += '（补写的声明）';
     // load: at a time cut the slots show who is in now; over the whole span they show the busiest moment
     var load = '';
-    if (!d.def && d.limit) {
+    if (d.unmeasured) {
+      load = '<div class="ob-chc-load"><span class="ob-chc-txt">负载未采集</span></div>';
+    } else if (!d.def && d.limit) {
       var used = d.cut ? d.active : d.peak;
       var cells = '';
       if (d.limit <= 8) for (var i = 0; i < d.limit; i++) cells += '<i class="' + (i < used ? 'on' : '') + '"></i>';
@@ -139,14 +142,14 @@
     }
     var avatars = d.agents.map(function (a) {
       var ac = a.kind === 'meta' ? '#22C4E6' : agentColor(a.agentId);
-      return '<span class="ob-mini' + (a.on ? ' ob-ms-working' : ' ob-ms-none') + '" style="--ic:' + ac + '" title="' + esc(HUB.model.name('individual', a.id)) + (a.on ? '（正在用）' : '') + '">' + (a.agentId ? agentIcon(a.agentId, 13) : '') + '</span>';
+      return '<span class="ob-mini' + (a.on && !d.unmeasured ? ' ob-ms-working' : ' ob-ms-none') + '" style="--ic:' + ac + '" title="' + esc(HUB.model.name('individual', a.id)) + (a.on && !d.unmeasured ? '（正在用）' : '') + '">' + (a.agentId ? agentIcon(a.agentId, 13) : '') + '</span>';
     }).join('') + (d.users > d.agents.length ? '<span class="ob-mini-more">+' + (d.users - d.agents.length) + '</span>' : '');
     var html = '<div class="ob-chc-head"><span class="ob-ch-ic" style="color:' + col + '">' + (d.chKind === 'model' ? ICON.model : ICON.tool) + '</span>' +
       '<span class="ob-ch-name" title="' + esc(name) + '">' + esc(name) + '</span>' +
-      (bad ? '<span class="ob-chs bad">' + esc(L.channelStatus[d.status] || d.status) + '</span>' : d.def ? '' : '<span class="ob-chs ok">正常</span>') + '</div>' +
+      (d.unmeasured ? '<span class="ob-chs">健康未采集</span>' : bad ? '<span class="ob-chs bad">' + esc(L.channelStatus[d.status] || d.status) + '</span>' : d.def ? '' : '<span class="ob-chs ok">正常</span>') + '</div>' +
       '<div class="ob-chc-kind">' + esc(kind) + '</div>' + load +
-      '<div class="ob-chc-users"><span class="ob-chc-av">' + avatars + '</span><span class="ob-chc-n">' + d.users + ' 人在用' + (d.calls != null ? ' · ' + d.calls + ' 次调用' : '') + '</span></div>';
-    var cls = 'ob-card ob-ch ob-chk-' + d.chKind + (bad ? ' ob-ch-bad' : '') + (!d.def && d.limit && (d.cut ? d.active >= d.limit || d.waiting : d.queued) ? ' ob-ch-full' : '');
+      '<div class="ob-chc-users"><span class="ob-chc-av">' + avatars + '</span><span class="ob-chc-n">' + d.users + (d.unmeasured ? ' 个声明使用者' : ' 人在用') + (d.calls != null ? ' · ' + d.calls + ' 次调用' : '') + '</span></div>';
+    var cls = 'ob-card ob-ch ob-chk-' + d.chKind + (bad ? ' ob-ch-bad' : '') + (!d.unmeasured && !d.def && d.limit && (d.cut ? d.active >= d.limit || d.waiting : d.queued) ? ' ob-ch-full' : '');
     return { cls: cls, html: html, sized: true, sig: JSON.stringify(d) };
   }
 
@@ -167,7 +170,7 @@
     var d = f.data;
     var stats = d.members + ' 人';
     if (d.runs != null) stats += d.cut ? ' · ' + d.working + ' 在做' : ' · 运行 ' + d.runs + ' 次';
-    if (d.never) stats += ' · ' + d.never + ' 未派';
+    if (d.never) stats += ' · ' + d.never + ' ' + HUB.util.cmpWord('neverShort');
     var html = '<div class="ob-fh" title="' + esc(d.name + '：' + stats + '。双击标题折叠') + '">' +
       '<span class="ob-fname">' + esc(d.name) + '</span><span class="ob-fmeta">' + esc(stats) + '</span>' +
       '<button class="ob-tog" type="button" data-toggle="' + esc(d.id) + '" title="折叠成一张卡">−</button></div>';
@@ -178,6 +181,7 @@
   function chframe(f) {
     var d = f.data;
     var meta = d.n + ' 条渠道' + (d.def ? '' : (d.bad ? ' · ' + d.bad + ' 条有故障' : '') + (d.full ? ' · ' + d.full + ' 条满载' : '') + (d.queued ? ' · 累计排队 ' + d.queued + ' 次' : ''));
+    if (d.unmeasured) meta = d.n + ' 条渠道 · 健康与负载未采集';
     var html = '<div class="ob-fh" title="能力层：模型渠道、功能渠道和本地工具。点标题打开渠道管理">' +
       '<span class="ob-fname">能力层 · 渠道</span><span class="ob-fmeta">' + esc(meta) + '</span></div>';
     return { cls: 'ob-fr-lv1 ob-fr-ch', html: html, style: { '--pc': '52, 211, 153' }, sig: JSON.stringify(d) };

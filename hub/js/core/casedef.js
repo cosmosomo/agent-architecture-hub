@@ -419,11 +419,26 @@
       var next = stages[i + 1] ? stages[i + 1].id : 'done';
       if (!gs.length) { add(s.id, next, 'normal'); return; }
       add(s.id, gs[0].id, 'normal');
+      // a way back (to this stage or an earlier one) is a loop; a way forward is a branch named by its condition
+      var back = function (to) { var ti = stages.findIndex(function (x) { return x.id === to; }); return ti >= 0 && ti <= i; };
+      var cond = function (g, to) {
+        var p = (g.paths || []).find(function (q) { return q.next === to; });
+        var t = String((p && p.condition) || '分支');
+        return t.length > 10 ? t.slice(0, 10) + '…' : t;
+      };
       gs.forEach(function (g, k) {
         var passTo = gs[k + 1] ? gs[k + 1].id : (g.pass || next);
         add(g.id, passTo, 'normal', '通过');
-        if (g.fail && g.fail !== passTo) add(g.id, g.fail, 'loop', '打回');
+        if (g.fail && g.fail !== passTo) {
+          if (back(g.fail) || !(g.paths || []).length) add(g.id, g.fail, 'loop', '打回');
+          else add(g.id, g.fail, 'normal', cond(g, g.fail));
+        }
         if (g.escalate) add(g.id, 'human', 'escalate', '上报');
+        // every other way out the orchestration wrote (routers with three or more exits)
+        (g.paths || []).forEach(function (p) {
+          if (!p.next || p.next === passTo || p.next === g.pass || p.next === g.fail) return;
+          add(g.id, p.next, back(p.next) ? 'loop' : 'normal', cond(g, p.next));
+        });
       });
     });
     return { stages: stages, gates: gates, flows: flows };

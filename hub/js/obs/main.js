@@ -25,13 +25,18 @@
     v3: '<circle cx="4.5" cy="18.5" r="2"/><circle cx="19.5" cy="5.5" r="2"/><path d="M6.5 18.5c5 0 3-6.5 6-6.5s1-6.5 5-6.5"/>',
     v4: '<path d="M3 6.5h5.5l3 5.5-3 5.5H3l3-5.5z"/><path d="M13 6.5h5l3 5.5-3 5.5h-5l3-5.5z"/>',
     v5: '<path d="M12 2.8l3.2 3.2L12 9.2 8.8 6z"/><path d="M12 14.8l3.2 3.2-3.2 3.2-3.2-3.2z"/><path d="M12 9.2v5.6"/>',
-    v6: '<path d="M4 5.5h7M7 9.5h10M10 13.5h6M6 17.5h12"/><path d="M4 3v18" opacity=".45"/>'
+    v6: '<path d="M4 5.5h7M7 9.5h10M10 13.5h6M6 17.5h12"/><path d="M4 3v18" opacity=".45"/>',
+    vc: '<path d="M3 6h18M3 12h18M3 18h18" opacity=".4"/><path d="M5.5 6l4.5 6h4.5l4 6"/><circle cx="5.5" cy="6" r="1.5" fill="currentColor"/><circle cx="18.5" cy="18" r="1.5" fill="currentColor"/>'
   };
 
   function st() { return HUB.store.get(); }
   function model() { return HUB.model.current; }
   function safe(label, fn) { try { return fn(); } catch (e) { console.error('[obs] ' + label, e); return null; } }
   function icon(paths, size) { return '<svg viewBox="0 0 24 24" width="' + (size || 16) + '" height="' + (size || 16) + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>'; }
+  // the trajectory view (subject 'collab') draws the org's individuals and groups: its granularity is the org's
+  function depthOf(s) { return s.subject === 'collab' ? 'org' : s.subject; }
+  // the cut in words: the trajectory view counts the records of its instance, the other views read the model's clock
+  function cutText(s) { return s.subject === 'collab' && HUB.obsCollab && HUB.obsCollab.cutLabel ? HUB.obsCollab.cutLabel(s, model()) : U.fmtClock(s.time); }
 
   /* ================= build ================= */
   function inject() {
@@ -76,19 +81,21 @@
     sr.insertBefore(els.sr, sr.firstChild);
     // a run's detail: the trace tree over the canvas, the selected step's details under our pane
     if (HUB.obsTrace) HUB.obsTrace.mount(cvA, sr, els.sr);
+    // the trajectory of one case instance: its own layer over the canvas
+    if (HUB.obsCollab) safe('collab.mount', function () { HUB.obsCollab.mount(cvA); });
 
     // canvas mouse: in observation mode a drag on the background pans and a click clears the selection
     var down = null;
     cvA.addEventListener('mousedown', function (e) {
       if (!on || e.button !== 0) return;
-      if (e.target.closest('.ob-float, .ob-tl, .zm-ctrl, .ob-card, .ob-fh, .ob-hit, .ob-tog, .ob-trace')) return;
+      if (e.target.closest('.ob-float, .ob-tl, .zm-ctrl, .ob-card, .ob-fh, .ob-hit, .ob-tog, .ob-trace, .ob-collab')) return;
       down = { x: e.clientX, y: e.clientY };
       isPan = true; panSt = { x: e.clientX, y: e.clientY, px: panX, py: panY };
       e.preventDefault(); e.stopImmediatePropagation();
     }, true);
     cvA.addEventListener('click', function (e) {
       if (!on) return;
-      if (e.target.closest('.ob-float, .ob-tl, .zm-ctrl, .ob-card, .ob-fh, .ob-hit, .ob-tog, .ob-trace')) return;
+      if (e.target.closest('.ob-float, .ob-tl, .zm-ctrl, .ob-card, .ob-fh, .ob-hit, .ob-tog, .ob-trace, .ob-collab')) return;
       e.stopImmediatePropagation();
       var moved = down && (Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y) > 4);
       down = null;
@@ -149,7 +156,7 @@
     renderPanel(s);
     if (HUB.obsTimeline) safe('timeline.update', function () { HUB.obsTimeline.update(m, s); });
     renderStatus(s);
-    document.title = m.presetName + ' · 协作观察';
+    document.title = (m.presetName || m.name) + ' · 协作观察';
   }
 
   function buildScene(m, s, a, view) {
@@ -173,6 +180,7 @@
     HUB.obsStage.setSelection(s.selection);
     showPanelMode(s);
     if (HUB.obsTrace) safe('trace', function () { HUB.obsTrace.render(s, m); });
+    if (HUB.obsCollab) safe('collab', function () { HUB.obsCollab.render(s, m); });
     var b = scene.bbox;
     var sig = [m.id, scene.subject, Math.round(b.x / 8), Math.round(b.y / 8), Math.round(b.w / 8), Math.round(b.h / 8), Math.round(view.w / 24), Math.round(view.h / 24)].join('|');
     if (sig !== lastFitSig || lastSubject !== scene.subject) {
@@ -211,11 +219,15 @@
     HUB.views.list().forEach(function (v) {
       row.appendChild(h('button', {
         type: 'button', class: 'ob-vbtn' + (cur === v.id ? ' on' : ''), role: 'tab', 'aria-selected': cur === v.id ? 'true' : 'false',
-        title: v.name + '：' + v.question + '（快捷键 ' + v.num + '）', onClick: function () { HUB.views.go(v.id); }
+        title: v.name + '：' + v.question + '（快捷键 ' + (v.key || v.num) + '）', onClick: function () { HUB.views.go(v.id); }
       }, h('span', { class: 'ob-vic', html: icon(VIEW_ICONS[v.id] || '', 16) }),
-        h('span', { class: 'ob-vtx' }, h('span', { class: 'ob-vname' }, h('span', { class: 'ob-vnum' }, v.num + ' '), v.short), h('span', { class: 'ob-vq' }, v.question))));
+        h('span', { class: 'ob-vtx' }, h('span', { class: 'ob-vname' }, v.key ? null : h('span', { class: 'ob-vnum' }, v.num + ' '), v.short), h('span', { class: 'ob-vq' }, v.question))));
     });
     els.tb.appendChild(row);
+    var m = model();
+    if (m.factSource && m.factSource.kind === 'error') els.tb.appendChild(h('span', {
+      class: 'ob-pill warn', title: HUB.model.factLabel(m)
+    }, '真实轨迹读取失败'));
     // the decision chain is a drill-down opened from an individual or a session, not one of the views: say where we are and how to go back
     var tg = drill(s);
     if (tg) els.tb.appendChild(h('span', { class: 'ob-custom ob-drill', title: '从个体或会话打开的决策链；Esc 或“返回”回到原来的视图' },
@@ -246,20 +258,25 @@
     }
     var tg = drill(s);
     if (tg) { c.appendChild(gt()); c.appendChild(h('span', null, tg.crumb)); }
-    if (s.time != null) { c.appendChild(gt()); c.appendChild(h('span', null, '截止 ' + U.fmtClock(s.time))); }
+    if (s.time != null) { c.appendChild(gt()); c.appendChild(h('span', null, '截止 ' + cutText(s))); }
     els.crumbs.appendChild(c);
     // focus picker: which case instance to follow
-    if (s.subject !== 'exec' && m.facts.cases.length) {
-      var sel = h('select', { class: 'ob-select', title: '聚焦一个案例实例：只点亮它经过的个体和交接', onChange: function () {
+    // the trajectory view always shows one instance of recorded facts: its picker lists every instance, has no "none",
+    // and picking one shows it whole; with the evaluation layer off the names keep quiet about outcomes too
+    var traj = s.subject === 'collab', shown = traj ? HUB.model.instanceOf(s, m) : null;
+    var quiet = traj && s.overlays && s.overlays.evals === false;
+    if (s.subject !== 'exec' && m.facts.cases.length && !(traj && m.synthetic)) {
+      var sel = h('select', { class: 'ob-select', title: traj ? '看哪一个案例实例的记录' : '聚焦一个案例实例：只点亮它经过的个体和交接', onChange: function () {
         var v2 = sel.value;
         if (!v2) HUB.store.set({ focus: null });
+        else if (traj) HUB.store.set({ focus: { type: 'case', id: v2 }, instanceId: v2, time: null, selection: null });
         else HUB.store.set({ focus: { type: 'case', id: v2 }, instanceId: v2, depth: { org: Math.max(2, s.depth.org) } });
       } });
-      sel.appendChild(h('option', { value: '' }, '不聚焦'));
+      if (!traj) sel.appendChild(h('option', { value: '' }, '不聚焦'));
       m.facts.cases.forEach(function (k) {
-        if (!HUB.model.visible(k.start, s)) return;
-        var o = h('option', { value: k.id }, k.id + ' ' + k.name + '（' + (L.caseStatus[k.status] || k.status) + '）');
-        if (s.focus && s.focus.type === 'case' && s.focus.id === k.id) o.selected = true;
+        if (!traj && !HUB.model.visible(k.start, s)) return;
+        var o = h('option', { value: k.id }, k.id + ' ' + (quiet ? HUB.collab.shortName(k.name) : k.name) + '（' + (L.caseStatus[k.status] || k.status) + '）');
+        if (traj ? !!shown && shown.id === k.id : s.focus && s.focus.type === 'case' && s.focus.id === k.id) o.selected = true;
         sel.appendChild(o);
       });
       els.crumbs.appendChild(h('span', { class: 'ob-sep' }));
@@ -270,16 +287,16 @@
   /* ---------- canvas: granularity, comparison, presentation (top right) ---------- */
   function renderTopCtl(s) {
     els.topctl.innerHTML = '';
-    var d = DEPTHS[s.subject] || [];
+    var ds = depthOf(s), d = DEPTHS[ds] || [];
     if (d.length && s.present !== 'panel') {
       els.topctl.appendChild(h('span', { class: 'ob-lbl' }, '粒度'));
       var seg = h('div', { class: 'ob-seg', title: '展开到哪一层（[ 和 ] 也行）' });
       d.forEach(function (x) {
-        seg.appendChild(h('button', { type: 'button', class: s.depth[s.subject] === x[0] ? 'on' : '', onClick: function () { HUB.store.setDepth(s.subject, x[0]); } }, x[1]));
+        seg.appendChild(h('button', { type: 'button', class: s.depth[ds] === x[0] ? 'on' : '', onClick: function () { HUB.store.setDepth(ds, x[0]); } }, x[1]));
       });
       els.topctl.appendChild(seg);
-      var n = (s.expanded[s.subject] || []).length + (s.collapsed[s.subject] || []).length;
-      if (n) els.topctl.appendChild(h('span', { class: 'ob-reset', title: '有分组被单独展开或折叠；点这里回到统一粒度', onClick: function () { HUB.store.setDepth(s.subject, s.depth[s.subject]); } }, '局部 ' + n + ' 处 · 还原'));
+      var n = (s.expanded[ds] || []).length + (s.collapsed[ds] || []).length;
+      if (n) els.topctl.appendChild(h('span', { class: 'ob-reset', title: '有分组被单独展开或折叠；点这里回到统一粒度', onClick: function () { HUB.store.setDepth(ds, s.depth[ds]); } }, '局部 ' + n + ' 处 · 还原'));
       els.topctl.appendChild(h('span', { class: 'ob-sep' }));
     }
     els.topctl.appendChild(h('span', { class: 'ob-lbl' }, '对照'));
@@ -353,11 +370,13 @@
     var m = model(), a = HUB.model.an(s, m), t = a.totals;
     var bar = document.querySelector('.statbar');
     bar.querySelectorAll('.ob-st').forEach(function (n) { n.remove(); });
-    [['个体', t.individuals], ['任务线', t.relations], ['案例', t.cases], ['运行', t.runs], ['调用', U.fmtNum(t.calls)], ['token', U.fmtNum(t.tokens)],
-      ['首次通过', U.pct(t.firstPassRate)], ['返工率', U.pct(t.reworkRate)], ['编排版本', m.def.version], ['时间', s.time == null ? '全部' : '截止 ' + U.fmtClock(s.time)]].forEach(function (x) {
+    [['个体', t.individuals], ['任务线', t.relations], ['案例', t.cases], ['运行', t.runs], ['调用', U.fmtNum(t.calls)], ['token', U.fmtTokens(t.tokens)],
+      ['首次通过', U.pct(t.firstPassRate)], ['返工率', U.pct(t.reworkRate)], ['编排版本', m.def.version], ['时间', s.time == null ? '全部' : '截止 ' + cutText(s)]].forEach(function (x) {
       bar.appendChild(h('div', { class: 'st ob-st' }, h('span', null, x[0] + ':'), h('span', { class: 'st-v' }, String(x[1]))));
     });
-    bar.appendChild(h('div', { class: 'st ob-st', style: { border: 'none' } }, h('span', { class: 'ob-tag-sim' }, m.synthetic ? '事实为模拟数据' : '本机真实会话')));
+    var failed = m.factSource && m.factSource.kind === 'error';
+    bar.appendChild(h('div', { class: 'st ob-st', style: { border: 'none' } }, h('span', { class: failed ? 'ob-pill warn' : 'ob-tag-sim' },
+      failed ? HUB.model.factLabel(m) : m.synthetic ? '事实为模拟数据' : '事实为' + HUB.model.factLabel(m))));
   }
 
   // what the open decision chain is, in words for the top bar and the breadcrumbs
@@ -484,18 +503,21 @@
     var k = e.key;
     var s = st();
     var handled = true;
+    // the trajectory view has its own replay: space, the arrows, Home and End move its cursor
+    if (s.subject === 'collab' && s.present !== 'panel' && HUB.obsCollab && HUB.obsCollab.key(e)) { e.preventDefault(); e.stopPropagation(); return; }
     if (/^[1-4]$/.test(k) && !e.ctrlKey && !e.metaKey && !e.altKey) HUB.views.go('v' + k);
+    else if ((k === 't' || k === 'T') && !e.ctrlKey && !e.metaKey && !e.altKey && HUB.views.get('vc')) HUB.views.go('vc');
     else if (e.altKey && k === 'ArrowLeft') HUB.store.back();
     else if (e.altKey && k === 'ArrowRight') HUB.store.forward();
     else if (k === 'g' || k === 'G') HUB.store.set({ present: s.present === 'graph' ? 'panel' : 'graph' });
     else if (k === '[' || k === ']') {
-      var d = DEPTHS[s.subject] || [];
-      var cur = s.depth[s.subject] || 1;
+      var ds = depthOf(s), d = DEPTHS[ds] || [];
+      var cur = s.depth[ds] || 1;
       var nx = Math.max(1, Math.min(d.length, cur + (k === ']' ? 1 : -1)));
-      if (nx !== cur) HUB.store.setDepth(s.subject, nx);
+      if (nx !== cur) HUB.store.setDepth(ds, nx);
     }
     else if (k === 'f' || k === 'F') fit();
-    else if (k === 'Escape') { if (els.pop) closePop(); else if (s.subject === 'exec') leaveChain(); else if (s.selection) HUB.store.set({ selection: null }, { history: false }); else if (s.focus) HUB.store.set({ focus: null }); }
+    else if (k === 'Escape') { if (els.pop) closePop(); else if (s.subject === 'exec') leaveChain(); else if (s.selection) HUB.store.set({ selection: null }, { history: false }); else if (s.focus && s.subject !== 'collab') HUB.store.set({ focus: null }); }
     else if (k === '?' || k === '/') { if (HUB.obsGuide) HUB.obsGuide.open(); else pokazSkroty(); }
     else if (k === '=' || k === '+' || k === '-' || k === '0') handled = false;   // the page's own zoom keys
     else if (k === ' ' && HUB.obsTimeline && HUB.obsTimeline.toggleReplay) HUB.obsTimeline.toggleReplay();
