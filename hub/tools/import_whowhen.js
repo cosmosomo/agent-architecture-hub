@@ -103,17 +103,17 @@ case: ${caseId}
 name: ${sp ? Object.keys(sp).find((n) => slug(n) === hubRole) || hubRole : 'Orchestrator'}
 model: claude-opus-5-5
 source_model: gpt-4o
-role: ${sp ? 'manager-worker 拓扑的调度中枢（Who&When 标注的 manager），角色定义见 attachments' : '维护任务账本并委派执行（Magentic-One 系实测系统）'}；本次运行在第 ${step} 步附近${hubRole === bad ? '自身即归因对象' : `未拦住 ${j.mistake_agent} 的失误`}
+role: ${sp ? 'manager-worker 拓扑的调度中枢（Who&When 标注的 manager），角色定义见 attachments' : '维护任务账本并委派执行（Magentic-One 系实测系统）'}；本次运行的归因见案例摘要与 traces（不写进定义）
 trigger: 人类提交任务
 watches: [${roles.filter((r) => r !== hubRole).join(', ')}]
 
 `;
     roles.filter((r) => r !== hubRole).forEach((r) => {
       ag += `# @${r} [individual] #phase/build #role/executor #group/team
-name: ${spBySlug[r] ? spBySlug[r].name : r}${r === bad ? '（本次失败的归因对象）' : ''}
+name: ${spBySlug[r] ? spBySlug[r].name : r}
 model: claude-sonnet-5-5
 source_model: gpt-4o
-${spBySlug[r] ? `prompt_file: attachments/agent_${r}_prompt.md\n` : ''}role: ${spBySlug[r] ? oneLine(spBySlug[r].text).slice(0, 180) : 'Magentic-One 系实测执行角色'}；${r === bad ? `第 ${step} 步的实际行为见 traces/history.json，失败原因：${reason}` : '真实行为见 traces/history.json'}
+${spBySlug[r] ? `prompt_file: attachments/agent_${r}_prompt.md\n` : ''}role: ${spBySlug[r] ? oneLine(spBySlug[r].text).slice(0, 180) : 'Magentic-One 系实测执行角色'}；实际行为见 traces/history.json（归因与失败原因在评价侧，不写进定义）
 trigger: 收到编排者委派
 watches: []
 
