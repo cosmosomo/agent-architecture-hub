@@ -49,19 +49,18 @@
     id: 'sim', label: '模拟案例',
     owns: function (id) {
       if (!HUB.base || !HUB.base.presets[id]) return false;
-      // defer to 'docs' source if it has already claimed this id
-      // (hub/data/cases/*.js are archived curated overrides; hub/cases/*.md is the source of truth)
+      // an md case with the same id replaces the built-in preset (hub/cases/ is the source of truth)
       var docsSrc = sources.find(function (s) { return s.id === 'docs'; });
       if (docsSrc && docsSrc.owns(id)) return false;
       return true;
     },
     build: function (caseId) {
       var cd = HUB.casedef.build(caseId);
-      return {
+      return HUB.facts.provide({
         id: cd.id, name: cd.name, presetName: cd.presetName, summary: cd.summary, flowText: cd.flowText,
-        category: cd.category, size: cd.size, curated: cd.curated, synthetic: true,
-        def: cd.def, facts: HUB.sim.simulate(cd), rev: 0, clock: null, source: { kind: 'sim' }
-      };
+        category: cd.category, size: cd.size, synthetic: true,
+        def: cd.def, rev: 0, clock: null, source: { kind: 'sim' }
+      }, { id: cd.id });
     }
   });
 

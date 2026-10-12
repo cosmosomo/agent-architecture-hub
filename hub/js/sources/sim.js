@@ -573,4 +573,7 @@
   }
 
   HUB.sim = { simulate: simulate, SPAN: SPAN, MIN: MIN, CASE_WINDOW: CASE_WINDOW };
+  if (HUB.facts) HUB.facts.register({ id: 'simulated', baseline: true, provide: function (model, ctx) {
+    return simulate({ id: ctx.id || model.id, def: model.def, override: ctx.override });
+  } });
 })();

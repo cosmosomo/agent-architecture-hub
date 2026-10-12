@@ -72,7 +72,7 @@
   function overview(m, s, a) {
     var t = a.totals;
     var h = hero({ name: m.name, role: [m.presetName, m.flowText].filter(Boolean).join(' · '), icon: typeof svgPresetu === 'function' ? svgPresetu(m.id, 30) : '',
-      chips: (m.curated ? chip('精选案例', 'm-op') : '') + chip(s.time == null ? '全部时间' : '截止 ' + U.fmtClock(s.time)) +
+      chips: chip(s.time == null ? '全部时间' : '截止 ' + U.fmtClock(s.time)) +
         (m.factSource && m.factSource.kind === 'error' ? pill(HUB.model.factLabel(m), 'warn') : chip(HUB.model.factLabel(m))) });
     var intro = '<div class="ds"><div class="ds-who">' + esc(m.summary || '') + '</div></div>';
     var nh = a.needsHuman.map(function (x) {

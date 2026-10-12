@@ -643,17 +643,10 @@
           parts.decisions = [].concat.apply([], allDecisions);
           var model = assemble(parts, caseId);
           model.source.base = base;   // the case folder, so attached originals (prompt_file …) open from the details
-          // 事实层：和 v41 精编案例同一条模拟流水线，scenario/decisions 作为覆盖
-          if (HUB.sim && HUB.sim.simulate) {
-            var decByAgent = {};
-            parts.decisions.forEach(function (d) { (decByAgent[d.agentId] = decByAgent[d.agentId] || []).push(d); });
-            model.facts = HUB.sim.simulate({ id: caseId, def: model.def, override: { scenario: parts.scenarios, decisions: decByAgent } });
-          } else {
-            model.facts = { synthetic: true, span: { start: 0, end: 0 }, cases: [], tasks: [], runs: [], decisions: parts.decisions, calls: [], handoffs: [], deliveries: [], gateEvents: [], channelEvents: [], versionEvents: [], actions: [], messages: [] };
-          }
-          // 案例目录里有真实轨迹（traces/）且有对应的读取器时，事实层换成实测的（from-traces.js）
-          if (HUB.fromTraces) return HUB.fromTraces.attach(model, get, parts);
-          return model;
+          // 事实不在这里决定：scenario 和 decisions 交给提供者当覆盖，案例带了记录（traces/）就由记录提供（core/facts.js）
+          var decByAgent = {};
+          parts.decisions.forEach(function (d) { (decByAgent[d.agentId] = decByAgent[d.agentId] || []).push(d); });
+          return HUB.facts.provide(model, { id: caseId, override: { scenario: parts.scenarios, decisions: decByAgent }, get: get, parts: parts });
         });
       });
     });

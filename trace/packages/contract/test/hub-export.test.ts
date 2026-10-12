@@ -5,9 +5,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CONTRACT_VERSION, isStale, validateAnnotationSet, validateSessionDoc, type AnnotationSet, type Session } from '../src/index.ts';
 
@@ -20,12 +18,10 @@ type Hub = {
 };
 
 const require = createRequire(import.meta.url);
-const { createContext, loadScripts, HUB_DIR } = require(fileURLToPath(new URL('../../../../hub/tools/load.js', import.meta.url)));
+const { createContext, loadScripts, pageScripts } = require(fileURLToPath(new URL('../../../../hub/tools/load.js', import.meta.url)));
 
 function hub(): Hub {
-  const cases = readdirSync(join(HUB_DIR, 'data', 'cases')).filter((f: string) => f.endsWith('.js')).map((f: string) => 'data/cases/' + f);
-  return loadScripts(createContext(), ['data/base.js', 'data/zh.js', ...cases,
-    'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/to-trace.js']).HUB;
+  return loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/'])).HUB;
 }
 
 // what the page hands the trace view travels as JSON

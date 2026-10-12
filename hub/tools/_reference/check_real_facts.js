@@ -8,11 +8,9 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { createContext, loadScripts, fsFetch, findCases, HUB_DIR } = require('../load.js');
+const { createContext, loadScripts, pageScripts, fsFetch, findCases, HUB_DIR } = require('../load.js');
 
-const ctx = loadScripts(createContext(), ['data/base.js', 'data/zh.js',
-  'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/views.js',
-  'js/sources/from-traces.js', 'js/sources/from-docs.js', 'js/obs/cards.js', 'js/obs/scene-org.js', 'js/obs/scene-process.js', 'js/obs/panels.js']);
+const ctx = loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/', 'js/obs/avatar.js', 'js/obs/cards.js', 'js/obs/scene-', 'js/obs/panels.js']));
 const HUB = ctx.HUB;
 const fetchFn = fsFetch;
 

@@ -12,11 +12,9 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { createContext, loadScripts, fsFetch, findCases, HUB_DIR } = require('./load.js');
+const { createContext, loadScripts, pageScripts, fsFetch, findCases, HUB_DIR } = require('./load.js');
 
-const ctx = loadScripts(createContext(), ['data/base.js', 'data/zh.js',
-  'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/views.js',
-  'js/sources/from-traces.js', 'js/sources/from-docs.js', 'js/core/collab.js']);
+const ctx = loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/']));
 const HUB = ctx.HUB;
 const fetchFn = fsFetch;
 const only = process.argv.slice(2).filter((s) => !s.startsWith('-'));

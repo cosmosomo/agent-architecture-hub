@@ -400,4 +400,7 @@
   }
 
   HUB.fromTraces = { attach: attach, build: build, readers: READERS };
+  if (HUB.facts) HUB.facts.register({ id: 'recorded-traces',
+    applies: function (model, ctx) { return !!ctx.get && READERS.some(function (r) { return r.match(model.id); }); },
+    provide: function (model, ctx) { return attach(model, ctx.get, ctx.parts); } });
 })();

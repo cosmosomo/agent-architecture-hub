@@ -3,16 +3,9 @@
  * test_model.js - builds every preset through casedef -> sim -> analysis and checks invariants.
  * Usage: node hub/tools/test_model.js [presetId]
  */
-const fs = require('fs');
-const path = require('path');
-const { createContext, loadScripts, HUB_DIR } = require('./load.js');
+const { createContext, loadScripts, pageScripts } = require('./load.js');
 
-const caseFiles = fs.existsSync(path.join(HUB_DIR, 'data', 'cases'))
-  ? fs.readdirSync(path.join(HUB_DIR, 'data', 'cases')).filter((f) => f.endsWith('.js')).map((f) => 'data/cases/' + f)
-  : [];
-const zh = fs.existsSync(path.join(HUB_DIR, 'data', 'zh.js')) ? ['data/zh.js'] : [];
-const ctx = loadScripts(createContext(), ['data/base.js', ...zh, ...caseFiles,
-  'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js']);
+const ctx = loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/']));
 const HUB = ctx.HUB;
 const only = process.argv[2];
 const ids = only ? [only] : Object.keys(HUB.base.presets);
@@ -53,7 +46,7 @@ ids.forEach((id) => {
     if (!F.cases.length) e('no cases');
     if (!F.runs.length) e('no runs');
     if (tBuild + tAn > 1500) e(`slow: build ${tBuild}ms analysis ${tAn}ms`);
-    rows.push([id, m.curated ? '*' : ' ', d.individuals.length - 2, d.groups.length, d.relations.filter((r) => r.type === 'task').length,
+    rows.push([id, d.individuals.length - 2, d.groups.length, d.relations.filter((r) => r.type === 'task').length,
       d.process.stages.length + '/' + d.process.gates.length, F.cases.map((c) => c.status[0]).join(''), F.runs.length, F.decisions.length, F.calls.length,
       an.neverDispatched.length, an.factOnly.length, Object.values(an.delivery).filter((x) => x.missing.length).length,
       Object.values(an.gateStats).reduce((s, g) => s + g.fail, 0), an.health.length, (tBuild + tAn) + 'ms', anMid.totals.runs]);
@@ -63,7 +56,7 @@ ids.forEach((id) => {
   if (errs.length) { failures++; console.log(`FAIL ${id}`); errs.slice(0, 8).forEach((x) => console.log('   ' + x)); }
 });
 
-const head = ['preset', 'c', 'ind', 'grp', 'task', 'st/gt', 'cases', 'runs', 'decs', 'calls', 'never', 'factOnly', 'missing', 'fails', 'health', 'time', 'runs@mid'];
+const head = ['preset', 'ind', 'grp', 'task', 'st/gt', 'cases', 'runs', 'decs', 'calls', 'never', 'factOnly', 'missing', 'fails', 'health', 'time', 'runs@mid'];
 const w = head.map((h, i) => Math.max(h.length, ...rows.map((r) => String(r[i]).length)));
 console.log(head.map((h, i) => h.padEnd(w[i])).join(' '));
 rows.forEach((r) => console.log(r.map((x, i) => String(x).padEnd(w[i])).join(' ')));

@@ -1,4 +1,4 @@
-/* HUB.casedef: one v41 preset (+ optional curated override) -> the definition layer. */
+/* HUB.casedef: one preset team -> the definition layer (the source of the built-in sample teams). */
 (function () {
   'use strict';
   var HUB = (window.HUB = window.HUB || {});
@@ -61,8 +61,6 @@
     var B = HUB.base;
     var P = B.presets[presetId];
     if (!P) throw new Error('unknown preset ' + presetId);
-    var O = (HUB.cases || {})[presetId] || null;
-    var OI = (O && O.individuals) || {};
 
     /* ---------- individuals ---------- */
     var counts = {}, seen = {};
@@ -75,11 +73,10 @@
       seen[n.d] = (seen[n.d] || 0) + 1;
       var name = agentName(n.d) + (counts[n.d] > 1 ? ' #' + seen[n.d] : '');
       if (n.d === 'orchestrator' && hubIndex < 0) hubIndex = i;
-      var ov = OI['n' + i] || {};
       return {
         id: 'n' + i, agentId: n.d, kind: 'agent', name: name,
         model: n.m || a.model || 'sonnet', phase: a.phase || 'build', groupId: null,
-        role: ov.role || agentRole(n.d), trigger: ov.trigger || '', watches: (ov.watches || []).slice(),
+        role: agentRole(n.d), trigger: '', watches: [],
         docs: [], channels: [], natives: [], host: 'Claude Code', tools: U.toolList(a.tools),
         x: n.x, y: n.y, isHub: false, enhanced: false
       };
@@ -88,64 +85,38 @@
     var spanX = Math.max(200, maxX - minX);
     var human = {
       id: 'human', agentId: null, kind: 'human', name: '人（用户）', model: null, phase: null, groupId: null,
-      role: (OI.human && OI.human.role) || '提出需求，在人工关拍板，随时通过中枢智能体或直接对个体下指令',
+      role: '提出需求，在人工关拍板，随时通过中枢智能体或直接对个体下指令',
       trigger: '自己决定', watches: [], docs: [], channels: [], natives: [], host: null, tools: [],
       x: maxX + spanX * 0.18, y: minY, isHub: false, enhanced: true
     };
     var maint = {
       id: 'meta_maint', agentId: null, kind: 'meta', name: '渠道维护者', model: 'haiku', phase: null, groupId: null,
-      role: (OI.meta_maint && OI.meta_maint.role) || '盯着模型和工具渠道，出故障时生成维护任务并跟进恢复',
+      role: '盯着模型和工具渠道，出故障时生成维护任务并跟进恢复',
       trigger: '渠道检查失败或额度告警', watches: [], docs: [], channels: [], natives: [], host: 'Claude Code', tools: ['Read', 'Bash'],
       x: maxX + spanX * 0.18, y: maxY, isHub: false, enhanced: true
     };
     individuals.push(human, maint);
     var indMap = U.byId(individuals);
     var nodeIds = individuals.filter(function (x) { return x.kind === 'agent'; }).map(function (x) { return x.id; });
-    var resolveAud = function (aud) {
-      if (aud === 'all' || aud == null) return nodeIds.slice();
-      return (aud || []).filter(function (id) { return indMap.has(id); });
-    };
-
     /* ---------- groups ---------- */
     var groups = [];
-    if (O && O.groups && O.groups.length) {
-      var walk = function (arr, level, parentId) {
-        arr.forEach(function (g) {
-          var grp = { id: g.id, name: g.name, level: level, parentId: parentId, order: 0, children: [], members: [] };
-          (g.members || []).forEach(function (m) { if (indMap.has(m)) { grp.members.push(m); indMap.get(m).groupId = g.id; } });
-          groups.push(grp);
-          if (g.children && g.children.length) {
-            walk(g.children, level + 1, g.id);
-            grp.children = g.children.map(function (c) { return c.id; });
-          }
-        });
-      };
-      walk(O.groups, 1, null);
-      var orphans = individuals.filter(function (x) { return x.kind === 'agent' && !x.groupId; });
-      if (orphans.length) {
-        var og = { id: 'g_other', name: '其他', level: 1, parentId: null, order: 0, children: [], members: [] };
-        orphans.forEach(function (x) { og.members.push(x.id); x.groupId = og.id; });
-        groups.push(og);
-      }
-    } else {
-      PHASE_ORDER.forEach(function (ph) {
-        var mem = individuals.filter(function (x) { return x.kind === 'agent' && x.phase === ph; });
-        if (!mem.length) return;
-        var g = { id: 'g_' + ph, name: phaseName(ph), level: 1, parentId: null, order: 0, children: [], members: [] };
-        var byAgent = U.groupBy(mem, function (x) { return x.agentId; });
-        byAgent.forEach(function (list, aid) {
-          if (list.length >= 3 && list.length < mem.length) {
-            var sg = { id: 'g_' + ph + '_' + aid, name: agentName(aid) + '组', level: 2, parentId: g.id, order: 0, children: [], members: [] };
-            list.forEach(function (x) { sg.members.push(x.id); x.groupId = sg.id; });
-            g.children.push(sg.id);
-            groups.push(sg);
-          } else {
-            list.forEach(function (x) { g.members.push(x.id); x.groupId = g.id; });
-          }
-        });
-        groups.push(g);
+    PHASE_ORDER.forEach(function (ph) {
+      var mem = individuals.filter(function (x) { return x.kind === 'agent' && x.phase === ph; });
+      if (!mem.length) return;
+      var g = { id: 'g_' + ph, name: phaseName(ph), level: 1, parentId: null, order: 0, children: [], members: [] };
+      var byAgent = U.groupBy(mem, function (x) { return x.agentId; });
+      byAgent.forEach(function (list, aid) {
+        if (list.length >= 3 && list.length < mem.length) {
+          var sg = { id: 'g_' + ph + '_' + aid, name: agentName(aid) + '组', level: 2, parentId: g.id, order: 0, children: [], members: [] };
+          list.forEach(function (x) { sg.members.push(x.id); x.groupId = sg.id; });
+          g.children.push(sg.id);
+          groups.push(sg);
+        } else {
+          list.forEach(function (x) { g.members.push(x.id); x.groupId = g.id; });
+        }
       });
-    }
+      groups.push(g);
+    });
     var groupMap = U.byId(groups);
     var membersDeep = function (gid) {
       var g = groupMap.get(gid);
@@ -187,15 +158,6 @@
         if (x.channels.indexOf(fc.id) < 0) x.channels.push(fc.id);
       });
     });
-    ((O && O.channels) || []).forEach(function (c) {
-      var ch = addChannel({ id: c.id, kind: c.kind || 'function', name: c.name, maintainer: 'meta_maint', capacity: c.capacity || '-', quota: c.quota || '-',
-        limit: c.limit != null ? c.limit : limitFrom(c.capacity), users: [] });
-      (c.users || []).forEach(function (u) {
-        if (!indMap.has(u)) return;
-        if (ch.users.indexOf(u) < 0) ch.users.push(u);
-        if (indMap.get(u).channels.indexOf(ch.id) < 0) indMap.get(u).channels.push(ch.id);
-      });
-    });
     // native capabilities: from a host tool (Claude Code's Agent) or declared by a curated case (e.g. an individual running on 豆包)
     var addNative = function (owner, n) {
       var x = indMap.get(owner);
@@ -209,7 +171,6 @@
     individuals.forEach(function (x) {
       x.tools.forEach(function (t) { if (NATIVE_FROM_TOOL[t]) addNative(x.id, Object.assign({ id: 'ch_nat_' + x.id + '_' + t.toLowerCase() }, NATIVE_FROM_TOOL[t])); });
     });
-    ((O && O.native) || []).forEach(function (n) { addNative(n.owner, n); });
     // tiers: basic = what every agent can do with no upkeep; shared = models and function channels; native = one individual's own
     channels.forEach(function (c) { c.tier = c.kind === 'native' ? 'native' : c.kind === 'tool' && !c.limit ? 'basic' : 'shared'; });
 
@@ -234,7 +195,6 @@
     relations.filter(function (r) { return r.type === 'task' && r.sub !== 'report'; }).forEach(function (r) {
       addRel('info', 'read', r.from, r.to, '读上游产出');
     });
-    ((O && O.infoReads) || []).forEach(function (t) { addRel('info', 'read', t[0], t[1], t[2] || ''); });
     if (hubId) {
       addRel('watch', 'watch', 'human', hubId, '人通过中枢智能体下指令');
       relations.filter(function (r) { return r.type === 'task' && r.sub === 'report'; }).forEach(function (r) {
@@ -244,7 +204,6 @@
     individuals.filter(function (x) { return x.agentId === 'qa_manager'; }).forEach(function (m) {
       individuals.filter(function (x) { return x.groupId === m.groupId && x.id !== m.id; }).forEach(function (x) { addRel('watch', 'watch', m.id, x.id, '收集并审核测试结论'); });
     });
-    ((O && O.watches) || []).forEach(function (t) { addRel('watch', 'watch', t[0], t[1], t[2] || ''); });
     individuals.forEach(function (x) {
       (x.watches || []).forEach(function (w) { if (indMap.has(w)) addRel('watch', 'watch', x.id, w, ''); });
     });
@@ -261,8 +220,8 @@
     maint.watches = channels.map(function (c) { return c.id; });
 
     /* ---------- docs ---------- */
-    var title = (O && O.title) || presetName(presetId);
-    var summary = (O && O.summary) || presetSummary(presetId);
+    var title = presetName(presetId);
+    var summary = presetSummary(presetId);
     var docs = [
       { id: 'd_goal', layer: 'consensus', name: '目标与约束', owner: 'human', summary: summary, audience: nodeIds.slice(), version: 'v1' },
       { id: 'd_terms', layer: 'consensus', name: '术语与约定', owner: hubId || 'human', summary: '本团队统一使用的说法、文件位置和交付格式', audience: nodeIds.slice(), version: 'v1' },
@@ -271,9 +230,6 @@
     individuals.forEach(function (x) {
       if (x.kind === 'human') return;
       docs.push({ id: 'd_role_' + x.id, layer: 'private', name: x.name + '的职责说明', owner: x.id, summary: x.role, audience: [x.id], version: 'v1' });
-    });
-    ((O && O.docs) || []).forEach(function (d) {
-      docs.push({ id: d.id, layer: d.layer, name: d.name, owner: d.owner || 'human', summary: d.summary || '', audience: resolveAud(d.audience), version: 'v1' });
     });
     docs.forEach(function (d) { d.audience.forEach(function (id) { var x = indMap.get(id); if (x && x.docs.indexOf(d.id) < 0) x.docs.push(d.id); }); });
 
@@ -286,9 +242,7 @@
     });
 
     /* ---------- process ---------- */
-    var process = O && O.process && O.process.stages && O.process.stages.length
-      ? curatedProcess(O.process, indMap)
-      : defaultProcess(groups, individuals, indMap, relations, groupMap, membersDeep);
+    var process = defaultProcess(groups, individuals, indMap, relations, groupMap, membersDeep);
 
     // The need enters through the hub; without a hub the human hands it to the first stage directly.
     if (hubId) addRel('task', 'dispatch', 'human', hubId, '提出需求');
@@ -302,34 +256,12 @@
       flowText: presetFlow(presetId),
       category: P.category,
       size: P.nodes.length,
-      curated: !!O,
-      override: O,
       def: {
         version: 'v1',
         versions: [{ id: 'v1', at: 0, note: '初始编排', by: hubId ? indMap.get(hubId).name : '人（用户）' }],
         individuals: individuals, groups: groups, relations: relations, channels: channels, docs: docs, process: process
       }
     };
-  }
-
-  function curatedProcess(OP, indMap) {
-    var stages = OP.stages.map(function (s, i) {
-      return {
-        id: s.id, name: s.name, order: i, groupId: s.groupId || null,
-        steps: (s.steps || []).map(function (st) {
-          return { id: st.id, name: st.name, executors: (st.executors || []).filter(function (x) { return indMap.has(x); }) };
-        })
-      };
-    });
-    var gates = (OP.gates || []).map(function (g) {
-      var dec = g.decider || { type: 'rule' };
-      return {
-        id: g.id, name: g.name, afterStage: g.afterStage,
-        decider: { type: dec.type || 'rule', who: dec.who || (dec.type === 'human' ? 'human' : null), text: dec.text || '' },
-        pass: g.pass || 'done', fail: g.fail || null, escalate: g.escalate || null
-      };
-    });
-    return finishProcess(stages, gates);
   }
 
   function defaultProcess(groups, individuals, indMap, relations, groupMap, membersDeep) {

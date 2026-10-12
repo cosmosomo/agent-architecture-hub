@@ -26,6 +26,14 @@ function loadScripts(ctx, files) {
   return ctx;
 }
 
+/** The page's scripts in the page's own order: index.html is the one place the load order is written down.
+    `only`: path prefixes (relative to hub/) to keep, for the ones that run without a DOM. */
+function pageScripts(only) {
+  const html = fs.readFileSync(path.join(HUB_DIR, '..', 'index.html'), 'utf-8');
+  const all = Array.from(html.matchAll(/<script src="hub\/([^"]+)"><\/script>/g), (m) => m[1]);
+  return only ? all.filter((f) => only.some((p) => f.startsWith(p))) : all;
+}
+
 /** fetch() over the file system, as the page sees the local service: a file answers its text, a folder an <a href> listing. */
 function fsFetch(url) {
   const p = path.join(HUB_DIR, url.replace(/^hub\//, ''));
@@ -56,4 +64,4 @@ function findCases(dir, opts) {
   return out;
 }
 
-module.exports = { createContext, loadScripts, fsFetch, findCases, HUB_DIR };
+module.exports = { createContext, loadScripts, pageScripts, fsFetch, findCases, HUB_DIR };

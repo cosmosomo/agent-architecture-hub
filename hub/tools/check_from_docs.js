@@ -8,9 +8,9 @@
  * Exit code 1 when there are errors. Warnings do not fail.
  */
 const path = require('path');
-const { createContext, loadScripts, fsFetch, findCases, HUB_DIR } = require('./load.js');
+const { createContext, loadScripts, pageScripts, fsFetch, findCases, HUB_DIR } = require('./load.js');
 
-const ctx = loadScripts(createContext(), ['js/core/util.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/sources/from-docs.js']);
+const ctx = loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/']));
 const HUB = ctx.HUB;
 
 const errors = [], warns = [];

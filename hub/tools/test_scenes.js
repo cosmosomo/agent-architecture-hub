@@ -5,14 +5,9 @@
  * A run's detail is the trace view now; trace/packages/contract/test/hub-export.test.ts checks what it gets.
  * Usage: node hub/tools/test_scenes.js [presetId]
  */
-const fs = require('fs');
-const path = require('path');
-const { createContext, loadScripts, HUB_DIR } = require('./load.js');
+const { createContext, loadScripts, pageScripts } = require('./load.js');
 
-const caseFiles = fs.readdirSync(path.join(HUB_DIR, 'data', 'cases')).filter((f) => f.endsWith('.js')).map((f) => 'data/cases/' + f);
-const ctx = loadScripts(createContext(), ['data/base.js', 'data/zh.js', ...caseFiles,
-  'js/core/util.js', 'js/core/store.js', 'js/sources/casedef.js', 'js/sources/sim.js', 'js/core/analysis.js', 'js/core/model.js', 'js/core/views.js',
-  'js/obs/cards.js', 'js/obs/scene-org.js', 'js/obs/scene-process.js']);
+const ctx = loadScripts(createContext(), pageScripts(['data/', 'js/core/', 'js/sources/', 'js/obs/avatar.js', 'js/obs/cards.js', 'js/obs/scene-', 'js/obs/panels.js']));
 const HUB = ctx.HUB;
 const ids = process.argv[2] ? [process.argv[2]] : Object.keys(HUB.base.presets);
 const overlap = (p, q) => p.x < q.x + q.w - 0.5 && q.x < p.x + p.w - 0.5 && p.y < q.y + q.h - 0.5 && q.y < p.y + p.h - 0.5;
