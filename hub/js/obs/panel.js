@@ -18,7 +18,7 @@
   function sec(title, body, extra) { return body ? '<div class="ds' + (extra ? ' ' + extra : '') + '"><div class="ds-l">' + esc(title) + '</div>' + body + '</div>' : ''; }
   function kv(rows) { return '<dl class="ob-kv">' + rows.filter(Boolean).map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>'; }
   function stats(items) { return '<div class="ob-stats">' + items.map(function (x) { return '<div class="ob-stat"><b>' + esc(x[1]) + '</b><span>' + esc(x[0]) + '</span></div>'; }).join('') + '</div>'; }
-  function rowItem(attrs, name, meta, lead) { return '<div class="ob-row" ' + attrs + '>' + (lead || '') + '<span class="ob-nm">' + name + '</span>' + (meta ? '<span class="ob-meta">' + meta + '</span>' : '') + '</div>'; }
+  function rowItem(attrs, name, meta, lead) { return '<div class="ob-row" ' + attrs + '>' + (lead || '') + '<span class="ob-nm">' + name + '</span>' + (meta ? '<span class="ob-meta">' + esc(meta) + '</span>' : '') + '</div>'; }
   function selAttrs(type, id) { return 'data-act="sel" data-type="' + type + '" data-id="' + esc(id) + '"'; }
   // everything an orchestration object carried that the panel does not show elsewhere (docs/hub-graph-format.md: keys the page
   // does not know go to the details, so nothing parsed stays invisible); *_file keys open the attached original
@@ -202,7 +202,7 @@
       chips: s.compare === 'def' ? '' : chip(rs.count ? '发生 ' + rs.count + ' 次' : U.cmpWord('unusedChip')) });
     var rows = hand.slice(-8).reverse().map(function (x) {
       return rowItem('data-act="focus" data-id="' + esc(x.caseId) + '"', esc(x.caseId) + ' · ' + U.fmtClock(x.at),
-        (!HUB.model.measured(m, 'delivery') ? '送达未采集' : x.missing && x.missing.length ? '缺 ' + x.missing.length + ' 份' : esc(x.note || '')), basis(x));
+        (!HUB.model.measured(m, 'delivery') ? '送达未采集' : x.missing && x.missing.length ? '缺 ' + x.missing.length + ' 份' : (x.note || '')), basis(x));
     }).join('');
     return h + '<div class="ds">' + kv([['从', link(m.idx.ch.has(r.from) ? 'channel' : 'individual', r.from)], ['到', link(m.idx.ch.has(r.to) ? 'channel' : 'individual', r.to)],
       ['说明', esc(r.note || r.label || '-')], rs.first != null ? ['第一次', U.fmtClock(rs.first)] : null, rs.last != null ? ['最近一次', U.fmtClock(rs.last)] : null]) + '</div>' +
@@ -228,7 +228,7 @@
     var hand = f.handoffIds.map(function (hid) { return m.idx.handoff.get(hid); }).filter(Boolean);
     var h = hero({ name: HUB.model.name('individual', f.from) + ' → ' + HUB.model.name('individual', f.to), role: '编排里没有这条线，实际发生了 ' + f.count + ' 次' + comparison(m),
       icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>', color: '#F97316', chips: chip(U.cmpWord('factTag')) });
-    var rows = hand.slice(-8).reverse().map(function (x) { return rowItem('data-act="focus" data-id="' + esc(x.caseId) + '"', esc(x.caseId) + ' · ' + U.fmtClock(x.at), esc(x.note || ''), basis(x)); }).join('');
+    var rows = hand.slice(-8).reverse().map(function (x) { return rowItem('data-act="focus" data-id="' + esc(x.caseId) + '"', esc(x.caseId) + ' · ' + U.fmtClock(x.at), x.note || '', basis(x)); }).join('');
     return h + '<div class="ds"><div class="ds-who">' + esc(f.note || U.cmpWord('factNote')) + '</div></div>' +
       sec('发生在', '<div class="ob-list">' + rows + '</div>') +
       sec('处理', actions({ type: 'individual', id: f.from }, ['edit_rule']));
@@ -315,7 +315,7 @@
     var h = hero({ name: g.name, role: '判断点 · 由' + who + '判断', icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 9-9 9-9-9z"/></svg>', color: 'var(--accent3)' });
     var paths = (g.paths || []).map(function (p) {
       var to = !p.next ? '-' : p.next === 'done' ? '完成' : HUB.model.name('stage', p.next);
-      return rowItem('style="cursor:default"', esc(p.condition || '-'), '→ ' + esc(to) + (p.note ? ' · ' + esc(p.note) : ''));
+      return rowItem('style="cursor:default"', esc(p.condition || '-'), '→ ' + to + (p.note ? ' · ' + p.note : ''));
     }).join('');
     return h + '<div class="ds">' + kv([['谁来判断', esc(who)], ['怎么判断', esc(g.decider.text || '-')], ['通过后', esc(g.pass === 'done' ? '完成' : HUB.model.name('stage', g.pass))],
       ['打回到', esc(g.fail ? HUB.model.name('stage', g.fail) : '-')], ['上报给', g.escalate ? '人' : '-']]) + '</div>' +

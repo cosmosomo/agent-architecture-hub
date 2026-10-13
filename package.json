@@ -4,6 +4,24 @@
   "private": true,
   "description": "Observatory for multi-agent collaboration: orchestration written as documents, compared with what actually happened.",
   "license": "MIT",
+  "homepage": "https://github.com/cosmosomo/agent-architecture-hub#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cosmosomo/agent-architecture-hub.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cosmosomo/agent-architecture-hub/issues"
+  },
+  "keywords": [
+    "multi-agent",
+    "agent-observability",
+    "orchestration",
+    "trace-viewer",
+    "llm-agents",
+    "codex",
+    "claude-code",
+    "markdown"
+  ],
   "engines": {
     "node": ">=24"
   },
@@ -12,6 +30,6 @@
     "start": "node --no-warnings=ExperimentalWarning trace/apps/cli/src/main.ts serve",
     "build": "npm run build --prefix trace",
     "typecheck": "npm run typecheck --prefix trace",
-    "test": "node hub/tools/test_model.js && node hub/tools/test_scenes.js && node hub/tools/check_from_docs.js && node hub/tools/check_shells.js && npm test --prefix trace"
+    "test": "node hub/tools/test_model.js && node hub/tools/test_scenes.js && node hub/tools/check_from_docs.js && node hub/tools/check_shells.js && node hub/tools/check_escape.js && npm test --prefix trace"
   }
 }

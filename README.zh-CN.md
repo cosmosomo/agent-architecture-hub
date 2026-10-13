@@ -4,6 +4,11 @@
 
 [English](README.md) | 简体中文
 
+[![CI](https://github.com/cosmosomo/agent-architecture-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/cosmosomo/agent-architecture-hub/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/cosmosomo/agent-architecture-hub?display_name=tag)](https://github.com/cosmosomo/agent-architecture-hub/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%E2%89%A5%2024-339933.svg)](package.json)
+
 Hub 把三类输入解析成同一个统一模型——写下来的编排（Markdown 文档或 JSON）、记录下来的运行、以及你本机上真实的智能体会话——再用一组相互联动的观察面板呈现。模型把三层分开保存：**定义**（协作被写成什么样）、**事实**（实际发生了什么）、以及由两者算出的**分析**。页面就是调试这两者差异的工具。
 
 ![由五份 Markdown 文档解析出的团队：部门、个体和四类线](docs/img/overview.jpg)
@@ -178,7 +183,7 @@ docs/               架构、格式、设计
 
 ## 概念画板
 
-`/concept/` 是这个项目当初长出来的手工团队画板：自包含的页面，通过拖拽组合智能体团队，带自己的智能体和团队目录。它是中文版页面，保持原样，与观察台分开；数据不共用。
+`/concept/` 是这个项目当初长出来的手工团队画板：自包含的页面，通过拖拽组合智能体团队，带自己的智能体和团队目录。它是中文版页面，保持原样，与观察台分开；数据不共用。它不需要服务，所以在 <https://cosmosomo.github.io/agent-architecture-hub/> 发布了一份。
 
 ## 许可与致谢
 

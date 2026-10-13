@@ -4,6 +4,11 @@
 
 English | [简体中文](README.zh-CN.md)
 
+[![CI](https://github.com/cosmosomo/agent-architecture-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/cosmosomo/agent-architecture-hub/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/cosmosomo/agent-architecture-hub?display_name=tag)](https://github.com/cosmosomo/agent-architecture-hub/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%E2%89%A5%2024-339933.svg)](package.json)
+
 Hub parses three kinds of input into one unified model — written orchestration (Markdown documents or JSON), recorded runs, and live agent sessions from your machine — and presents it through a set of linked observation panels. The model keeps three layers apart: the **definition** (what the collaboration is written to be), the **facts** (what happened) and the **analysis** computed from the two. The page is the debugger for the difference between them.
 
 ![A team parsed from five Markdown documents: departments, individuals and the four kinds of lines](docs/img/overview.jpg)
@@ -178,7 +183,7 @@ docs/               architecture, formats, designs
 
 ## Concept board
 
-`/concept/` is the hand-built team board this project grew out of: a self-contained page for composing a team of agents by dragging, with its own agent and team catalogue. It is the Chinese-localized page, kept as it is and separate from the observatory; its data is not shared.
+`/concept/` is the hand-built team board this project grew out of: a self-contained page for composing a team of agents by dragging, with its own agent and team catalogue. It is the Chinese-localized page, kept as it is and separate from the observatory; its data is not shared. Unlike the observatory it needs no service, so a copy is published at <https://cosmosomo.github.io/agent-architecture-hub/>.
 
 ## License and credits
 
