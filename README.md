@@ -17,7 +17,7 @@ Inputs are recognised, not registered. Put a folder or a file under `hub/cases/`
 | Orchestration documents (Markdown) | a folder containing `meta.md` | individuals, groups, relations (task, information, supervision, channel), capability channels, documents with their audiences, the process (stages, steps, gates with their exits), scenarios and decision records |
 | hub-graph (JSON) | a `.json` file in [hub-graph format](docs/hub-graph-format.md) | the same model; unknown object types degrade to a default card instead of failing |
 | Recorded traces | a `traces/` folder, read by the reader that matches the `source:` line of the case's `meta.md` | facts that replace the simulated ones: runs, turns, handoffs with their basis (explicit in the record, or implied by the source's protocol), outcomes and failure labels |
-| Local agent sessions | Codex, Claude Code, OpenCode, Gemini CLI, Factory and ZCode log files, one adapter per format | one session contract; a session and its sub-agents become individuals, groups of sub-agents spawned together, dispatch and delivery lines, and model and tool channels |
+| Local agent sessions | Codex, Claude Code, OpenCode, Gemini CLI, Factory and ZCode log files, one adapter per format | one session contract; a session and its sub-agents become individuals, groups of sub-agents spawned together, dispatch and delivery lines, and model and tool channels. There is no written definition behind a session, so the definition is read from the facts, and no decision layer yet: a session's run opens as its recorded turns and steps |
 | Built-in sample teams | 62 teams in `hub/data/base.js` | a definition and simulated facts, labelled as simulated wherever they are shown |
 
 How the parsing behaves matters as much as what it accepts:
@@ -43,7 +43,7 @@ The graph presentation draws one subject at a time. Views are presets of the sta
 | ③ Case route | organisation, focused on one case instance | which individuals and handoffs one piece of work actually used; the rest dims |
 | ④ Business process | process | stages, gates, who decides each gate, where work is returned or escalated to a person |
 | Collaboration trajectory | collaboration | who handed what to whom, record by record, with replay; drawn only from what the record supports |
-| Run detail | execution | the decisions and calls of one run as a tree, with their real input and output (the embedded Trace view) |
+| Run detail | execution | one run as a tree of turns, steps and calls with their input and output (the embedded Trace view); decision records — alternatives, choice, reason — are shown where the case documents or the simulator provide them |
 
 Lines are typed: task, information, supervision, capability channel. Against the facts, a solid line was written and used, a dashed one was written and never used, an orange one happened without being written. The comparison control switches between *definition*, *both* and *facts*; granularity runs from departments through groups to individuals (stages and steps; decisions and calls). Cards and department frames can be dragged; the offsets are kept per case in the browser and undone with one button.
 
@@ -54,7 +54,7 @@ Lines are typed: task, information, supervision, capability channel. Against the
 </tr>
 <tr>
 <td width="50%"><img src="docs/img/trajectory.jpg" alt="The collaboration trajectory of a recorded run"><br>Collaboration trajectory of a recorded failure (Who&amp;When); the annotated step is flagged.</td>
-<td width="50%"><img src="docs/img/run.jpg" alt="Run detail: decisions, input and output"><br>Run detail. Decisions with their alternatives, calls, input and output.</td>
+<td width="50%"><img src="docs/img/run.jpg" alt="Run detail: decisions, input and output"><br>Run detail of a case that carries decision records: alternatives, calls, input and output.</td>
 </tr>
 </table>
 
