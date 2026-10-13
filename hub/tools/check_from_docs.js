@@ -65,9 +65,10 @@ async function checkCase(dir, id) {
 
 // session annotations: an individual's document may name the local sessions it ran as
 async function checkSessionAnnotations() {
+  const before = errors.length;
   const files = {
     'meta.md': '---\nhub: "1.0"\nkind: meta\ncase: ann\nsession: codex:root-1\n---\n\n# Annotated\n\nA case whose agents name their sessions.\n',
-    'decisions/one.md': '---\nhub: "1.0"\nkind: decisions\ncase: ann\n---\n\n' +
+    'decisions/three.md': '---\nhub: "1.0"\nkind: decisions\ncase: ann\n---\n\n' +
       '# @d1 [decision]\ntitle: Read first\ntrigger: a task arrived\nalternatives: [just do it, read first]\nchoice: read first\nreason: avoids rework\naction: tool\nturn: 1\nsteps: 1-2\n\n' +
       '# @d2 [decision]\ntitle: Out of range\nturn: 9\nsteps: 1\n\n' +
       '# @d3 [decision]\ntitle: Overlaps d1\nturn: 1\nsteps: 2-3\n\n' +
@@ -82,7 +83,7 @@ async function checkSessionAnnotations() {
   const serve = (p) => {
     const rel = p.replace(/^virtual\/ann\//, '');
     if (rel === '') return '<a href="decisions/">decisions/</a>';
-    if (rel === 'decisions/') return '<a href="one.md">one.md</a>';
+    if (rel === 'decisions/') return '<a href="three.md">three.md</a>';
     return files[rel] || '';
   };
   const m = await HUB.fromDocs.loadCase((p) => Promise.resolve(serve(p)), 'virtual/ann', 'ann');
@@ -106,7 +107,7 @@ async function checkSessionAnnotations() {
   files['meta.md'] = files['meta.md'].replace('session: codex:root-1\n', '');
   const bare = await HUB.fromDocs.loadCase((p) => Promise.resolve(serve(p)), 'virtual/ann', 'ann');
   if (bare.annotations.length || !bare.annotationProblems.length) err('ann: records were accepted without a root session');
-  console.log('session annotations: ok');
+  console.log(errors.length === before ? 'session annotations: ok' : 'session annotations: FAILED');
 }
 
 (async () => {
