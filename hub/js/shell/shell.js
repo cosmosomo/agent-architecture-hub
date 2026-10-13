@@ -104,6 +104,9 @@
     document.getElementById('tbLogo').innerHTML = logoSVG('lgTop');
     setFavicon();
     document.getElementById('themeToggle').addEventListener('click', function () { setTheme(theme() === 'light' ? 'dark' : 'light'); });
+    // a link from the Trace viewer carries its theme along
+    var linked = new URLSearchParams((location.hash || '').slice(1)).get('theme');
+    if (linked === 'light' || linked === 'dark') setTheme(linked);
     paintToggle();
     // opened from a plain static server (or from disk): there is no service behind the page, say so
     fetch('api/health', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('no service'); })

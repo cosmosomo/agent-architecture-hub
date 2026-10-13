@@ -77,6 +77,22 @@
 
 **未知 type 降级渲染**：前端遇到不认识的 type，用默认卡片画出来，不崩。这是格式可扩展的前提。
 
+### 标注会话：把定义连到真实的会话
+
+`individual` 可以写出它在本机跑成的会话，编排文档和会话的 Trace 因此接在一起：
+
+```markdown
+# @reviewer [individual] #phase/qa
+name: 审核员
+session: codex:019a3c1e-…                       # 一个会话
+sessions: [claude-code:7f2d…, opencode:ses_91…]  # 或几个（同一个角色跑过多次）
+```
+
+- 会话编号就是 Trace 里的那个：`<来源>:<id>`（`codex:`、`claude-code:`、`opencode:`、`gemini:`、`factory:`、`zcode:`）。不像编号的值被忽略，不去猜。
+- 解析进个体的 `sessions` 数组（`session` 是第一个）；详情里的“会话”一节给出“在画布里打开”（这个会话的 Trace 树，和运行明细是同一个视图）和到 Trace 查看器的链接。
+- JSON 里是 `attributes.session` / `attributes.sessions`。
+- 尚未做的是下一步：用标注的会话替换这个个体的模拟事实，让“写的”和“发生的”直接对照。
+
 ---
 
 ## 3. 标签系统

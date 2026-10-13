@@ -7,9 +7,11 @@ type Props = {
   /** Summaries by id, to name linked sessions. */
   known: Map<string, SessionSummary>;
   onOpen: (id: string) => void;
+  /** The same session (and the step selected here) in the observatory, drawn with the sub-agents it started. */
+  observatoryHref: string;
 };
 
-export function SessionHeader({ session: s, known, onOpen }: Props) {
+export function SessionHeader({ session: s, known, onOpen, observatoryHref }: Props) {
   const parent = s.links.find((l) => l.rel === 'parent');
   const children = s.links.filter((l) => l.rel === 'child');
   const forked = s.links.find((l) => l.rel === 'forked-from');
@@ -36,6 +38,13 @@ export function SessionHeader({ session: s, known, onOpen }: Props) {
         </span>
         {s.state.detail && <span className="text-agentprism-muted-foreground">{s.state.detail}</span>}
         {s.updatedAt && <span className="text-agentprism-secondary-foreground">· 最后记录 {ago(s.updatedAt)}</span>}
+        <a
+          className="border-agentprism-border text-agentprism-muted-foreground hover:border-agentprism-brand ml-auto rounded border px-1.5 py-0.5"
+          href={observatoryHref}
+          title="在观察台里打开：把这个会话和它派出的子智能体画成协作图，并停在这里选中的这一步"
+        >
+          在观察台里打开 ↗
+        </a>
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs sm:grid-cols-[auto_1fr_auto_1fr]">
         {facts.filter(([, v]) => v).map(([k, v]) => (

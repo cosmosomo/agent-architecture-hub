@@ -139,5 +139,20 @@
     el.scrollTop = keep;
   }
 
-  HUB.obsSessions = { render: render, openTree: openTree };
+  // the title of a session the index knows (null until the index has been read); warm() reads it once, then repaints
+  function titleOf(id) {
+    var s = cache && cache.find(function (x) { return x.id === id; });
+    return s ? s.title : null;
+  }
+  function warm() {
+    if (cache || loading || error) return;
+    loading = true;
+    fetch('/api/sessions', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+      .then(function (idx) { cache = idx.sessions || []; loadedAt = Date.now(); })
+      .catch(function () { error = 'down'; })
+      .then(function () { loading = false; if (cache && HUB.obs) HUB.obs.render(); });
+  }
+
+  HUB.obsSessions = { render: render, openTree: openTree, titleOf: titleOf, warm: warm };
 })();

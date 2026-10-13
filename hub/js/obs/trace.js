@@ -39,7 +39,7 @@
     remote[id] = { status: 'loading' };
     var done = function () { if (HUB.obs) HUB.obs.render(); };
     if (location.protocol !== 'http:' && location.protocol !== 'https:') {
-      remote[id] = { status: 'error', error: '这个页面是直接用文件打开的，读不到本机会话。在 trace 目录运行 npm run serve，再打开 http://127.0.0.1:8790/。' };
+      remote[id] = { status: 'error', error: '这个页面不是由观察台服务打开的，读不到本机会话。在仓库里运行 npm start，用它打印出来的地址打开。' };
       return;
     }
     fetch('/api/sessions/' + encodeURIComponent(id), { cache: 'no-store' })
@@ -131,6 +131,22 @@
     return true;
   }
 
+  /* the same session at the same step in the Trace viewer: the session of a real run (or the session itself), and the step
+     selected in the tree, else the turn the run stands for.  A simulated run is not a session on this machine: null. */
+  function viewerLink(s, m) {
+    var t = target(s, m), id = null, turn = null;
+    if (!t) return null;
+    if (t.kind === 'session') id = t.id;
+    else {
+      var ref = m.source && m.source.runs && m.source.runs[t.run.id];
+      if (!ref) return null;
+      id = ref.session; turn = ref.turn;
+    }
+    var span = s.selection && s.selection.type === 'span' ? s.selection.id : turn && available() ? window.HubTrace.ids.turn(turn) : null;
+    var theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    return '/trace/#s=' + encodeURIComponent(id) + (span ? '&n=' + encodeURIComponent(span) : '') + '&theme=' + theme;
+  }
+
   /* the session behind the drill-down, for the summary pane: the loaded one, or the converted run */
   function current(s, m) {
     var t = target(s, m);
@@ -140,6 +156,6 @@
     return { kind: 'session', id: t.id, session: r.session || null, error: r.error || null };
   }
 
-  HUB.obsTrace = { mount: mount, render: render, target: target, current: current, available: available };
+  HUB.obsTrace = { mount: mount, render: render, target: target, current: current, available: available, viewerLink: viewerLink };
   HUB.render.register('exec', { layer: { mount: function (ctx) { mount(ctx.canvas, ctx.side, ctx.pane); }, render: render } });
 })();

@@ -181,6 +181,22 @@ export function App() {
     return m;
   }, [known]);
 
+  // the observatory draws a session together with the tree it belongs to: its root, and the session and step to land on
+  const observatoryHref = (id: string, span: string | null) => {
+    let root = id;
+    const seen = new Set<string>();
+    while (!seen.has(root)) {
+      seen.add(root);
+      const up = known.get(root)?.links.find((l) => l.rel === 'parent');
+      if (!up || !known.has(up.id)) break;
+      root = up.id;
+    }
+    const p = new URLSearchParams({ c: 'tree:' + root, j: id });
+    if (span) p.set('n', span);
+    p.set('theme', theme);
+    return '/#' + p.toString();
+  };
+
   const childActions = (span: TraceSpan) => {
     const raw = span.raw[0];
     if (!raw || !session) return null;
@@ -278,7 +294,7 @@ export function App() {
             </div>
           ) : session && session.id === selectedId ? (
             <div className="flex h-full min-h-0 flex-col">
-              <SessionHeader session={session} known={known} onOpen={open} />
+              <SessionHeader session={session} known={known} onOpen={open} observatoryHref={observatoryHref(session.id, spanId)} />
               <div className="flex shrink-0 items-center gap-2 px-4 py-2">
                 <input
                   className="border-agentprism-border bg-agentprism-muted placeholder:text-agentprism-secondary-foreground min-w-0 flex-1 rounded border px-2 py-1 text-xs outline-none focus:border-agentprism-brand"

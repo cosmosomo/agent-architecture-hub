@@ -22,7 +22,7 @@
   function selAttrs(type, id) { return 'data-act="sel" data-type="' + type + '" data-id="' + esc(id) + '"'; }
   // everything an orchestration object carried that the panel does not show elsewhere (docs/hub-graph-format.md: keys the page
   // does not know go to the details, so nothing parsed stays invisible); *_file keys open the attached original
-  var SHOWN = { name: 1, role: 1, trigger: 1, model: 1, watches: 1 };
+  var SHOWN = { name: 1, role: 1, trigger: 1, model: 1, watches: 1, session: 1, sessions: 1 };
   function rawFields(m, attrs, tags) {
     var base = m.source && m.source.base;
     var rows = Object.keys(attrs || {}).filter(function (k) { return !SHOWN[k]; }).map(function (k) {
@@ -152,10 +152,19 @@
           (!HUB.model.measured(m, 'channel') ? ' · 并发未采集' : cs.maxWidth ? ' · 最多同时 ' + cs.maxWidth + ' 个' : '') +
           (c.limit ? ' · 上限 ' + c.limit + ' 个' + (!HUB.model.measured(m, 'channel') ? '（补写的声明）' : '') : '') + '</div>') + '</div>';
     }).join('');
+    // the sessions the document says this individual ran as: its trace opens in the canvas, or in the Trace viewer
+    var sess = x.sessions && x.sessions.length ? x.sessions : x.session ? [x.session] : [];
+    if (sess.length && HUB.obsSessions) HUB.obsSessions.warm();
+    var sessBlock = sess.length ? sec('会话（编排文档里标注的本机真实会话）', '<div class="ob-list">' + sess.map(function (sid) {
+      var title = HUB.obsSessions && HUB.obsSessions.titleOf(sid);
+      return '<div class="ob-row" style="cursor:default"><span class="ob-nm" title="' + esc(sid) + '">' + esc(title || sid) + '</span>' +
+        '<button class="btn btn-a" type="button" data-act="session" data-id="' + esc(sid) + '" style="height:24px">在画布里打开</button>' +
+        '<a class="ob-a" href="/trace/#s=' + encodeURIComponent(sid) + '" target="_blank" rel="noopener" style="margin-left:6px">Trace ↗</a></div>';
+    }).join('') + '</div>') : '';
     var lastRun = s.compare !== 'def' ? HUB.model.latestRunOf(id, s, m) : null;
     var openChain = lastRun ? '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + lastRun.id + '">打开最近一次运行的决策链</button>'
       + '<div class="ob-note" style="margin-top:5px">在中间画布显示；双击个体也能打开，Esc 返回。</div></div>' : '';
-    return h + (natBlock ? '<div class="ds">' + natBlock + '</div>' : '') + openChain + '<div class="ds">' + info + '</div>' + rawFields(m, x.attributes, x.tags) +
+    return h + (natBlock ? '<div class="ds">' + natBlock + '</div>' : '') + openChain + '<div class="ds">' + info + '</div>' + sessBlock + rawFields(m, x.attributes, x.tags) +
       (s.compare !== 'def' && x.kind !== 'human' ? sec('运行', stats([['运行', st.runs || 0], ['任务', st.tasks || 0], ['token', U.fmtTokens(st.tokens)]])) : '') +
       (s.compare !== 'def' ? sec('送达：它该知道的有没有真的到它手里', deliv) : '') +
       sec('线', relRows ? '<div class="ob-list">' + relRows + '</div>' : '') +
@@ -418,7 +427,8 @@
       '<div class="ds">' + kv([['开始', U.fmtClock(r.start)], ['结束', U.fmtClock(r.end)], ['编排版本', esc(r.version || '-')], ['token', U.fmtTokens(r.tokens)],
         ['会话覆盖', '读全 ' + (cov.indexed || 0) + ' · 只看元信息 ' + (cov.metaOnly || 0) + ' · 截断 ' + (cov.truncated || 0)]]) + '</div>' +
       // open in the canvas, the decisions are the tree itself and the details of a step show below this pane
-      (open ? '<div class="ob-note">中间是这次运行的决策链：粒度选“决策”看每个决定，选“调用”展开到每一步。选中一项，下面显示它的输入输出和属性。</div>'
+      (open ? '<div class="ob-note">中间是这次运行的决策链：粒度选“决策”看每个决定，选“调用”展开到每一步。选中一项，下面显示它的输入输出和属性。' +
+        (HUB.obsTrace.viewerLink(s, m) ? ' <a class="ob-a" href="' + HUB.obsTrace.viewerLink(s, m) + '" target="_blank" rel="noopener">在 Trace 查看器里打开这一步 ↗</a>' : '') + '</div>'
         : sec('决策（' + decs.length + '）', '<div class="ob-list">' + decs.map(function (d) {
           return rowItem(selAttrs('decision', d.id), esc(d.title), '', pill(L.action[d.action] || d.action, DEC_ACTION_CLS[d.action]));
         }).join('') + '</div>') + '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + id + '">打开决策链</button></div>');
@@ -428,7 +438,7 @@
   var STATE_ZH = { working: '在做', waiting: '等待中', failed: '出错', aborted: '被打断', stale: '疑似已退出', idle: '空闲', empty: '空' };
   function session(t) {
     var x = t.session;
-    var viewer = '/trace/#s=' + encodeURIComponent(t.id);
+    var viewer = HUB.obsTrace.viewerLink(HUB.store.get(), HUB.model.current) || '/trace/#s=' + encodeURIComponent(t.id);
     if (!x) return '<div class="ob-note">' + esc(t.error || '读取会话…') + '</div>';
     return hero({ name: x.title, role: x.agent.product + ' · ' + (x.agent.role === 'subagent' ? '子智能体 ' + (x.agent.path || x.agent.name) : '主会话'),
       icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent1)', chips: chip(STATE_ZH[x.state.status] || x.state.status) + chip(x.stats.turns + ' 轮') }) +
@@ -513,6 +523,7 @@
     else if (act === 'replay') { if (HUB.obsTimeline) HUB.obsTimeline.replay(t.getAttribute('data-id')); }
     else if (act === 'traj') HUB.store.set({ subject: 'collab', focus: { type: 'case', id: t.getAttribute('data-id') }, instanceId: t.getAttribute('data-id'), depth: { org: 3 }, present: 'graph', time: null, selection: null });
     else if (act === 'tree') { if (HUB.obsSessions) HUB.obsSessions.openTree(t.getAttribute('data-id')); }
+    else if (act === 'session') HUB.store.set({ subject: 'exec', depth: { exec: 1 }, focus: { type: 'session', id: t.getAttribute('data-id') }, selection: null, present: 'graph' });
     else if (act === 'limit') {
       var li = host.querySelector('[data-limit]');
       var res2 = HUB.model.perform('set_limit', { target: { type: 'channel', id: t.getAttribute('data-id') }, text: li ? li.value.trim() : '' });

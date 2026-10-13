@@ -502,6 +502,7 @@
       var rest = Object.assign({}, p);
       delete rest.caseId;
       HUB.store.set(rest);
+      applyJump();
     }).catch(function (e) { HUB.shell.toast('链接里的数据没打开：' + e.message); });
   }
 
@@ -510,10 +511,30 @@
     // The cases on disk are found by walking hub/cases/ (HUB.catalog), which takes a moment; a link into
     // the shelved reference corpus opens the folders it needs. Start-up waits for that, then applies the link.
     var want = HUB.store.fromHash(location.hash || '').caseId;
+    pendingJump = jumpFromHash();
     HUB.catalog.ready()
       .then(function () { return want && !HUB.base.presets[want] && !HUB.model.owns(want) ? HUB.catalog.find(want) : null; })
       .catch(function () {})
       .then(boot);
+  }
+
+  /* a link from the Trace viewer: land on a session of the case and, if given, a step of it (#c=tree:<root>&j=<session>&n=<step>) */
+  var pendingJump = null;
+  function jumpFromHash() {
+    var p = new URLSearchParams((location.hash || '').slice(1)), j = p.get('j');
+    return j ? { session: j, span: p.get('n') } : null;
+  }
+  function applyJump() {
+    var j = pendingJump, m = model();
+    pendingJump = null;
+    var runs = m && m.source && m.source.runs;
+    if (!j || !runs || !window.HubTrace) return;
+    var ids = Object.keys(runs).filter(function (id) { return runs[id].session === j.session; });
+    if (!ids.length) return;
+    // the run whose turn the step is in, else the session's first
+    var rid = (j.span && ids.find(function (id) { return String(j.span).indexOf(window.HubTrace.ids.turn(runs[id].turn)) === 0; })) || ids[0];
+    HUB.store.set({ subject: 'exec', depth: { exec: 2 }, expanded: { exec: [] }, collapsed: { exec: [] }, focus: { type: 'run', id: rid },
+      selection: j.span ? { type: 'span', id: j.span } : { type: 'run', id: rid } });
   }
 
   function boot() {
@@ -543,7 +564,7 @@
       HUB.store.set(p);
     });
     renderAll(st(), null);
-    if (pending) later(pending);
+    if (pending) later(pending); else applyJump();
   }
 
   // a click on a case in the sidebar.  A built-in sample team has no real facts, only simulated ones: it opens as the plain

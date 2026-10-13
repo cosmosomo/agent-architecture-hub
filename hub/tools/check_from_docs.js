@@ -63,7 +63,25 @@ async function checkCase(dir, id) {
   );
 }
 
+// session annotations: an individual's document may name the local sessions it ran as
+async function checkSessionAnnotations() {
+  const files = {
+    'meta.md': '---\nhub: "1.0"\nkind: meta\ncase: ann\n---\n\n# Annotated\n\nA case whose agents name their sessions.\n',
+    'agents.md': '---\nhub: "1.0"\nkind: agents\ncase: ann\n---\n\n' +
+      '# @one [individual] #phase/build\nname: One\nsession: codex:019a-b\n\n' +
+      '# @two [individual] #phase/qa\nname: Two\nsessions: [claude-code:x1, opencode:ses_2, claude-code:x1, not a session]\n\n' +
+      '# @three [individual] #phase/qa\nname: Three\nsession: nonsense\n'
+  };
+  const m = await HUB.fromDocs.loadCase((p) => Promise.resolve(files[p.replace(/^.*\//, '')] || ''), 'virtual/ann', 'ann');
+  const by = Object.fromEntries(m.def.individuals.map((x) => [x.id, x]));
+  if (JSON.stringify(by.one.sessions) !== '["codex:019a-b"]' || by.one.session !== 'codex:019a-b') err('ann: session: not read');
+  if (JSON.stringify(by.two.sessions) !== '["claude-code:x1","opencode:ses_2"]') err('ann: sessions: [...] not read as a deduplicated list of ids (' + JSON.stringify(by.two.sessions) + ')');
+  if (by.three.sessions.length || by.three.session !== null) err('ann: something that is not a session id was taken for one');
+  console.log('session annotations: ok');
+}
+
 (async () => {
+  await checkSessionAnnotations();
   let total = 0;
   const found = findCases(path.join(HUB_DIR, 'cases'), { shelved: all });
   if (!found.length) err('hub/cases: no cases found');

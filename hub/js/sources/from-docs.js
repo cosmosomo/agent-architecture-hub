@@ -143,6 +143,18 @@
   }
   var PHASE_MAP = { debate: 'debate1' };   // 文档标签 → casedef/sim 的 phase 名
 
+  /* The local agent sessions an individual ran as, written in its document as `session: codex:019…` or `sessions: [a:1, b:2]`:
+     the id is the one the Trace names (<source>:<id>).  Anything that does not look like one is ignored, not guessed at. */
+  var SESSION_ID = /^[a-z][a-z0-9-]*:[^\s,\]]+$/i;
+  function sessionIds(a) {
+    var out = [];
+    [].concat(a.sessions || [], a.session || []).forEach(function (v) {
+      v = String(v).trim();
+      if (SESSION_ID.test(v) && out.indexOf(v) < 0) out.push(v);
+    });
+    return out;
+  }
+
   /** agents.md → def.individuals（部分字段）+ 返回 id→object 映射供后续用 */
   function loadAgents(body) {
     var objects = parseObjects(body);
@@ -153,8 +165,11 @@
       var role = (o.tags.find(function (t) { return t.startsWith('role/'); }) || '').slice(5) || null;
       var model = shortModel(a.model || (o.tags.find(function (t) { return t.startsWith('model/'); }) || '').slice(6) || null);
       var groupTag = (o.tags.find(function (t) { return t.startsWith('group/'); }) || '').slice(6) || null;
+      var sessions = sessionIds(a);
       return {
         id: o.id,
+        session: sessions[0] || null,
+        sessions: sessions,
         agentId: role || phase,
         kind: o.type === 'individual' ? 'agent' : o.type,
         name: a.name || o.id,

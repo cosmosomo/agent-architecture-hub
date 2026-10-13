@@ -14,7 +14,7 @@ Inputs are recognised, not registered. Put a folder or a file under `hub/cases/`
 
 | Input | Recognised by | Parsed into |
 |---|---|---|
-| Orchestration documents (Markdown) | a folder containing `meta.md` | individuals, groups, relations (task, information, supervision, channel), capability channels, documents with their audiences, the process (stages, steps, gates with their exits), scenarios and decision records |
+| Orchestration documents (Markdown) | a folder containing `meta.md` | individuals, groups, relations (task, information, supervision, channel), capability channels, documents with their audiences, the process (stages, steps, gates with their exits), scenarios and decision records. An individual may name the local sessions it ran as (`session: codex:…`); its details then open that session's trace |
 | hub-graph (JSON) | a `.json` file in [hub-graph format](docs/hub-graph-format.md) | the same model; unknown object types degrade to a default card instead of failing |
 | Recorded traces | a `traces/` folder, read by the reader that matches the `source:` line of the case's `meta.md` | facts that replace the simulated ones: runs, turns, handoffs with their basis (explicit in the record, or implied by the source's protocol), outcomes and failure labels |
 | Local agent sessions | Codex, Claude Code, OpenCode, Gemini CLI, Factory and ZCode log files, one adapter per format | one session contract; a session and its sub-agents become individuals, groups of sub-agents spawned together, dispatch and delivery lines, and model and tool channels. There is no written definition behind a session, so the definition is read from the facts, and no decision layer yet: a session's run opens as its recorded turns and steps |
