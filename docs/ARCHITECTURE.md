@@ -146,6 +146,7 @@ node hub/tools/test_model.js     # every sample team builds a model with a sane 
 node hub/tools/test_scenes.js    # every team, many states: finite geometry, links end at drawn things, no overlaps, drag
 node hub/tools/check_from_docs.js [--all]   # case documents parse and assemble
 node hub/tools/check_collab.js [--all]      # the trajectory view's data, for every case with a record
+node hub/tools/check_shells.js [--all]      # case documents -> what is drawn: no empty frames, faceless cards, broken text; counts unconnected nodes
 ```
 
 `--all` includes the shelved reference corpus. The checks load the page's scripts in a `vm` context (no DOM), so they run in CI without a browser.

@@ -25,7 +25,8 @@
     var focusCase = s.focus && s.focus.type === 'case' ? m.idx.case.get(s.focus.id) : null;
     var visits = {};
     if (focusCase) focusCase.path.forEach(function (p) { if (HUB.model.visible(p.at, s)) visits[p.node] = (visits[p.node] || 0) + 1; });
-    var open = function (st) { return HUB.store.isOpen('process', st.id, 1, s); };
+    // a stage with no steps has nothing to open into: it stays a card, never an empty frame
+    var open = function (st) { return st.steps.length > 0 && HUB.store.isOpen('process', st.id, 1, s); };
     var phaseOfStage = function (st) {
       var c = {};
       st.steps.forEach(function (x) { x.executors.forEach(function (e) { var i = idx.ind.get(e); if (i && i.phase) c[i.phase] = (c[i.phase] || 0) + 1; }); });

@@ -129,7 +129,7 @@
     var rk = computeRanks(m);
     var open = function (g) { return HUB.store.isOpen('org', g.id, g.level, s); };
     var hidden = function (id) { return s.compare === 'fact' && a.indStats[id] && a.indStats[id].status === 'never'; };
-    var shown = function (ids) { return ids.filter(function (id) { return !hidden(id); }); };
+    var shown = function (ids) { return ids.filter(function (id) { return idx.ind.has(id) && !hidden(id); }); };   // a group may name someone not defined
     var order = function (ids) {
       return ids.slice().sort(function (p, q) {
         var d = (rk[p] || 0) - (rk[q] || 0);
@@ -151,10 +151,11 @@
     def.individuals.forEach(function (x) { maxRuns = Math.max(maxRuns, (a.indStats[x.id] || {}).runs || 0); });
 
     var cards = [], frames = [];
-    var indCard = function (id) {
-      var x = idx.ind.get(id), st = a.indStats[id] || {};
+    // owner: the group whose frame the card is drawn in (someone listed in two groups is drawn once, in the first)
+    var indCard = function (id, owner) {
+      var x = idx.ind.get(id), st = a.indStats[id] || {}, own = owner || x.groupId;
       return { key: 'i:' + id, kind: x.kind === 'agent' ? 'ind' : x.kind, w: NW, h: NH, sel: { type: 'individual', id: id },
-        anchor: x.groupId ? HUB.obsSceneOrg.anchorsOf(x.groupId, idx) : [],
+        anchor: own ? HUB.obsSceneOrg.anchorsOf(own, idx) : [],
         data: { id: id, name: x.name, agentId: x.agentId, phase: x.phase, model: x.model, isHub: !!x.isHub, kind: x.kind,
           status: s.compare === 'def' ? null : st.status, runs: s.compare === 'def' ? null : st.runs || 0, maxRuns: maxRuns,
           host: x.host && x.host !== 'Claude Code' ? x.host : null,
@@ -246,12 +247,12 @@
       var bl = { w: bw, h: bh, cards: [], frames: [Object.assign(frameOf(G, bw, bh, 1), { x: 0, y: 0 })] };
       items.forEach(function (it) {
         var ox = FP + it.px, oy = FT + it.py;
-        if (it.kind === 'ind') bl.cards.push(Object.assign(indCard(it.id), { x: ox, y: oy }));
+        if (it.kind === 'ind') bl.cards.push(Object.assign(indCard(it.id, G.id), { x: ox, y: oy }));
         else if (it.kind === 'merged') bl.cards.push(Object.assign(mgCard(it.mg), { x: ox, y: oy }));
         else if (it.kind === 'subfold') bl.cards.push(Object.assign(groupCard(it.g, SW, SH), { x: ox, y: oy }));
         else {
           bl.frames.push(Object.assign(frameOf(it.g, it.w, it.h, 2), { x: ox, y: oy }));
-          it.inner.forEach(function (c) { bl.cards.push(Object.assign(indCard(c.id), { x: ox + SP + c.px, y: oy + ST + c.py })); });
+          it.inner.forEach(function (c) { bl.cards.push(Object.assign(indCard(c.id, it.g.id), { x: ox + SP + c.px, y: oy + ST + c.py })); });
         }
       });
       blocks.push(bl);

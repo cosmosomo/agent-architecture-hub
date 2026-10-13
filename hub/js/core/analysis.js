@@ -30,8 +30,10 @@
     var deep = function (gid) {
       if (idx.membersDeep.has(gid)) return idx.membersDeep.get(gid);
       var g = idx.group.get(gid);
-      var out = g ? g.members.slice() : [];
+      // only people who are defined: a group may name one that is not (a typo, a half-parsed document)
+      var out = g ? g.members.filter(function (id) { return idx.ind.has(id); }) : [];
       if (g) g.children.forEach(function (c) { out = out.concat(deep(c)); });
+      out = U.uniq(out);
       idx.membersDeep.set(gid, out);
       return out;
     };
@@ -44,7 +46,7 @@
 
   function within(t, cut) { return cut == null || t <= cut; }
 
-  /* 能不能对照：定义和事实各自从哪来，决定体检能下什么结论（设计总览 9.4；任务书 2 的事实边界）。
+  /* 能不能对照：定义和事实各自从哪来，决定体检能下什么结论。
      full    两边都是自己的（模拟案例、本机会话）：可以说“设计了没用上”“编排里没有这条线”。
      written 事实是真实轨迹，定义是我们补写的编排：只说“这份记录里没有出现”“与补写的编排不一致”。
      none    真实轨迹里没有任何有依据的交接，只有发言先后：任务线不对照。 */
