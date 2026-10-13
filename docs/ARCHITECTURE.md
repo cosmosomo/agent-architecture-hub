@@ -135,7 +135,7 @@ An npm workspace in TypeScript, run directly by Node (type stripping, no build s
 - `apps/cli` — the service (`serve`: page, `/api`, `/trace/`) and the command line (`scan`, `list`, `show`, `index`); a search index over every step.
 - `apps/viewer` — the Trace viewer (React), also built as one script, `hub/vendor/hub-trace.js`, that the observatory embeds.
 
-`js/sources/from-trace.js` and `js/core/to-trace.js` are the two directions between a session and the unified model, so a real multi-agent run is drawn by the same views as a written one.
+`js/sources/from-trace.js` and `js/core/to-trace.js` are the two directions between a session and the unified model, so a real multi-agent run is drawn by the same views as a written one. `js/core/annotate.js` turns the decision records a case writes over a session (`turn`, `steps`, a root session in `meta.md`) into the contract's annotation set, the coarse-grained layer the Trace view draws over the session's own steps.
 
 ## Checks
 

@@ -360,6 +360,22 @@
     return { infoReads: infoReads, watches: watches };
   }
 
+  /* A decision may be written as a record of a session — a diary of the coarse-grained trace: which turn of the session it
+     happened in and which steps of that turn are its evidence.  turn: the nth turn as the Trace shows it; steps: n, a-b, or a
+     list, counted inside that turn; session: optional (the individual's session, else the case's root session). */
+  function evidenceOf(a) {
+    var turn = parseInt(a.turn, 10), steps = [];
+    if (!(turn >= 1)) return null;
+    [].concat(a.steps == null ? [] : a.steps).forEach(function (v) {
+      String(v).split(',').forEach(function (part) {
+        var r = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(part), n = /^\s*(\d+)\s*$/.exec(part);
+        if (r) { for (var i = +r[1]; i <= +r[2] && i - r[1] < 500; i++) steps.push(i); }
+        else if (n) steps.push(+n[1]);
+      });
+    });
+    return steps.length ? { session: sessionIds({ session: a.session })[0] || null, turn: turn, steps: steps } : null;
+  }
+
   /** decisions/<agent>.md → decisions 列表 */
   function loadDecisions(body, agentId) {
     var objects = parseObjects(body);
@@ -378,6 +394,7 @@
         impact: a.impact || '',
         action: a.action || kind || 'deliver',
         stage: stage,
+        evidence: evidenceOf(a),
         tags: o.tags,
       };
     });
@@ -568,8 +585,23 @@
       d.audience.forEach(function (id) { var x = indMap[id]; if (x && x.docs.indexOf(d.id) < 0) x.docs.push(d.id); });
     });
 
+    /* The root session: the session the case's records hang on (meta.md `session:`).  A decision that points into a session is
+       accepted only when the case names it: the records are a trace of that session tree, not free-floating notes. */
+    var rootId = parts.meta && parts.meta.session ? String(parts.meta.session).trim() : '';
+    var rootSession = SESSION_ID.test(rootId) ? rootId : null;
+    var annotations = [], annotationProblems = [];
+    (parts.decisions || []).forEach(function (d) {
+      if (!d.evidence) return;
+      var owner = indMap[d.agentId], session = d.evidence.session || (owner && owner.session) || rootSession;
+      if (!rootSession) { annotationProblems.push(d.id + '：案例没有写根会话（meta.md 的 session:），这条记录不生效'); return; }
+      annotations.push({ id: d.id, agentId: d.agentId, session: session, turn: d.evidence.turn, steps: d.evidence.steps, decision: d });
+    });
+
     return {
       id: caseId,
+      rootSession: rootSession,
+      annotations: annotations,
+      annotationProblems: annotationProblems,
       name: parts.meta && parts.meta.title || caseId,
       summary: parts.meta && parts.meta.summary || '',
       synthetic: true,
@@ -660,7 +692,8 @@
           model.source.base = base;   // the case folder, so attached originals (prompt_file …) open from the details
           // 事实不在这里决定：scenario 和 decisions 交给提供者当覆盖，案例带了记录（traces/）就由记录提供（core/facts.js）
           var decByAgent = {};
-          parts.decisions.forEach(function (d) { (decByAgent[d.agentId] = decByAgent[d.agentId] || []).push(d); });
+          // a decision that records a session belongs to that session (model.annotations), not to the simulated run
+          parts.decisions.forEach(function (d) { if (!d.evidence) (decByAgent[d.agentId] = decByAgent[d.agentId] || []).push(d); });
           return HUB.facts.provide(model, { id: caseId, override: { scenario: parts.scenarios, decisions: decByAgent }, get: get, parts: parts });
         });
       });

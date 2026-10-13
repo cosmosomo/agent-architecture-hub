@@ -17,7 +17,7 @@ Inputs are recognised, not registered. Put a folder or a file under `hub/cases/`
 | Orchestration documents (Markdown) | a folder containing `meta.md` | individuals, groups, relations (task, information, supervision, channel), capability channels, documents with their audiences, the process (stages, steps, gates with their exits), scenarios and decision records. An individual may name the local sessions it ran as (`session: codex:…`); its details then open that session's trace |
 | hub-graph (JSON) | a `.json` file in [hub-graph format](docs/hub-graph-format.md) | the same model; unknown object types degrade to a default card instead of failing |
 | Recorded traces | a `traces/` folder, read by the reader that matches the `source:` line of the case's `meta.md` | facts that replace the simulated ones: runs, turns, handoffs with their basis (explicit in the record, or implied by the source's protocol), outcomes and failure labels |
-| Local agent sessions | Codex, Claude Code, OpenCode, Gemini CLI, Factory and ZCode log files, one adapter per format | one session contract; a session and its sub-agents become individuals, groups of sub-agents spawned together, dispatch and delivery lines, and model and tool channels. There is no written definition behind a session, so the definition is read from the facts, and no decision layer yet: a session's run opens as its recorded turns and steps |
+| Local agent sessions | Codex, Claude Code, OpenCode, Gemini CLI, Factory and ZCode log files, one adapter per format | one session contract; a session and its sub-agents become individuals, groups of sub-agents spawned together, dispatch and delivery lines, and model and tool channels. There is no written definition behind a session, so the definition is read from the facts. Its decision chain is a coarse-grained record that the case documents write over it (below); without one, a run opens as its recorded turns and steps |
 | Built-in sample teams | 62 teams in `hub/data/base.js` | a definition and simulated facts, labelled as simulated wherever they are shown |
 
 How the parsing behaves matters as much as what it accepts:
@@ -43,7 +43,7 @@ The graph presentation draws one subject at a time. Views are presets of the sta
 | ③ Case route | organisation, focused on one case instance | which individuals and handoffs one piece of work actually used; the rest dims |
 | ④ Business process | process | stages, gates, who decides each gate, where work is returned or escalated to a person |
 | Collaboration trajectory | collaboration | who handed what to whom, record by record, with replay; drawn only from what the record supports |
-| Run detail | execution | one run as a tree of turns, steps and calls with their input and output (the embedded Trace view); decision records — alternatives, choice, reason — are shown where the case documents or the simulator provide them |
+| Run detail | execution | one run as a tree of turns, steps and calls with their input and output (the embedded Trace view); decision records — alternatives, choice, reason — are shown where the case documents or the simulator provide them; a real session gets its decision chain from a diary written in the case documents (turn and steps as evidence) |
 
 Lines are typed: task, information, supervision, capability channel. Against the facts, a solid line was written and used, a dashed one was written and never used, an orange one happened without being written. The comparison control switches between *definition*, *both* and *facts*; granularity runs from departments through groups to individuals (stages and steps; decisions and calls). Cards and department frames can be dragged; the offsets are kept per case in the browser and undone with one button.
 
@@ -131,6 +131,8 @@ watches: [worker]
 ```
 
 `# @id [type] #tag` opens an object; `key: value` lines and lists describe it; tags are `namespace/value`. The protocol and its JSON form are specified in [docs/hub-graph-format.md](docs/hub-graph-format.md).
+
+**Writing a decision chain over a real session.** Name the root session in `meta.md` (`session: codex:…`), then write the decisions in `decisions/<agent>.md` with `turn` and `steps` saying where in the session each one happened. It is a diary kept at coarse grain: the decision chain on top, the session's own steps as its evidence. Records that do not match the session (a turn or step that is not there) are not drawn and are listed with the reason.
 
 ## Extending
 

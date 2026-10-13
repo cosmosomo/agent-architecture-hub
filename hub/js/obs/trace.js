@@ -69,7 +69,8 @@
     }
     if (!remote[t.id]) load(t.id);
     var r = remote[t.id];
-    return r && r.status === 'ok' ? { session: r.session, layer: null } : null;
+    // a real session carries the decision records the case documents wrote for it, as its coarse-grained layer
+    return r && r.status === 'ok' ? { session: r.session, layer: HUB.annotate.layerFor(m, r.session) } : null;
   }
 
   function note(text) {
@@ -153,7 +154,7 @@
     if (!t) return null;
     if (t.kind === 'run') return { kind: 'run', run: t.run };
     var r = remote[t.id] || {};
-    return { kind: 'session', id: t.id, session: r.session || null, error: r.error || null };
+    return { kind: 'session', id: t.id, session: r.session || null, error: r.error || null, layer: r.session ? HUB.annotate.layerFor(m, r.session) : null };
   }
 
   HUB.obsTrace = { mount: mount, render: render, target: target, current: current, available: available, viewerLink: viewerLink };

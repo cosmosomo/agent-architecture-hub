@@ -66,17 +66,46 @@ async function checkCase(dir, id) {
 // session annotations: an individual's document may name the local sessions it ran as
 async function checkSessionAnnotations() {
   const files = {
-    'meta.md': '---\nhub: "1.0"\nkind: meta\ncase: ann\n---\n\n# Annotated\n\nA case whose agents name their sessions.\n',
+    'meta.md': '---\nhub: "1.0"\nkind: meta\ncase: ann\nsession: codex:root-1\n---\n\n# Annotated\n\nA case whose agents name their sessions.\n',
+    'decisions/one.md': '---\nhub: "1.0"\nkind: decisions\ncase: ann\n---\n\n' +
+      '# @d1 [decision]\ntitle: Read first\ntrigger: a task arrived\nalternatives: [just do it, read first]\nchoice: read first\nreason: avoids rework\naction: tool\nturn: 1\nsteps: 1-2\n\n' +
+      '# @d2 [decision]\ntitle: Out of range\nturn: 9\nsteps: 1\n\n' +
+      '# @d3 [decision]\ntitle: Overlaps d1\nturn: 1\nsteps: 2-3\n\n' +
+      '# @d4 [decision]\ntitle: Not consecutive\nturn: 1\nsteps: [4, 6]\n\n' +
+      '# @d5 [decision]\ntitle: Fine\nturn: 1\nsteps: 5\n\n' +
+      '# @d6 [decision]\ntitle: A plain simulated decision\ntrigger: x\n',
     'agents.md': '---\nhub: "1.0"\nkind: agents\ncase: ann\n---\n\n' +
       '# @one [individual] #phase/build\nname: One\nsession: codex:019a-b\n\n' +
       '# @two [individual] #phase/qa\nname: Two\nsessions: [claude-code:x1, opencode:ses_2, claude-code:x1, not a session]\n\n' +
       '# @three [individual] #phase/qa\nname: Three\nsession: nonsense\n'
   };
-  const m = await HUB.fromDocs.loadCase((p) => Promise.resolve(files[p.replace(/^.*\//, '')] || ''), 'virtual/ann', 'ann');
+  const serve = (p) => {
+    const rel = p.replace(/^virtual\/ann\//, '');
+    if (rel === '') return '<a href="decisions/">decisions/</a>';
+    if (rel === 'decisions/') return '<a href="one.md">one.md</a>';
+    return files[rel] || '';
+  };
+  const m = await HUB.fromDocs.loadCase((p) => Promise.resolve(serve(p)), 'virtual/ann', 'ann');
   const by = Object.fromEntries(m.def.individuals.map((x) => [x.id, x]));
   if (JSON.stringify(by.one.sessions) !== '["codex:019a-b"]' || by.one.session !== 'codex:019a-b') err('ann: session: not read');
   if (JSON.stringify(by.two.sessions) !== '["claude-code:x1","opencode:ses_2"]') err('ann: sessions: [...] not read as a deduplicated list of ids (' + JSON.stringify(by.two.sessions) + ')');
   if (by.three.sessions.length || by.three.session !== null) err('ann: something that is not a session id was taken for one');
+  // the diary: records that point into the root session become the coarse layer of that session, the rest are reported
+  if (m.rootSession !== 'codex:root-1') err('ann: the root session was not read');
+  if (m.annotations.length !== 5) err('ann: ' + m.annotations.length + ' records point into a session, expected 5');
+  if (m.annotations.some((a) => a.session !== 'codex:root-1')) err('ann: a record did not default to the root session');
+  const steps = (n) => Array.from({ length: n }, (_, i) => ({ id: 's' + (i + 1) }));
+  const session = { id: 'codex:root-1', startedAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T01:00:00Z', turns: [{ id: 't1', index: 1, steps: steps(6) }] };
+  const layer = HUB.annotate.layerFor(m, session);
+  if (!layer || layer.segments.map((g) => g.id).join() !== 'doc:d1,doc:d5') err('ann: wrong segments ' + (layer && layer.segments.map((g) => g.id)));
+  else if (JSON.stringify(layer.segments[0].steps) !== '["s1","s2"]' || layer.segments[0].choice !== 'read first') err('ann: segment content lost');
+  if (!layer || layer.problems.length !== 3 || layer.total !== 5) err('ann: expected 3 problems of 5, got ' + (layer && layer.problems.length) + ' of ' + (layer && layer.total));
+  if (m.facts.decisions.some((d) => /Read first|Out of range/.test(d.title))) err('ann: a recorded decision leaked into the simulated run');
+  if (HUB.annotate.layerFor(m, { id: 'other:1', turns: [] }) !== null) err('ann: a layer for a session nothing points at');
+  // without a root session nothing is accepted
+  files['meta.md'] = files['meta.md'].replace('session: codex:root-1\n', '');
+  const bare = await HUB.fromDocs.loadCase((p) => Promise.resolve(serve(p)), 'virtual/ann', 'ann');
+  if (bare.annotations.length || !bare.annotationProblems.length) err('ann: records were accepted without a root session');
   console.log('session annotations: ok');
 }
 

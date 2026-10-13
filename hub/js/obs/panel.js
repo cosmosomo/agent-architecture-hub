@@ -95,6 +95,10 @@
       sec('需要人处理的事', nh ? '<div class="ob-list">' + nh + '</div>' : '<div class="ob-note">现在没有等你处理的事。</div>') +
       sec('概况', stats([['个体', t.individuals], ['任务线', t.relations], ['案例', t.cases], ['运行', t.runs], ['调用', U.fmtNum(t.calls)], ['token', U.fmtTokens(t.tokens)],
         ['首次通过', U.pct(t.firstPassRate)], ['返工率', U.pct(t.reworkRate)], ['失败运行', t.failedRuns]])) +
+      (m.rootSession ? sec('根会话（案例文档的记录挂在它上面）', '<div class="ob-row" style="cursor:default"><span class="ob-nm" title="' + esc(m.rootSession) + '">' + esc((HUB.obsSessions && HUB.obsSessions.titleOf(m.rootSession)) || m.rootSession) + '</span>' +
+        '<button class="btn btn-a" type="button" data-act="session" data-id="' + esc(m.rootSession) + '" style="height:24px">在画布里打开</button>' +
+        '<a class="ob-a" href="/trace/#s=' + encodeURIComponent(m.rootSession) + '" target="_blank" rel="noopener" style="margin-left:6px">Trace ↗</a></div>' +
+        ((m.annotationProblems || []).length ? '<div class="ob-note">' + m.annotationProblems.map(esc).join('<br>') + '</div>' : '')) : (m.annotationProblems || []).length ? sec('标注', '<div class="ob-note">' + m.annotationProblems.map(esc).join('<br>') + '</div>') : '') +
       sec('案例实例（点一下聚焦它）', cases ? '<div class="ob-list">' + cases + '</div>' : '') +
       sec('架构体检', health ? '<div class="ob-list">' + health + '</div>' : '<div class="ob-note">没有发现问题。</div>') +
       sec('编排版本', versions ? '<div class="ob-list">' + versions + '</div>' : '') +
@@ -444,7 +448,9 @@
       icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent1)', chips: chip(STATE_ZH[x.state.status] || x.state.status) + chip(x.stats.turns + ' 轮') }) +
       '<div class="ds">' + kv([['工作目录', esc(x.cwd || '-')], ['模型', esc(x.agent.model || '-')], ['开始', esc((x.startedAt || '').replace('T', ' ').slice(0, 16))],
         ['最近', esc((x.updatedAt || '').replace('T', ' ').slice(0, 16))], ['调用', x.stats.modelCalls + ' 次模型 · ' + x.stats.toolCalls + ' 次工具' + (x.stats.toolErrors ? ' · 出错 ' + x.stats.toolErrors : '')]]) + '</div>' +
-      '<div class="ob-note">这是本机的真实会话，还没有粗粒度标注，所以树按“轮 → 步”显示。选中一项，下面显示它的细节。<a class="ob-a" href="' + viewer + '" target="_blank" rel="noopener">在独立查看器打开 ↗</a></div>' +
+      (t.layer ? '<div class="ob-note">粗粒度记录：案例文档为这个会话写了 ' + t.layer.total + ' 条决策，画上去 ' + t.layer.segments.length + ' 条；粒度选“决策”看决策链，选“调用”展开到会话的每一步。' +
+        (t.layer.problems.length ? '</div><div class="ds"><div class="ds-l">没对上的记录</div>' + t.layer.problems.map(function (p) { return '<div class="ob-row" style="cursor:default">' + pill('对不上', 'warn') + '<span class="ob-nm ob-wrap-text">' + esc(p) + '</span></div>'; }).join('') : '') + '</div>' : '') +
+      '<div class="ob-note">这是本机的真实会话，' + (t.layer ? '左边是它自己的轮和步骤。' : '案例文档没有给它写粗粒度记录，所以树按“轮 → 步”显示。') + ' 选中一项，下面显示它的细节。<a class="ob-a" href="' + viewer + '" target="_blank" rel="noopener">在独立查看器打开 ↗</a></div>' +
       (x.links.some(function (l) { return l.rel === 'child'; }) ? '<div class="ds"><button class="btn btn-p" type="button" data-act="tree" data-id="' + esc(t.id) + '">把它和它派出的子智能体画成协作图</button></div>' : '');
   }
 
