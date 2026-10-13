@@ -7,3 +7,5 @@
 默认的 `npm test` 不跑这里的东西。
 
 > Importers and corpus-only checks, kept out of the way. They read datasets from the author's machine and are not part of the default test run.
+
+注：导入脚本还会往输出目录里追加一个 `_index.md`——那是已经退役的案例登记表，现在目录是自动发现的，这个文件不起作用，可以删掉。`check_shells.js --all` 是对这批语料的验收：逐案例画一遍，数空框、无头像、破文字。
