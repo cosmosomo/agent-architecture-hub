@@ -147,7 +147,7 @@ Every seam is a registry, so a new kind of input or output is a registration:
 | a subject the stage can draw, or a layer of its own | `HUB.render.register` |
 | a kind of agent-session log | a `SourceAdapter` in `trace/packages/adapters` |
 
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) describes the pieces and how they fit. [docs/parsing-design.md](docs/parsing-design.md) is the design of an LLM-assisted parsing system with machine verification (not built yet).
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) describes the pieces and how they fit. [docs/parsing-design.md](docs/parsing-design.md) is the design of an LLM-assisted parsing system with machine verification (not built yet). [docs/ROADMAP.md](docs/ROADMAP.md) lists what comes next: one Trace across the viewer and the observatory, one orchestration and visualisation layer with write-back, facts from annotated sessions.
 
 ## Security and privacy
 

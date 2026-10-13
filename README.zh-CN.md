@@ -147,7 +147,7 @@ watches: [worker]
 | 画板能画的主体，或自带的一层 | `HUB.render.register` |
 | 一种智能体会话日志 | `trace/packages/adapters` 里的一个 `SourceAdapter` |
 
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)（英文）说明各部分及其配合。[docs/parsing-design.md](docs/parsing-design.md) 是大模型辅助、带机器验证的解析系统的设计（尚未实现）。
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)（英文）说明各部分及其配合。[docs/parsing-design.md](docs/parsing-design.md) 是大模型辅助、带机器验证的解析系统的设计（尚未实现）。[docs/ROADMAP.md](docs/ROADMAP.md) 是后续开发计划：Trace 在独立查看器和观察台之间统一、编排层和可视化层统一（含写回）、用标注的会话做事实。
 
 ## 安全与隐私
 
