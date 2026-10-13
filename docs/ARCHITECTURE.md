@@ -75,7 +75,7 @@ hub/
   cases/              the cases; cases/_reference/ is the shelved corpus (not in the repository)
 trace/                npm workspace: contract · adapters · otel · cli (the service) · viewer
 concept/              the standalone concept board
-docs/                 this file, SPEC.md, hub-graph-format.md, orchestration-granularity.md
+docs/                 this file, hub-graph-format.md, orchestration-granularity.md
 ```
 
 Scripts are classic IIFEs that hang one object on `window.HUB`; there is no bundler for the page. `index.html` lists them in load order, and `hub/tools/load.js` reads that same list (`pageScripts`), so the node checks and the browser can never disagree about the order.

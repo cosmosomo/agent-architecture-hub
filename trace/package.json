@@ -2,7 +2,7 @@
   "name": "hub-trace",
   "private": true,
   "type": "module",
-  "description": "Session and trace parsing for the observatory: contract, source adapters, OpenTelemetry export, CLI and viewer. See docs/SPEC.md section 17.",
+  "description": "Session and trace parsing for the observatory: contract, source adapters, OpenTelemetry export, CLI and viewer. See docs/ARCHITECTURE.md.",
   "workspaces": [
     "packages/*",
     "apps/*"

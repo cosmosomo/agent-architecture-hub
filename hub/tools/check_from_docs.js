@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * check_from_docs.js - parses every hub/cases/<id>/ Markdown case through from-docs
- * and checks the assembled model against SPEC.md §18.6: steps parsed, task lines
+ * and checks the assembled model against the format in docs/hub-graph-format.md: steps parsed, task lines
  * inferred, watch lines deduped, scenarios reaching the sim facts (cases/runs/
  * decisions), decisions keeping their alternatives.
  * Usage: node hub/tools/check_from_docs.js [--all] [caseId ...]   (--all also walks the shelved reference corpus)

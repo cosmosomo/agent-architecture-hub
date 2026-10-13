@@ -215,7 +215,7 @@ HUB.model.addSource({
 });
 ```
 
-`HUB.fromHubGraph.model(doc)` 是格式到统一模型的转换函数（待实现，见 SPEC §18）。
+`HUB.fromHubGraph.model(doc)` 是格式到统一模型的转换函数。
 
 **换来源不改前端**：加一种来源 = 写一个适配器 + 注册一行。
 

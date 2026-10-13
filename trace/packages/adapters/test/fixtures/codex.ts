@@ -1,5 +1,5 @@
 /**
- * Hand-made Codex sessions in the shapes recorded in docs/SPEC.md 17.2. No real
+ * Hand-made Codex sessions in the shapes recorded in docs/ARCHITECTURE.md. No real
  * session content: tests and the viewer demo use only these.
  * `node packages/adapters/test/fixtures/write.ts` writes them as .jsonl files.
  */

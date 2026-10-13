@@ -1,7 +1,7 @@
 /* HUB.collab: what the collaboration-trajectory view (协作轨迹图) draws for one case instance: the nodes
    (individuals, or closed groups: the same representatives as the org views), the rails (task lines of the
    definition), the handoffs paired by direction with their basis, the recorded turns in order, and where the
-   time cut is. docs/SPEC.md 7; 设计总览 9.4; 任务书 2 的事实边界.
+   time cut is. docs/ARCHITECTURE.md.
    Rules:
    - only recorded facts are drawn as records: a model whose facts are simulated gives the definition only;
    - a handoff is drawn only on a recorded or protocol basis; adjacency alone is the order of the records,

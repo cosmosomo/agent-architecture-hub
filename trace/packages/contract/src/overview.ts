@@ -2,7 +2,7 @@
  * The overview aggregation behind /api/overview: which CLIs have sessions on this
  * machine, and which projects they worked in. Pure: summaries in, counts out, so
  * the page stays cheap over thousands of sessions and the aggregation is testable.
- * Lives in the contract because the CLI serves it and the viewer reads it (SPEC 17.1).
+ * Lives in the contract because the CLI serves it and the viewer reads it (docs/ARCHITECTURE.md).
  */
 import type { Iso, SessionSummary } from './index.ts';
 

@@ -96,7 +96,7 @@ Every seam is a registry, so a new kind of thing is one registration, not a patc
 | a subject the stage can draw, or a layer of its own | `HUB.render.register` |
 | a kind of agent-session log | a `SourceAdapter` in `trace/packages/adapters` |
 
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains the pieces; [docs/SPEC.md](docs/SPEC.md) is the detailed specification (in Chinese).
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains the pieces; [docs/hub-graph-format.md](docs/hub-graph-format.md) specifies the JSON format (in Chinese).
 
 ## Security and privacy
 
@@ -127,7 +127,7 @@ docs/               architecture, specification, formats
 
 ## Concept board
 
-`/concept/` is the hand-built team board this project grew out of: a single self-contained HTML page for composing a team of agents by dragging, with its own agent and team catalogue. It is kept as it was received and is separate from the observatory — its data is not shared.
+`/concept/` is the hand-built team board this project grew out of: a single self-contained HTML page for composing a team of agents by dragging, with its own agent and team catalogue. It is the Chinese-localized page, kept as it is and separate from the observatory — its data is not shared.
 
 ## License and credits
 

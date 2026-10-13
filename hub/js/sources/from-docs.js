@@ -1,4 +1,4 @@
-/* HUB.fromDocs: hub/cases/ 目录里的 Markdown 文档 → 统一模型（docs/SPEC.md §5）
+/* HUB.fromDocs: hub/cases/ 目录里的 Markdown 文档 → 统一模型（docs/ARCHITECTURE.md）
    格式规范见 docs/hub-graph-format.md §18.6
 
    解析规则：

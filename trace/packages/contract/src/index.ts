@@ -1,7 +1,7 @@
 /**
  * Trace contract v0.1. Adapters produce it, the CLI serves it, the viewer and the
  * OpenTelemetry export read it; no module looks at another module's raw input.
- * Any field change bumps CONTRACT_VERSION. See docs/SPEC.md section 17.
+ * Any field change bumps CONTRACT_VERSION. See docs/ARCHITECTURE.md.
  *
  * Token counts follow the OpenAI / OTel GenAI convention: `input` includes the
  * cached and cache-write parts, `output` includes `reasoning`.
@@ -313,7 +313,7 @@ export function validateSessionDoc(doc: unknown): string[] {
 }
 
 /**
- * The coarse-grained layer (docs/SPEC.md 17.5). Parsed turns and steps stay as they are; an
+ * The coarse-grained layer (docs/ARCHITECTURE.md). Parsed turns and steps stay as they are; an
  * annotation set cuts a session's steps into segments, such as the decisions of the decision
  * chain, each covering consecutive steps of one turn and pointing back to them as evidence.
  * Every producer (the simulator, a rule set, a summarising agent, a person) writes its own set,
@@ -420,7 +420,7 @@ export function validateAnnotationSet(set: unknown, session?: Session): string[]
 }
 
 /**
- * Step search (the retrieval layer, docs/SPEC.md 17.4). Types only: the service builds
+ * Step search (the retrieval layer, docs/ARCHITECTURE.md). Types only: the service builds
  * the index and answers, the viewer and the observatory ask. Kept here so both sides
  * read the same field names without importing the service's database code.
  */

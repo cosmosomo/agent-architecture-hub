@@ -96,7 +96,7 @@ watches: [worker]
 | 画板能画的主体，或自带一层 | `HUB.render.register` |
 | 一种智能体会话日志 | `trace/packages/adapters` 里的一个 `SourceAdapter` |
 
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) 讲各部分怎么拼；[docs/SPEC.md](docs/SPEC.md) 是详细规格。
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) 讲各部分怎么拼；[docs/hub-graph-format.md](docs/hub-graph-format.md) 是 JSON 格式规范。
 
 ## 安全与隐私
 
@@ -127,7 +127,7 @@ docs/               架构、规格、格式
 
 ## 概念画板
 
-`/concept/` 是这个项目当初长出来的那块手工搭建的团队画板：一个自包含的 HTML 页，拖拽组合智能体团队，带自己的智能体和团队目录。它保持原样，和观察台分开——数据不共用。
+`/concept/` 是这个项目当初长出来的那块手工搭建的团队画板：一个自包含的 HTML 页，拖拽组合智能体团队，带自己的智能体和团队目录。就是中文版页面，保持原样，和观察台分开——数据不共用。
 
 ## 许可和致谢
 

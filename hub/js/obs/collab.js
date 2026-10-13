@@ -1,4 +1,4 @@
-/* HUB.obsCollab: the collaboration-trajectory view (协作轨迹图) over the canvas. docs/SPEC.md 7 and 8.
+/* HUB.obsCollab: the collaboration-trajectory view (协作轨迹图) over the canvas. docs/ARCHITECTURE.md.
    One case instance: who hands what to whom, in the recorded order. A star map on top (the same nodes as the org
    views: individuals, or closed groups), the full chart of the records underneath, which is also the time axis.
    The observation state stays the source of truth: the instance is focus/instanceId, the cursor is state.time,

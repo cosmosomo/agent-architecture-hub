@@ -20,7 +20,7 @@
   function stats(items) { return '<div class="ob-stats">' + items.map(function (x) { return '<div class="ob-stat"><b>' + esc(x[1]) + '</b><span>' + esc(x[0]) + '</span></div>'; }).join('') + '</div>'; }
   function rowItem(attrs, name, meta, lead) { return '<div class="ob-row" ' + attrs + '>' + (lead || '') + '<span class="ob-nm">' + name + '</span>' + (meta ? '<span class="ob-meta">' + meta + '</span>' : '') + '</div>'; }
   function selAttrs(type, id) { return 'data-act="sel" data-type="' + type + '" data-id="' + esc(id) + '"'; }
-  // everything an orchestration object carried that the panel does not show elsewhere (SPEC 18.2: keys the page
+  // everything an orchestration object carried that the panel does not show elsewhere (docs/hub-graph-format.md: keys the page
   // does not know go to the details, so nothing parsed stays invisible); *_file keys open the attached original
   var SHOWN = { name: 1, role: 1, trigger: 1, model: 1, watches: 1 };
   function rawFields(m, attrs, tags) {

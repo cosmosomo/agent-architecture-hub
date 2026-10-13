@@ -22,3 +22,6 @@ trace-data/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# local backups of working notes (not part of the repository)
+.local/

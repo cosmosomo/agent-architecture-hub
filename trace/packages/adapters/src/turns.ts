@@ -1,5 +1,5 @@
 /**
- * Shared turn machinery for the source adapters (docs/SPEC.md 17). Both record
+ * Shared turn machinery for the source adapters (docs/ARCHITECTURE.md). Both record
  * formats describe the same thing — turns that hold steps, one open model step
  * per model reply, tool calls paired with their outputs — so the lifecycle
  * lives here once: an adapter feeds it records and keeps only what is specific

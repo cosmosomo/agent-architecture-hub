@@ -4,12 +4,14 @@
  *   scan                         update the index; prints counts only
  *   list [--limit N] [--state S] list indexed sessions (titles included)
  *   show <id> [--otel] [--out F] one session as contract JSON (or OTLP)
- *   serve [--port P] [--host H]  the whole observatory on one address (default 127.0.0.1:8899): / page, /api, /trace/
+ *   serve [--port P] [--host H] [--open]  the whole observatory on one address (default 127.0.0.1:8899, the next free one when
+ *                                a different program holds it): / page, /api, /trace/; --open opens the browser
  *   index                        build or update the step search index; prints counts only
  *
  *   --root DIR    search DIR instead of the default homes (repeatable)
  *   --cache FILE  index cache file (default ~/.agent-hub/trace/index-v<contract>.json)
  */
+import { spawn } from 'node:child_process';
 import { statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,7 +33,7 @@ type Args = { cmd: string; pos: string[]; flags: Map<string, string[]> };
 function parseArgs(argv: string[]): Args {
   const flags = new Map<string, string[]>();
   const pos: string[] = [];
-  const bool = new Set(['otel']);
+  const bool = new Set(['otel', 'open']);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith('--')) {
@@ -119,10 +121,21 @@ async function main() {
       // The page is up at once; sessions fill in while the first scan runs (the page polls the index).
       const search = new SearchIndex(searchFile(store));
       const server = createService({ store, search, repoRoot: REPO_ROOT, viewerDir: join(TRACE_DIR, 'apps', 'viewer', 'dist') });
-      const url = await listen(server, Number(flag(a, 'port') || DEFAULT_PORT), flag(a, 'host') || '127.0.0.1');
+      const host = flag(a, 'host') || '127.0.0.1', asked = flag(a, 'port');
+      const first = Number(asked || DEFAULT_PORT), last = asked ? first : first + 20;
+      let url = '';
+      for (let port = first; ; port++) {
+        try { url = await listen(server, port, host); break; }
+        catch (e) { if ((e as NodeJS.ErrnoException).code !== 'EADDRINUSE' || port >= last) throw e; }
+      }
+      if (!asked && !url.endsWith(':' + DEFAULT_PORT)) console.log('端口 ' + DEFAULT_PORT + ' 被别的程序占着（多半是旧的静态文件服务），这次用 ' + url.replace(/^.*:/, '') + '。');
       console.log('观察台 ' + url + '/');
       console.log('Trace  ' + url + '/trace/');
       console.log('按 Ctrl+C 停止');
+      if (flag(a, 'open')) {
+        const [cmd, args] = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url + '/']] : process.platform === 'darwin' ? ['open', [url + '/']] : ['xdg-open', [url + '/']];
+        spawn(cmd, args, { detached: true, stdio: 'ignore' }).on('error', () => {}).unref();
+      }
       scan(store)
         .then(() => search.sync(store.files(), (f) => store.parseSource(f)))
         .then((r) => { if (r.indexed || r.removed) console.log('检索索引就绪：重建 ' + r.indexed + ' 个会话，用时 ' + (r.ms / 1000).toFixed(1) + ' 秒'); })
@@ -130,7 +143,7 @@ async function main() {
       return;
     }
     default:
-      console.log(['用法：node apps/cli/src/main.ts <scan|list|show|serve> [选项]', '  scan                     更新索引，只打印数量', '  list [--limit N] [--state S]', '  show <id> [--otel] [--out 文件]', '  serve [--port 8899] [--host 127.0.0.1]', '  index                    建立或更新检索索引', '  --root 目录   换搜索目录（可多次）', '  --cache 文件  索引缓存文件'].join('\n'));
+      console.log(['用法：node apps/cli/src/main.ts <scan|list|show|serve> [选项]', '  scan                     更新索引，只打印数量', '  list [--limit N] [--state S]', '  show <id> [--otel] [--out 文件]', '  serve [--port 8899] [--host 127.0.0.1] [--open]', '  index                    建立或更新检索索引', '  --root 目录   换搜索目录（可多次）', '  --cache 文件  索引缓存文件'].join('\n'));
   }
 }
 

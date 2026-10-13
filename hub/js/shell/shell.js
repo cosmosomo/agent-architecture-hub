@@ -105,6 +105,9 @@
     setFavicon();
     document.getElementById('themeToggle').addEventListener('click', function () { setTheme(theme() === 'light' ? 'dark' : 'light'); });
     paintToggle();
+    // opened from a plain static server (or from disk): there is no service behind the page, say so
+    fetch('api/health', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('no service'); })
+      .catch(function () { document.getElementById('svcNote').hidden = false; });
     starfield(document.getElementById('starfield'), area);
     HUB.camera.mount(area, document.getElementById('cvT'), { ignore: '.ob-float, .ob-tl, .zm-ctrl, .ob-card, .ob-fh, .ob-hit, .ob-tog, .ob-trace, .ob-collab, .ob-panelhost' });
   }

@@ -1,22 +1,13 @@
-name: trace CI
+name: CI
 
 on:
   push:
     branches: ["master"]
-    paths:
-      - "trace/**"
-      - ".github/workflows/trace-ci.yml"
   pull_request:
-    paths:
-      - "trace/**"
-      - ".github/workflows/trace-ci.yml"
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: trace
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,7 +15,8 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: trace/package-lock.json
-      - run: npm ci
+      - run: npm ci --prefix trace
+      # the node checks of the page's model and scenes, then the workspace tests
       - run: npm test
       - run: npm run typecheck
       - run: npm run build

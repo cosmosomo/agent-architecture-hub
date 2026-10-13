@@ -1,5 +1,5 @@
 /**
- * The analytics view (docs/SPEC.md 17.8): one page of folds over everything the adapters
+ * The analytics view (docs/ARCHITECTURE.md): one page of folds over everything the adapters
  * parsed — daily activity, tool and model rankings, project leaderboard. The layout and
  * the chart idioms (metric cards, ranked bars, calendar heatmap, trend bars) are adapted
  * from jerrywu001/jhlee0409's claude-code-history-viewer (MIT); the material language

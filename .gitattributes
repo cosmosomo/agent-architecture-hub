@@ -2,5 +2,5 @@
 * text=auto eol=lf
 *.bat text eol=crlf
 
-# the concept board is kept byte for byte as it was received
+# the concept board (the Chinese-localized designer page) is kept exactly as it is: no line-ending rewrite
 concept/index.html -text

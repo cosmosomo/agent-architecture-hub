@@ -9,7 +9,7 @@ export const T0 = Date.parse('2026-10-10T08:00:00.000Z');
 export const SESSION = '/home/u/.factory/sessions/' + SID + '.jsonl';
 
 const at = (sec: number) => new Date(T0 + sec * 1000).toISOString();
-const start = (title?: string) => JSON.stringify({ type: 'session_start', id: SID, owner: 'COLORFIRE', ...(title ? { title } : {}) });
+const start = (title?: string) => JSON.stringify({ type: 'session_start', id: SID, owner: 'user', ...(title ? { title } : {}) });
 const msg = (sec: number, role: string, content: unknown) =>
   JSON.stringify({ type: 'message', id: SID, timestamp: at(sec), message: { role, content } });
 

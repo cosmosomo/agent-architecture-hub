@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * check_zh.js - validates hub/data/zh.js against SPEC.md §12.1.
+ * check_zh.js - validates hub/data/zh.js against the format in docs/hub-graph-format.md
  * Usage: node hub/tools/check_zh.js
  */
 const { createContext, loadScripts } = require('./load.js');
