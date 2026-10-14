@@ -13,7 +13,7 @@
  * (b/c), a string or a [{type:'text',text}] parts list. The parser is pure: the
  * .project_root file some directories carry is not read, so the session has no cwd.
  */
-import { sessionId, type Iso, type Session, type ToolFamily, type Usage } from '@hub-trace/contract';
+import { sessionId, type AdapterCapabilities, type Iso, type Session, type ToolFamily, type Usage } from '@hub-trace/contract';
 import { detectState, STALE_MS } from '../state.ts';
 import { TurnBuilder, titleFallback } from '../turns.ts';
 import { clean, oneLine, partsText, LIMITS } from '../text.ts';
@@ -21,6 +21,12 @@ import type { FinishOptions, LineParser, SourceFile } from '../types.ts';
 
 export const GEMINI_KIND = 'gemini';
 export const GEMINI_ADAPTER_VERSION = '0.1.0';
+export const GEMINI_CAPABILITIES: AdapterCapabilities = {
+  observe_only: true,
+  control_lifecycle: { start: true, resume: true, fork: false, stop: false },
+  steer_in_turn: { in_turn: false, next_turn: true, inbox_file: false },
+  coordinate_team: { spawn_subagent: false, peer_message: false, task_board: false },
+};
 
 type J = Record<string, any>;
 
@@ -101,12 +107,13 @@ function parseJsonl(text: string): { meta: J; records: J[]; skipped: number } {
 }
 
 /** Parse one logs file's text, whichever of the three shapes it turns out to be. */
-export function parseGeminiLogs(text: string, file: SourceFile, opts: FinishOptions): Session {
+export function parseGeminiLogs(text: string, file: SourceFile, opts: FinishOptions, projectRoot?: string): Session {
   const B = new TurnBuilder({ userStartsTurn: true, turnForInferred: false });
   let meta: J = {};
   let records: J[] = [];
   let skipped = 0;
   let usageSum: Usage | undefined;
+  let lastModel: string | undefined;
   let format = 'gemini/logs-jsonl';
   let doc: unknown;
   let whole = false;
@@ -153,6 +160,12 @@ export function parseGeminiLogs(text: string, file: SourceFile, opts: FinishOpti
       const usage = usageOf(r.tokens);
       if (!body && !reasoning && !calls.length && !usage) { skipped++; B.note('gemini-empty'); continue; }
       const m = B.ensureModel(at);
+      if (typeof r.model === 'string' && r.model) {
+        lastModel = r.model;
+        m.model = r.model;
+        B.settings = { ...B.settings, model: r.model };
+        if (B.cur) B.cur.settings = { ...B.cur.settings, model: r.model };
+      }
       if (reasoning) m.reasoning = m.reasoning ? m.reasoning + '\n\n' + reasoning : reasoning;
       if (body) m.text = m.text ? m.text + '\n\n' + body : body;
       if (usage) { m.usage = usage; usageSum = usageSum ? addUsage(usageSum, usage) : usage; }
@@ -199,6 +212,9 @@ export function parseGeminiLogs(text: string, file: SourceFile, opts: FinishOpti
   // Shapes b/c carry their own times; the array only has the records' timestamps.
   const startedAt = (format === 'gemini/logs-json' ? undefined : iso(meta.startTime)) || B.firstAt;
   const updatedAt = (format === 'gemini/logs-json' ? undefined : iso(meta.lastUpdated)) || B.lastAt;
+  const cwd = typeof projectRoot === 'string' && projectRoot.trim()
+    ? projectRoot.trim()
+    : typeof meta.cwd === 'string' && meta.cwd.trim() ? meta.cwd.trim() : undefined;
   const title = oneLine(f.firstUser, 80);
   const session: Session = {
     id: sessionId(GEMINI_KIND, id),
@@ -211,13 +227,20 @@ export function parseGeminiLogs(text: string, file: SourceFile, opts: FinishOpti
       ...(file.size !== undefined ? { size: file.size } : {}),
       ...(file.mtimeMs !== undefined ? { mtimeMs: file.mtimeMs } : {}),
     },
-    title: title || titleFallback([f.firstUser], undefined, startedAt, 'Gemini CLI'),
-    agent: { product: 'Gemini CLI', name: 'Gemini CLI', role: 'main' },
+    title: title || titleFallback([f.firstUser], cwd, startedAt, 'Gemini CLI'),
+    agent: {
+      product: 'Gemini CLI',
+      name: 'Gemini CLI',
+      role: 'main',
+      ...(lastModel ? { model: lastModel } : {}),
+    },
+    ...(cwd ? { cwd } : {}),
     ...(startedAt ? { startedAt } : {}),
     ...(updatedAt ? { updatedAt } : {}),
     links: [],
     turns: B.turns,
     ...(usageSum ? { usage: usageSum } : {}),
+    capabilities: GEMINI_CAPABILITIES,
     state: { status: 'empty' },
     stats: {
       turns: B.turns.length,

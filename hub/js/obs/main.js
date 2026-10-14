@@ -59,25 +59,41 @@
     cvA.append(els.crumbs, els.topctl, els.strip, els.ctrl, els.tl);
     if (HUB.obsTimeline) safe('timeline.mount', function () { HUB.obsTimeline.mount(els.tl); });
 
-    // left sidebar: one page per tab; the page is drawn when its tab is shown
+    // left sidebar: 3 pure input-source tabs (预设 | 目录 | 会话) — "每类信息只有一个家"
     var tabs = HUB.shell.tabs;
     els.panPresets = tabs.add({ id: 'presets', label: '预设', title: '内置的样例团队：事实是模拟的' });
     els.panCases = tabs.add({ id: 'cases', label: '目录', cls: 'ob-pan', title: 'hub/cases 下找到的案例，按文件夹分层，可折叠' });
-    els.panTree = tabs.add({ id: 'tree', label: '结构', cls: 'ob-pan' });
-    els.panHealth = tabs.add({ id: 'health', label: '体检', cls: 'ob-pan' });
     els.panSessions = tabs.add({ id: 'sessions', label: '会话', cls: 'ob-pan', title: '本机真实的智能体会话' });
     tabs.onChange(renderSide);
 
-    // right sidebar: the details pane
-    var sr = document.getElementById('sR');
+    var sL = document.getElementById('sL');
+    var slBtn = document.getElementById('slToggle');
+    if (slBtn && sL) {
+      slBtn.addEventListener('click', function () {
+        var col = sL.classList.toggle('collapsed');
+        slBtn.textContent = col ? '▸ 左栏' : '◂';
+        setTimeout(function () { fit(false); }, 240);
+      });
+    }
+    var ctrlBtn = document.getElementById('ctrlToggle');
+    if (ctrlBtn) {
+      ctrlBtn.addEventListener('click', function () {
+        var cur = st();
+        var nextDrawer = cur.drawer === 'ctrl' && !cur.selection ? null : 'ctrl';
+        HUB.store.set({ drawer: nextDrawer, selection: nextDrawer ? null : cur.selection }, { history: false });
+      });
+    }
+
+    // right sidebar: the details & reverse-control drawer pane (default collapsed when nothing is selected)
+    els.sR = document.getElementById('sR');
     els.sr = document.getElementById('obSr');
     // the subjects the stage cannot draw have a layer of their own over the canvas (a run's trace tree, the trajectory of a case)
-    HUB.render.all().forEach(function (r) { if (r.layer) safe('layer.mount', function () { r.layer.mount({ canvas: cvA, side: sr, pane: els.sr }); }); });
+    HUB.render.all().forEach(function (r) { if (r.layer) safe('layer.mount', function () { r.layer.mount({ canvas: cvA, side: els.sR, pane: els.sr }); }); });
 
-    // a click on the empty canvas clears the selection (a drag that panned does not)
+    // a click on the empty canvas clears the selection and closes temporary drawer (a drag that panned does not)
     cvA.addEventListener('click', function (e) {
       if (e.target.closest('.ob-float, .ob-tl, .zm-ctrl, .ob-card, .ob-fh, .ob-hit, .ob-tog, .ob-trace, .ob-collab')) return;
-      if (!HUB.camera.wasDrag() && st().selection) HUB.store.set({ selection: null }, { history: false });
+      if (!HUB.camera.wasDrag() && (st().selection || st().drawer)) HUB.store.set({ selection: null, drawer: null }, { history: false });
     });
     document.addEventListener('keydown', onKey, true);
     document.addEventListener('click', function (e) { if (els.pop && !els.pop.contains(e.target) && !e.target.closest('[data-pop]')) closePop(); });
@@ -95,6 +111,7 @@
     renderCrumbs(s);
     renderTopCtl(s);
     renderCtrl(s);
+    syncPanelOpen(s, m);
     renderScene(s, prev);
     renderSide();
     renderPanel(s);
@@ -252,6 +269,7 @@
   /* ---------- canvas: granularity, comparison, presentation (top right) ---------- */
   function renderTopCtl(s) {
     els.topctl.innerHTML = '';
+    var isLocalSession = s.subject === 'exec' && s.focus && s.focus.type === 'session';
     var ds = depthOf(s), d = DEPTHS[ds] || [];
     if (d.length && s.present !== 'panel') {
       els.topctl.appendChild(h('span', { class: 'ob-lbl' }, '粒度'));
@@ -262,8 +280,13 @@
       els.topctl.appendChild(seg);
       var n = (s.expanded[ds] || []).length + (s.collapsed[ds] || []).length;
       if (n) els.topctl.appendChild(h('span', { class: 'ob-reset', title: '有分组被单独展开或折叠；点这里回到统一粒度', onClick: function () { HUB.store.setDepth(ds, s.depth[ds]); } }, '局部 ' + n + ' 处 · 还原'));
-      els.topctl.appendChild(h('span', { class: 'ob-sep' }));
     }
+    if (isLocalSession) {
+      els.topctl.appendChild(h('span', { class: 'ob-sep' }));
+      els.topctl.appendChild(h('button', { type: 'button', class: 'ob-ibtn', title: '退出本机会话调用树，返回架构画布（Esc）', onClick: leaveChain }, '← 返回画布'));
+      return;
+    }
+    if (d.length && s.present !== 'panel') els.topctl.appendChild(h('span', { class: 'ob-sep' }));
     els.topctl.appendChild(h('span', { class: 'ob-lbl' }, '对照'));
     var cmp = h('div', { class: 'ob-seg', title: '只看编排里的定义、两者对照、只看实际发生的事实' });
     [['def', '定义'], ['both', '对照'], ['fact', '事实']].forEach(function (x) {
@@ -281,7 +304,7 @@
   /* ---------- canvas: lines and overlays (bottom) ---------- */
   function renderCtrl(s) {
     els.ctrl.innerHTML = '';
-    if (s.present === 'panel') { els.ctrl.style.display = 'none'; return; }
+    if (s.present === 'panel' || s.subject === 'exec') { els.ctrl.style.display = 'none'; return; }
     els.ctrl.style.display = '';
     if (s.subject === 'org') {
       els.ctrl.appendChild(h('span', { class: 'ob-lbl' }, '线'));
@@ -323,28 +346,73 @@
   /* ---------- left and right sidebars, status bar ---------- */
   // only the page that is showing is drawn
   function renderSide() {
-    var s = st(), page = HUB.shell.tabs.current();
+    var page = HUB.shell.tabs.current();
     if (page === 'presets') safe('side.presets', function () { HUB.obsPresets.render(els.panPresets); });
     else if (page === 'cases') safe('side.cases', function () { HUB.obsSide.cases(els.panCases); });
-    else if (page === 'tree') safe('side.tree', function () { HUB.obsSide.tree(els.panTree, model(), s); });
-    else if (page === 'health') safe('side.health', function () { HUB.obsSide.health(els.panHealth, model(), s); });
     else if (page === 'sessions') safe('side.sessions', function () { HUB.obsSessions.render(els.panSessions); });
   }
-  function renderPanel(s) {
-    if (HUB.obsPanel) safe('panel', function () { HUB.obsPanel.render(els.sr, model(), s); });
+  function syncPanelOpen(s, m) {
+    var hasTrace = s.subject === 'exec' && HUB.obsTrace && !!HUB.obsTrace.target(s, m);
+    var isOpen = !!(s.selection || s.drawer || hasTrace);
+    if (els.sR) els.sR.classList.toggle('open', isOpen);
+    var ctrlBtn = document.getElementById('ctrlToggle');
+    if (ctrlBtn) ctrlBtn.classList.toggle('on', s.drawer === 'ctrl' && !s.selection);
+    return isOpen;
   }
-  // the status bar: one item per number
+  function renderPanel(s) {
+    var m = model();
+    var isOpen = syncPanelOpen(s, m);
+    if (isOpen && HUB.obsPanel) safe('panel', function () { HUB.obsPanel.render(els.sr, m, s); });
+  }
+  // the status bar: single-line global pulse on left + interactive capsule triggers on right
   function renderStatus(s) {
     var m = model(), a = HUB.model.an(s, m), t = a.totals;
     var bar = els.status;
     bar.innerHTML = '';
-    [['个体', t.individuals], ['任务线', t.relations], ['案例', t.cases], ['运行', t.runs], ['调用', U.fmtNum(t.calls)], ['token', U.fmtTokens(t.tokens)],
-      ['首次通过', U.pct(t.firstPassRate)], ['返工率', U.pct(t.reworkRate)], ['编排版本', m.def.version], ['时间', s.time == null ? '全部' : '截止 ' + cutText(s)]].forEach(function (x) {
-      bar.appendChild(h('div', { class: 'st' }, h('span', null, x[0] + ':'), h('span', { class: 'st-v' }, String(x[1]))));
+    var pulse = h('div', { class: 'st-pulse' });
+    [['个体', t.individuals], ['任务线', t.relations], ['案例', t.cases], ['运行', t.runs], ['调用', U.fmtNum(t.calls)], ['Token', U.fmtTokens(t.tokens)],
+      ['首次通过', U.pct(t.firstPassRate)], ['返工率', U.pct(t.reworkRate)], ['版本', m.def.version], ['时间', s.time == null ? '全部' : '截止 ' + cutText(s)]].forEach(function (x) {
+      pulse.appendChild(h('div', { class: 'st' }, h('span', null, x[0] + ':'), h('span', { class: 'st-v' }, String(x[1]))));
     });
     var failed = m.factSource && m.factSource.kind === 'error';
-    bar.appendChild(h('div', { class: 'st', style: { border: 'none' } }, h('span', { class: failed ? 'ob-pill warn' : 'ob-tag-sim' },
-      failed ? HUB.model.factLabel(m) : m.synthetic ? '事实为模拟数据' : '事实为' + HUB.model.factLabel(m))));
+    pulse.appendChild(h('div', { class: 'st', style: { border: 'none' } }, h('span', { class: failed ? 'ob-pill warn' : 'ob-tag-sim' },
+      failed ? HUB.model.factLabel(m) : m.synthetic ? '模拟数据' : HUB.model.factLabel(m))));
+    bar.appendChild(pulse);
+
+    var caps = h('div', { class: 'st-caps' });
+    var nhCount = a.needsHuman.length;
+    var hcCount = a.health.length;
+    var actCount = (m.facts.actions || []).length;
+    var toggleDrawer = function (kind) {
+      var cur = st();
+      var next = (cur.drawer === kind && !cur.selection) ? null : kind;
+      HUB.store.set({ drawer: next, selection: next ? null : cur.selection }, { history: false });
+    };
+    caps.appendChild(h('button', {
+      type: 'button',
+      class: 'st-cap' + (nhCount ? ' danger' : '') + (s.drawer === 'needs' && !s.selection ? ' on' : ''),
+      title: '点击展开/收起“需要人处理的事”抽屉',
+      onClick: function () { toggleDrawer('needs'); }
+    }, '● 需人处理', h('b', null, String(nhCount))));
+    caps.appendChild(h('button', {
+      type: 'button',
+      class: 'st-cap' + (hcCount ? ' warn' : '') + (s.drawer === 'health' && !s.selection ? ' on' : ''),
+      title: '点击展开/收起“架构体检”抽屉',
+      onClick: function () { toggleDrawer('health'); }
+    }, '▲ 架构体检', h('b', null, String(hcCount))));
+    caps.appendChild(h('button', {
+      type: 'button',
+      class: 'st-cap ctrl' + (s.drawer === 'ctrl' && !s.selection ? ' on' : ''),
+      title: '点击展开/收起“反向调控与编排写回”抽屉',
+      onClick: function () { toggleDrawer('ctrl'); }
+    }, '★ 人工调控', h('b', null, String(actCount))));
+    caps.appendChild(h('button', {
+      type: 'button',
+      class: 'st-cap info' + (s.drawer === 'search' && !s.selection ? ' on' : ''),
+      title: '页内全局检索：按关键词搜本案例记录、决策与调用步骤',
+      onClick: function () { toggleDrawer('search'); }
+    }, '⌕ 检索步骤'));
+    bar.appendChild(caps);
   }
 
   // what the open decision chain is, in words for the top bar and the breadcrumbs
@@ -355,8 +423,8 @@
       var who = HUB.model.name('individual', t.run.individualId);
       return { label: '决策链 · ' + who, crumb: who + ' 的一次运行' };
     }
-    var title = t.session ? t.session.title : t.id;
-    return { label: '本机会话 · ' + (title.length > 24 ? title.slice(0, 24) + '…' : title), crumb: '本机会话' };
+    var title = (HUB.obsSessions && HUB.obsSessions.titleOf && HUB.obsSessions.titleOf(t.id)) || (t.session ? t.session.title : t.id);
+    return { label: '本机会话 · ' + (title.length > 24 ? title.slice(0, 24) + '…' : title), crumb: '本机会话 · ' + (title.length > 18 ? title.slice(0, 18) + '…' : title) };
   }
 
   // back from a decision chain to the view it was opened from
@@ -484,7 +552,8 @@
       if (nx !== cur) HUB.store.setDepth(ds, nx);
     }
     else if (k === 'f' || k === 'F') fit();
-    else if (k === 'Escape') { if (els.pop) closePop(); else if (s.subject === 'exec') leaveChain(); else if (s.selection) HUB.store.set({ selection: null }, { history: false }); else if (s.focus && s.subject !== 'collab') HUB.store.set({ focus: null }); }
+    else if (k === 'b' || k === 'B') { var b0 = document.getElementById('slToggle'); if (b0) b0.click(); }
+    else if (k === 'Escape') { if (els.pop) closePop(); else if (s.subject === 'exec') leaveChain(); else if (s.selection || s.drawer) HUB.store.set({ selection: null, drawer: null }, { history: false }); else if (s.focus && s.subject !== 'collab') HUB.store.set({ focus: null }); }
     else if (k === '?' || k === '/') HUB.obsGuide.open();
     else if (k === '=' || k === '+') HUB.camera.zoomBy(1.2);
     else if (k === '-') HUB.camera.zoomBy(1 / 1.2);

@@ -55,54 +55,140 @@
     if (ind.kind === 'human' || ind.kind === 'meta') return HUB.obsCards.ICON[ind.kind];
     return HUB.obsCards.agentIcon(ind.agentId, 30);
   }
+  var pendingPreview = null;
+  var stepSearchQuery = '';
+
+  function renderDiffBox(pv) {
+    if (!pv) return '';
+    var lines = String(pv.diff || '').split('\n').map(function (ln) {
+      var cls = ln.indexOf('+') === 0 && ln.indexOf('+++') !== 0 ? 'ob-diff-add'
+        : ln.indexOf('-') === 0 && ln.indexOf('---') !== 0 ? 'ob-diff-del'
+        : ln.indexOf('@@') === 0 || ln.indexOf('---') === 0 || ln.indexOf('+++') === 0 ? 'ob-diff-meta' : '';
+      return cls ? '<span class="' + cls + '">' + esc(ln) + '</span>' : esc(ln);
+    }).join('\n');
+    return '<div class="ob-diff">' +
+      '<div class="ob-diff-hdr"><span>⚡ 待确认写回预览 · ' + esc(pv.file || 'agents/inbox.md') + '</span><span>' + esc(pv.modeLabel || '先预览后落盘') + '</span></div>' +
+      '<pre class="ob-diff-pre">' + lines + '</pre>' +
+      '<div class="ob-acts" style="padding:7px 10px;border-top:1px solid rgba(245,158,11,.22);background:rgba(0,0,0,.14)">' +
+        '<button class="btn btn-sim" type="button" data-act="confirm-ctrl">✓ 确认写入并注入轨迹</button>' +
+        '<button class="btn" type="button" data-act="export-patch">⬇ 导出补丁</button>' +
+        '<button class="btn btn-d" type="button" data-act="cancel-ctrl">取消</button>' +
+      '</div></div>';
+  }
+
   function actions(target, kinds) {
-    var BTN = { talk: '对话', interject: '插话（新指令）', urge: '催办', reassign: '改派', edit_rule: '交给中枢改规则', approve: '放行', pause_channel: '暂停这条渠道', resume_channel: '恢复', assign_maint: '指派维护' };
+    var BTN = { talk: '对话', interject: '插话（新指令）', urge: '催办', reassign: '改派任务线', edit_rule: '修改编排规则', approve: '拍板放行', pause_channel: '暂停渠道', resume_channel: '恢复渠道', assign_maint: '指派维护' };
     var needsText = kinds.some(function (k) { return k === 'talk' || k === 'interject' || k === 'edit_rule' || k === 'reassign'; });
-    return (needsText ? '<div class="ob-say"><input type="text" data-say placeholder="写下要说的话或新的要求…" aria-label="要说的话"></div>' : '') +
+    var pvHtml = (pendingPreview && pendingPreview.target && pendingPreview.target.type === target.type && pendingPreview.target.id === target.id)
+      ? renderDiffBox(pendingPreview) : '';
+    return (needsText ? '<div class="ob-say"><input type="text" data-say placeholder="输入新指令、改派目标或新规则说明…" aria-label="调控指令或规则"></div>' : '') +
       '<div class="ob-acts" style="margin-top:6px">' + kinds.map(function (k) {
         return '<button class="btn' + (k === 'approve' ? ' btn-sim' : k === 'talk' || k === 'interject' ? ' btn-p' : '') + '" type="button" data-act="do" data-kind="' + k + '" data-type="' + target.type + '" data-id="' + esc(target.id) + '">' + BTN[k] + '</button>';
       }).join('') + '</div>' +
-      '<div class="ob-note" style="margin-top:6px">操作会记成一条事实，送达后图上和时间轴上都看得到。' +
-      (HUB.model.current && HUB.model.current.factSource && HUB.model.current.factSource.kind === 'trace'
-        ? '这是一次已经结束的真实运行的记录：操作只在这里记下，不会送回原系统。'
-        : '现在连的是模拟数据，回复也是模拟的。') + '</div>';
+      pvHtml +
+      '<div class="ob-note" style="margin-top:6px">遵循“先预览 Diff / 载荷，确认后再落盘”安全边界：确认后同步更新画布拓扑、协作轨迹图（★ 人工调控）及本地编排/信箱文件。</div>';
   }
 
-  /* ================= per type ================= */
-  function overview(m, s, a) {
-    var t = a.totals;
-    var h = hero({ name: m.name, role: [m.presetName, m.flowText].filter(Boolean).join(' · '), icon: HUB.obsAvatar.presetSvg(m.id, 30),
-      chips: chip(s.time == null ? '全部时间' : '截止 ' + U.fmtClock(s.time)) +
-        (m.factSource && m.factSource.kind === 'error' ? pill(HUB.model.factLabel(m), 'warn') : chip(HUB.model.factLabel(m))) });
-    var intro = '<div class="ds"><div class="ds-who">' + esc(m.summary || '') + '</div></div>';
+  /* ================= focused right-sidebar drawers ("每类信息只有一个家") ================= */
+  function drawerNeeds(m, s, a) {
     var nh = a.needsHuman.map(function (x) {
       var act = x.kind === 'approval' ? '<button class="btn btn-sim" type="button" data-act="do" data-kind="approve" data-type="gate" data-id="' + esc(x.target.id) + '" style="height:24px">放行</button>' : '';
       return '<div class="ob-row" ' + selAttrs(x.target.type, x.target.id) + '>' + pill(KIND_ZH[x.kind] || x.kind, x.kind === 'approval' ? 'warn' : 'info') +
         '<span class="ob-nm ob-wrap-text">' + esc(U.quietEval(x.text)) + '</span>' + act + '</div>';
     }).join('');
-    var cases = m.facts.cases.filter(function (c) { return HUB.model.visible(c.start, s); }).map(function (c) {
-      var cls = c.status === 'done' ? 'good' : c.status === 'blocked' ? 'warn' : 'info';
-      var r = evalsOn(s) ? RESULT_ZH[c.result] : null;
-      return rowItem('data-act="focus" data-id="' + c.id + '"', '<b>' + c.id + '</b> ' + esc(evalsOn(s) ? c.name : shortName(c.name)), U.fmtClock(c.start), r ? pill(r[0], r[1]) : pill(L.caseStatus[c.status] || c.status, cls));
-    }).join('');
-    var health = a.health.slice(0, 6).map(function (x) {
+    var pvHtml = (pendingPreview && pendingPreview.target && pendingPreview.target.type === 'gate') ? renderDiffBox(pendingPreview) : '';
+    return hero({ name: '需要人处理的事项', role: '拍板放行 · 异常上报 · 待送达人工指令（共 ' + a.needsHuman.length + ' 项）',
+      icon: HUB.obsCards.ICON.human, color: 'var(--accent3)', chips: chip(s.time == null ? '全部时间' : '截止 ' + U.fmtClock(s.time)) }) +
+      sec('待处理队列（点击定位画布对象）', nh ? '<div class="ob-list">' + nh + '</div>' : '<div class="ob-note">当前没有等待人工拍板或处理的阻塞事项。</div>') +
+      pvHtml;
+  }
+
+  function drawerHealth(m, s, a) {
+    var health = a.health.map(function (x) {
       return '<div class="ob-row" data-act="health" data-hid="' + x.id + '"><span class="ob-sev ' + x.severity + '">' + ({ high: '高', mid: '中', low: '低' })[x.severity] + '</span><span class="ob-nm ob-wrap-text">' + esc(U.quietEval(x.text)) + '</span></div>';
     }).join('');
-    var versions = (m.def.versions || []).slice().reverse().slice(0, 4).map(function (v) {
-      return '<div class="ob-row" style="cursor:default">' + pill(v.id, 'info') + '<span class="ob-nm ob-wrap-text">' + esc(v.note || '') + '</span><span class="ob-meta">' + U.fmtClock(v.at) + '</span></div>';
+    return hero({ name: '架构体检与偏差诊断', role: '编排声明 vs 真实运行事实对照（共 ' + a.health.length + ' 项）',
+      icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>', color: 'var(--accent4)' }) +
+      sec('发现的架构与投递偏差（点击在画布定位）', health ? '<div class="ob-list">' + health + '</div>' : '<div class="ob-note">未发现编排与实际运行偏差。</div>') +
+      (m.rootSession ? sec('根会话（页内调用树）', '<div class="ob-row" style="cursor:default"><span class="ob-nm" title="' + esc(m.rootSession) + '">' + esc((HUB.obsSessions && HUB.obsSessions.titleOf(m.rootSession)) || m.rootSession) + '</span>' +
+        '<button class="btn btn-a" type="button" data-act="session" data-id="' + esc(m.rootSession) + '" style="height:24px">在画布展开 ⑤⑥</button></div>') : '');
+  }
+
+  function drawerSearch(m, s) {
+    var q = stepSearchQuery.trim().toLowerCase();
+    var hits = [];
+    (m.facts.turns || []).forEach(function (t) {
+      var txt = (t.text || '') + ' ' + (t.individualId || '');
+      if (!q || txt.toLowerCase().indexOf(q) >= 0) {
+        hits.push({ kind: 'turn', id: t.id, badge: 'T · #' + t.seq, title: shortName(HUB.model.name('individual', t.individualId)) + '：' + (t.text || '').slice(0, 68), meta: t.caseId });
+      }
+    });
+    (m.facts.decisions || []).forEach(function (d) {
+      var txt = (d.title || '') + ' ' + (d.reason || '') + ' ' + (d.choice || '');
+      if (!q || txt.toLowerCase().indexOf(q) >= 0) {
+        hits.push({ kind: 'decision', id: d.id, runId: d.runId, badge: '⑤ 决策', title: d.title || d.choice || d.id, meta: U.fmtClock(d.start) });
+      }
+    });
+    (m.facts.calls || []).forEach(function (c) {
+      var txt = (c.name || '') + ' ' + (c.input || '') + ' ' + (c.output || '');
+      if (!q || txt.toLowerCase().indexOf(q) >= 0) {
+        hits.push({ kind: 'call', id: c.id, badge: '⑥ 调用', title: (c.name || c.kind) + ' · ' + (c.input || '').slice(0, 48), meta: c.status });
+      }
+    });
+    var rows = hits.slice(0, 28).map(function (h0) {
+      var attr = h0.kind === 'turn' ? selAttrs('turn', h0.id) : h0.kind === 'decision' ? 'data-act="run" data-id="' + esc(h0.runId) + '"' : selAttrs('call', h0.id);
+      return rowItem(attr, esc(h0.title), h0.meta, pill(h0.badge, h0.kind === 'turn' ? 'info' : 'good'));
     }).join('');
-    return h + intro +
-      sec('需要人处理的事', nh ? '<div class="ob-list">' + nh + '</div>' : '<div class="ob-note">现在没有等你处理的事。</div>') +
-      sec('概况', stats([['个体', t.individuals], ['任务线', t.relations], ['案例', t.cases], ['运行', t.runs], ['调用', U.fmtNum(t.calls)], ['token', U.fmtTokens(t.tokens)],
-        ['首次通过', U.pct(t.firstPassRate)], ['返工率', U.pct(t.reworkRate)], ['失败运行', t.failedRuns]])) +
-      (m.rootSession ? sec('根会话（案例文档的记录挂在它上面）', '<div class="ob-row" style="cursor:default"><span class="ob-nm" title="' + esc(m.rootSession) + '">' + esc((HUB.obsSessions && HUB.obsSessions.titleOf(m.rootSession)) || m.rootSession) + '</span>' +
-        '<button class="btn btn-a" type="button" data-act="session" data-id="' + esc(m.rootSession) + '" style="height:24px">在画布里打开</button>' +
-        '<a class="ob-a" href="/trace/#s=' + encodeURIComponent(m.rootSession) + '" target="_blank" rel="noopener" style="margin-left:6px">Trace ↗</a></div>' +
-        ((m.annotationProblems || []).length ? '<div class="ob-note">' + m.annotationProblems.map(esc).join('<br>') + '</div>' : '')) : (m.annotationProblems || []).length ? sec('标注', '<div class="ob-note">' + m.annotationProblems.map(esc).join('<br>') + '</div>') : '') +
-      sec('案例实例（点一下聚焦它）', cases ? '<div class="ob-list">' + cases + '</div>' : '') +
-      sec('架构体检', health ? '<div class="ob-list">' + health + '</div>' : '<div class="ob-note">没有发现问题。</div>') +
-      sec('编排版本', versions ? '<div class="ob-list">' + versions + '</div>' : '') +
-      sec('怎么看', '<div class="ob-note">顶栏六个按钮是六种常用视图，键盘 1～6 也行。单击任何卡片或线看详情；双击部门展开、再双击标题折叠；双击个体进入它最近一次运行的决策链。右上角切换粒度和对照方式，下方开关各类线。</div>');
+    return hero({ name: '页内全局步骤与记录检索', role: '无需跳出页面 · 直接检索发言记录(T)、决策(⑤)与工具调用(⑥)',
+      icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>', color: 'var(--accent1)' }) +
+      '<div class="ds"><div class="ob-say"><input type="search" data-step-search value="' + esc(stepSearchQuery) + '" placeholder="输入关键词过滤发言、工具名、报错或决策理由…" aria-label="检索步骤"></div></div>' +
+      sec('匹配结果（' + hits.length + ' 条，显示前 28 条）', rows ? '<div class="ob-list">' + rows + '</div>' : '<div class="ob-note">没有匹配的记录或调用步骤。</div>');
+  }
+
+  function drawerCtrl(m, s, a) {
+    var spokeSet = new Set((m.facts.turns || []).map(function (t) { return t.speaker; }));
+    var inds = m.def.individuals.filter(function (x) { return x.kind !== 'human'; }).slice().sort(function (x, y) {
+      return (spokeSet.has(y.id) ? 1 : 0) - (spokeSet.has(x.id) ? 1 : 0);
+    });
+    var allInds = m.def.individuals;
+    var optsFrom = allInds.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(shortName(x.name)) + '</option>'; }).join('');
+    var optsTo = inds.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(shortName(x.name)) + '</option>'; }).join('');
+    var formRel = '<div class="ob-ctrl-form">' +
+      '<div class="ob-ctrl-row"><span>发出方</span><select data-ctrl-from>' + optsFrom + '</select></div>' +
+      '<div class="ob-ctrl-row"><span>接收方</span><select data-ctrl-to>' + (inds.length > 1 ? '<option value="' + esc(inds[1].id) + '">' + esc(shortName(inds[1].name)) + '</option>' : '') + optsTo + '</select></div>' +
+      '<div class="ob-ctrl-row"><span>线类型</span><select data-ctrl-reltype><option value="task">任务派发线 (task/dispatch)</option><option value="info">信息同步线 (info/sync)</option><option value="watch">监督审计线 (watch/audit)</option></select></div>' +
+      '<div class="ob-ctrl-row"><span>交接规则</span><input type="text" data-ctrl-label placeholder="例如：核验通过后移交终审报告"></div>' +
+      '<div class="ob-acts"><button class="btn btn-p" type="button" data-act="preview-rel">预览 relations.md Diff</button></div>' +
+    '</div>';
+    var formRuntime = '<div class="ob-ctrl-form">' +
+      '<div class="ob-ctrl-row"><span>目标个体</span><select data-ctrl-target>' + optsTo + '</select></div>' +
+      '<div class="ob-ctrl-row"><span>调控动作</span><select data-ctrl-kind><option value="interject">★ 注入新指令 (interject → inbox.md)</option><option value="urge">⚡ 催办挂起任务 (urge → inbox.md)</option><option value="edit_rule">✎ 修订流程门禁规则 (edit_rule → process.md)</option></select></div>' +
+      '<div class="ob-ctrl-row"><span>指令载荷</span><input type="text" data-ctrl-text placeholder="输入写入 agents/<id>/inbox.md 的指令…"></div>' +
+      '<div class="ob-acts"><button class="btn btn-sim" type="button" data-act="preview-runtime">预览信箱/规则写入 Diff</button></div>' +
+    '</div>';
+    var actsLog = (m.facts.actions || []).slice().reverse().map(function (ac) {
+      var stCls = ac.status === 'delivered' ? 'good' : ac.status === 'pending' ? 'warn' : 'info';
+      var stLbl = ac.status === 'delivered' ? '已送达/落盘' : ac.status === 'pending' ? '待送达' : '已写回';
+      return '<div class="ob-row" ' + (ac.target && ac.target.id ? selAttrs(ac.target.type, ac.target.id) : 'style="cursor:default"') + '>' +
+        pill('★ ' + ac.kind, 'warn') +
+        '<span class="ob-nm ob-wrap-text">' + esc(ac.text || ac.kind) + '</span>' +
+        pill(stLbl, stCls) + '</div>';
+    }).join('');
+    return hero({ name: '反向调控与编排写回台', role: '能看也能动 · 设计态 Markdown 编排写回 + 运行态信箱指令注入',
+      icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>', color: 'var(--gold)',
+      chips: chip('版本 ' + (m.def.version || 'v1')) + chip('已调控 ' + (m.facts.actions || []).length + ' 次') }) +
+      (pendingPreview ? renderDiffBox(pendingPreview) : '') +
+      sec('1. 设计态：增补/调整画布编排连接（写回 relations.md）', formRel) +
+      sec('2. 运行态：向个体信箱注入新指令（写回 agents/<id>/inbox.md）', formRuntime) +
+      sec('3. 本次会话已执行的人工调控记录', actsLog ? '<div class="ob-list">' + actsLog + '</div>' : '<div class="ob-note">尚未执行人工调控。在上方预览 Diff 后点击“确认写入并注入轨迹”，画布与协作轨迹图将立即点亮金色 ★ 人工调控节点。</div>');
+  }
+
+  /* ================= per type ================= */
+  function overview(m, s, a) {
+    if (s.drawer === 'needs') return drawerNeeds(m, s, a);
+    if (s.drawer === 'health') return drawerHealth(m, s, a);
+    if (s.drawer === 'search') return drawerSearch(m, s, a);
+    return drawerCtrl(m, s, a);
   }
 
   function individual(m, s, a, id) {
@@ -118,14 +204,14 @@
       x.watches && x.watches.length ? ['盯着', x.watches.map(function (w) { return link('individual', w); }).join('、')] : null]);
     var dv = a.delivery[id];
     var deliv = '';
-    if (dv && !HUB.model.measured(m, 'delivery')) deliv = '<div class="ob-note">未采集</div>';
+    if (dv && !HUB.model.measured(m, 'delivery')) deliv = '<div class="ob-note">当前数据源未单独采集文档级送达回执（可在协作轨迹图查看外环四态推演）。</div>';
     else if (dv) {
       var miss = dv.missing.map(function (d) {
         return '<div class="ob-row" style="cursor:default">' + pill('没送到', 'bad') + '<span class="ob-nm">' + nm('doc', d) + '</span>' +
           '<button class="btn btn-a" type="button" data-act="do" data-kind="redeliver" data-type="individual" data-id="' + esc(id) + '" data-doc="' + esc(d) + '" style="height:24px">补送</button></div>';
       }).join('');
       var ever = dv.missedEver.filter(function (d) { return dv.missing.indexOf(d) < 0; }).map(function (d) { return pill(HUB.model.name('doc', d), 'warn'); }).join(' ');
-      deliv = kv([['该知道', dv.expected.length + ' 份'], ['已送到', dv.received.length + ' 份'], ['新指令', dv.instructions + ' 条' + (dv.pending ? '（' + dv.pending + ' 条待送达）' : '')]]) +
+      deliv = kv([['1.该知道', dv.expected.length + ' 份'], ['2.已送到', dv.received.length + ' 份'], ['人工指令', dv.instructions + ' 条' + (dv.pending ? '（' + dv.pending + ' 条待送达）' : '')]]) +
         (miss ? '<div class="ob-list" style="margin-top:6px">' + miss + '</div>' : '') +
         (ever ? '<div class="ob-note" style="margin-top:6px">曾经没拿到，后来补上：' + ever + '</div>' : '');
     }
@@ -154,26 +240,25 @@
         '<div class="ob-note">' + esc(c.note || '') + '</div>' +
         (s.compare === 'def' ? '' : '<div class="ob-native-s">用过 ' + (cs.calls || 0) + ' 次' +
           (!HUB.model.measured(m, 'channel') ? ' · 并发未采集' : cs.maxWidth ? ' · 最多同时 ' + cs.maxWidth + ' 个' : '') +
-          (c.limit ? ' · 上限 ' + c.limit + ' 个' + (!HUB.model.measured(m, 'channel') ? '（补写的声明）' : '') : '') + '</div>') + '</div>';
+          (c.limit ? ' · 上限 ' + c.limit + ' 个' : '') + '</div>') + '</div>';
     }).join('');
-    // the sessions the document says this individual ran as: its trace opens in the canvas, or in the Trace viewer
+    // the sessions the document says this individual ran as: its trace opens right in the center canvas (⑤⑥)
     var sess = x.sessions && x.sessions.length ? x.sessions : x.session ? [x.session] : [];
     if (sess.length && HUB.obsSessions) HUB.obsSessions.warm();
     var sessBlock = sess.length ? sec('会话（编排文档里标注的本机真实会话）', '<div class="ob-list">' + sess.map(function (sid) {
       var title = HUB.obsSessions && HUB.obsSessions.titleOf(sid);
       return '<div class="ob-row" style="cursor:default"><span class="ob-nm" title="' + esc(sid) + '">' + esc(title || sid) + '</span>' +
-        '<button class="btn btn-a" type="button" data-act="session" data-id="' + esc(sid) + '" style="height:24px">在画布里打开</button>' +
-        '<a class="ob-a" href="/trace/#s=' + encodeURIComponent(sid) + '" target="_blank" rel="noopener" style="margin-left:6px">Trace ↗</a></div>';
+        '<button class="btn btn-a" type="button" data-act="session" data-id="' + esc(sid) + '" style="height:24px">在画布展开 ⑤⑥</button></div>';
     }).join('') + '</div>') : '';
     var lastRun = s.compare !== 'def' ? HUB.model.latestRunOf(id, s, m) : null;
-    var openChain = lastRun ? '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + lastRun.id + '">打开最近一次运行的决策链</button>'
-      + '<div class="ob-note" style="margin-top:5px">在中间画布显示；双击个体也能打开，Esc 返回。</div></div>' : '';
+    var openChain = lastRun ? '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + lastRun.id + '">在画布展开最近一次运行的决策链 ⑤⑥</button>'
+      + '<div class="ob-note" style="margin-top:5px">直接内嵌在中央画布显示调用树，双击个体也能打开，Esc 返回。</div></div>' : '';
     return h + (natBlock ? '<div class="ds">' + natBlock + '</div>' : '') + openChain + '<div class="ds">' + info + '</div>' + sessBlock + rawFields(m, x.attributes, x.tags) +
       (s.compare !== 'def' && x.kind !== 'human' ? sec('运行', stats([['运行', st.runs || 0], ['任务', st.tasks || 0], ['token', U.fmtTokens(st.tokens)]])) : '') +
-      (s.compare !== 'def' ? sec('送达：它该知道的有没有真的到它手里', deliv) : '') +
+      (s.compare !== 'def' ? sec('四段送达状态（该知道 → 已送到 → 已读 → 已写）', deliv) : '') +
       sec('线', relRows ? '<div class="ob-list">' + relRows + '</div>' : '') +
       (s.compare !== 'def' ? sec('最近的运行（点一下看决策链）', runs ? '<div class="ob-list">' + runs + '</div>' : '<div class="ob-note">' + (st.status === 'never' ? esc(U.cmpWord('neverNote')) : '这个时间点之前还没有运行。') + '</div>') : '') +
-      sec('和它说话', (msgs ? '<div class="ob-list">' + msgs + '</div>' : '') + acts);
+      sec('反向调控与对话（agents/' + esc(id) + '/inbox.md）', (msgs ? '<div class="ob-list">' + msgs + '</div>' : '') + acts);
   }
 
   function group(m, s, a, id) {
@@ -430,27 +515,25 @@
       chips: chip(L.outcome[r.outcome] || r.outcome) + chip(U.fmtDur(r.end - r.start)) + (r.mark && evalsOn(s) ? pill('标注失误', 'warn') : '') }) +
       '<div class="ds">' + kv([['开始', U.fmtClock(r.start)], ['结束', U.fmtClock(r.end)], ['编排版本', esc(r.version || '-')], ['token', U.fmtTokens(r.tokens)],
         ['会话覆盖', '读全 ' + (cov.indexed || 0) + ' · 只看元信息 ' + (cov.metaOnly || 0) + ' · 截断 ' + (cov.truncated || 0)]]) + '</div>' +
-      // open in the canvas, the decisions are the tree itself and the details of a step show below this pane
-      (open ? '<div class="ob-note">中间是这次运行的决策链：粒度选“决策”看每个决定，选“调用”展开到每一步。选中一项，下面显示它的输入输出和属性。' +
-        (HUB.obsTrace.viewerLink(s, m) ? ' <a class="ob-a" href="' + HUB.obsTrace.viewerLink(s, m) + '" target="_blank" rel="noopener">在 Trace 查看器里打开这一步 ↗</a>' : '') + '</div>'
+      (open ? '<div class="ob-note">中央画布已直接内嵌展开本次运行的决策链与调用树（⑤⑥）：顶部粒度选“决策”看每个决定，选“调用”展开到每一步；点击树节点在下方查看输入输出细节。</div>'
         : sec('决策（' + decs.length + '）', '<div class="ob-list">' + decs.map(function (d) {
           return rowItem(selAttrs('decision', d.id), esc(d.title), '', pill(L.action[d.action] || d.action, DEC_ACTION_CLS[d.action]));
-        }).join('') + '</div>') + '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + id + '">打开决策链</button></div>');
+        }).join('') + '</div>') + '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + id + '">在画布展开决策与调用树 ⑤⑥</button></div>');
   }
 
   // a session from this machine, opened from the session list (HUB.obsTrace loads it)
   var STATE_ZH = { working: '在做', waiting: '等待中', failed: '出错', aborted: '被打断', stale: '疑似已退出', idle: '空闲', empty: '空' };
   function session(t) {
     var x = t.session;
-    var viewer = HUB.obsTrace.viewerLink(HUB.store.get(), HUB.model.current) || '/trace/#s=' + encodeURIComponent(t.id);
     if (!x) return '<div class="ob-note">' + esc(t.error || '读取会话…') + '</div>';
-    return hero({ name: x.title, role: x.agent.product + ' · ' + (x.agent.role === 'subagent' ? '子智能体 ' + (x.agent.path || x.agent.name) : '主会话'),
+    var cleanName = (HUB.obsSessions && HUB.obsSessions.titleOf && HUB.obsSessions.titleOf(t.id)) || x.title;
+    return hero({ name: cleanName, role: x.agent.product + ' · ' + (x.agent.role === 'subagent' ? '子智能体 ' + (x.agent.path || x.agent.name) : '主会话'),
       icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent1)', chips: chip(STATE_ZH[x.state.status] || x.state.status) + chip(x.stats.turns + ' 轮') }) +
       '<div class="ds">' + kv([['工作目录', esc(x.cwd || '-')], ['模型', esc(x.agent.model || '-')], ['开始', esc((x.startedAt || '').replace('T', ' ').slice(0, 16))],
         ['最近', esc((x.updatedAt || '').replace('T', ' ').slice(0, 16))], ['调用', x.stats.modelCalls + ' 次模型 · ' + x.stats.toolCalls + ' 次工具' + (x.stats.toolErrors ? ' · 出错 ' + x.stats.toolErrors : '')]]) + '</div>' +
       (t.layer ? '<div class="ob-note">粗粒度记录：案例文档为这个会话写了 ' + t.layer.total + ' 条决策，画上去 ' + t.layer.segments.length + ' 条；粒度选“决策”看决策链，选“调用”展开到会话的每一步。' +
         (t.layer.problems.length ? '</div><div class="ds"><div class="ds-l">没对上的记录</div>' + t.layer.problems.map(function (p) { return '<div class="ob-row" style="cursor:default">' + pill('对不上', 'warn') + '<span class="ob-nm ob-wrap-text">' + esc(p) + '</span></div>'; }).join('') : '') + '</div>' : '') +
-      '<div class="ob-note">这是本机的真实会话，' + (t.layer ? '左边是它自己的轮和步骤。' : '案例文档没有给它写粗粒度记录，所以树按“轮 → 步”显示。') + ' 选中一项，下面显示它的细节。<a class="ob-a" href="' + viewer + '" target="_blank" rel="noopener">在独立查看器打开 ↗</a></div>' +
+      '<div class="ob-note">这是本机的真实会话，已在中央画布内嵌展开调用树（⑤⑥）。选中树中的任意步骤，下方即时显示完整输入输出与属性。</div>' +
       (x.links.some(function (l) { return l.rel === 'child'; }) ? '<div class="ds"><button class="btn btn-p" type="button" data-act="tree" data-id="' + esc(t.id) + '">把它和它派出的子智能体画成协作图</button></div>' : '');
   }
 
@@ -484,33 +567,57 @@
 
   var BY_TYPE = { individual: individual, group: group, relation: relation, agg: agg, factonly: factonly, channel: channel, channels: channels, gate: gate, stage: stage, step: step, case: kase, run: run, decision: decision, call: call, turn: turn };
 
+  function buildSrHead(s, sel, dr) {
+    var curDr = s.drawer === 'needs' || s.drawer === 'health' || s.drawer === 'search' ? s.drawer : (dr ? null : 'ctrl');
+    var tabs = [['ctrl', '⚡ 编排与调控'], ['needs', '● 待办'], ['health', '▲ 体检'], ['search', '⌕ 检索']].map(function (t) {
+      var isOn = !sel && curDr === t[0];
+      return '<button type="button" class="ob-sr-tab' + (isOn ? ' on' : '') + '" data-act="drawer-tab" data-drawer="' + t[0] + '">' + t[1] + '</button>';
+    }).join('');
+    var left = sel
+      ? '<span class="ds-l" style="margin:0;color:var(--accent1)">' + esc(TYPE_ZH[sel.type] || sel.type) + '详情</span>' +
+        '<a class="ob-a" data-act="clear" style="margin-left:8px;font-size:10px">← 调控/抽屉</a>'
+      : '<div class="ob-sr-tabs">' + tabs + '</div>';
+    return '<div class="ob-sr-head">' + left + '<button type="button" class="ob-sr-close" data-act="close-sr" title="收起右侧栏（Esc）">× 收起</button></div>';
+  }
+
   /* ================= render + events ================= */
   function render(el, m, s) {
     if (!el || !m) return;
-    if (host !== el) { host = el; el.addEventListener('click', onClick); el.addEventListener('keydown', onKeydown); }
+    if (host !== el) { host = el; el.addEventListener('click', onClick); el.addEventListener('keydown', onKeydown); el.addEventListener('input', onInput); }
     var a = HUB.model.an(s, m);
-    // a step selected in the trace tree shows its details under this pane (HUB.obsTrace); the pane keeps the summary
     var sel = s.selection && s.selection.type !== 'span' ? s.selection : null;
-    var dr = !sel && HUB.obsTrace ? HUB.obsTrace.current(s, m) : null;
-    var key = m.id + '|' + m.rev + '|' + (sel ? sel.type + ':' + sel.id : '-') + '|' + s.time + '|' + s.compare + '|' + s.subject + '|' + (s.focus ? s.focus.id : '') + '|' + (dr && dr.kind === 'session' ? !!dr.session + (dr.error || '') : '') + '|' + (evalsOn(s) ? '' : 'noeval');
+    var dr = !sel && !s.drawer && HUB.obsTrace ? HUB.obsTrace.current(s, m) : null;
+    var pvSig = pendingPreview ? (pendingPreview.kind + ':' + pendingPreview.diff.length) : '';
+    var key = m.id + '|' + m.rev + '|' + (sel ? sel.type + ':' + sel.id : '-') + '|' + (s.drawer || '') + '|' + pvSig + '|' + stepSearchQuery + '|' + s.time + '|' + s.compare + '|' + s.subject + '|' + (s.focus ? s.focus.id : '') + '|' + (dr && dr.kind === 'session' ? !!dr.session + (dr.error || '') : '') + '|' + (evalsOn(s) ? '' : 'noeval');
     if (key === last) return;
-    var keepScroll = last && last.split('|').slice(0, 3).join('|') === key.split('|').slice(0, 3).join('|') ? el.scrollTop : 0;
+    var keepScroll = last && last.split('|').slice(0, 4).join('|') === key.split('|').slice(0, 4).join('|') ? el.scrollTop : 0;
+    var activeSearch = document.activeElement && document.activeElement.hasAttribute && document.activeElement.hasAttribute('data-step-search');
     last = key;
     var html = '';
-    // with nothing selected the pane describes what the canvas shows: the open run or session, the case otherwise
     var fr = dr && dr.kind === 'run' ? dr.run : null;
-    var fc = !sel && !dr && s.focus && s.focus.type === 'case' ? s.focus.id : null;
+    var fc = !sel && !dr && !s.drawer && s.focus && s.focus.type === 'case' ? s.focus.id : null;
     try { html = sel && BY_TYPE[sel.type] ? BY_TYPE[sel.type](m, s, a, sel.id) : dr && dr.kind === 'session' ? session(dr) : fr ? run(m, s, a, fr.id) : fc ? kase(m, s, a, fc) + overviewTail() : overview(m, s, a); }
     catch (e) { console.error('[obs.panel]', e); html = '<div class="sr-mt">这个对象的详情没画出来。</div>'; }
     if (sel && !html) html = overview(m, s, a);
-    var back = sel ? '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="ds-l" style="margin:0">' + esc(TYPE_ZH[sel.type] || sel.type) + '</span><a class="ob-a" data-act="clear">回到案例概况</a></div>' : '';
-    el.innerHTML = back + html;
+    el.innerHTML = buildSrHead(s, sel, dr) + html;
     el.scrollTop = keepScroll;
+    if (activeSearch) {
+      var inp = el.querySelector('[data-step-search]');
+      if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e2) {} }
+    }
+  }
+
+  function onInput(e) {
+    if (e.target && e.target.matches('[data-step-search]')) {
+      stepSearchQuery = e.target.value || '';
+      last = null;
+      render(host, HUB.model.current, HUB.store.get());
+    }
   }
 
   function onKeydown(e) {
     if (e.key === 'Enter' && e.target.matches('[data-say]')) {
-      var b = host.querySelector('[data-act="do"][data-kind="talk"], [data-act="do"][data-kind="edit_rule"]');
+      var b = host.querySelector('[data-act="do"][data-kind="interject"], [data-act="do"][data-kind="talk"], [data-act="do"][data-kind="edit_rule"]');
       if (b) b.click();
     }
   }
@@ -520,7 +627,9 @@
     var act = t.getAttribute('data-act');
     var s = HUB.store.get(), m = HUB.model.current;
     if (act === 'sel') HUB.store.set({ selection: { type: t.getAttribute('data-type'), id: t.getAttribute('data-id') } }, { history: false });
-    else if (act === 'clear') HUB.store.set({ selection: null }, { history: false });
+    else if (act === 'clear') HUB.store.set({ selection: null, drawer: s.drawer || 'ctrl' }, { history: false });
+    else if (act === 'close-sr') { pendingPreview = null; HUB.store.set({ selection: null, drawer: null }, { history: false }); }
+    else if (act === 'drawer-tab') { pendingPreview = null; HUB.store.set({ selection: null, drawer: t.getAttribute('data-drawer') }, { history: false }); }
     else if (act === 'unfocus') HUB.store.set({ focus: null, selection: null });
     else if (act === 'focus') HUB.store.set({ focus: { type: 'case', id: t.getAttribute('data-id') }, instanceId: t.getAttribute('data-id'), subject: s.subject === 'exec' ? 'org' : s.subject, present: 'graph',
       depth: { org: Math.max(2, s.depth.org) }, selection: { type: 'case', id: t.getAttribute('data-id') } });
@@ -538,12 +647,53 @@
     else if (act === 'health') {
       var hc = HUB.model.an(s, m).health.find(function (x) { return x.id === t.getAttribute('data-hid'); });
       if (hc) HUB.obsPanel.followHealth(hc);
+    } else if (act === 'preview-rel') {
+      var fromEl = host.querySelector('[data-ctrl-from]'), toEl = host.querySelector('[data-ctrl-to]');
+      var rtypeEl = host.querySelector('[data-ctrl-reltype]'), lblEl = host.querySelector('[data-ctrl-label]');
+      var fromId = fromEl ? fromEl.value : '', toId = toEl ? toEl.value : '';
+      var rtype = rtypeEl ? rtypeEl.value : 'task', lbl = lblEl && lblEl.value.trim() ? lblEl.value.trim() : '协同交接与结果核验';
+      pendingPreview = HUB.model.previewControl('add_relation', { target: { type: 'individual', id: fromId }, from: fromId, to: toId, relType: rtype, text: lbl });
+      last = null; render(host, m, s);
+    } else if (act === 'preview-runtime') {
+      var tgEl = host.querySelector('[data-ctrl-target]'), kEl = host.querySelector('[data-ctrl-kind]'), txEl = host.querySelector('[data-ctrl-text]');
+      var tgId = tgEl ? tgEl.value : '', kVal = kEl ? kEl.value : 'interject';
+      var txVal = txEl && txEl.value.trim() ? txEl.value.trim() : (kVal === 'urge' ? '请立即汇报当前步骤阻塞点并输出阶段结论' : '请优先复核共享黑板中的待审草稿并补充验证依据');
+      pendingPreview = HUB.model.previewControl(kVal, { target: { type: 'individual', id: tgId }, text: txVal });
+      last = null; render(host, m, s);
+    } else if (act === 'confirm-ctrl') {
+      if (!pendingPreview) return;
+      var pv = pendingPreview;
+      pendingPreview = null;
+      var res3 = HUB.model.perform(pv.kind, pv.payload);
+      last = null; render(host, m, s);
+      if (res3) HUB.shell.toast('✓ 已写入编排/信箱并注入 ★ 人工调控轨迹');
+    } else if (act === 'cancel-ctrl') {
+      pendingPreview = null;
+      last = null; render(host, m, s);
+    } else if (act === 'export-patch') {
+      if (!pendingPreview) return;
+      var blob = new Blob([pendingPreview.diff || ''], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a0 = document.createElement('a');
+      a0.href = url; a0.download = (m.id || 'case') + '-control.patch';
+      a0.click();
+      URL.revokeObjectURL(url);
+      HUB.shell.toast('已导出 Markdown 补丁文件');
     } else if (act === 'do') {
       var input = host.querySelector('[data-say]');
       var text = input ? input.value.trim() : '';
       var kind = t.getAttribute('data-kind');
-      if ((kind === 'talk' || kind === 'interject') && !text) { if (input) { input.focus(); input.placeholder = '先写下要说的话'; } return; }
-      var res = HUB.model.perform(kind, { target: { type: t.getAttribute('data-type'), id: t.getAttribute('data-id') }, text: text, docId: t.getAttribute('data-doc') || undefined });
+      var target = { type: t.getAttribute('data-type'), id: t.getAttribute('data-id') };
+      var docId = t.getAttribute('data-doc') || undefined;
+      if ((kind === 'talk' || kind === 'interject') && !text) {
+        text = kind === 'interject' ? '请复核上一步输出并在共享黑板登记核验结论' : '请汇报当前进展与下一步计划';
+      }
+      if (HUB.model.previewControl && (kind === 'interject' || kind === 'reassign' || kind === 'edit_rule' || kind === 'redeliver' || kind === 'approve' || kind === 'urge')) {
+        pendingPreview = HUB.model.previewControl(kind, { target: target, text: text, docId: docId });
+        last = null; render(host, m, s);
+        return;
+      }
+      var res = HUB.model.perform(kind, { target: target, text: text, docId: docId });
       if (res) HUB.shell.toast(({ delivered: '已送达', pending: '已记下，等它下一次运行时送达', recorded: '已记录' })[res.status] || '已记录');
     }
   }

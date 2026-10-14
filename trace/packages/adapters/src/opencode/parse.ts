@@ -10,14 +10,21 @@
  * read() opens them; tests pass an in-memory map. A dropped marker file alone
  * degrades to a metadata-only session (createParser accumulates the JSON text).
  */
-import { sessionId, type Iso, type Session, type ToolFamily, type Usage } from '@hub-trace/contract';
+import { sessionId, type AdapterCapabilities, type Iso, type Session, type ToolFamily, type Usage } from '@hub-trace/contract';
 import { detectState, STALE_MS } from '../state.ts';
 import { TurnBuilder, titleFallback } from '../turns.ts';
 import { clean, oneLine } from '../text.ts';
 import type { Bundle, FinishOptions, LineParser, SourceFile } from '../types.ts';
 
 export const OPENCODE_KIND = 'opencode';
-export const OPENCODE_ADAPTER_VERSION = '0.1.0';
+export const OPENCODE_ADAPTER_VERSION = '0.1.1';
+
+export const OPENCODE_CAPABILITIES: AdapterCapabilities = {
+  observe_only: true,
+  control_lifecycle: { start: true, resume: true, fork: true, stop: true },
+  steer_in_turn: { in_turn: true, next_turn: true, inbox_file: true },
+  coordinate_team: { spawn_subagent: true, peer_message: false, task_board: false },
+};
 
 type J = Record<string, any>;
 
@@ -221,6 +228,7 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
     links: [],
     turns: B.turns,
     ...(usageSum ? { usage: usageSum } : {}),
+    capabilities: OPENCODE_CAPABILITIES,
     state: { status: 'empty' },
     stats: {
       turns: B.turns.length,

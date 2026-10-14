@@ -30,8 +30,72 @@
   }
   function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9.\-]+/g, '_'); }
 
+  function normMdPath(raw) {
+    if (!raw || typeof raw !== 'string') return null;
+    var s = raw.trim().replace(/^["'`({\[]+|["'`.,;:\])}]+$/g, '').replace(/\\/g, '/');
+    if (!/\.md$/i.test(s) || s.indexOf('://') >= 0) return null;
+    return s;
+  }
+
+  function extractMdOps(st) {
+    if (!st || st.kind !== 'tool') return [];
+    var out = [], seen = {};
+    var add = function (rawPath, op) {
+      var p = normMdPath(rawPath);
+      if (!p) return;
+      var base = p.split('/').filter(Boolean).pop() || p;
+      if (!/^[A-Za-z0-9_.\-\u4e00-\u9fa5]+\.md$/i.test(base)) return;
+      var key = op + ':' + base.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push({ path: p, baseName: base, op: op });
+    };
+    var name = String(st.name || '');
+    var defaultOp = /write|edit|patch|replace|create| notebook/i.test(name) ? 'write'
+      : /read|view/i.test(name) ? 'read' : null;
+
+    (st.effects || []).forEach(function (e) {
+      if (e && e.kind === 'file' && e.ref) {
+        add(e.ref, e.verb === 'read' ? 'read' : 'write');
+      }
+    });
+
+    var inp = typeof st.input === 'string' ? st.input : '';
+    if (inp) {
+      try {
+        var obj = JSON.parse(inp);
+        if (obj && typeof obj === 'object') {
+          ['file_path', 'path', 'TargetFile', 'AbsolutePath', 'filePath', 'target_file', 'notebook_path'].forEach(function (k) {
+            if (typeof obj[k] === 'string') add(obj[k], defaultOp || 'read');
+          });
+          if (typeof obj.patch === 'string') {
+            var pm = obj.patch.match(/\*\*\*\s+(?:Update|Add)\s+File:\s*([^\r\n]+?\.md)/gi) || [];
+            pm.forEach(function (line) { add(line.replace(/^\*\*\*\s+(?:Update|Add)\s+File:\s*/i, ''), 'write'); });
+          }
+          var cmdStr = typeof obj.command === 'string' ? obj.command : typeof obj.cmd === 'string' ? obj.cmd : '';
+          if (cmdStr) inp = cmdStr;
+        }
+      } catch (_) {}
+
+      var patchMatches = inp.match(/\*\*\*\s+(?:Update|Add)\s+File:\s*([^\r\n]+?\.md)/gi) || [];
+      patchMatches.forEach(function (line) { add(line.replace(/^\*\*\*\s+(?:Update|Add)\s+File:\s*/i, ''), 'write'); });
+
+      var shellOp = defaultOp;
+      if (!shellOp && st.family === 'shell') {
+        shellOp = /set-content|out-file|add-content|tee\b|cat\s+<<|>\s*[^\s]*\.md/i.test(inp) ? 'write'
+          : /cat\b|get-content\b|gc\b|type\b|head\b|tail\b|sed\b/i.test(inp) ? 'read' : null;
+      }
+      if (shellOp) {
+        var re = /([A-Za-z]:[\\/][^\s"'<>|*?`]+?\.md|(?:[A-Za-z0-9_.\-\u4e00-\u9fa5]+[\\/])+[^\s"'<>|*?`]+?\.md|[A-Za-z0-9_.\-\u4e00-\u9fa5]+?\.md)(?=$|[\s"'`:,;)\]}])/gi;
+        var m;
+        while ((m = re.exec(inp)) !== null) add(m[1], shellOp);
+      }
+    }
+    return out;
+  }
+
   /* sessions: a main session and the sessions it started (any depth), or several such trees.
-     opts: { id, name, summary } of the model. */
+     opts: { id, name, summary, singleCase } of the model. */
   function model(sessions, opts) {
     opts = opts || {};
     var byId = new Map(sessions.map(function (s) { return [s.id, s]; }));
@@ -79,12 +143,12 @@
       var nm = hub ? (roots.length > 1 ? cut(s.title, 14) : '主智能体') : (s.agent.nickname || (s.agent.path || '').split('/').filter(Boolean).pop() || '子智能体');
       names[nm] = (names[nm] || 0) + 1;
       var agentId = iconFor(s, hub);
-      var p = parentOf(s);
       var x = {
         id: ind.get(s.id), agentId: agentId, kind: 'agent', name: nm, model: s.agent.model || null,
         phase: (HUB.base && HUB.base.agents[agentId] || {}).phase || 'build', groupId: null,
         role: cut(s.title, 80), trigger: hub ? '人发来的消息' : '',
         watches: [], docs: [], channels: [], natives: [], host: s.agent.product, tools: [],
+        capabilities: s.capabilities || null,
         x: i * 10, y: depthOf(s.id) * 100, isHub: hub, enhanced: false, session: s.id
       };
       individuals.push(x);
@@ -158,16 +222,25 @@
       return addChannel({ id: 'ch_tool_' + f, kind: 'tool', name: '工具：' + TOOLS[f], maintainer: null, capacity: '不限', quota: '-', limit: null });
     };
 
-    /* ---------- facts ---------- */
+    /* ---------- facts & markdown document deliveries ---------- */
     var F = { synthetic: false, span: { start: 0, end: 0 }, cases: [], tasks: [], runs: [], decisions: [], calls: [], handoffs: [], deliveries: [],
       gateEvents: [], channelEvents: [], versionEvents: [], actions: [], messages: [] };
     var runRef = {}, taskOfTurn = new Map(), caseOf = new Map();
-    roots.forEach(function (s, i) {
-      var k = { id: 'k' + (i + 1), name: cut(s.title, 40), start: rel(s.startedAt, 0), end: 0, status: 'done', path: [], waitingAt: null };
-      F.cases.push(k);
-      var mark = function (id) { caseOf.set(id, k); (kids.get(id) || []).forEach(mark); };
-      mark(s.id);
-    });
+    var docs = [], docMap = new Map(), lastWriter = new Map(), pendingCrossReads = [];
+
+    if (opts.singleCase && roots.length > 1) {
+      var k0 = { id: 'k1', name: cut(opts.name || roots[0].title, 40), start: rel(roots[0].startedAt, 0), end: 0, status: 'done', path: [], waitingAt: null };
+      F.cases.push(k0);
+      list.forEach(function (s) { caseOf.set(s.id, k0); });
+    } else {
+      roots.forEach(function (s, i) {
+        var k = { id: 'k' + (i + 1), name: cut(s.title, 40), start: rel(s.startedAt, 0), end: 0, status: 'done', path: [], waitingAt: null };
+        F.cases.push(k);
+        var mark = function (id) { caseOf.set(id, k); (kids.get(id) || []).forEach(mark); };
+        mark(s.id);
+      });
+    }
+
     list.forEach(function (s) {
       var x = indMap.get(ind.get(s.id)), k = caseOf.get(s.id);
       var sStart = rel(s.startedAt, rel(s.updatedAt, 0));
@@ -206,7 +279,53 @@
           var u = st.usage || {};
           F.calls.push({ id: x.id + '.' + st.id, runId: run.id, decisionId: null, parentId: null, kind: st.kind, tool: st.kind === 'tool' ? st.family : null,
             name: st.kind === 'model' ? (st.model || mName || '模型') : st.name, channelId: ch.id, start: a, end: Math.max(a, b),
-            tokensIn: u.input || 0, tokensOut: u.output || 0, status: st.kind === 'tool' && st.status === 'error' ? 'error' : 'ok', repeat: false, input: '', output: '', context: null });
+            tokensIn: u.input || 0, tokensOut: u.output || 0, status: st.kind === 'tool' && st.status === 'error' ? 'error' : 'ok', repeat: false,
+            input: cut(st.input || '', 240), output: cut(st.output || st.text || '', 240), context: null });
+
+          if (st.kind === 'tool') {
+            var mdOps = extractMdOps(st);
+            mdOps.forEach(function (mOp) {
+              var docId = 'doc_' + slug(mOp.baseName);
+              var doc = docMap.get(docId);
+              if (!doc) {
+                var layer = /AGENTS\.md|CLAUDE\.md|GEMINI\.md|INDEX\.md|BOARD\.md/i.test(mOp.baseName) ? 'global'
+                  : /任务书|task|spec|plan|readme/i.test(mOp.baseName) ? 'role' : 'case';
+                doc = { id: docId, name: mOp.baseName, path: mOp.path, layer: layer, owner: x.id, summary: mOp.path, version: 'v1', audience: [], tags: ['layer/' + layer] };
+                docMap.set(docId, doc);
+                docs.push(doc);
+              }
+              if (mOp.op === 'write') doc.owner = x.id;
+              if (doc.audience.indexOf(x.id) < 0) doc.audience.push(x.id);
+              if (x.docs.indexOf(docId) < 0) x.docs.push(docId);
+
+              var prevW = lastWriter.get(docId);
+              var fromWho = mOp.op === 'read' && prevW ? prevW.indId : (mOp.op === 'write' ? x.id : 'human');
+              F.deliveries.push({
+                id: 'dv' + (F.deliveries.length + 1),
+                runId: run.id,
+                caseId: k.id,
+                individualId: x.id,
+                from: fromWho,
+                to: x.id,
+                by: fromWho,
+                docId: docId,
+                kind: 'context',
+                op: mOp.op,
+                status: st.status === 'error' ? 'missing' : 'delivered',
+                at: a,
+                text: (mOp.op === 'write' ? '写入 ' : '读取 ') + mOp.baseName
+              });
+
+              if (mOp.op === 'write' && st.status !== 'error') {
+                lastWriter.set(docId, { indId: x.id, taskId: task.id, runStart: run.start, at: Math.max(a, b), caseId: k.id, docId: docId, baseName: mOp.baseName });
+              } else if (mOp.op === 'read' && prevW && prevW.indId !== x.id && prevW.caseId === k.id) {
+                pendingCrossReads.push({
+                  k: k, from: prevW.indId, to: x.id, fromTask: prevW.taskId, toTask: task.id,
+                  at: Math.max(prevW.runStart, run.start), docId: docId, baseName: mOp.baseName, isError: st.status === 'error'
+                });
+              }
+            });
+          }
         });
       });
       F.span.end = Math.max(F.span.end, rel(s.updatedAt, 0));
@@ -223,8 +342,12 @@
       relKeys[key] = r; relations.push(r);
       return r;
     };
-    var hand = function (k, from, to, fromTask, toTask, at, r) {
-      F.handoffs.push({ id: 'h' + (F.handoffs.length + 1), caseId: k.id, from: from, to: to, fromTask: fromTask, toTask: toTask, at: at, relationId: r ? r.id : null, carried: [], missing: [] });
+    var hand = function (k, from, to, fromTask, toTask, at, r, basis, carried, missing, note) {
+      F.handoffs.push({
+        id: 'h' + (F.handoffs.length + 1), caseId: k.id, from: from, to: to, fromTask: fromTask, toTask: toTask,
+        at: at, basis: basis || 'explicit', relationId: r ? r.id : null, carried: carried || [], missing: missing || [],
+        ...(note ? { note: note } : {})
+      });
     };
     roots.forEach(function (s) {
       var x = indMap.get(ind.get(s.id)), k = caseOf.get(s.id);
@@ -232,8 +355,8 @@
       addRel('watch', 'watch', 'human', x.id, '人通过主智能体下指令');
       s.turns.forEach(function (t) {
         var tid = taskOfTurn.get(s.id + '#' + t.index), r = F.runs.find(function (u) { return u.taskId === tid; });
-        hand(k, 'human', x.id, null, tid, r.start, down);
-        if (t.status !== 'running') hand(k, x.id, 'human', tid, null, r.end, up);
+        hand(k, 'human', x.id, null, tid, r.start, down, 'explicit');
+        if (t.status !== 'running') hand(k, x.id, 'human', tid, null, r.end, up, 'explicit');
       });
     });
     list.forEach(function (s) {
@@ -244,18 +367,28 @@
       var from = taskOfTurn.get(p + '#' + spawnTurn.get(s.id)) || null;
       var first = s.turns.length ? taskOfTurn.get(s.id + '#' + s.turns[0].index) : null;
       var lastT = s.turns.length ? s.turns[s.turns.length - 1] : null;
-      hand(k, px.id, x.id, from, first, rel(s.startedAt, 0), down);
-      if (lastT && lastT.status !== 'running') hand(k, x.id, px.id, taskOfTurn.get(s.id + '#' + lastT.index), from, rel(lastT.endedAt, rel(s.updatedAt, 0)), up);
+      hand(k, px.id, x.id, from, first, rel(s.startedAt, 0), down, 'explicit');
+      if (lastT && lastT.status !== 'running') hand(k, x.id, px.id, taskOfTurn.get(s.id + '#' + lastT.index), from, rel(lastT.endedAt, rel(s.updatedAt, 0)), up, 'explicit');
+    });
+    var seenRelay = {};
+    pendingCrossReads.forEach(function (cr) {
+      var rKey = cr.from + '>' + cr.to + ':' + cr.docId + ':' + cr.toTask;
+      if (seenRelay[rKey]) return;
+      seenRelay[rKey] = true;
+      var pr = addRel('task', 'deliver', cr.from, cr.to, '文档交接：' + cr.baseName);
+      addRel('info', 'read', cr.from, cr.to, '读取 ' + cr.baseName);
+      hand(cr.k, cr.from, cr.to, cr.fromTask, cr.toTask, cr.at, pr, 'protocol', [cr.docId], cr.isError ? [cr.docId] : [], '通过 ' + cr.baseName + ' 交接');
     });
     relations.filter(function (r) { return r.type === 'task' && r.sub !== 'report'; }).forEach(function (r) { addRel('info', 'read', r.from, r.to, '读上游产出'); });
     individuals.forEach(function (x) { x.channels.forEach(function (cid) { addRel('channel', 'use', x.id, cid); }); });
 
     var def = { version: 'v1', versions: [{ id: 'v1', at: 0, note: '从本机会话解析', by: '解析' }], individuals: individuals, groups: groups,
-      relations: relations, channels: channels, docs: [], process: { stages: [], gates: [], flows: [] } };
+      relations: relations, channels: channels, docs: docs, process: { stages: [], gates: [], flows: [] } };
     var name = opts.name || (roots[0] ? cut(roots[0].title, 24) : '本机会话');
     return {
       id: opts.id || 'sessions', name: name, presetName: name, summary: opts.summary || (list.length + ' 个会话，其中 ' + (list.length - roots.length) + ' 个子智能体'),
       flowText: '', category: 'sessions', size: list.length, curated: false, synthetic: false,
+      capabilities: (roots[0] && roots[0].capabilities) || (list[0] && list[0].capabilities) || null,
       def: def, facts: F, rev: 0, clock: base,
       source: { kind: 'sessions', sessions: byId, runs: runRef }
     };

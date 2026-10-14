@@ -91,7 +91,10 @@
     document.addEventListener('mouseup', function () { if (drag) { lastDrag = drag.moved; drag = null; setTimeout(function () { lastDrag = false; }, 0); } });
     area.querySelector('[data-zoom="in"]').addEventListener('click', function () { zoomBy(STEP); });
     area.querySelector('[data-zoom="out"]').addEventListener('click', function () { zoomBy(1 / STEP); });
-    area.querySelector('[data-zoom="reset"]').addEventListener('click', function () { go({ k: 1, x: 0, y: 0 }, true); });
+    area.querySelector('[data-zoom="reset"]').addEventListener('click', function () {
+      if (HUB.obs && typeof HUB.obs.fit === 'function') HUB.obs.fit();
+      else go({ k: 1, x: 0, y: 0 }, true);
+    });
     paint();
   }
 

@@ -13,7 +13,7 @@ import { TurnBuilder, titleFallback } from '../turns.ts';
 import { clean, oneLine } from '../text.ts';
 import { toolFamily } from '../opencode/parse.ts';
 import type { FinishOptions, SourceFile, SqliteSource } from '../types.ts';
-import { ZCODE_ADAPTER_VERSION, ZCODE_KIND } from './parse.ts';
+import { ZCODE_ADAPTER_VERSION, ZCODE_CAPABILITIES, ZCODE_KIND } from './parse.ts';
 
 type J = Record<string, any>;
 
@@ -47,6 +47,19 @@ export function parseZcodeDb(file: SourceFile, db: SqliteSource, opts: FinishOpt
   const sessions = db.all('SELECT id, parent_id, directory, title, task_type, summary_additions, summary_deletions, time_created, time_updated FROM session') as J[];
   const messages = db.all('SELECT id, session_id, data FROM message ORDER BY session_id, sequence') as MsgRow[];
   const parts = db.all('SELECT message_id, data FROM part ORDER BY message_id, sequence') as { message_id: string; data: string }[];
+  const taskLinks = new Map<string, string[]>();
+  try {
+    const links = db.all('SELECT session_id, task_id FROM session_task_link') as { session_id?: string; task_id?: string }[];
+    for (const r of links || []) {
+      if (r && typeof r.session_id === 'string' && typeof r.task_id === 'string' && r.session_id && r.task_id) {
+        const list = taskLinks.get(r.session_id) || [];
+        list.push(r.task_id);
+        taskLinks.set(r.session_id, list);
+      }
+    }
+  } catch {
+    // Older or mock SQLite stores may not have session_task_link.
+  }
 
   const partsByMessage = new Map<string, J[]>();
   for (const row of parts) {
@@ -68,7 +81,7 @@ export function parseZcodeDb(file: SourceFile, db: SqliteSource, opts: FinishOpt
   const out: Session[] = [];
   for (const s of sessions) {
     if (!s || typeof s.id !== 'string' || !s.id) continue;
-    out.push(zcodeSessionFromRows(s, msgsBySession.get(s.id) || [], partsByMessage, file, opts));
+    out.push(zcodeSessionFromRows(s, msgsBySession.get(s.id) || [], partsByMessage, taskLinks.get(s.id) || [], file, opts));
   }
   return out;
 }
@@ -77,6 +90,7 @@ function zcodeSessionFromRows(
   s: J,
   msgs: { id: string; data: J }[],
   partsByMessage: Map<string, J[]>,
+  linkedTasks: string[],
   file: SourceFile,
   opts: FinishOptions,
 ): Session {
@@ -94,15 +108,24 @@ function zcodeSessionFromRows(
     const parts = partsByMessage.get(id) || [];
     if (m.role === 'user') {
       const texts: string[] = [];
+      let hadCompaction = false;
       for (const p of parts) {
         records++;
         if (p.type === 'text' && typeof p.text === 'string') texts.push(p.text);
-        else if (p.type && p.type !== 'step-start' && p.type !== 'step-finish') { skipped++; B.note('part:' + p.type); }
+        else if (p.type === 'file') {
+          const fname = typeof p.filename === 'string' && p.filename ? p.filename : typeof p.url === 'string' ? p.url.slice(0, 60) : 'file';
+          texts.push('[附件: ' + fname + ']');
+        } else if (p.type === 'compaction') {
+          hadCompaction = true;
+        } else if (p.type && p.type !== 'step-start' && p.type !== 'step-finish') { skipped++; B.note('part:' + p.type); }
       }
       const text = texts.map((t) => clean(t)).filter(Boolean).join('\n').trim();
       if (text) {
         B.addMessage('user', text, at, id);
         if (!firstUser) firstUser = oneLine(text, 80);
+      }
+      if (hadCompaction) {
+        B.addEvent('compaction', at, '上下文压缩');
       }
       continue;
     }
@@ -124,6 +147,13 @@ function zcodeSessionFromRows(
       } else if (p.type === 'reasoning' && typeof p.text === 'string' && p.text.trim()) {
         const model = B.ensureModel(pat);
         model.reasoning = model.reasoning ? model.reasoning + '\n\n' + clean(p.text) : clean(p.text);
+      } else if (p.type === 'file') {
+        const fname = typeof p.filename === 'string' && p.filename ? p.filename : typeof p.url === 'string' ? p.url.slice(0, 60) : 'file';
+        const model = B.ensureModel(pat);
+        const tag = '[附件: ' + fname + ']';
+        model.text = model.text ? model.text + '\n\n' + tag : tag;
+      } else if (p.type === 'compaction') {
+        B.addEvent('compaction', pat, '上下文压缩');
       } else if (p.type === 'tool' && typeof p.tool === 'string') {
         const input = p.state?.input !== undefined ? JSON.stringify(p.state.input) : undefined;
         B.addToolCall({ callId: p.callID, name: p.tool, family: toolFamily(p.tool), input, at: pat });
@@ -158,6 +188,10 @@ function zcodeSessionFromRows(
   const cwd = typeof s.directory === 'string' && s.directory ? s.directory : undefined;
   const isSub = typeof s.parent_id === 'string' && !!s.parent_id;
   const links: SessionLink[] = isSub ? [{ rel: 'parent', id: sessionId(ZCODE_KIND, s.parent_id) }] : [];
+  for (const tid of linkedTasks) {
+    const target = sessionId(ZCODE_KIND, tid);
+    if (!links.some((l) => l.id === target)) links.push({ rel: 'child', id: target, label: 'task' });
+  }
   const title = typeof s.title === 'string' && s.title.trim() ? oneLine(s.title, 80) : '';
 
   const session: Session = {
@@ -184,6 +218,7 @@ function zcodeSessionFromRows(
     ...(updatedAt ? { updatedAt } : {}),
     turns: B.turns,
     ...(usageSum ? { usage: usageSum } : {}),
+    capabilities: ZCODE_CAPABILITIES,
     state: { status: 'empty' },
     stats: {
       turns: B.turns.length,
@@ -191,8 +226,8 @@ function zcodeSessionFromRows(
       toolCalls: f.toolCalls,
       toolErrors: f.toolErrors,
       messages: f.messages,
-      compactions: 0,
-      subagents: 0,
+      compactions: f.compactions,
+      subagents: links.filter((l) => l.rel === 'child').length,
       ...(costUsd !== undefined ? { costUsd } : {}),
       ...(Number.isFinite(+s.summary_additions) ? { linesAdded: +s.summary_additions } : {}),
       ...(Number.isFinite(+s.summary_deletions) ? { linesRemoved: +s.summary_deletions } : {}),

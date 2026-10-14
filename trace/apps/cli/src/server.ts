@@ -9,7 +9,7 @@
  * Everything is same-origin, so no CORS header is sent: other sites in the
  * browser cannot read the sessions. A Host check blocks DNS rebinding.
  */
-import { createReadStream, existsSync, readdirSync, statSync } from 'node:fs';
+import { appendFileSync, createReadStream, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import { CONTRACT_VERSION, overview, type RootInfo, type Session, type SessionDoc, type SessionSummary } from '@hub-trace/contract';
@@ -122,12 +122,30 @@ function sendFile(res: ServerResponse, path: string, head: boolean) {
   createReadStream(path).pipe(res);
 }
 
+function readJsonBody(req: IncomingMessage): Promise<Record<string, any>> {
+  return new Promise((ok, fail) => {
+    const chunks: Buffer[] = [];
+    let len = 0;
+    req.on('data', (c: Buffer) => {
+      len += c.length;
+      if (len > 256 * 1024) { fail(new Error('payload too large')); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => {
+      try { ok(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')); }
+      catch (e) { fail(e); }
+    });
+    req.on('error', fail);
+  });
+}
+
 export function createService(opts: ServeOptions): Server {
   const { store, repoRoot, viewerDir } = opts;
-  const refreshMs = opts.refreshMs ?? 5000;
+  const refreshMs = opts.refreshMs ?? 30000;
   const { search } = opts;
   /** Rescan if due, then let the search index catch up in the background. */
   const refresh = async () => {
+    if (store.isScanning()) return;
     await store.refresh(refreshMs);
     if (search) search.sync(store.files(), (f) => store.parseSource(f)).catch(() => {});
   };
@@ -136,10 +154,60 @@ export function createService(opts: ServeOptions): Server {
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     try {
       if (!allowedHosts.has(String(req.headers.host || '').toLowerCase())) return send(res, 403, 'host not allowed');
-      if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'read only');
       const url = new URL(req.url || '/', 'http://local');
       let path: string;
       try { path = decodeURIComponent(url.pathname); } catch { return send(res, 400, 'bad path'); }
+
+      if (req.method === 'POST' && path === '/api/control') {
+        const body = await readJsonBody(req);
+        const safeModel = String(body.modelId || 'default').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const kind = String(body.kind || 'interject');
+        const payload = body.payload || {};
+        const casesRoot = join(repoRoot, 'hub', 'cases');
+        const caseDir = dirUnder(casesRoot, safeModel) || join(casesRoot, '_control_log', safeModel);
+        const tracesDir = join(caseDir, 'traces');
+        mkdirSync(tracesDir, { recursive: true });
+        const ts = new Date().toISOString();
+        const writtenFiles: string[] = [];
+
+        if (kind === 'add_relation') {
+          const relFile = join(caseDir, 'relations.md');
+          const line = `\n| \`${payload.from || 'human'}\` | \`${payload.to || 'agent'}\` | \`${payload.relType || 'task'}\` | ${payload.text || '人工新增协同交接线'} |\n<!-- Reverse-Control Writeback at ${ts} -->\n`;
+          appendFileSync(relFile, line, 'utf8');
+          writtenFiles.push('relations.md');
+        } else if (kind === 'edit_rule') {
+          const targetType = payload.target?.type || 'individual';
+          const docName = targetType === 'gate' || targetType === 'step' ? 'process.md' : 'relations.md';
+          const docFile = join(caseDir, docName);
+          const line = `\n- **[${payload.target?.id || 'rule'}]** 人工修订规则（${ts}）：${payload.text || '补充门禁约束'}\n`;
+          appendFileSync(docFile, line, 'utf8');
+          writtenFiles.push(docName);
+        } else {
+          const indId = String(payload.target?.id || payload.to || 'orchestrator').replace(/[^a-zA-Z0-9_-]/g, '_');
+          const inboxDir = join(caseDir, 'agents', indId);
+          mkdirSync(inboxDir, { recursive: true });
+          const inboxFile = join(inboxDir, 'inbox.md');
+          const block = `\n## [★ 人工调控指令 · \`${kind}\` · ${ts}]\n- **目标个体**：\`${indId}\`\n- **关联实例**：\`${body.caseId || '-'}\`\n- **指令正文**：${payload.text || '请按人工拍板要求立即复核当前上下文并继续执行'}\n`;
+          appendFileSync(inboxFile, block, 'utf8');
+          writtenFiles.push(`agents/${indId}/inbox.md`);
+        }
+
+        const actionRecord = JSON.stringify({
+          ts,
+          modelId: safeModel,
+          caseId: body.caseId || null,
+          kind,
+          target: payload.target || null,
+          text: payload.text || '',
+          action: body.action || null,
+        }) + '\n';
+        appendFileSync(join(tracesDir, 'human_actions.jsonl'), actionRecord, 'utf8');
+        writtenFiles.push('traces/human_actions.jsonl');
+
+        return json(res, 200, { ok: true, ts, writtenFiles });
+      }
+
+      if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'read only');
       const head = req.method === 'HEAD';
 
       if (path === '/api/health') {
@@ -220,7 +288,7 @@ export function createService(opts: ServeOptions): Server {
     // for (or shares a thread with) a rescan any more. The cadence keeps the directory
     // cache warm, which is what makes the rescan itself cheap.
     refresh().catch(() => {});
-    const timer = setInterval(() => { refresh().catch(() => {}); }, 15000);
+    const timer = setInterval(() => { refresh().catch(() => {}); }, 60000);
     if (typeof timer.unref === 'function') timer.unref();
   });
   return server;

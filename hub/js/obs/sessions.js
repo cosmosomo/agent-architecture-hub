@@ -11,7 +11,7 @@
   var ORDER = ['working', 'waiting', 'failed', 'aborted', 'stale', 'idle', 'empty'];
   var KIND = { codex: 'Codex', 'claude-code': 'Claude', opencode: 'OpenCode', zcode: 'ZCode', factory: 'Factory', gemini: 'Gemini CLI' };
   var PAGE = 80;
-  var cache = null, error = null, loading = false, loadedAt = 0, filter = 'all', limit = PAGE, open = {};
+  var cache = null, error = null, loading = false, loadedAt = 0, filter = 'all', limit = PAGE, open = {}, query = '';
   var bound = new WeakSet();
 
   function ago(iso) {
@@ -62,30 +62,74 @@
       var t = e.target.closest('[data-act]');
       if (!t) return;
       var act = t.getAttribute('data-act');
-      // a plain click opens the session's trace in the canvas; Ctrl or middle click keeps the link's new tab
+      var id = t.getAttribute('data-id');
       if (act === 'open') {
-        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) {
+          window.open(viewer(id), '_blank', 'noopener');
+          return;
+        }
         e.preventDefault();
-        HUB.store.set({ subject: 'exec', depth: { exec: 1 }, focus: { type: 'session', id: t.getAttribute('data-id') }, selection: null, present: 'graph' });
+        HUB.store.set({ subject: 'exec', depth: { exec: 1 }, focus: { type: 'session', id: id }, selection: null, present: 'graph' });
+      }
+      else if (act === 'err') {
+        e.preventDefault(); e.stopPropagation();
+        if (e.ctrlKey || e.metaKey) {
+          window.open(search('', id) + '&errors=1', '_blank', 'noopener');
+          return;
+        }
+        HUB.store.set({ subject: 'exec', depth: { exec: 2 }, focus: { type: 'session', id: id }, selection: null, present: 'graph' });
       }
       else if (act === 'filter') { filter = t.getAttribute('data-v'); limit = PAGE; render(el); }
-      else if (act === 'kids') { e.preventDefault(); e.stopPropagation(); var id = t.getAttribute('data-id'); open[id] = !open[id]; render(el); }
-      else if (act === 'tree') { e.preventDefault(); e.stopPropagation(); openTree(t.getAttribute('data-id')); }
+      else if (act === 'kids') { e.preventDefault(); e.stopPropagation(); open[id] = !open[id]; render(el); }
+      else if (act === 'tree') { e.preventDefault(); e.stopPropagation(); openTree(id); }
+      else if (act === 'inpage-search') { e.preventDefault(); e.stopPropagation(); HUB.store.set({ drawer: 'search', selection: null }, { history: false }); }
       else if (act === 'more') { limit += PAGE; render(el); }
       else if (act === 'reload') { load(el, true); render(el); }
     });
+    el.addEventListener('input', function (e) {
+      var inp = e.target.closest('[data-sess-q]');
+      if (!inp) return;
+      query = inp.value || '';
+      limit = PAGE;
+      var pos = inp.selectionStart;
+      render(el);
+      var nextInp = el.querySelector('[data-sess-q]');
+      if (nextInp) {
+        nextInp.focus();
+        try { nextInp.setSelectionRange(pos, pos); } catch (err) {}
+      }
+    });
+  }
+
+  function cleanTitle(s) {
+    var raw = String((s && s.title) || '').trim();
+    if (!raw || /^[\s.,;:!?'"`~_\-\\/]+$/.test(raw)) {
+      var proj = base(s && s.cwd) || (s && s.source && KIND[s.source.kind]) || '会话';
+      return raw ? (proj + ' · ' + raw) : proj;
+    }
+    return raw;
   }
 
   function row(s, lv, kids) {
+    var titleText = cleanTitle(s);
     var meta = [KIND[s.source.kind] || s.source.kind, s.agent.role === 'subagent' ? (s.agent.path || s.agent.name) : base(s.cwd), s.stats.turns + ' 轮', ago(s.updatedAt)].filter(Boolean).join(' · ');
-    return '<a class="ob-si ob-sess" data-act="open" data-id="' + esc(s.id) + '" style="padding-left:' + (14 + lv * 14) + 'px" href="' + viewer(s.id) + '" target="_blank" rel="noopener" title="' + esc(s.title + '\n' + (STATUS[s.state.status] || '') + (s.state.detail ? '：' + s.state.detail : '') + '\n点一下在中间打开它的决策链；按住 Ctrl 点，在新标签页打开独立查看器') + '">' +
+    var tags = [];
+    if (s.stats.toolErrors) {
+      tags.push('<span class="ob-sess-pill err" data-act="err" data-id="' + esc(s.id) + '" title="点一下在画布内展开该会话的调用步骤（按住 Ctrl 在独立查看器定位报错）">✕ 错 ' + s.stats.toolErrors + '</span>');
+    }
+    if (kids) {
+      tags.push('<span class="ob-sess-pill kids" data-act="kids" data-id="' + esc(s.id) + '" title="展开或收起子智能体列表">' + (open[s.id] ? '▾' : '▸') + ' 子智能体 ' + kids + '</span>');
+      tags.push('<span class="ob-sess-pill tree" data-act="tree" data-id="' + esc(s.id) + '" title="把该会话和派出的子智能体在主画布画成多智能体协作图">☍ 画成协作图</span>');
+    }
+    var curFocus = HUB.store && HUB.store.get ? HUB.store.get().focus : null;
+    var isOn = curFocus && curFocus.type === 'session' && curFocus.id === s.id;
+    return '<div class="ob-si ob-sess' + (isOn ? ' on' : '') + '" data-act="open" data-id="' + esc(s.id) + '" style="padding-left:' + (12 + lv * 14) + 'px" title="' + esc(titleText + '\n' + (STATUS[s.state.status] || '') + (s.state.detail ? '：' + s.state.detail : '') + '\n点一下在中间画布打开它的决策链；按住 Ctrl 点在新标签页打开独立查看器') + '">' +
       '<span class="ob-dot ' + (DOT[s.state.status] || '') + '"></span>' +
-      '<span class="ob-sess-b"><span class="ob-nm">' + esc(s.title) + '</span>' +
-      '<span class="ob-meta">' + esc(meta) +
-      (s.stats.toolErrors ? ' <a data-act="ext" href="' + search('', s.id) + '&errors=1" target="_blank" rel="noopener" title="在这个会话里看出错的那几步" style="color:var(--warn,#d08)">错 ' + s.stats.toolErrors + '</a>' : '') +
-      (kids ? ' <b data-act="kids" data-id="' + esc(s.id) + '" title="展开或收起子智能体">' + (open[s.id] ? '▾' : '▸') + ' 子智能体 ' + kids + '</b>' +
-        ' <b data-act="tree" data-id="' + esc(s.id) + '" title="把它和它派出的子智能体画成协作图：一次派出的算一组">画成协作图</b>' : '') +
-      '</span></span></a>';
+      '<span class="ob-sess-b">' +
+        '<span class="ob-nm">' + esc(titleText) + '</span>' +
+        '<span class="ob-meta">' + esc(meta) + '</span>' +
+        (tags.length ? '<span class="ob-sess-tags">' + tags.join('') + '</span>' : '') +
+      '</span></div>';
   }
 
   function render(el) {
@@ -116,24 +160,33 @@
     });
     var chips = ['<span class="ob-chip' + (filter === 'all' ? ' on' : '') + '" data-act="filter" data-v="all">全部 ' + cache.length + '</span>'];
     ORDER.forEach(function (k) { if (counts[k]) chips.push('<span class="ob-chip' + (filter === k ? ' on' : '') + '" data-act="filter" data-v="' + k + '">' + STATUS[k] + ' ' + counts[k] + '</span>'); });
-    out.push('<div class="ob-chips" style="padding:2px 14px 6px;display:flex;flex-wrap:wrap;gap:4px">' + chips.join('') + '</div>');
-    out.push('<a class="ob-si" style="text-decoration:none" href="/trace/" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">打开 Trace 查看器 ↗</span><span class="ob-meta">按会话看调用树</span></a>');
-    out.push('<a class="ob-si" style="text-decoration:none" href="/trace/#view=sources" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">来源与项目 ↗</span><span class="ob-meta">哪些 CLI 有会话、各在哪些项目里干活</span></a>');
-    out.push('<a class="ob-si" style="text-decoration:none" href="/trace/#view=analytics" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">统计 ↗</span><span class="ob-meta">日活跃、最忙的工具和模型、项目榜</span></a>');
-    out.push('<a class="ob-si" style="text-decoration:none" href="' + search('') + '" target="_blank" rel="noopener"><span class="ob-nm" style="color:var(--accent1)">在全部会话里检索 ↗</span><span class="ob-meta">找命令、文件、错误、说过的话</span></a>');
-    var ok = function (s) { return filter === 'all' || s.state.status === filter; };
+    out.push('<div class="ob-chips" style="padding:2px 12px 6px;display:flex;flex-wrap:wrap;gap:4px">' + chips.join('') + '</div>');
+    out.push('<div class="ob-sess-search"><input type="search" data-sess-q value="' + esc(query) + '" placeholder="过滤会话标题、项目或 CLI…" aria-label="过滤本机会话"></div>');
+    out.push('<div class="ob-sess-quick">' +
+      '<button type="button" class="ob-sq-btn" data-act="inpage-search" title="不跳出观察台，直接在右侧抽屉检索当前案例/会话的步骤"><b>⌕ 页内检索</b><span>当前案例/调用树</span></button>' +
+      '<a class="ob-sq-btn" href="' + search('') + '" target="_blank" rel="noopener" title="跨全部本机会话检索命令、文件、错误与对话"><b>⌕ 全库检索 ↗</b><span>查命令/文件/报错</span></a>' +
+      '<a class="ob-sq-btn" href="/trace/#view=sources" target="_blank" rel="noopener" title="查看哪些 CLI 有会话、各在哪些项目里干活"><b>◈ 来源与项目 ↗</b><span>CLI 与工作区</span></a>' +
+      '<a class="ob-sq-btn" href="/trace/#view=analytics" target="_blank" rel="noopener" title="查看日活跃、最忙的工具和模型、项目榜"><b>▤ 活跃统计 ↗</b><span>工具/模型/项目榜</span></a>' +
+    '</div>');
+    var qNorm = query.trim().toLowerCase();
+    var ok = function (s) {
+      if (filter !== 'all' && s.state.status !== filter) return false;
+      if (!qNorm) return true;
+      var hay = [s.title, s.source && s.source.kind, KIND[s.source && s.source.kind], base(s.cwd), s.agent && s.agent.name].join(' ').toLowerCase();
+      return hay.indexOf(qNorm) >= 0;
+    };
     var rows = [];
     tops.forEach(function (s) {
       var ks = kids[s.id] || [];
       var hit = ks.filter(ok);
       if (!ok(s) && !hit.length) return;
       rows.push(row(s, 0, ks.length));
-      if (open[s.id] || (filter !== 'all' && hit.length)) (filter === 'all' ? ks : hit).forEach(function (k) { rows.push(row(k, 1, 0)); });
+      if (open[s.id] || ((filter !== 'all' || qNorm) && hit.length)) (filter === 'all' && !qNorm ? ks : hit).forEach(function (k) { rows.push(row(k, 1, 0)); });
     });
     out = out.concat(rows.slice(0, limit));
     if (rows.length > limit) out.push('<div class="ob-si" data-act="more"><span class="ob-nm" style="color:var(--accent1)">再显示 ' + Math.min(PAGE, rows.length - limit) + ' 条（共 ' + rows.length + '）</span></div>');
-    if (!rows.length) out.push('<div class="ob-si" style="cursor:default"><span class="ob-nm" style="color:var(--t3)">没有这种状态的会话</span></div>');
-    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">这里是本机智能体会话的实时状态（约 15 秒刷新）：Codex 读 ~/.codex/sessions，Claude Code 读 ~/.claude/projects。“疑似已退出”指进行中的一轮很久没有新记录。点一条，在中间打开它的决策链：每一轮的模型调用、工具调用和子智能体；Esc 回到原来的图。按住 Ctrl 点，在新标签页打开独立查看器。</div>');
+    if (!rows.length) out.push('<div class="ob-si" style="cursor:default"><span class="ob-nm" style="color:var(--t3)">没有匹配的会话</span></div>');
+    out.push('<div class="ob-sh">怎么读</div><div class="ob-si ob-wrap-text" style="cursor:default;color:var(--t3);font-size:10.5px">这里是本机智能体会话的实时状态（约 15 秒刷新）：点任意一条，直接在中央画布打开它的决策与调用树（⑤⑥）；有子智能体的会话可点“☍ 画成协作图”直接在主画布生成多智能体协作图。</div>');
     var keep = el.scrollTop;
     el.innerHTML = out.join('');
     el.scrollTop = keep;
@@ -142,7 +195,7 @@
   // the title of a session the index knows (null until the index has been read); warm() reads it once, then repaints
   function titleOf(id) {
     var s = cache && cache.find(function (x) { return x.id === id; });
-    return s ? s.title : null;
+    return s ? cleanTitle(s) : null;
   }
   function warm() {
     if (cache || loading || error) return;

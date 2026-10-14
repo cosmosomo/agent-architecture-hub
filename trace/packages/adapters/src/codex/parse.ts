@@ -14,6 +14,7 @@
 import {
   CONTRACT_VERSION,
   sessionId,
+  type AdapterCapabilities,
   type Effect,
   type Iso,
   type RateLimit,
@@ -30,7 +31,14 @@ import { basename, titleFallback, TurnBuilder } from '../turns.ts';
 import { detectState } from '../state.ts';
 
 export const CODEX_KIND = 'codex';
-export const CODEX_ADAPTER_VERSION = '0.2.0';
+export const CODEX_ADAPTER_VERSION = '0.2.1';
+
+export const CODEX_CAPABILITIES: AdapterCapabilities = {
+  observe_only: true,
+  control_lifecycle: { start: true, resume: true, fork: true, stop: true },
+  steer_in_turn: { in_turn: true, next_turn: true, inbox_file: true },
+  coordinate_team: { spawn_subagent: true, peer_message: true, task_board: true },
+};
 
 // Raw records are external JSON; they are read defensively field by field.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -508,6 +516,7 @@ export function createCodexParser(file: SourceFile): LineParser {
         turns: B.turns,
         ...(sessionUsage ? { usage: sessionUsage } : {}),
         ...(limits ? { limits } : {}),
+        capabilities: CODEX_CAPABILITIES,
         state: { status: 'empty' },
         stats: {
           turns: B.turns.length,

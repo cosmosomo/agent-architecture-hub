@@ -48,6 +48,11 @@
 
   function update(m, s) {
     if (!T.el) return;
+    if (s && s.subject === 'exec' && s.focus && s.focus.type === 'session') {
+      T.el.style.display = 'none';
+      return;
+    }
+    T.el.style.display = '';
     T.w = T.el.clientWidth || 800;
     var H = 58;
     T.svg.setAttribute('width', T.w);

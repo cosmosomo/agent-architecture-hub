@@ -101,6 +101,7 @@
     var t = target(s, m);
     var on = !!t && s.present !== 'panel';
     els.host.classList.toggle('on', on);
+    els.host.classList.toggle('ob-trace-session', !!(on && t && t.kind === 'session'));
     els.side.classList.toggle('on', on && available());
     els.side.parentNode.classList.toggle('ob-trace-open', on && available());
     if (!on) return false;

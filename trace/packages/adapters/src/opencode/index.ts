@@ -1,4 +1,4 @@
-import { OPENCODE_ADAPTER_VERSION, OPENCODE_KIND, createOpencodeParser, parseOpencodeBundle } from './parse.ts';
+import { OPENCODE_ADAPTER_VERSION, OPENCODE_CAPABILITIES, OPENCODE_KIND, createOpencodeParser, parseOpencodeBundle } from './parse.ts';
 import type { Bundle, FinishOptions, SourceAdapter, SourceFile } from '../types.ts';
 
 const SESSION_FILE_RE = /[\\/]storage[\\/]session[\\/][^\\/]+[\\/]ses_[A-Za-z0-9]+\.json$/i;
@@ -36,6 +36,7 @@ export const opencodeAdapter: SourceAdapter = {
   kind: OPENCODE_KIND,
   version: OPENCODE_ADAPTER_VERSION,
   label: 'OpenCode',
+  capabilities: OPENCODE_CAPABILITIES,
   homeRoots: ['.local/share/opencode/storage'],
   matchFile: (path) => SESSION_FILE_RE.test(path),
   bundleMembers: opencodeBundleMembers,
@@ -43,4 +44,4 @@ export const opencodeAdapter: SourceAdapter = {
   parseBundle: (file: SourceFile, bundle: Bundle, opts: FinishOptions) => parseOpencodeBundle(file, bundle, opts),
 };
 
-export { createOpencodeParser, parseOpencodeBundle, toolFamily, OPENCODE_KIND, OPENCODE_ADAPTER_VERSION } from './parse.ts';
+export { OPENCODE_CAPABILITIES, createOpencodeParser, parseOpencodeBundle, toolFamily, OPENCODE_KIND, OPENCODE_ADAPTER_VERSION } from './parse.ts';

@@ -1,4 +1,4 @@
-import type { Session } from '@hub-trace/contract';
+import type { AdapterCapabilities, Session } from '@hub-trace/contract';
 
 /** What the caller knows about the source file. Adapters never touch the file system themselves. */
 export type SourceFile = {
@@ -38,6 +38,8 @@ export type SourceAdapter = {
   version: string;
   /** Display name. */
   label: string;
+  /** Honest 4-tier capability bitmap of this host adapter. */
+  capabilities?: AdapterCapabilities;
   /** Where this source keeps its sessions, relative to the user's home directory. */
   homeRoots: string[];
   /** Whether a file below a root is a session of this source. */

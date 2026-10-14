@@ -65,8 +65,9 @@
       // no line to follow: a round table in order of first speaking
       loose.sort(function (a, b) { return rank(a) - rank(b); });
       var n0 = loose.length, f0 = n0 > 8 ? 0.72 : n0 > 5 ? 0.86 : 1;
+      var aOff = n0 === 5 ? -Math.PI / 10 : 0;
       loose.forEach(function (n, j) {
-        var a = Math.PI + j * 2 * Math.PI / Math.max(1, n0);
+        var a = Math.PI + aOff + j * 2 * Math.PI / Math.max(1, n0);
         n.x = n0 === 1 ? 500 : 500 + Math.cos(a) * (n0 === 2 ? 190 : 320);
         n.y = n0 === 1 ? 290 : 290 + Math.sin(a) * (n0 === 2 ? 0 : 175);
         n.r = radius(n, f0); n.layer = j;
@@ -272,14 +273,95 @@
     railList.forEach(function (x) { if (has(x.from) && has(x.to)) (x.used ? match : declOnly).push(x.key); });
     pairList.forEach(function (p) { if (!p.declared) factOnly.push(p.key); });
 
+    /* shared blackboard gravity field & human reverse-control actions */
+    var doc0 = (def.docs && def.docs[0]) || null;
+    var bbActive = real && (shape === 'table' || (orderOnly > 0 && hands.length === 0));
+    var blackboard = {
+      active: bbActive,
+      x: 500,
+      y: 290,
+      w: 196,
+      h: 72,
+      id: doc0 ? doc0.id : 'shared_context',
+      name: doc0 ? shortName(doc0.name) : (src.kind === 'turns' ? '共享对话黑板 · 台账' : '共享会话上下文'),
+      sub: orderOnly > 0 ? ('相邻发言 ' + orderOnly + ' 次经共享台账同步') : '群体共享读写台账'
+    };
+    var humanActions = (F.actions || []).filter(function (a) {
+      return !inst || !a.caseId || a.caseId === inst.id;
+    });
+    var stages = buildStages(recs, hands, tools, evals, nodeByKey);
+
     var st = { src: src, inst: inst, real: real, cmpMode: cmpMode, cmp: cmp, recs: recs, N: N, nodes: nodes, nodeByKey: nodeByKey, rails: railList, railByKey: rails,
       pairs: pairList, pairByKey: pairs, hands: hands, tools: tools, chan: chan, evals: evals, result: result,
+      blackboard: blackboard, stages: stages, humanActions: humanActions,
       counts: { explicit: hands.filter(function (h) { return h.basis === 'explicit'; }).length, protocol: hands.filter(function (h) { return h.basis === 'protocol'; }).length,
         orderOnly: orderOnly, internal: internal, undrawn: undrawn, runs: recs.reduce(function (n, r) { return n + (r.runId && r.pos === 1 ? 1 : 0); }, 0) },
       match: match, declOnly: declOnly, factOnly: factOnly, vb: VB, shape: shape,
       absent: nodes.filter(function (n) { return n.ghost; }).map(function (n) { return n.name; }) };
     st.captions = captions(st, m, L);
     return st;
+  }
+
+  /* macro-stage segmentation for long trajectories */
+  function buildStages(recs, hands, tools, evals, nodeByKey) {
+    var N = recs.length;
+    if (!N) return [];
+    var K = N <= 6 ? 2 : N <= 16 ? 3 : N <= 40 ? 4 : 5;
+    if (K > N) K = N;
+    var cuts = [1];
+    for (var i = 1; i < K; i++) {
+      var target = Math.round(1 + i * (N - 1) / K);
+      var best = target;
+      for (var d = -2; d <= 2; d++) {
+        var cand = target + d;
+        if (cand > cuts[cuts.length - 1] && cand <= N) {
+          var r = recs[cand - 1], prev = recs[cand - 2];
+          if ((r && r.pos === 1) || (r && prev && r.node !== prev.node)) { best = cand; break; }
+        }
+      }
+      if (best > cuts[cuts.length - 1] && best <= N) cuts.push(best);
+    }
+    var stages = [];
+    for (var s = 0; s < cuts.length; s++) {
+      var a = cuts[s], b = (s + 1 < cuts.length) ? cuts[s + 1] - 1 : N;
+      if (b < a) b = a;
+      var counts = {}, topKey = null, topCnt = 0, hasErr = false, hasEval = false;
+      for (var q = a; q <= b; q++) {
+        var rec = recs[q - 1];
+        if (!rec) continue;
+        counts[rec.node] = (counts[rec.node] || 0) + 1;
+        if (counts[rec.node] > topCnt) { topCnt = counts[rec.node]; topKey = rec.node; }
+        if (rec.toolRes && rec.toolRes.error) hasErr = true;
+      }
+      evals.forEach(function (e) { if (e.seq != null && e.seq >= a && e.seq <= b) hasEval = true; });
+      var spk = (topKey && nodeByKey[topKey]) ? nodeByKey[topKey].name : '协作';
+      var tag = s === 0 ? '开场与分发' : (hasEval ? '失误发生段' : hasErr ? '工具报错与重试' : (s === cuts.length - 1 ? '收口与总结' : clip(spk, 10) + ' 主导'));
+      stages.push({ idx: s + 1, start: a, end: b, label: 'S' + (s + 1) + ' · ' + tag, range: a === b ? ('#' + a) : ('#' + a + '–' + b), hasErr: hasErr, hasEval: hasEval });
+    }
+    return stages;
+  }
+
+  /* 4-segment delivery ring state for a node at cursor (0..st.N) */
+  function deliveryRing(st, m, nodeKey, cursor) {
+    var n = st && st.nodeByKey ? st.nodeByKey[nodeKey] : null;
+    if (!n) return { should_know: false, delivered: false, read: false, written: false, trust: 'idle', humanInjected: false };
+    var c = cursor == null ? st.N : cursor;
+    var should_know = !n.ghost || st.rails.some(function (r) { return r.from === nodeKey || r.to === nodeKey; });
+    var spoke = st.recs.some(function (r) { return r.node === nodeKey && r.seq <= c; });
+    var wrote = st.recs.some(function (r) { return r.node === nodeKey && r.seq <= c && r.kind !== 'think' && r.kind !== 'context'; });
+    var gotHand = st.hands.some(function (h) { return h.to === nodeKey && h.sent <= c; });
+    var readHand = st.hands.some(function (h) { return h.to === nodeKey && h.got != null && h.got <= c; });
+    var sentHandCaught = st.hands.some(function (h) { return h.from === nodeKey && h.got != null && h.got <= c; });
+    var bbSync = !!(st.blackboard && st.blackboard.active && c >= 1 && !n.ghost);
+    var delivered = spoke || gotHand || bbSync;
+    var read = spoke || readHand;
+    var written = wrote;
+    var tainted = st.evals.some(function (e) { return e.node === nodeKey && (!e.seq || e.seq <= c); }) ||
+      st.tools.some(function (t) { return t.node === nodeKey && t.error && t.seq <= c; });
+    var verified = !tainted && written && (sentHandCaught || (st.result && st.result.result === 'success' && c >= st.N));
+    var trust = tainted ? 'tainted' : verified ? 'verified' : written ? 'unreviewed' : 'idle';
+    var humanInjected = (st.humanActions || []).some(function (a) { return ('i:' + a.targetId) === nodeKey; });
+    return { should_know: should_know, delivered: delivered, read: read, written: written, trust: trust, humanInjected: humanInjected };
   }
 
   /* one sentence at the records worth stopping at; every sentence is computed from the facts */
@@ -350,5 +432,5 @@
     return { st: st, cursor: cursorOf(st, s.time) };
   }
 
-  HUB.collab = { build: build, source: source, cursorOf: cursorOf, timeOf: timeOf, VB: VB, turnsOf: turnsOf, shortName: shortName };
+  HUB.collab = { build: build, source: source, cursorOf: cursorOf, timeOf: timeOf, VB: VB, turnsOf: turnsOf, shortName: shortName, deliveryRing: deliveryRing };
 })();

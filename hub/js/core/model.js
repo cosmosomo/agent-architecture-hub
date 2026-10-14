@@ -167,12 +167,74 @@
     }
   }
 
-  /* ---------- page actions ---------- */
+  /* ---------- page actions & reverse control ---------- */
   var REPLIES = [
     '收到。我会在当前这一步做完后按你的意思调整。',
     '明白。这条我先记进工作区，下一次运行开始时会读到。',
     '好的，我把它当作新的约束，已经同步给中枢智能体。'
   ];
+
+  function previewControl(kind, payload) {
+    var m = HUB.model.current;
+    payload = payload || {};
+    var target = payload.target || { type: 'individual', id: payload.from || 'human' };
+    var text = payload.text || '';
+    var ts = new Date().toISOString().slice(0, 19) + 'Z';
+    var inst = m ? instanceOf(HUB.store ? HUB.store.get() : {}, m) : null;
+    var caseId = inst ? inst.id : (m ? m.id : 'case_01');
+    var file = 'traces/human_actions.jsonl';
+    var modeLabel = '运行态 · 信箱与轨迹注入';
+    var diff = '';
+
+    if (kind === 'add_relation') {
+      var fromId = payload.from || (target && target.id) || 'human';
+      var toId = payload.to || '';
+      var rtype = payload.relType || 'task';
+      var fromNm = m ? name('individual', fromId, m) : fromId;
+      var toNm = m ? name('individual', toId, m) : toId;
+      file = 'relations.md';
+      modeLabel = '设计态 · 编排文档写回';
+      diff = [
+        '--- a/' + file,
+        '+++ b/' + file,
+        '@@ -12,3 +12,5 @@',
+        ' | 发出方 | 接收方 | 关系类型 | 交接与契约说明 |',
+        ' | :--- | :--- | :--- | :--- |',
+        '+| `' + fromId + '` (' + fromNm + ') | `' + toId + '` (' + toNm + ') | `' + rtype + '` | ' + (text || '人工新增协同交接线') + ' |',
+        '+<!-- Reverse-Control Writeback at ' + ts + ' -->'
+      ].join('\n');
+    } else if (kind === 'edit_rule') {
+      var tName = m && target ? name(target.type, target.id, m) : (target ? target.id : '');
+      file = (target && (target.type === 'gate' || target.type === 'step')) ? 'process.md' : 'relations.md';
+      modeLabel = '设计态 · 编排规则写回';
+      diff = [
+        '--- a/' + file,
+        '+++ b/' + file,
+        '@@ -18,2 +18,5 @@',
+        ' ## 编排约束与拍板门禁',
+        '+- **[' + tName + ' (`' + (target ? target.id : '') + '`)]** 人工修订规则：' + (text || '补充核验门禁约束'),
+        '+  - 生效版本：`v' + (m ? m.def.versions.length + 1 : 2) + '` · 修订人：`human`'
+      ].join('\n');
+    } else {
+      var indId = target && target.type === 'individual' ? target.id : (payload.to || 'orchestrator');
+      var indNm = m && target ? name(target.type, target.id, m) : indId;
+      file = target && target.type === 'individual' ? ('agents/' + indId + '/inbox.md') : 'traces/human_actions.jsonl';
+      diff = [
+        '--- a/' + file,
+        '+++ b/' + file,
+        '@@ -1,2 +1,9 @@',
+        ' # Agent Control Inbox (`' + indId + '`)',
+        '+',
+        '+## [★ 人工调控指令 · `' + kind + '`]',
+        '+- **目标对象**：' + indNm + ' (`' + indId + '`)',
+        '+- **关联案例**：`' + caseId + '`',
+        '+- **指令正文**：' + (text || '请按人工拍板要求立即复核当前上下文并继续执行'),
+        '+- **轨迹注入**：同步写入 `traces/human_actions.jsonl` 并在协作轨迹图点亮 `★调控` 角标'
+      ].join('\n');
+    }
+    return { kind: kind, payload: payload, target: target, file: file, modeLabel: modeLabel, diff: diff };
+  }
+
   function perform(kind, payload) {
     var m = HUB.model.current;
     if (!m) return null;
@@ -182,11 +244,45 @@
     var now = st.time != null ? st.time : F.span.end;
     var target = payload.target || null;
     var text = payload.text || '';
-    var act = { id: U.uid('act'), at: now, kind: kind, target: target, text: text, status: 'recorded' };
+    var inst = instanceOf(st, m);
+    var act = {
+      id: U.uid('act'),
+      at: now,
+      kind: kind,
+      target: target,
+      targetId: payload.to || (target && target.id) || null,
+      caseId: inst ? inst.id : null,
+      text: text,
+      status: 'recorded'
+    };
     var targetInd = target && target.type === 'individual' ? m.idx.ind.get(target.id) : null;
     var runningRun = targetInd ? (m.idx.runsByInd.get(targetInd.id) || []).find(function (r) { return r.start <= now && r.end > now; }) : null;
 
     switch (kind) {
+      case 'add_relation':
+        var fromId = payload.from || (target && target.id) || 'human';
+        var toId = payload.to || '';
+        var rtype = payload.relType || 'task';
+        if (fromId && toId && fromId !== toId) {
+          var relId = U.uid('rel');
+          m.def.relations.push({
+            id: relId,
+            type: rtype,
+            from: fromId,
+            to: toId,
+            label: text || '协同交接',
+            channelId: (m.def.channels[0] && m.def.channels[0].id) || null
+          });
+          var vr = 'v' + (m.def.versions.length + 1);
+          var noteR = '新增编排关系：' + name('individual', fromId, m) + ' → ' + name('individual', toId, m) + '（' + (text || rtype) + '）';
+          F.versionEvents.push({ id: U.uid('ve'), at: now, version: vr, note: noteR, by: '人（用户）' });
+          m.def.versions.push({ id: vr, at: now, note: noteR, by: '人（用户）' });
+          m.def.version = vr;
+          act.text = noteR;
+          act.targetId = toId;
+          act.status = 'delivered';
+        }
+        break;
       case 'talk':
         F.messages.push({ id: U.uid('msg'), at: now, from: 'human', to: target.id, text: text });
         F.messages.push({ id: U.uid('msg'), at: now + 60000, from: target.id, to: 'human', text: REPLIES[F.messages.length % REPLIES.length] });
@@ -257,6 +353,16 @@
     F.actions.push(act);
     m.rev += 1;
     m.idx = HUB.analysis.buildIdx(m.def, m.facts);
+    m.cmp = HUB.analysis.comparability(m);
+    if (typeof window !== 'undefined' && window.fetch && window.location && /^https?:/.test(window.location.protocol)) {
+      try {
+        window.fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modelId: m.id, caseId: act.caseId, kind: kind, payload: payload, action: act })
+        }).catch(function () {});
+      } catch (e) {}
+    }
     HUB.bus.emit('model', { model: m, action: act });
     return act;
   }
@@ -264,7 +370,7 @@
   HUB.model = {
     current: null,
     build: build, load: load, ready: ready, owns: function (id) { return !!sourceOf(id); }, addSource: addSource,
-    select: select, an: an, perform: perform, traceOf: traceOf,
+    select: select, an: an, perform: perform, previewControl: previewControl, traceOf: traceOf,
     visible: visible, instanceOf: instanceOf, latestRunOf: latestRunOf, focusRun: focusRun, name: name, factLabel: factLabel, measured: measured
   };
 })();

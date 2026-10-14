@@ -117,6 +117,27 @@ export type RateLimit = {
   resetsAt?: Iso;
 };
 
+/** Honest 4-tier capability declaration for a session's host adapter. */
+export type AdapterCapabilities = {
+  observe_only: boolean;
+  control_lifecycle: {
+    start: boolean;
+    resume: boolean;
+    fork: boolean;
+    stop: boolean;
+  };
+  steer_in_turn: {
+    in_turn: boolean;
+    next_turn: boolean;
+    inbox_file: boolean;
+  };
+  coordinate_team: {
+    spawn_subagent: boolean;
+    peer_message: boolean;
+    task_board: boolean;
+  };
+};
+
 export type Session = {
   /** Global id: `kind:sourceId`. */
   id: string;
@@ -133,6 +154,8 @@ export type Session = {
   usage?: Usage;
   /** Provider rate limits as last reported: the state of the model channel. */
   limits?: RateLimit[];
+  /** Honest capability declaration for this session's host adapter. */
+  capabilities?: AdapterCapabilities;
   state: SessionState;
   stats: SessionStats;
   /** Parser notes, e.g. counts of record kinds it did not know. Never source content. */

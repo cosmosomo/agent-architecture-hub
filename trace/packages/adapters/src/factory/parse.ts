@@ -9,7 +9,7 @@
  * from user messages, toolCalls stay 0, and the last turn always closes as
  * completed — there is no running marker, so detectState never sees an open turn.
  */
-import { sessionId, type Iso, type Session } from '@hub-trace/contract';
+import { sessionId, type AdapterCapabilities, type Iso, type Session, type Todo } from '@hub-trace/contract';
 import { detectState, STALE_MS } from '../state.ts';
 import { TurnBuilder, titleFallback } from '../turns.ts';
 import { toolFamily } from '../opencode/parse.ts';
@@ -18,8 +18,39 @@ import type { FinishOptions, LineParser, SourceFile } from '../types.ts';
 
 export const FACTORY_KIND = 'factory';
 export const FACTORY_ADAPTER_VERSION = '0.1.0';
+export const FACTORY_CAPABILITIES: AdapterCapabilities = {
+  observe_only: true,
+  control_lifecycle: { start: true, resume: true, fork: false, stop: false },
+  steer_in_turn: { in_turn: false, next_turn: true, inbox_file: false },
+  coordinate_team: { spawn_subagent: false, peer_message: false, task_board: true },
+};
 
 type J = Record<string, any>;
+
+function parseFactoryTodos(raw: unknown): Todo[] | undefined {
+  const inner = (raw && typeof raw === 'object' && 'todos' in (raw as J)) ? (raw as J).todos : raw;
+  const out: Todo[] = [];
+  if (Array.isArray(inner)) {
+    for (const it of inner) {
+      if (!it || typeof it !== 'object') continue;
+      const text = clean(typeof it.content === 'string' ? it.content : typeof it.text === 'string' ? it.text : '');
+      const rawSt = String(it.status || 'pending').toLowerCase();
+      const status: Todo['status'] = rawSt === 'completed' || rawSt === 'in_progress' ? rawSt : 'pending';
+      if (text) out.push({ title: text, status });
+    }
+    return out.length ? out : undefined;
+  }
+  const str = typeof inner === 'string' ? inner : '';
+  if (!str.trim()) return undefined;
+  for (const line of str.split(/\r?\n/)) {
+    const m = line.match(/^\s*\d+\.\s*\[(completed|in_progress|pending)\]\s*(.+)$/i);
+    if (!m) continue;
+    const st = m[1].toLowerCase() as 'completed' | 'in_progress' | 'pending';
+    const text = clean(m[2]);
+    if (text) out.push({ title: text, status: st });
+  }
+  return out.length ? out : undefined;
+}
 
 /** Streamed JSONL: every push() line is collected, finish() parses line by line. */
 export function createFactoryParser(file: SourceFile): LineParser {
@@ -52,6 +83,23 @@ export function createFactoryParser(file: SourceFile): LineParser {
           // 首个 marker 为准
           if (!markerId && typeof o.id === 'string' && o.id) markerId = o.id;
           if (!markerTitle && typeof o.title === 'string' && o.title.trim()) markerTitle = o.title;
+        } else if (type === 'todo_state') {
+          const todos = parseFactoryTodos(o.todos);
+          const tool = B.addToolCall({
+            callId: typeof o.id === 'string' && o.id ? o.id : undefined,
+            name: 'TodoWrite',
+            family: 'plan',
+            input: o.todos !== undefined ? JSON.stringify(o.todos) : undefined,
+            at,
+          });
+          if (todos) tool.todos = todos;
+          tool.status = 'ok';
+          B.closeTool(tool, at);
+        } else if (type === 'compaction_state') {
+          const summary = typeof o.summaryText === 'string' && o.summaryText.trim()
+            ? oneLine(o.summaryText, 120)
+            : '上下文压缩';
+          B.addEvent('compaction', at, summary);
         } else if (type === 'message') {
           const m = o.message;
           if (!m || typeof m !== 'object' || typeof m.role !== 'string') {
@@ -152,6 +200,7 @@ export function createFactoryParser(file: SourceFile): LineParser {
         ...(lastAt ? { updatedAt: lastAt } : {}),
         links: [],
         turns: B.turns,
+        capabilities: FACTORY_CAPABILITIES,
         state: { status: 'empty' },
         stats: {
           turns: B.turns.length,
@@ -159,7 +208,7 @@ export function createFactoryParser(file: SourceFile): LineParser {
           toolCalls: f.toolCalls,
           toolErrors: f.toolErrors,
           messages: f.messages,
-          compactions: 0,
+          compactions: f.compactions,
           subagents: 0,
           records,
           skipped,

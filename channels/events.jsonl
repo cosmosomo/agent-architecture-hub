@@ -1,0 +1,6 @@
+{"at":"2026-10-07T14:59:00+08:00","channel":"yinzi-api","kind":"outage","from":"🟢","to":"🔴","maintainer":"S6","note":"银子智能账户额度耗尽返回 HTTP 403，触发 AP leader-pause-20261007 排空暂停"}
+{"at":"2026-10-07T18:30:00+08:00","channel":"yinzi-api","kind":"recover","from":"🔴","to":"🟢","maintainer":"S6","note":"额度补充并验证 127.0.0.1:7892 代理连通，恢复可用"}
+{"at":"2026-10-09T16:00:00+08:00","channel":"opencli-job-sites","kind":"degraded","from":"🟢","to":"🟡","maintainer":"S3","note":"51job company 连字符 encCoId 契约修复，但 DOM 公司名易误抓 APP下载，挂账 U08/T11"}
+{"at":"2026-10-14T04:44:11+08:00","channel":"opencli-xiaohongshu","kind":"degraded","from":"🟢","to":"🟡","maintainer":"S3","note":"search 复测通过(exit 0)，note 出现 1 次 COMMAND_FAILED 立即停手保现场，保留 T1 观察"}
+{"at":"2026-10-14T12:20:00+08:00","channel":"codex","kind":"upgrade_detected","from":"0.118.0","to":"0.159.2","maintainer":"S5","note":"检测到 Codex 升级至 0.159.2，新增 queue/hooks/goals，生成调研单 UPG-20261014-01"}
+{"at":"2026-10-14T12:20:00+08:00","channel":"claude-code","kind":"upgrade_detected","from":"2.1.85","to":"2.1.296","maintainer":"S5","note":"检测到 Claude Code 升级至 2.1.296，新增 --bg/agents --json/stop，生成调研单 UPG-20261014-02"}

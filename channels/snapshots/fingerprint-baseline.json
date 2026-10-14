@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0",
+  "capturedAt": "2026-10-14T12:55:00+08:00",
+  "hosts": {
+    "codex": {
+      "verifiedVersion": "0.159.2",
+      "detectedVersion": "0.159.2",
+      "subcommands": ["exec", "review", "login", "logout", "mcp", "app-server", "app", "completion", "sandbox", "debug", "apply", "resume", "fork", "cloud", "features", "agents", "queue", "archive", "unarchive", "delete", "migrate-rollouts", "plugin", "remote-control", "exec-server", "doctor", "update", "help"],
+      "newSinceVerified": []
+    },
+    "claude-code": {
+      "verifiedVersion": "2.1.85",
+      "detectedVersion": "2.1.296",
+      "subcommands": ["agents", "auth", "auto-mode", "doctor", "install", "mcp", "plugin", " plugins", "ps", "logs", "attach", "stop", "setup-token", "update", "upgrade"],
+      "newSinceVerified": ["--bg", "agents --json", "ps", "logs", "attach", "stop", "--forward-subagent-text"]
+    },
+    "zcode": {
+      "verifiedVersion": "0.16.9",
+      "detectedVersion": "0.16.9",
+      "sqliteTables": ["model_usage", "part", "permission", "project", "session", "session_share", "session_summary_cache", "session_task_link", "todo", "workspace", "message"]
+    },
+    "workbuddy": {
+      "verifiedVersion": "2.160.0",
+      "detectedVersion": "2.160.0",
+      "dbPath": "~/.workbuddy/workbuddy.db"
+    },
+    "antigravity": {
+      "verifiedVersion": "CDP:9234",
+      "detectedVersion": "CDP:9234",
+      "transcriptRoot": "~/.gemini/antigravity/brain"
+    },
+    "doubao-desktop": {
+      "verifiedVersion": "CDP:9225",
+      "detectedVersion": "CDP:9225",
+      "externalSessionRead": false,
+      "knownStorageDirs": ["saman_shell_db_storage", "IndexedDB", "Local Storage", "Session Storage"],
+      "opencliSubcommands": ["status", "ask", "send", "read", "new", "screenshot", "dump"]
+    },
+    "gemini-cli": {
+      "verifiedVersion": "0.62.0",
+      "detectedVersion": "0.62.0",
+      "sessionRoot": "~/.gemini/tmp"
+    },
+    "opencode": {
+      "verifiedVersion": "1.18.33",
+      "detectedVersion": "1.18.33",
+      "storageRoot": "~/.local/share/opencode/storage"
+    },
+    "factory-droid": {
+      "verifiedVersion": "0.228.0",
+      "detectedVersion": "0.228.0",
+      "sessionRoot": "~/.factory/sessions"
+    },
+    "ap-vibe": {
+      "verifiedVersion": "8876-agent-hub",
+      "detectedVersion": "8876-agent-hub",
+      "endpoint": "http://127.0.0.1:8876"
+    }
+  }
+}

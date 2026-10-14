@@ -17,7 +17,7 @@
     overlays: { human: true, channels: false, delivery: false, lanes: true, evals: true },   /* evals: after-the-fact judgements (failure labels, outcomes), a layer apart from the facts */
     present: 'graph',
     selection: null,
-    drawer: true,
+    drawer: null,  /* null: collapsed when nothing is selected; 'needs' | 'health' | 'ctrl' | 'search' | true: open drawer */
     merged: []   /* quick-aggregate: [{id, memberIds, name}]; view-only, never touches def/facts */
   };
   var MERGE_KEYS = ['depth', 'expanded', 'collapsed', 'lines', 'overlays'];

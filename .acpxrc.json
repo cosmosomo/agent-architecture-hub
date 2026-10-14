@@ -1,0 +1,17 @@
+{
+  "defaultAgent": "codex",
+  "defaultPermissions": "approve-reads",
+  "nonInteractivePermissions": "deny",
+  "ttl": 300,
+  "agents": {
+    "zcode": {
+      "argv": ["zcode-acp-server"]
+    },
+    "workbuddy": {
+      "argv": ["codebuddy", "--acp"]
+    },
+    "codebuddy": {
+      "argv": ["codebuddy", "--acp"]
+    }
+  }
+}

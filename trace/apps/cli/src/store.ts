@@ -279,7 +279,7 @@ export class SessionStore {
         continue;
       }
       const old = this.entries.get(f.path);
-      const open = old && (old.summary.state.status === 'working' || old.summary.state.status === 'waiting');
+      const open = old && (old.summary.state.status === 'working' || old.summary.state.status === 'waiting') && (this.now() - st.mtimeMs < 3600_000);
       if (old && old.size === st.size && old.mtimeMs === st.mtimeMs && old.adapter === adapterId && !open) {
         report.reused++;
         continue;
@@ -321,8 +321,13 @@ export class SessionStore {
     this.byId.clear();
     for (const e of this.entries.values()) {
       const prev = this.byId.get(e.summary.id);
-      // The same session can appear twice (e.g. sessions and archived_sessions): keep the newest copy.
-      if (!prev || e.mtimeMs > prev.mtimeMs) this.byId.set(e.summary.id, e);
+      // Prefer a richer copy (e.g. Gemini chats/session-*.json with modelCalls > 0 over user-echo-only logs.json),
+      // or the newest copy when both have the same richness (e.g. sessions vs archived_sessions).
+      const curRich = (e.summary.stats.modelCalls || 0) > 0 ? 1 : 0;
+      const prevRich = prev && (prev.summary.stats.modelCalls || 0) > 0 ? 1 : 0;
+      if (!prev || curRich > prevRich || (curRich === prevRich && e.mtimeMs > prev.mtimeMs)) {
+        this.byId.set(e.summary.id, e);
+      }
     }
   }
 
@@ -369,7 +374,7 @@ export class SessionStore {
     if (!this.has(id)) return undefined;
     const e = this.byId.get(id)!;
     const adapter = ADAPTERS.find((a) => a.kind === e.kind);
-    if (!adapter || !existsSync(e.path)) return undefined;
+    if (!adapter) return undefined;
     const hash = e.path.indexOf('#');
     if (hash > 0) {
       const real = e.path.slice(0, hash);
@@ -390,7 +395,9 @@ export class SessionStore {
         if (this.parsedCache.size > 12) this.parsedCache.delete(this.parsedCache.keys().next().value!);
         return fromDb;
       }
+      return undefined;
     }
+    if (!existsSync(e.path)) return undefined;
     const st = statSync(e.path);
     const hit = this.parsedCache.get(id);
     if (hit && hit.size === st.size && hit.mtimeMs === st.mtimeMs) return hit.session;

@@ -9,9 +9,6 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-7o1OCZ6Svd948D0uBS8sJf/zXF2NgLL7BGWd0qjedrk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>Agent Architecture Hub</title>
 <script>try { if (localStorage.getItem('hub.theme') === 'light') document.documentElement.setAttribute('data-theme', 'light'); } catch (e) { /* storage blocked */ }</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="hub/css/shell.css">
 <link rel="stylesheet" href="hub/css/obs.css">
 <link rel="stylesheet" href="hub/css/panels.css">
@@ -27,13 +24,16 @@
 
 <div class="app">
 <header class="topbar">
-  <div class="tb-brand"><span class="tb-logo" id="tbLogo" role="img" aria-label="Logo"></span><h1>AGENT ARCHITECTURE HUB</h1></div>
+  <div class="tb-brand">
+    <button class="btn tb-sl-btn" id="slToggle" type="button" title="收起/展开左侧数据源栏（快捷键 B）" aria-label="收起或展开左栏">◂</button>
+    <span class="tb-logo" id="tbLogo" role="img" aria-label="Logo"></span>
+    <h1>AGENT ARCHITECTURE HUB</h1>
+  </div>
   <div class="tb-main" id="tbMain"></div>
   <div class="tb-actions">
     <div class="tb-right">
       <div class="tb-util">
-        <a class="btn" href="concept/" target="_blank" rel="noopener" title="概念画板：手工拖拽搭建多智能体团队的画板（独立的数据和页面）">概念画板 ↗</a>
-        <a class="btn" href="trace/" target="_blank" rel="noopener" title="Trace 查看器：本机会话的列表、调用树、检索、统计">Trace ↗</a>
+        <button class="btn btn-p" id="ctrlToggle" type="button" title="反向调控与编排写回台：连接关系编辑、指令注入、Markdown Diff 预览与落盘">⚡ 编排与调控</button>
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换明暗主题"></button>
       </div>
     </div>
@@ -41,11 +41,7 @@
 </header>
 <main class="workspace">
   <aside class="side-l" id="sL" aria-label="案例与会话">
-    <div class="svc-note" id="svcNote" hidden>没有连上观察台服务：这个地址只提供静态文件，会话、Trace 查看器和案例目录用不了。在仓库里运行 <code>npm start</code>，用它打印出来的地址打开。</div>
-    <a class="trace-entry" href="trace/" target="_blank" rel="noopener" title="本机真实智能体会话的调用记录：列表、调用树、全文检索、统计">
-      <span class="te-ic">&#9719;</span>
-      <span class="te-tx"><b>TRACE 查看器</b><small>本机会话 · 调用树 · 检索 · 统计 ↗</small></span>
-    </a>
+    <div class="svc-note" id="svcNote" hidden>没有连上观察台服务：这个地址只提供静态文件，会话、调用树和案例目录用不了。在仓库里运行 <code>npm start</code>，用它打印出来的地址打开。</div>
     <div class="sl-tabs" id="slTabs" role="tablist"></div>
     <div class="sl-panels" id="slPanels"></div>
   </aside>

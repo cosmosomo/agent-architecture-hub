@@ -9,7 +9,7 @@
  * finish() parses it whole. Messages carry a turnIndex, so turns come straight from
  * the source rather than from role transitions.
  */
-import { sessionId, type Iso, type Session } from '@hub-trace/contract';
+import { sessionId, type AdapterCapabilities, type Iso, type Session } from '@hub-trace/contract';
 import { detectState, STALE_MS } from '../state.ts';
 import { TurnBuilder, titleFallback } from '../turns.ts';
 import { clean, oneLine } from '../text.ts';
@@ -17,6 +17,12 @@ import type { FinishOptions, LineParser, SourceFile } from '../types.ts';
 
 export const ZCODE_KIND = 'zcode';
 export const ZCODE_ADAPTER_VERSION = '0.1.0';
+export const ZCODE_CAPABILITIES: AdapterCapabilities = {
+  observe_only: true,
+  control_lifecycle: { start: true, resume: true, fork: false, stop: false },
+  steer_in_turn: { in_turn: false, next_turn: true, inbox_file: true },
+  coordinate_team: { spawn_subagent: true, peer_message: false, task_board: true },
+};
 
 type J = Record<string, any>;
 
@@ -101,6 +107,7 @@ export function parseZcodeSession(text: string, file: SourceFile, opts: FinishOp
     ...(updatedAt || lastAt ? { updatedAt: updatedAt || lastAt } : {}),
     links: [],
     turns: B.turns,
+    capabilities: ZCODE_CAPABILITIES,
     state: { status: 'empty' },
     stats: {
       turns: B.turns.length,

@@ -19,6 +19,7 @@
 import {
   CONTRACT_VERSION,
   sessionId,
+  type AdapterCapabilities,
   type Iso,
   type ModelStep,
   type Session,
@@ -31,7 +32,14 @@ import { basename, titleFallback, TurnBuilder } from '../turns.ts';
 import { detectState } from '../state.ts';
 
 export const CLAUDE_KIND = 'claude-code';
-export const CLAUDE_ADAPTER_VERSION = '0.2.3';
+export const CLAUDE_ADAPTER_VERSION = '0.2.4';
+
+export const CLAUDE_CAPABILITIES: AdapterCapabilities = {
+  observe_only: true,
+  control_lifecycle: { start: true, resume: true, fork: true, stop: true },
+  steer_in_turn: { in_turn: true, next_turn: true, inbox_file: true },
+  coordinate_team: { spawn_subagent: true, peer_message: true, task_board: true },
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type J = any;
@@ -306,6 +314,7 @@ export function createClaudeParser(file: SourceFile): LineParser {
         links: [],
         turns: B.turns,
         ...(sessionUsage ? { usage: sessionUsage } : {}),
+        capabilities: CLAUDE_CAPABILITIES,
         state: { status: 'empty' },
         stats: {
           turns: B.turns.length,

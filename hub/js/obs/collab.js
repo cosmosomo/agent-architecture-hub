@@ -68,9 +68,10 @@
     els.legend.style.display = 'none';
     els.stage.append(els.note, els.bubble, els.caption, els.legend);
     els.bar = h('div', { class: 'obc-bar' });
+    els.stages = h('div', { class: 'obc-stages' });
     els.score = sv('svg', { class: 'obc-score', role: 'img', 'aria-label': '按记录先后排开的全图' });
     els.scorewrap = h('div', { class: 'obc-scorewrap' }, els.score);
-    els.foot = h('div', { class: 'obc-foot obc-glass' }, els.bar, els.scorewrap);
+    els.foot = h('div', { class: 'obc-foot obc-glass' }, els.bar, els.stages, els.scorewrap);
     els.host.append(els.head, els.stage, els.foot);
     // the page zooms the canvas on wheel; here the wheel belongs to the view
     els.host.addEventListener('wheel', function (e) { e.stopPropagation(); }, { passive: true });
@@ -125,14 +126,14 @@
     var out = HUB.collab.build(m, s), st = out.st, prev = V.cursor, instId = st.inst ? st.inst.id : '';
     V.st = st; V.cursor = out.cursor; V.evalOn = !(s.overlays && s.overlays.evals === false);
     // an instance opens as the whole picture, with nobody speaking; the last record speaks once the cursor has moved
-    if (!wasOn || instId !== V.instId) V.quiet = true; else if (V.cursor !== prev) V.quiet = false;
+    if (!wasOn || instId !== V.instId) { V.quiet = true; V.stageIdx = 0; } else if (V.cursor !== prev) V.quiet = false;
     V.instId = instId;
     if (V.playing && !canReplay()) { V.playing = false; clearTimeout(V.timer); }
     // what stays while the cursor moves is rebuilt only when the instance, the comparison, the granularity or the room changes
     var base = st.sig + '|' + V.evalOn;
     var fresh = base !== V.base;
-    if (fresh) { V.base = base; renderHead(); renderLegend(); renderBar(); }
-    var fw = els.foot.clientWidth + 'x' + (els.host.clientHeight < 380 ? 'low' : 'ok');
+    if (fresh) { V.base = base; renderHead(); renderLegend(); renderBar(); renderStages(); }
+    var fw = els.foot.clientWidth + 'x' + (els.host.clientHeight < 380 ? 'low' : 'ok') + '|s' + (V.stageIdx || 0);
     if (fresh || fw !== V.fw) { V.fw = fw; renderScore(); }
     var size = els.stage.clientWidth + 'x' + els.stage.clientHeight;
     var rebuilt = fresh || size !== V.size;
@@ -142,6 +143,7 @@
     if (!animate) clearFx();
     updateStage();
     updateBar();
+    updateStages();
     if (animate && showFacts() && !REDUCE) launchStep(prev);
     return true;
   }
@@ -232,6 +234,7 @@
     var spanX = x1 > x0 ? Math.min(right - left, table ? 280 + n * 80 : Math.max((nCols - 1) * (zig ? 440 + 2 * DX : 440), nLoose ? (Math.min(8, nLoose) - 1) * 150 : 0)) : 0;
     var spanY = y1 > y0 ? Math.min(bot - top, table ? 170 + n * 46 : (maxCol - 1) * (zig ? SPZ + 30 : 200) + roomLoose) : 0;
     var cx = (left + right) / 2, cy = (top + bot) / 2;
+    V.cx = cx; V.cy = cy;
     V.nk = {};
     V.nodes = st.nodes.map(function (p0) {
       var p = Object.create(p0);
@@ -269,7 +272,7 @@
         '<radialGradient id="obc-hl-' + c + '"><stop offset=".45" style="stop-color:var(--oc-' + c + ');stop-opacity:.42"/><stop offset="1" style="stop-color:var(--oc-' + c + ');stop-opacity:0"/></radialGradient>';
     });
     defs.innerHTML = html;
-    ['rails', 'edges', 'chan', 'nodes', 'docks', 'fx', 'tags', 'flags'].forEach(function (k) { G[k] = sv('g', { class: 'obc-L-' + k }, svg); });
+    ['rails', 'bb', 'edges', 'chan', 'nodes', 'docks', 'fx', 'tags', 'flags'].forEach(function (k) { G[k] = sv('g', { class: 'obc-L-' + k }, svg); });
     V.seqs = {};   // the records of each node, to count how many the cursor has passed
     V.st.recs.forEach(function (r) { (V.seqs[r.node] || (V.seqs[r.node] = [])).push(r.seq); });
     drawRails(); drawChannel(); drawNodes();
@@ -312,6 +315,7 @@
       var c = { x: o.x + d[0], y: o.y + d[1], cost: i };
       if (c.x - w / 2 < 6 || c.x + w / 2 > V.vw - 6 || c.y - hh / 2 < 6 || c.y + hh / 2 > V.vh - 6) c.cost += 1000;
       V.nodes.forEach(function (n) { if (n !== o && Math.abs(n.x - c.x) < w / 2 + n.r + 14 && Math.abs(n.y - c.y) < hh / 2 + n.r + 34) c.cost += 100; });
+      if (st.blackboard && st.blackboard.active && Math.abs((V.cx || 500) - c.x) < w / 2 + 110 && Math.abs((V.cy || 290) - c.y) < hh / 2 + 46) c.cost += 120;
       if (!best || c.cost < best.cost) best = c;
     });
     var grp = sv('g', { class: 'obc-chan' }, G.chan);
@@ -331,6 +335,7 @@
       var col = colOf(p.key), ghost = col === 'ghost';
       var grp = sv('g', { class: 'obc-node obc-c-' + col + (ghost ? ' ghost' : ''), transform: 'translate(' + f1(p.x) + ',' + f1(p.y) + ')', 'data-key': p.key }, G.nodes);
       sv('circle', { class: 'halo', r: f1(p.r + 22), fill: 'url(#obc-hl-' + col + ')' }, grp);
+      var dlv = sv('g', { class: 'dlvring' }, grp);
       var ring = sv('g', { class: 'runring' }, grp);
       var r = p.r, body;
       if (p.glyph === 'hub') {
@@ -355,7 +360,7 @@
         var run = HUB.model.latestRunOf(p.id, Object.assign({}, V.s, { focus: { type: 'case', id: V.st.inst.id } }), V.m);
         if (run) openRun(run.id, p.sel);
       });
-      NODE[p.key] = { g: grp, ring: ring, sub: sub, p: p, col: col };
+      NODE[p.key] = { g: grp, dlv: dlv, ring: ring, sub: sub, p: p, col: col };
     });
   }
 
@@ -363,15 +368,23 @@
     var what = p.type === 'group' ? '分组 · ' + p.members + ' 人' : p.glyph === 'human' ? '人' : p.glyph === 'hub' ? '中枢智能体' : p.glyph === 'meta' ? '维护者' : '个体';
     var head = '<b>' + esc(V.evalOn ? (p.full || p.name) : p.name) + '</b> <span class="m">' + what + '</span>';
     var fact = defOnly ? '' : '<br>' + (ghost ? '这份记录里没有出现' : p.recs ? '这份记录里 ' + p.recs + ' 条记录' : '这份记录里没有它自己的记录，只作为交接的一端出现');
+    var dlvHtml = '';
+    if (!defOnly && !ghost && HUB.collab.deliveryRing) {
+      var ds = HUB.collab.deliveryRing(V.st, V.m, p.key, V.cursor);
+      var trustTxt = ds.trust === 'tainted' ? '⚑ 含失误写入' : ds.trust === 'verified' ? '✓ 已核验签发' : ds.trust === 'unreviewed' ? '◌ 待审草稿' : '未产出';
+      dlvHtml = '<br><span class="m">送达四分外环：1.该知道 ' + (ds.should_know ? '✓' : '·') + ' · 2.已送到 ' + (ds.delivered ? '✓' : '·') +
+        ' · 3.已读 ' + (ds.read ? '✓' : '·') + ' · 4.已写 ' + (ds.written ? '✓' : '·') + '（' + trustTxt + '）</span>';
+    }
     var gap = !defOnly && !ghost && p.glyph !== 'human' && !HUB.model.measured(V.m, 'tokens') ? '<br><span class="m">token、用时：未采集</span>' : '';
     var how = p.type === 'group' ? '单击看详情，双击展开这个分组' : !defOnly && !ghost && p.glyph !== 'human' ? '单击看详情，双击进它最近一次运行的决策链' : '单击看详情';
-    return head + fact + gap + '<br><span class="m">' + how + '</span>';
+    return head + fact + dlvHtml + gap + '<br><span class="m">' + how + '</span>';
   }
 
   /* ================= the stage: what follows the cursor ================= */
   function updateStage() {
     var st = V.st, s = V.cursor, tau = Math.max(3, st.N / 22);
     G.edges.innerHTML = ''; G.tags.innerHTML = ''; G.flags.innerHTML = '';
+    if (G.bb) G.bb.innerHTML = '';
     EDGE = {};
     var LBL = [];
     if (showFacts()) st.pairs.forEach(function (pair) {
@@ -409,11 +422,15 @@
     });
     // who is speaking, and where it is inside its run
     var r = speaking();
+    updateBlackboard(s, r);
     Object.keys(NODE).forEach(function (k) {
       var n = NODE[k];
       n.g.classList.toggle('active', !!(r && r.node === k));
       n.ring.innerHTML = '';
-      if (!showFacts() || n.col === 'ghost') return;
+      if (n.dlv) n.dlv.innerHTML = '';
+      if (!showFacts()) return;
+      drawDeliveryRing(n, s);
+      if (n.col === 'ghost') return;
       // part way through the record: how many of its records have been reached; a member that has not spoken yet waits dimmed
       var all = V.seqs[k] || [], done = upper(all, s);
       n.sub.textContent = (n.p.type === 'group' ? n.p.members + ' 人 · ' : '') + (s < st.N ? done + ' / ' + all.length + ' 条' : all.length + ' 条');
@@ -430,6 +447,7 @@
     var obs = [], pts = [];
     Object.keys(NODE).forEach(function (k) { var p = NODE[k].p, hw = Math.max(p.r + 6, 60); obs.push({ key: k, x: p.x - hw, y: p.y - p.r - 6, w: hw * 2, h: 2 * p.r + 46 }); });
     if (V.chan) obs.push({ x: V.chan.x - V.chan.w / 2 - 4, y: V.chan.y - V.chan.h / 2 - 4, w: V.chan.w + 8, h: V.chan.h + 8 });
+    if (V.bbRect) obs.push(V.bbRect);
     Object.keys(EDGE).forEach(function (k) { for (var i = 1; i < 20; i++) pts.push(qpt(EDGE[k].g, i / 20)); });
     if (V.evalOn && showFacts()) st.evals.forEach(function (e) { if (e.seq != null && e.seq <= s && V.nk[e.node]) obs.push(drawFlag(V.nk[e.node], '失误标注 · 第 ' + e.seq + ' 条', obs)); });
     COLD.forEach(function (c) { placeAlong(function (p) { return tagPill(p, st.cmp.written ? '记录里没有对应的交接' : U.cmpWord('unusedChip'), 'cold'); }, c.g, [0.5, 0.62, 0.38, 0.74, 0.26], [13, -13], obs, pts); });
@@ -484,6 +502,95 @@
       sv('path', { class: i < r.pos ? 'done' : 'todo', d: 'M' + f1(Math.cos(a0) * R0) + ',' + f1(Math.sin(a0) * R0) + 'A' + f1(R0) + ',' + f1(R0) + ' 0 0 1 ' + f1(Math.cos(a1) * R0) + ',' + f1(Math.sin(a1) * R0),
         opacity: i === r.pos - 1 ? 1 : 0.7 }, n.ring);
     }
+  }
+  function drawDeliveryRing(n, s) {
+    if (!n.dlv || !HUB.collab.deliveryRing) return;
+    var ds = HUB.collab.deliveryRing(V.st, V.m, n.p.key, s);
+    if (n.col !== 'ghost') {
+      var R = n.p.r * (n.p.glyph === 'hub' ? 1.08 : n.p.type === 'group' ? 1.2 : 1) + 9.5;
+      var segs = [ds.should_know, ds.delivered, ds.read, ds.written];
+      var angs = [[-82, -8], [8, 82], [98, 172], [188, 262]];
+      for (var i = 0; i < 4; i++) {
+        var a0 = angs[i][0] * Math.PI / 180, a1 = angs[i][1] * Math.PI / 180;
+        sv('path', {
+          class: 'dlv-seg s' + (i + 1) + (segs[i] ? ' on' : ' off'),
+          d: 'M' + f1(Math.cos(a0) * R) + ',' + f1(Math.sin(a0) * R) + 'A' + f1(R) + ',' + f1(R) + ' 0 0 1 ' + f1(Math.cos(a1) * R) + ',' + f1(Math.sin(a1) * R)
+        }, n.dlv);
+      }
+      if (ds.trust !== 'idle') {
+        var tx = -n.p.r * 0.85, ty = -n.p.r * 0.78;
+        var bg = sv('g', { class: 'dlv-trust ' + ds.trust, transform: 'translate(' + f1(tx) + ',' + f1(ty) + ')' }, n.dlv);
+        sv('rect', { x: -13, y: -8, width: 26, height: 15, rx: 7.5 }, bg);
+        var tt = sv('text', { x: 0, y: 3, 'text-anchor': 'middle' }, bg);
+        tt.textContent = ds.trust === 'tainted' ? '⚑失' : ds.trust === 'verified' ? '✓核' : '◌草';
+      }
+    }
+    if (ds.humanInjected) {
+      var hx = n.p.r * 0.88, hy = -n.p.r * 0.8;
+      var hg = sv('g', { class: 'dlv-human', transform: 'translate(' + f1(hx) + ',' + f1(hy) + ')' }, n.dlv);
+      sv('rect', { x: -18, y: -8, width: 36, height: 15, rx: 7.5 }, hg);
+      var ht = sv('text', { x: 0, y: 3, 'text-anchor': 'middle' }, hg);
+      ht.textContent = '★调控';
+    }
+  }
+  function updateBlackboard(s, r) {
+    var st = V.st, bb = st.blackboard;
+    V.bbRect = null;
+    if (!G.bb) return;
+    G.bb.innerHTML = '';
+    if (!showFacts() || !bb || !bb.active) return;
+    var cx0 = V.cx || 500, cy0 = V.cy || 290, bw = 204, bh = 68;
+    var cands = [[0, 0], [0, -126], [0, 134], [-150, -105], [150, -105], [-150, 115], [150, 115]];
+    var bx = cx0, by = cy0, bestCost = Infinity;
+    cands.forEach(function (off, idx) {
+      var tx = cx0 + off[0], ty = cy0 + off[1], cost = idx * 4;
+      var rx0 = tx - bw / 2 - 12, rx1 = tx + bw / 2 + 12, ry0 = ty - bh / 2 - 12, ry1 = ty + bh / 2 + 12;
+      V.nodes.forEach(function (p) {
+        var nx0 = p.x - Math.max(p.r + 18, 86), nx1 = p.x + Math.max(p.r + 18, 86);
+        var ny0 = p.y - p.r - 16, ny1 = p.y + p.r + 48;
+        if (rx0 < nx1 && rx1 > nx0 && ry0 < ny1 && ry1 > ny0) cost += 500;
+      });
+      if (cost < bestCost) { bestCost = cost; bx = tx; by = ty; }
+    });
+    V.bbRect = { x: bx - bw / 2 - 8, y: by - bh / 2 - 8, w: bw + 16, h: bh + 16 };
+    var activeRec = r || (s > 0 ? st.recs[s - 1] : null);
+    var activeNode = activeRec ? activeRec.node : null;
+    V.nodes.forEach(function (p) {
+      if (p.ghost) return;
+      var a = towards(p, bx, by, p.r + 12), b = towards({ x: bx, y: by }, p.x, p.y, 44);
+      var isWriter = activeNode === p.key;
+      if (isWriter) {
+        sv('line', { class: 'obc-bb-beam write obc-c-' + colOf(p.key), x1: f1(a.x), y1: f1(a.y), x2: f1(b.x), y2: f1(b.y) }, G.bb);
+        var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        var wg = sv('g', { class: 'obc-bb-pill write obc-c-' + colOf(p.key), transform: 'translate(' + f1(mx) + ',' + f1(my) + ')' }, G.bb);
+        sv('rect', { x: -28, y: -8, width: 56, height: 16, rx: 8 }, wg);
+        var wt = sv('text', { x: 0, y: 3.5, 'text-anchor': 'middle' }, wg);
+        wt.textContent = '写入 #' + activeRec.seq;
+      } else if (s > 0) {
+        sv('line', { class: 'obc-bb-beam read', x1: f1(b.x), y1: f1(b.y), x2: f1(a.x), y2: f1(a.y) }, G.bb);
+      }
+    });
+    var tainted = V.evalOn && st.evals.some(function (e) { return !e.seq || e.seq <= s; });
+    var verified = !tainted && st.result && st.result.result === 'success' && s >= st.N;
+    var tCls = tainted ? 'tainted' : verified ? 'verified' : 'unreviewed';
+    var grp = sv('g', { class: 'obc-bb ' + tCls, transform: 'translate(' + f1(bx) + ',' + f1(by) + ')' }, G.bb);
+    sv('ellipse', { class: 'bb-aura', rx: 118, ry: 46 }, grp);
+    sv('rect', { class: 'bb-card', x: -bw / 2, y: -bh / 2, width: bw, height: bh, rx: 12 }, grp);
+    var k = sv('text', { class: 'bb-k', x: 0, y: -15, 'text-anchor': 'middle' }, grp);
+    k.textContent = 'SHARED BLACKBOARD · 共享黑板引力场';
+    var nmEl = sv('text', { class: 'bb-name', x: 0, y: 3, 'text-anchor': 'middle' }, grp);
+    nmEl.textContent = clip(bb.name, 18);
+    var stEl = sv('text', { class: 'bb-sub', x: 0, y: 20, 'text-anchor': 'middle' }, grp);
+    stEl.textContent = (tainted ? '⚑ 含失误写入 · ' : verified ? '✓ 已核验签发 · ' : '◌ 待审草稿 · ') + '已同步 ' + Math.min(s, st.N) + '/' + st.N + ' 拍';
+    grp.addEventListener('mouseenter', function (e) {
+      tipShow(e, '<b>共享黑板引力场：' + esc(bb.name) + '</b><br>' + esc(bb.sub) +
+        '<br><span class="m">严守事实边界：无显式/协议交接时不画假点对点连线，而是展现经中心共享黑板写入与广播同步的真实拓扑</span>');
+    });
+    grp.addEventListener('mouseleave', tipHide);
+    grp.addEventListener('click', function () {
+      var sel = (V.m && V.m.idx && V.m.idx.doc && V.m.idx.doc.has(bb.id)) ? { type: 'doc', id: bb.id } : { type: 'case', id: st.inst.id };
+      HUB.store.set({ selection: sel }, { history: false });
+    });
   }
   // the flag of a failure label: on the side of the node where it covers no other node or name and stays inside
   function drawFlag(p, text, obs) {
@@ -731,16 +838,56 @@
     bar.appendChild(els.pos);
     bar.appendChild(h('span', { class: 'ob-sep' }));
     if (st.evals.length || st.result) bar.appendChild(chipBtn('评价', V.evalOn, '评价是事后的判断（失误标注、结局），和执行事实分开；可以整层关掉', function () { HUB.store.set({ overlays: { evals: !V.evalOn } }); }));
-    bar.appendChild(chipBtn('讲解', V.story, '播放时在关键记录停一下，配一句由数据算出来的说明', function () { V.story = !V.story; if (V.story && !V.playing) play(); else { renderBar(); updateBar(); } }));
+    bar.appendChild(chipBtn('✦ 故事模式', V.story, '播放时在关键记录停一下，配一句由数据算出来的说明', function () { V.story = !V.story; if (V.story && !V.playing) play(); else { renderBar(); updateBar(); } }));
     bar.appendChild(legendBtn());
     bar.appendChild(h('span', { class: 'obc-barnote' }, st.src.kind === 'turns' ? '一拍一条记录 · 只有先后，没有时间 · 节拍不代表时长、等待或并发' : '一拍一次运行 · 按先后排，节拍和间隔不代表时长'));
   }
   function updateBar() {
     if (els.pos) els.pos.innerHTML = (V.st.src.kind === 'turns' ? '第 <b>' + V.cursor + '</b> / ' + V.st.N + ' 条' : '第 <b>' + V.cursor + '</b> / ' + V.st.N + ' 次运行');
   }
+  function renderStages() {
+    var st = V.st, box = els.stages;
+    if (!box) return;
+    box.innerHTML = '';
+    if (!canReplay() || !st.stages || st.stages.length <= 1) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    box.appendChild(h('span', { class: 'obc-stg-lbl' }, '阶段节拍带：'));
+    st.stages.forEach(function (sg) {
+      var btn = h('button', {
+        type: 'button',
+        class: 'obc-stg-pill' + (sg.hasEval ? ' eval' : sg.hasErr ? ' err' : '') + (V.stageIdx === sg.idx ? ' zoomed' : ''),
+        'data-idx': sg.idx,
+        title: '单击跳到阶段起点（第 ' + sg.start + ' 条）；双击或点右侧“聚焦本段”放大下方全图到 ' + sg.range,
+        onClick: function () { pause(); go(sg.start, true); },
+        onDblclick: function () { V.stageIdx = V.stageIdx === sg.idx ? 0 : sg.idx; renderStages(); updateStages(); renderScore(); updateScoreHead(); }
+      }, h('b', null, sg.label), h('span', { class: 'rng' }, sg.range));
+      box.appendChild(btn);
+    });
+    var curStg = st.stages.find(function (sg) { return V.cursor >= sg.start && V.cursor <= sg.end; }) || st.stages[0];
+    box.appendChild(h('button', {
+      type: 'button',
+      class: 'ob-chip obc-stg-zoom' + (V.stageIdx ? ' on' : ''),
+      title: V.stageIdx ? '恢复显示全部 1..' + st.N + ' 条记录' : '将下方全图放大聚焦到当前所在阶段',
+      onClick: function () {
+        var targetIdx = V.stageIdx ? 0 : (curStg ? curStg.idx : 1);
+        V.stageIdx = targetIdx;
+        renderStages(); updateStages(); renderScore(); updateScoreHead();
+      }
+    }, V.stageIdx ? '⊡ 全部 1–' + st.N : '🔍 聚焦本段'));
+  }
+  function updateStages() {
+    if (!els.stages || !V.st || !V.st.stages) return;
+    var c = V.cursor;
+    Array.prototype.forEach.call(els.stages.querySelectorAll('.obc-stg-pill'), function (b) {
+      var idx = Number(b.getAttribute('data-idx'));
+      var sg = V.st.stages[idx - 1];
+      b.classList.toggle('cur', !!(sg && c >= sg.start && c <= sg.end));
+      b.classList.toggle('zoomed', V.stageIdx === idx);
+    });
+  }
 
   function scoreLanes() { return V.st.nodes.slice().sort(function (a, b) { return (a.layer - b.layer) || (a.y - b.y); }); }
-  function sx(r) { return SC.labelW + (r - 1) * SC.cell; }
+  function sx(r) { return SC.labelW + (r - (SC.sMin || 1)) * SC.cell; }
   function renderScore() {
     var st = V.st, svgS = els.score, W = els.foot.clientWidth || 800;
     svgS.innerHTML = '';
@@ -750,8 +897,11 @@
     els.scorewrap.style.display = '';
     var lanes = scoreLanes().filter(function (p) { return !p.ghost || st.cmpMode !== 'fact' || st.hands.some(function (x) { return x.from === p.key || x.to === p.key; }); });
     SC.laneH = clamp(Math.round(clamp((els.host.clientHeight || 640) * 0.17, 84, 150) / Math.max(1, lanes.length)), 17, 30);
-    var N = st.N, H = SC.top + lanes.length * SC.laneH + SC.axisH;
-    SC.W = W; SC.H = H; SC.cell = (W - SC.labelW - SC.padR) / N;
+    var stg = (V.stageIdx && st.stages) ? st.stages[V.stageIdx - 1] : null;
+    var sMin = stg ? stg.start : 1, sMax = stg ? stg.end : st.N, span = Math.max(1, sMax - sMin + 1);
+    SC.sMin = sMin; SC.sMax = sMax; SC.span = span;
+    var H = SC.top + lanes.length * SC.laneH + SC.axisH;
+    SC.W = W; SC.H = H; SC.cell = (W - SC.labelW - SC.padR) / span;
     svgS.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svgS.setAttribute('width', W); svgS.setAttribute('height', H);
     var laneY = {};
     lanes.forEach(function (p, i) { laneY[p.key] = SC.top + i * SC.laneH + SC.laneH / 2; });
@@ -767,11 +917,14 @@
     st.recs.forEach(function (r) {
       var y = laneY[r.node];
       if (y == null || r.pos !== 1 || r.len < 2) return;
-      sv('rect', { class: 'run obc-c-' + colOf(r.node), x: f1(sx(r.seq) + 0.3), y: f1(y - 8), width: f1(r.len * cw - 0.6), height: 16, rx: 5 }, g);
+      var r0 = Math.max(sMin, r.seq), r1 = Math.min(sMax, r.seq + r.len - 1);
+      if (r1 < sMin || r0 > sMax) return;
+      sv('rect', { class: 'run obc-c-' + colOf(r.node), x: f1(sx(r0) + 0.3), y: f1(y - 8), width: f1((r1 - r0 + 1) * cw - 0.6), height: 16, rx: 5 }, g);
     });
     var sentBy = {};
     st.hands.forEach(function (x) { if (x.basis === 'explicit') sentBy[x.sent] = true; });
     st.recs.forEach(function (r) {
+      if (r.seq < sMin || r.seq > sMax) return;
       var y = laneY[r.node];
       if (y == null) return;
       var w = clamp(cw - 1.4, 1.3, 20);
@@ -781,15 +934,17 @@
     });
     // handoffs: from the record that sends to the record that catches
     st.hands.forEach(function (x) {
+      if (x.sent < sMin || x.sent > sMax) return;
       var y1 = laneY[x.from], y2 = laneY[x.to];
       if (y1 == null || y2 == null) return;
-      var dn = y2 > y1 ? 1 : -1, x1 = sx(x.sent) + cw / 2, x2 = x.got != null && x.got > x.sent ? sx(x.got) + cw / 2 : x1 + Math.min(6, cw / 3);
+      var dn = y2 > y1 ? 1 : -1, x1 = sx(x.sent) + cw / 2, x2 = x.got != null && x.got > x.sent ? sx(Math.min(sMax, x.got)) + cw / 2 : x1 + Math.min(6, cw / 3);
       var fo = compareOn() && !x.relationId;
       sv('line', { class: 'hand ' + x.basis + (fo ? ' fo' : '') + (x.got == null ? ' never' : ''), x1: f1(x1), y1: f1(y1 + 5.5 * dn), x2: f1(x2), y2: f1(y2 - 5.5 * dn) }, g);
       if (x.got == null) sv('circle', { class: 'hand-end' + (fo ? ' fo' : ''), cx: f1(x2), cy: f1(y2 - 5.5 * dn), r: 2.4 }, g);
     });
     if (V.evalOn) st.evals.forEach(function (e) {
-      var rec = e.seq != null ? st.recs[e.seq - 1] : null, y = rec ? laneY[rec.node] : null;
+      if (e.seq == null || e.seq < sMin || e.seq > sMax) return;
+      var rec = st.recs[e.seq - 1], y = rec ? laneY[rec.node] : null;
       if (y == null) return;
       var xx = sx(e.seq) + cw / 2;
       sv('line', { class: 'eflag', x1: f1(xx), y1: f1(y + 6), x2: f1(xx), y2: f1(y - 11) }, g);
@@ -797,11 +952,11 @@
     });
     var ax = sv('g', { class: 'axis' }, svgS), yA = SC.top + lanes.length * SC.laneH + 4;
     var stepK = [1, 2, 5, 10, 20, 50, 100, 200, 500].filter(function (v) { return v * cw >= 34; })[0] || 1000;
-    for (var n = 1; n <= N; n++) if (n === 1 || n % stepK === 0 || (n === N && (N % stepK) * cw >= 30)) {
+    for (var n = sMin; n <= sMax; n++) if (n === sMin || n % stepK === 0 || (n === sMax && ((sMax - sMin) % stepK) * cw >= 30)) {
       sv('line', { x1: f1(sx(n) + cw / 2), x2: f1(sx(n) + cw / 2), y1: yA, y2: yA + 4 }, ax);
       var tt = sv('text', { x: f1(sx(n) + cw / 2), y: yA + 15, 'text-anchor': 'middle' }, ax); tt.textContent = n;
     }
-    var ttl = sv('text', { class: 'ttl', x: 14, y: yA + 15 }, ax); ttl.textContent = st.src.kind === 'turns' ? '记录序号（不是时间）' : '运行先后（不是时长）';
+    var ttl = sv('text', { class: 'ttl', x: 14, y: yA + 15 }, ax); ttl.textContent = (stg ? stg.label + ' ' : '') + (st.src.kind === 'turns' ? '记录序号（不是时间）' : '运行先后（不是时长）');
     SC.sel = sv('rect', { class: 'selrec', height: 18, rx: 4, visibility: 'hidden' }, svgS);
     SC.fut = sv('rect', { class: 'fut', y: SC.top, height: lanes.length * SC.laneH }, svgS);
     SC.ph = sv('g', { class: 'ph' }, svgS);
@@ -810,22 +965,25 @@
   }
   function updateScoreHead() {
     if (!SC.ph) return;
-    var st = V.st, s = V.cursor, cw = SC.cell, xx = s ? sx(s) + cw / 2 : SC.labelW - 3;
+    var st = V.st, s = V.cursor, cw = SC.cell, sMin = SC.sMin || 1, sMax = SC.sMax || st.N;
+    var sClamp = clamp(s, sMin - 1, sMax);
+    var xx = sClamp >= sMin ? sx(sClamp) + cw / 2 : SC.labelW - 3;
     Array.prototype.forEach.call(SC.ph.querySelectorAll('line'), function (l) { l.setAttribute('x1', f1(xx)); l.setAttribute('x2', f1(xx)); });
     var label = s ? '第 ' + s + (st.src.kind === 'turns' ? ' 条' : ' 次') : '开始前', w = label.length * 7 + 12, rx = clamp(xx - w / 2, SC.labelW - 6, SC.W - SC.padR - w + 6);
     SC.phRect.setAttribute('x', f1(rx)); SC.phRect.setAttribute('width', f1(w));
     SC.phText.setAttribute('x', f1(rx + w / 2)); SC.phText.textContent = label;
-    var fx = s ? sx(s) + cw : SC.labelW - 6;
+    var fx = sClamp >= sMin ? sx(sClamp) + cw : SC.labelW - 6;
     SC.fut.setAttribute('x', f1(fx)); SC.fut.setAttribute('width', f1(Math.max(0, SC.W - SC.padR + 6 - fx)));
     // the selected record
     var sel = V.s.selection, sr = null;
     if (sel && sel.type === 'turn') sr = st.recs.find(function (r) { return r.id === sel.id; });
-    if (sr && SC.laneY[sr.node] != null) { SC.sel.setAttribute('x', f1(sx(sr.seq) - 1)); SC.sel.setAttribute('y', f1(SC.laneY[sr.node] - 9)); SC.sel.setAttribute('width', f1(cw + 2)); SC.sel.setAttribute('visibility', 'visible'); }
+    if (sr && sr.seq >= sMin && sr.seq <= sMax && SC.laneY[sr.node] != null) { SC.sel.setAttribute('x', f1(sx(sr.seq) - 1)); SC.sel.setAttribute('y', f1(SC.laneY[sr.node] - 9)); SC.sel.setAttribute('width', f1(cw + 2)); SC.sel.setAttribute('visibility', 'visible'); }
     else SC.sel.setAttribute('visibility', 'hidden');
   }
   function scoreAt(e) {
     var r = els.score.getBoundingClientRect(), x = (e.clientX - r.left) * (SC.W / (r.width || SC.W));
-    return clamp(Math.floor((x - SC.labelW) / SC.cell) + 1, 0, V.st.N);
+    var sMin = SC.sMin || 1, sMax = SC.sMax || V.st.N;
+    return clamp(sMin + Math.floor((x - SC.labelW) / SC.cell), sMin === 1 ? 0 : sMin, sMax);
   }
 
   /* ================= legend ================= */
@@ -835,7 +993,8 @@
     els.legend.innerHTML = '<h4>这张图怎么看</h4>' +
       row('<path class="lg-task" d="M2 6.5 L48 9.4 L48 10.6 L2 13.5Z"/><circle class="lg-core" cx="50" cy="10" r="3.6"/>', '<b>' + esc(L.handoffBasis.explicit) + '</b>的交接：实线楔形、实心光。宽的一端是发出者，越宽次数越多') +
       row('<circle class="lg-task" cx="4" cy="10" r="3"/><circle class="lg-task" cx="13" cy="10" r="2.5"/><circle class="lg-task" cx="22" cy="10" r="2"/><circle class="lg-task" cx="31" cy="10" r="1.6"/><circle class="lg-task" cx="40" cy="10" r="1.2"/><circle class="lg-hollow" cx="50" cy="10" r="3.8"/>', '<b>' + esc(L.handoffBasis.protocol) + '</b>的交接：点线、空心光。点由大到小指向接收者') +
-      row('<line class="lg-none" x1="2" y1="10" x2="54" y2="10"/>', '<b>' + esc(L.handoffBasis.adjacent) + '</b>：不算交接，不连线，只在下方全图里看顺序' + (st.real ? '（这个实例 ' + st.counts.orderOnly + ' 处）' : '')) +
+      row('<rect x="8" y="3" width="42" height="14" rx="4" fill="none" stroke="var(--oc-c1)" stroke-dasharray="3 2"/><line x1="2" y1="10" x2="8" y2="10" stroke="var(--oc-c1)" stroke-width="2"/>', '<b>共享黑板引力场</b>：只有发言先后、无点对点交接时，展示向中心共享黑板写入与广播同步（严守事实边界不画假点对点线）') +
+      row('<circle cx="29" cy="10" r="7" fill="none" stroke="var(--oc-c2)" stroke-width="2.2" stroke-dasharray="9 3"/>', '<b>送达四分外环 + 信任角标</b>：4 段弧依次表示 1.该知道 → 2.已送到 → 3.已读 → 4.已写；角标区分 ◌草稿 / ✓已核验 / ⚑失误') +
       row('<path class="lg-rail" d="M2 8.2 Q28 4 54 8.2"/><path class="lg-rail" d="M2 11.8 Q28 7.6 54 11.8"/>', '<b>' + (w ? '补写的编排里的任务线' : '编排里的任务线') + '</b>：双细线，像轨道。看“定义”或“对照”时显示') +
       row('<path class="lg-fo" d="M2 6.5 L48 9.4 L48 10.6 L2 13.5Z"/>', '对照：这份记录里有，' + (w ? '补写的编排里没有' : '编排里没有（未声明）')) +
       row('<path class="lg-cold" d="M2 10 L54 10"/>', '对照：' + (w ? '补写的编排里有，这份记录里没有出现' : '编排里有，没有发生')) +
