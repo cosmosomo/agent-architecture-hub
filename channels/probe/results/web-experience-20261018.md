@@ -339,3 +339,55 @@
 - 详情页各产品会话正常展示坐标、模型与产出抽屉，干活态输入框动态切换插话/排队；
 - Feed 页面审批卡片支持稳定点击放行，不再整块刷新 DOM。
 
+
+## 甲：接入常驻驱动
+
+按总负责人安排，将丙在 [`trace/apps/cli/src/drivers/`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/drivers) 写好并完成 L0 实测的两条常驻驱动——**Codex `app-server`**（[`codex_app_server.ts`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/drivers/codex_app_server.ts)）与 **Claude `stream-json`**（[`claude_stream.ts`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/drivers/claude_stream.ts)）——正式接入 `:8899` 后端（[`trace/apps/cli/src/gateway.ts`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/gateway.ts)、[`trace/apps/cli/src/server.ts`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/server.ts)），替代原先每次发话用 `acpx` 单轮启停的做法（其他产品仍走 `acpx`），并完成轮内插话（`steer`）与轮内挂起审批（`permission`）的端到端实测。
+
+### 1. 代码接线与关键修复
+
+1. **Codex 走 `app-server` 常驻驱动（`gateway.ts:5744-6056`）**：
+   - `ensureCodexDriver()`（`gateway.ts:5744-5854`）：在 `:8899` 内维护单例 `CodexAppServerDriver`，订阅 `turn/started`、`item/agentMessage/delta`、`item/reasoning/*`、`item/started`、`item/completed`，实时更新 `ActiveRun` 并广播 SSE `run_update`；
+   - `startCodexAppServerRun()`（`gateway.ts:5931-6056`）：新建会话调 `driver.startThread`（`thread/start` + `thread/name/set`），已有会话调 `driver.resumeThread`（`thread/resume`）+ `driver.startTurn`（`turn/start`），并将原生 `threadId` 同步写回 `~/.acpx/sessions/driver-codex-<name>.json` 与 `run.traceSessionId = "codex:<threadId>"`；
+   - **轮内真插话 `steerCodexRun()`**（`gateway.ts:4878-4884, 5911-5929`）：当会话处于 `running` 态收到 `POST /api/gateway/send` 时，直接调用 `driver.steerTurn(threadId, expectedTurnId, prompt)`（`turn/steer`）插进当前活跃轮次，返回 `{ ok: true, status: "running", action: "steered", runId }`；
+   - **轮内真打断与热切模型**（`gateway.ts:4373-4379, 5044-5052`）：`cancelRun` 调 `driver.interruptTurn(threadId, turnId)`（`turn/interrupt`）；`setChannelModel` 调 `driver.switchModel(threadId, model)`（`thread/settings/update`）；
+   - **轮内挂起审批 `handleCodexApproval()`**（`gateway.ts:5856-5909`）：拦截 `item/commandExecution/requestApproval`、`item/fileChange/requestApproval`、`item/permissions/requestApproval` 逆向 RPC，生成 `inTurn: true, mode: 'in-turn'` 的 `PendingApproval` 挂起当前轮；`resolveApproval()`（`gateway.ts:4600-4630`）向活跃 stdin 回传 `{ decision: 'accept' | 'decline' }`，**同一轮继续跑完，不重开第二轮**。
+2. **Claude 走 `stream-json` 常驻驱动（`gateway.ts:6058-6295`）**：
+   - `ensureClaudeDriver()` 与 `startClaudeStreamRun()`：通过 `ClaudeStreamDriver`（`--input-format stream-json --output-format stream-json --permission-prompt-tool stdio`，测试固定用 `haiku`）维护常驻双向会话，实时解析 `assistant`（`thinking` / `text` / `tool_use`）与 `user`（`tool_result`）事件流；
+   - **轮内挂起审批 `handleClaudeApproval()`**（`gateway.ts:6134-6182`）：在 `permissions: 'reads'` 下自动放行只读工具（`Read/Glob/Grep/LS`），对写入/命令工具（`Write/Edit/Bash`）拦截 `control_request (subtype="can_use_tool")` 并挂起当前轮；`resolveApproval()` 回传 `control_response (behavior="allow" | "deny")`，**原轮次继续执行完毕**；
+   - **轮内打断**（`gateway.ts:5053-5061`）：`cancelRun` 调 `session.interrupt()` 下发 `control_request (subtype="interrupt")`。
+3. **Windows 隐藏守护进程（`:8899`）下原生二进制直连修复**：
+   - 在 `:8899` 后台守护进程（无控制台窗口）中通过 `.cmd` 包装器启动 `claude.cmd` 或 `codex.cmd` 会因 `cmd.exe` 控制台初始化卡死或报 `-1073741502`；
+   - 在 [`claude_stream.ts:8-22`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/drivers/claude_stream.ts#L8-L22)（`resolveClaudeExecutable`）与 [`codex_app_server.ts:8-21`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/drivers/codex_app_server.ts#L8-L21)（`resolveCodexExecutable`）中直接解析原生 `claude.exe` 与 `codex.exe` 路径，以 `shell: false, windowsHide: true` 直连 stdio 管道。
+4. **会话坐标点（`point`）与四张表同步更新**：
+   - [`server.ts:806-816, 1046-1117`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/server.ts#L1046-L1117)：已绑定的 Codex 会话 `point.entry` 报 `"app-server"`，已绑定的 Claude 会话 `point.entry` 报 `"stream-json"`；Codex 的 `pointCapabilities.steer` 报 `{ enabled: true, status: "real", mode: "steer" }`；Codex 与 Claude 的 `pointCapabilities.permission` 均报 `{ enabled: true, status: "real", mode: "in-turn" }`；
+   - 同时按总负责人要求，在 `gateway.ts` 为 `listAntigravitySessions`、`listWorkbuddyDesktopSessions`、`listAcpxSessions`（按文件 `mtimeMs` 缓存 JSON 解析）补齐了内存缓存，消除了巡检与详情请求的同步磁盘抖动；
+   - 更新 [`hub/data/products.json`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/hub/data/products.json)（`routes["app-server"].inBackend = true`、`routes["stream-json"].inBackend = true`）与 [`hub/data/integration-map.json`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/hub/data/integration-map.json)。
+
+---
+
+### 2. `:8899` 端到端实测结果（[`gateway_resident_drivers_20261018.json`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/probe/scripts/output/gateway_resident_drivers_20261018.json)）
+
+1. **Claude (`haiku`) `stream-json` 轮内挂起审批与同轮完成（`probe-claude-approve-368223`）**：
+   - 发起请求：`POST /api/gateway/send`（`channel: "claude"`, `sessionName: "probe-claude-approve-368223"`, `model: "haiku"`, `permissions: "reads"`），要求调用 `Write` 工具创建文件写入 `CLAUDE_IN_TURN_APPROVAL_OK_1018`；
+   - 轮内挂起：运行 `run_1792327368520_mbga`（原生会话 `claude-code:184f1917-9f80-412b-bae7-c0cf5c15f127`）中途触发 `can_use_tool (Write)`，`:8899` 捕获生成待批项 `appr_1792327376586_rm44`（`inTurn: true, mode: "in-turn"`），此时 `run.status === "running"`；
+   - 批准并同轮跑完：调用 `POST /api/gateway/approve`（`{ id: "appr_1792327376586_rm44", decision: "approve" }`），返回 `action: "approved-in-turn"`；**同一轮 `run_1792327368520_mbga`** 继续执行写出文件并回复 `“写入完成”`（`sameTurnCompleted: true`）；
+   - 会话坐标点：`GET /api/sessions/claude-code:184f1917-9f80-412b-bae7-c0cf5c15f127?compact=1` 返回 `point: { product: "claude", entry: "stream-json", ownership: "hub-idle", controlName: "probe-claude-approve-368223" }`。
+2. **Codex `app-server` 轮内真插话 `steer`（`probe-codex-steer-380189`）**：
+   - 发起首轮：`POST /api/gateway/send`（`channel: "codex"`, `sessionName: "probe-codex-steer-380189"`, `model: "gpt-6.1-sol"`），启动 `run_1792327380239_n4ia`（`codex:01a14f09-6e48-70c0-93b1-7e7bb15ab8ac`，`codexTurnId: "01a14f09-72a2-70f1-a12a-3fd68457ffdc"`）；
+   - 轮内插话：趁该轮正在运行，再次调用 `POST /api/gateway/send` 注入插话要求附带暗号 `STEER_CODEX_GATEWAY_OK_9527`，网关经 `turn/steer` 实时注入并返回 `{"ok":true,"status":"running","action":"steered","runId":"run_1792327380239_n4ia"}`；
+   - 同轮采纳：同一轮 `run_1792327380239_n4ia` 结束时回复末尾直接包含 `STEER_CODEX_GATEWAY_OK_9527`（`sameRunId: true, replyContainsSteerToken: true`）。
+3. **Codex `app-server` 轮内挂起审批与同轮完成（`probe-codex-approve-899236`）**：
+   - 发起请求：`POST /api/gateway/send`（`channel: "codex"`, `sessionName: "probe-codex-approve-899236"`, `model: "gpt-5.6-sol"`, `permissions: "reads"`），要求终端执行 `cmd.exe /c echo CODEX_IN_TURN_APPROVAL_OK_1018`；
+   - 轮内挂起：运行 `run_1792327899249_kuzv`（原生会话 `codex:01a14f11-5b9a-7d72-a8c7-2cd0f7a5357c`）触发 `item/commandExecution/requestApproval`，`:8899` 生成待批项 `appr_1792327916498_9obp`（`inTurn: true, mode: "in-turn"`，`run.status === "running"`）；
+   - 批准并同轮跑完：调用 `POST /api/gateway/approve`（`{ id: "appr_1792327916498_9obp", decision: "approve" }`），返回 `action: "approved-in-turn"`；**同一轮 `run_1792327899249_kuzv`** 获放行执行命令，退出码 `0`，输出 `CODEX_IN_TURN_APPROVAL_OK_1018` 并完成（`sameTurnCompleted: true`）；
+   - 会话坐标点：`GET /api/sessions/codex:01a14f11-5b9a-7d72-a8c7-2cd0f7a5357c?compact=1` 返回 `point: { product: "codex", entry: "app-server", ownership: "hub-idle", controlName: "probe-codex-approve-899236" }`。
+4. **热态续写（`resume`）与轮内打断（`cancel`）**：
+   - 对 `probe-codex-approve-899236` 发起第 2 轮（`run_1792327925174_ki9h`）返回 `CODEX_RESUME_OK`；对 `probe-claude-approve-368223` 发起第 2 轮（`run_1792327933372_vwj1`）返回 `CLAUDE_RESUME_OK`；
+   - 对运行中的 `probe-codex-approve-899236`（`run_1792327942442_my8g`）与 `probe-claude-approve-368223`（`run_1792327939791_a4mg`）调用 `POST /api/gateway/cancel`，均通过常驻驱动无损打断当前轮次。
+
+
+
+## 总负责人验收：甲·接入常驻驱动（10-18 晚）
+
+通过。Codex 经后端的轮内插话：rollout 只有一轮，插话暗号先在 user 消息、后在 assistant 回答里；Codex、Claude 一轮中审批各只有一轮且完成，没有重开一轮。

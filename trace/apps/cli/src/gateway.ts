@@ -8,12 +8,30 @@ import { DatabaseSync } from 'node:sqlite';
 import type { Session, SessionSummary, Step, ToolFamily, Turn } from '@hub-trace/contract';
 import { CodexAppServerDriver, type ApprovalDecision, type ServerApprovalRequest } from './drivers/codex_app_server.ts';
 import { ClaudeStreamDriver, type ClaudeCanUseToolRequest, type ClaudeStreamSession } from './drivers/claude_stream.ts';
+import { TaskBoard, type DispatchView } from './collab/taskboard.ts';
+import { AcpResidentDriver, resolveAcpBridgeCommand, type AcpApprovalDecision, type AcpPermissionRequest } from './drivers/acp_runtime.ts';
 import type { SessionStore } from './store.ts';
 
 const HOME = homedir();
 
 // Seconds acpx lets one turn run before killing it. Was hard-coded to 180, which killed any longer
 // task started from the page (2026-10-17). Override with HUB_ACPX_TIMEOUT_SEC.
+/** What one turn needs, whichever route runs it. */
+type RunOpts = {
+  prof: ChannelProfile;
+  sessionName: string;
+  traceSessionId?: string;
+  cwd: string;
+  prompt: string;
+  model: string;
+  permissions: 'all' | 'reads' | 'deny';
+  source: 'web' | 'cli';
+  retryCount?: number;
+  resumedByMeta?: string;
+  originalPrompt?: string;
+};
+/** A resident ACP bridge with no turn for this long is closed; the next turn starts it again and reloads the session. */
+const ACP_IDLE_MS = 15 * 60_000;
 const ACPX_TURN_TIMEOUT_SEC = Number(process.env.HUB_ACPX_TIMEOUT_SEC) > 0 ? Number(process.env.HUB_ACPX_TIMEOUT_SEC) : 3600;
 
 // The workbench opens an agent session in a folder, the same as opening the agent there yourself. A new
@@ -134,6 +152,10 @@ export type ChannelProfile = {
   label: string;
   product: string;
   traceKind: string;
+  /** How the backend runs a turn for this product: the `route` column of hub/data/products.json. */
+  route: string;
+  acpModes?: Partial<Record<'all' | 'reads' | 'deny', string>>;
+  modes?: string[];
   acpxAgent: string;
   defaultModel: string;
   recommendedModels: string[];
@@ -155,6 +177,10 @@ type ProductRow = {
   id: string; name: string; label: string; aliases?: string[]; route: string; acpxAgent: string | null; backend: boolean;
   readKind: string | null; defaultModel: string | null; models: string[]; env?: Record<string, string>; envFrom?: string;
   accent: string; badge: string; notes: string;
+  /** Resident ACP route: which of the agent's own modes each permission level maps to (ZCode: yolo / guarded / plan). */
+  acpModes?: Partial<Record<'all' | 'reads' | 'deny', string>>;
+  /** The agent's own working modes, for switching mid-session (session-control mode). */
+  modes?: string[];
 };
 const PRODUCT_ROWS: ProductRow[] = JSON.parse(readFileSync(join(REPO_ROOT, 'hub', 'data', 'products.json'), 'utf8')).products;
 
@@ -188,6 +214,9 @@ export const CHANNEL_PROFILES = Object.fromEntries(
       label: p.label,
       product: p.name,
       traceKind: p.readKind || p.id,
+      route: p.route,
+      acpModes: p.acpModes,
+      modes: p.modes,
       acpxAgent: p.acpxAgent || p.aliases?.[0] || p.id,
       defaultModel: p.defaultModel || '',
       recommendedModels: p.models,
@@ -332,6 +361,8 @@ export type ActiveRun = {
   codexTurnId?: string;
   /** Claude stream-json native sessionId. */
   claudeSessionId?: string;
+  /** ACP session id when the turn runs on a resident ACP bridge (ZCode, WorkBuddy, OpenCode, Hermes). */
+  acpSessionId?: string;
   /** Mid-turn steered instructions injected into the active turn. */
   steeredPrompts?: string[];
   /** Currently pending live in-turn approval ID, when the turn is suspended waiting for approval. */
@@ -658,6 +689,14 @@ export class AgentGatewayHub {
   private readonly hermesDir = join(HOME, 'AppData', 'Local', 'hermes');
   private readonly metaAgentsFile = join(HOME, '.acpx', 'hub-meta-agents.json');
   private readonly dispatchesDir = join(HOME, '.agent-hub', 'dispatches');
+  /**
+   * The "一群会话" level (collab/taskboard.ts): goals made of tasks. It dispatches through dispatchTask below and
+   * hears back from saveDispatch; the page and agent_gateway.js reach it under /api/gateway/goals and /tasks.
+   */
+  readonly taskboard = new TaskBoard({
+    dispatch: async (p) => (await this.dispatchTask({ kind: 'spawn-subagent', ...p })).dispatch as DispatchView,
+    changed: (g) => this.broadcast('goal_update', { id: g.id, status: g.status, reason: g.reason }),
+  });
   private readonly eventsFile: string;
   private readonly clients = new Set<ServerResponse>();
   private readonly activeRuns = new Map<string, ActiveRun>();
@@ -696,6 +735,14 @@ export class AgentGatewayHub {
   private claudeDriver: ClaudeStreamDriver | null = null;
   private readonly activeCodexRunsByThread = new Map<string, ActiveRun>();
   private readonly activeClaudeRunsBySession = new Map<string, ActiveRun>();
+  /** Resident ACP bridges, one per "<product>|<folder>", and which run is on which ACP session right now. */
+  private readonly acpDrivers = new Map<string, AcpResidentDriver>();
+  private readonly activeAcpRunsBySession = new Map<string, ActiveRun>();
+  private acpIdleTimer: ReturnType<typeof setInterval> | null = null;
+  /** A mode the person set on an ACP session (session-control mode); it wins over the per-turn permission mapping. */
+  private readonly acpPinnedModes = new Map<string, string>();
+  /** Codex reasoning effort per session slot (session-control effort); turns default to low. */
+  private readonly codexEfforts = new Map<string, string>();
   private externalAnomalies: ExternalSessionAnomaly[] = [];
   private readonly metaAgents = new Map<MetaAgentId, MetaAgentConfig>();
   private readonly metaAgentLogs: MetaAgentLogEntry[] = [];
@@ -736,6 +783,10 @@ export class AgentGatewayHub {
     this.loadRecentRuns();
     this.loadDispatches();
     this.startMetaPatrolLoop();
+    // Dispatches that ended while the service was down, then the board's own steps (budget, stall, unblock).
+    for (const d of this.dispatches.values()) this.taskboard.onDispatch(d);
+    setInterval(() => void this.taskboard.step(), 15_000).unref?.();
+    void this.taskboard.step();
   }
 
   // Finished runs go to ~/.agent-hub/runs.jsonl so `agent_gateway.js read`/`wait` and the pages still have the
@@ -782,6 +833,7 @@ export class AgentGatewayHub {
       this.broadcast('dispatch_update', d);
       this.broadcast('state', this.getState());
     }
+    this.taskboard.onDispatch(d);
   }
 
   private resolveDispatchWaiters(d: DispatchRecord) {
@@ -1271,6 +1323,8 @@ export class AgentGatewayHub {
     this.saveDispatch(record);
 
     const gwToolPath = join(this.repoRoot, 'hub', 'tools', 'agent_gateway.js').replace(/\\/g, '/');
+    // Agents' shells often lack node on PATH (ZCode's Git Bash, 2026-10-18), so the command names this node.
+    const nodeBin = process.execPath.replace(/\\/g, '/');
     const fromLabel = fromProf ? `${fromProf.label} (${fromSessionName || 'caller'})` : '中心调度方';
     const fullPrompt = params.rawPrompt
       ? task
@@ -1285,9 +1339,9 @@ export class AgentGatewayHub {
           `---`,
           `【回执与交回约定（任选其一，中心亦会在本轮结束时自动兜底采集回复）】`,
           `1. 命令行交回/汇报（若你有终端工具）：`,
-          `   - 中途汇报进度（不打断当前轮）：node "${gwToolPath}" report --id ${id} --text "进度说明"`,
-          `   - 完成并交回：node "${gwToolPath}" deliver --id ${id} --summary "一句话结论"`,
-          `   - 阻塞并让出：node "${gwToolPath}" yield --id ${id} --waiting-for "等待的输入或条件"`,
+          `   - 中途汇报进度（不打断当前轮）："${nodeBin}" "${gwToolPath}" report --id ${id} --text "进度说明"`,
+          `   - 完成并交回："${nodeBin}" "${gwToolPath}" deliver --id ${id} --summary "一句话结论"`,
+          `   - 阻塞并让出："${nodeBin}" "${gwToolPath}" yield --id ${id} --waiting-for "等待的输入或条件"`,
           `2. 结构化尾注交回（无需调工具）：在回复末尾写一行 \`【交回】一句话结论\` 或 \`【让出：等待什么】\`。`,
         ]
           .filter(Boolean)
@@ -2947,6 +3001,9 @@ foreach ($p in $procs) {
 
   /** List all WorkBuddy Desktop sessions from `~/.workbuddy/projects/<project>/<id>.jsonl` + `~/.workbuddy/workbuddy.db`. */
   public listWorkbuddyDesktopSessions(excludeAcpIds?: Set<string>): AcpxSessionInfo[] {
+    if (!excludeAcpIds && this.wbListCache && Date.now() - this.wbListCache.at < 10_000) {
+      return this.wbListCache.list;
+    }
     const projectsDir = join(this.wbDir, 'projects');
     if (!existsSync(projectsDir)) return [];
 
@@ -2989,6 +3046,9 @@ foreach ($p in $procs) {
       }
     } catch {}
     out.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+    if (!excludeAcpIds) {
+      this.wbListCache = { at: Date.now(), list: out };
+    }
     return out;
   }
 
@@ -3373,7 +3433,13 @@ foreach ($p in $procs) {
         if (!f.endsWith('.json')) continue;
         try {
           const fullJsonPath = join(this.acpxDir, f);
-          const raw = JSON.parse(readFileSync(fullJsonPath, 'utf8'));
+          const fStat = statSync(fullJsonPath);
+          let cachedJson = this.acpxJsonCache.get(fullJsonPath);
+          if (!cachedJson || cachedJson.mtimeMs !== fStat.mtimeMs) {
+            cachedJson = { mtimeMs: fStat.mtimeMs, raw: JSON.parse(readFileSync(fullJsonPath, 'utf8')) };
+            this.acpxJsonCache.set(fullJsonPath, cachedJson);
+          }
+          const raw = cachedJson.raw;
           if (!raw || raw.schema !== 'acpx.session.v1') continue;
           const channel = detectChannelFromCommand(raw.agent_command || '');
           const prof = CHANNEL_PROFILES[channel];
@@ -4167,6 +4233,7 @@ foreach ($p in $procs) {
         currentModel: chCurrentModel,
         currentCwd: chCurrentCwd,
         recommendedModels: [...p.recommendedModels],
+        modes: p.modes || [],
         capabilities: this.registryCapabilities(p),
         capabilityEvidence: this.capabilityRegistry()?.families?.[p.id]?.gateway ?? null,
         accent: p.accent,
@@ -4306,6 +4373,126 @@ foreach ($p in $procs) {
   }
 
   /** Switch the active model for a channel and/or named session (persisting to acpx session JSON & invoking `acpx <agent> set-model`). */
+  /**
+   * Operations on an existing session other than a turn, each sent to the product's own driver:
+   *   mode    — ACP bridge: session/set_mode, then kept for the session (the per-turn permission mapping no longer
+   *             overrides it); Claude: set_permission_mode on its live process
+   *   compact — Codex: thread/compact/start; Claude and ACP agents: a "/compact" turn (their own command)
+   *   fork    — Codex: thread/fork, recorded as a new session newSessionName that continues on its own
+   *   effort  — Codex: reasoning effort for this session's turns (thread/settings/update now, turn/start after)
+   *   commands — read: the slash commands the agent lists (ACP available_commands_update; Claude system/init)
+   * A product that cannot do the operation gets an error that says so.
+   */
+  public async sessionControl(params: {
+    channel: string;
+    sessionName?: string;
+    traceSessionId?: string;
+    op: string;
+    value?: string;
+    newSessionName?: string;
+  }) {
+    const prof = resolveChannel(params.channel);
+    if (!prof) throw new Error(`未知渠道: ${params.channel}`);
+    const sessionName = this.resolveBoundSessionName(prof, params.sessionName, params.traceSessionId);
+    if (!sessionName) throw new Error('要指明会话（sessionName 或 traceSessionId）');
+    const slot = this.slotKey(prof.id, sessionName);
+    const rec = this.listAcpxSessions().find((s) => s.channel === prof.id && s.sessionName === sessionName && s.acpSessionId);
+    const prefix = prof.traceKind + ':';
+    const nativeId = rec?.acpSessionId || (params.traceSessionId?.startsWith(prefix) ? params.traceSessionId.slice(prefix.length) : '');
+    const cwd = rec?.cwd || this.selectedCwds.get(slot) || this.repoRoot;
+    const value = String(params.value || '').trim();
+    const op = String(params.op || '');
+    const done = (how: string, extra: Record<string, unknown> = {}) => {
+      try {
+        appendFileSync(this.eventsFile, JSON.stringify({ ts: new Date().toISOString(), kind: 'session_control', channel: prof.id, session: sessionName, op, value, how, ...extra }) + '\n', 'utf8');
+      } catch {}
+      return { ok: true, op, channel: prof.id, sessionName, value, how, ...extra };
+    };
+
+    if (op === 'mode') {
+      if (!value) throw new Error('切模式要给 value（模式名）');
+      if (prof.route === 'acp-resident') {
+        if (!nativeId) throw new Error('这个会话还没在智能体那边建出来，先发一句话');
+        const driver = await this.ensureAcpDriver(prof, cwd);
+        if (!driver.getSession(nativeId)) await driver.loadSession(nativeId, cwd);
+        const modes = driver.getSession(nativeId)?.availableModes;
+        if (modes && !modes.includes(value)) throw new Error(`${prof.label} 没有模式 ${value}，可选：${modes.join('、')}`);
+        await driver.setSessionMode(nativeId, value);
+        this.acpPinnedModes.set(nativeId, value);
+        return done('session/set_mode', { modes });
+      }
+      if (prof.id === 'claude') {
+        const live = nativeId ? this.claudeDriver?.getSession(nativeId) : undefined;
+        if (!live?.running) throw new Error('Claude 会话没在常驻进程上（先发一句话让它起来）');
+        const ok = await live.switchPermissionMode(value as any);
+        if (!ok) throw new Error(`Claude 没接受模式 ${value}`);
+        return done('set_permission_mode');
+      }
+      throw new Error(`${prof.label} 还不能中途切模式（权限随每一轮的 permissions 走）`);
+    }
+
+    if (op === 'compact') {
+      if (prof.id === 'codex') {
+        if (!nativeId) throw new Error('这个 Codex 会话还没有线程编号');
+        if (this.activeRuns.get(slot)) throw new Error('这个会话正在跑一轮，等它结束再压缩');
+        const driver = await this.ensureCodexDriver();
+        const model = this.selectedModels.get(slot) || prof.defaultModel;
+        await driver.resumeThread(nativeId, { cwd, model, sandbox: 'workspace-write', approvalPolicy: 'untrusted' });
+        await driver.compactThread(nativeId, true, 180000);
+        return done('thread/compact/start');
+      }
+      if (prof.id === 'claude' || prof.route === 'acp-resident') {
+        const r: any = await this.sendPrompt({ channel: prof.id, sessionName, traceSessionId: params.traceSessionId, prompt: '/compact', source: 'web' });
+        return done('/compact 作为一轮', { runId: r?.run?.runId || r?.runId });
+      }
+      throw new Error(`${prof.label} 还不能压缩上下文`);
+    }
+
+    if (op === 'fork') {
+      if (prof.id !== 'codex') throw new Error(`${prof.label} 的分叉还没接（Codex 已接）`);
+      if (!nativeId) throw new Error('这个 Codex 会话还没有线程编号');
+      const driver = await this.ensureCodexDriver();
+      const model = this.selectedModels.get(slot) || prof.defaultModel;
+      await driver.resumeThread(nativeId, { cwd, model, sandbox: 'workspace-write', approvalPolicy: 'untrusted' }).catch(() => '');
+      const forked = await driver.forkThread({ threadId: nativeId } as any);
+      const newName = String(params.newSessionName || `${sessionName}-fork-${Date.now().toString(36).slice(-4)}`);
+      this.saveDriverSessionRecord({ channel: 'codex', sessionName: newName, nativeId: forked.forkedThreadId, cwd, model, driverName: 'app-server' });
+      return done('thread/fork', { newSessionName: newName, traceSessionId: `codex:${forked.forkedThreadId}` });
+    }
+
+    if (op === 'effort') {
+      if (prof.id !== 'codex') throw new Error(`${prof.label} 的推理力度还没接（Codex 已接）`);
+      const ok = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'];
+      if (!ok.includes(value)) throw new Error(`推理力度只能是 ${ok.join('、')}`);
+      this.codexEfforts.set(slot, value);
+      if (nativeId && this.codexDriver) {
+        const model = this.selectedModels.get(slot) || prof.defaultModel;
+        await this.codexDriver.switchModel(nativeId, model, value as any).catch(() => {});
+      }
+      return done('thread/settings/update + turn/start effort');
+    }
+
+    if (op === 'commands') {
+      // Read-only: the slash commands the agent itself lists for this session (not logged as an event).
+      if (prof.route === 'acp-resident') {
+        if (!nativeId) throw new Error('这个会话还没在智能体那边建出来，先发一句话');
+        const driver = await this.ensureAcpDriver(prof, cwd);
+        if (!driver.getSession(nativeId)) await driver.loadSession(nativeId, cwd);
+        // The agent announces its commands just after session/new or session/load.
+        for (let i = 0; i < 15 && !driver.getCommands(nativeId).length; i++) await new Promise((r) => setTimeout(r, 200));
+        return { ok: true, op, channel: prof.id, sessionName, how: 'available_commands_update', commands: driver.getCommands(nativeId) };
+      }
+      if (prof.id === 'claude') {
+        const live = nativeId ? this.claudeDriver?.getSession(nativeId) : undefined;
+        if (!live?.slashCommands?.length) throw new Error('Claude 的命令清单要会话在常驻进程上跑过一轮才有');
+        return { ok: true, op, channel: prof.id, sessionName, how: 'system/init slash_commands', commands: live.slashCommands.map((name) => ({ name, description: '', hint: '' })) };
+      }
+      throw new Error(`${prof.label} 不报自己的命令清单`);
+    }
+
+    throw new Error(`没有这个会话操作：${op}（mode、compact、fork、effort、commands）`);
+  }
+
   public setSessionModel(params: {
     channel: string;
     sessionName?: string;
@@ -4323,7 +4510,8 @@ foreach ($p in $procs) {
 
     const sessionName = this.resolveBoundSessionName(prof, params.sessionName, params.traceSessionId);
 
-    this.selectedModels.set(prof.id, model);
+    // With a session, the choice is that session's; without one, it is the product's default for new sessions.
+    if (!sessionName) this.selectedModels.set(prof.id, model);
     if (sessionName) {
       const slot = this.slotKey(prof.id, sessionName);
       this.selectedModels.set(slot, model);
@@ -4361,7 +4549,7 @@ foreach ($p in $procs) {
         if (prof.id === 'codex') {
           const bound = this.listAcpxSessions().find((s) => s.channel === 'codex' && s.sessionName === sessionName && s.acpSessionId);
           const tid = bound?.acpSessionId || (params.traceSessionId?.startsWith('codex:') ? params.traceSessionId.slice(6) : '');
-          if (tid && this.codexDriver?.isAlive()) {
+          if (tid && this.codexDriver) {
             this.codexDriver.switchModel(tid, model).catch(() => {});
           }
         } else if (prof.id === 'claude') {
@@ -4375,6 +4563,12 @@ foreach ($p in $procs) {
               liveSess.switchModel(model).catch(() => {});
             }
           }
+        } else if (prof.route === 'acp-resident') {
+          // A hot session switches now; otherwise the next turn loads it and applies the model recorded above.
+          const bound = this.listAcpxSessions().find((s) => s.channel === prof.id && s.sessionName === sessionName && s.acpSessionId);
+          const sid = bound?.acpSessionId || '';
+          const d = sid ? this.acpDriverOf(sid) : undefined;
+          if (d) d.setSessionModel(sid, model).catch(() => {});
         } else {
           // Fire `acpx --cwd <sessionCwd> <agent> set-model <model> -s <sessionName>` asynchronously so live ACP daemon updates too
           try {
@@ -4588,7 +4782,7 @@ foreach ($p in $procs) {
     const liveResolver = this.liveApprovalResolvers.get(item.id);
     if (liveResolver) {
       this.liveApprovalResolvers.delete(item.id);
-      liveResolver(params.decision);
+      liveResolver.resolve(params.decision === 'approve');
       const slot = this.slotKey(item.channel, item.sessionName);
       const activeRun = this.activeRuns.get(slot);
       if (activeRun && activeRun.waitingApprovalId === item.id) {
@@ -4609,6 +4803,7 @@ foreach ($p in $procs) {
         ok: true,
         id: item.id,
         status: item.status,
+        action: params.decision === 'approve' ? 'approved-in-turn' : 'rejected-in-turn',
         inTurn: true,
         mode: 'in-turn',
         runId: item.runId,
@@ -4882,8 +5077,9 @@ foreach ($p in $procs) {
       this.listAcpxSessions().find((s) => s.channel === prof.id && s.sessionName === sessionName)?.currentModel ||
       this.selectedModels.get(prof.id) ||
       prof.defaultModel;
+    // Only this session's choice is remembered: writing it to the product too made every later new session of the
+    // product inherit it (OpenCode after one session switched to a blocked free model, full test 10-18).
     this.selectedModels.set(key, model);
-    this.selectedModels.set(prof.id, model);
 
     const existingRun = this.activeRuns.get(key);
     if (existingRun && existingRun.status === 'running') {
@@ -5046,6 +5242,8 @@ foreach ($p in $procs) {
           await this.claudeDriver.getSession(sid)?.interrupt().catch(() => {});
         }
       } catch {}
+    } else if (run?.acpSessionId && this.acpDriverOf(run.acpSessionId)) {
+      this.acpDriverOf(run.acpSessionId)!.cancelTurn(run.acpSessionId);
     } else {
       // Invoke acpx cancel
       try {
@@ -5073,6 +5271,7 @@ foreach ($p in $procs) {
       this.activeProcs.delete(key);
       if (run.codexThreadId) this.activeCodexRunsByThread.delete(run.codexThreadId);
       if (run.claudeSessionId) this.activeClaudeRunsBySession.delete(run.claudeSessionId);
+      if (run.acpSessionId) this.activeAcpRunsBySession.delete(run.acpSessionId);
       this.rememberRun(run);
       this.broadcast('run_done', run);
       this.broadcast('state', this.getState());
@@ -5590,7 +5789,6 @@ foreach ($p in $procs) {
         if (candidates.length > 0) {
           nextModel = candidates[0];
           this.selectedModels.set(key, nextModel);
-          this.selectedModels.set(prof.id, nextModel);
           this.recordMetaAction(
             'meta_maint',
             prof.id,
@@ -5663,12 +5861,12 @@ foreach ($p in $procs) {
   }
 
   private saveDriverSessionRecord(params: {
-    channel: 'codex' | 'claude';
+    channel: ChannelId;
     sessionName: string;
     nativeId: string;
     cwd: string;
     model: string;
-    driverName: 'app-server' | 'stream-json';
+    driverName: 'app-server' | 'stream-json' | 'acp-resident';
     prompt?: string;
     reply?: string;
   }) {
@@ -5695,7 +5893,14 @@ foreach ($p in $procs) {
         schema: 'acpx.session.v1',
         acpx_record_id: recordId,
         acp_session_id: params.nativeId,
-        agent_command: params.channel === 'codex' ? 'codex app-server' : 'claude --input-format stream-json',
+        // acpx reads this to start the agent and listAcpxSessions to tell the product: for a resident ACP session it is
+        // the same bridge command acpx would use.
+        agent_command:
+          params.driverName === 'acp-resident'
+            ? (({ cmd, args }) => [cmd, ...args].join(' '))(resolveAcpBridgeCommand(CHANNEL_PROFILES[params.channel]?.acpxAgent || params.channel))
+            : params.channel === 'codex'
+            ? 'codex app-server'
+            : 'claude --input-format stream-json',
         cwd: params.cwd,
         name: params.sessionName,
         created_at: existing?.created_at || now,
@@ -5985,6 +6190,7 @@ foreach ($p in $procs) {
           threadId,
           input: prompt,
           model,
+          effort: (this.codexEfforts.get(this.slotKey('codex', sessionName)) as any) || 'low',
           cwd,
         });
         run.codexTurnId = turnRes.turnId;
@@ -6260,19 +6466,211 @@ foreach ($p in $procs) {
     return run;
   }
 
-  private startRunInternal(opts: {
-    prof: ChannelProfile;
-    sessionName: string;
-    traceSessionId?: string;
-    cwd: string;
-    prompt: string;
-    model: string;
-    permissions: 'all' | 'reads' | 'deny';
-    source: 'web' | 'cli';
-    retryCount?: number;
-    resumedByMeta?: string;
-    originalPrompt?: string;
-  }): ActiveRun {
+  /**
+   * One turn on the product's resident ACP bridge (route "acp-resident" in hub/data/products.json): the bridge
+   * for this folder stays up between turns and a session, once loaded, stays hot. Its frames go through the
+   * same parser as acpx's output (handleAcpFrame), so replies, thoughts, tools and refusals read the same way.
+   * A session the bridge cannot load falls back to acpx for this turn.
+   */
+  private startAcpResidentRun(run: ActiveRun, opts: RunOpts): ActiveRun {
+    const { prof, sessionName, cwd, prompt, model } = opts;
+    (async () => {
+      let sid = '';
+      let handedOff = false;
+      try {
+        const driver = await this.ensureAcpDriver(prof, cwd);
+        const rec = this.listAcpxSessions().find((s) => s.channel === prof.id && s.sessionName === sessionName && s.acpSessionId);
+        const prefix = prof.traceKind + ':';
+        sid = rec?.acpSessionId || (opts.traceSessionId?.startsWith(prefix) ? opts.traceSessionId.slice(prefix.length) : '');
+        let info = sid ? driver.getSession(sid) : undefined;
+        if (!info && sid) {
+          try {
+            info = await driver.loadSession(sid, cwd);
+          } catch (e: any) {
+            (run.warnings ||= []).push(`常驻桥载入会话失败，这一轮改走 acpx：${e?.message || e}`);
+            handedOff = true;
+            this.startAcpxRun(run, opts);
+            return;
+          }
+        }
+        if (!info) {
+          info = await driver.createSession(cwd);
+          sid = info.sessionId;
+        }
+        run.acpSessionId = sid;
+        if (model && info.currentModel !== model) {
+          try {
+            await driver.setSessionModel(sid, model);
+          } catch (e: any) {
+            (run.warnings ||= []).push(`没换成模型 ${model}：${e?.message || e}`);
+          }
+        }
+        // The model the agent says it is on, not only the one asked for.
+        if (info.currentModel) run.model = info.currentModel;
+        // Products whose own mode decides whether they ask before writing (ZCode) get the mode for this turn's permission.
+        const mode = this.acpPinnedModes.get(sid) || prof.acpModes?.[opts.permissions];
+        if (mode && info.currentMode !== mode) {
+          try {
+            await driver.setSessionMode(sid, mode);
+          } catch (e: any) {
+            (run.warnings ||= []).push(`没切到模式 ${mode}：${e?.message || e}`);
+          }
+        }
+        const ownRecord = !rec || rec.acpxRecordId.startsWith('driver-');
+        if (ownRecord) {
+          this.saveDriverSessionRecord({ channel: prof.id, sessionName, nativeId: sid, cwd, model: run.model, driverName: 'acp-resident' });
+        }
+        run.traceSessionId = this.canonicalSessionId(prof.id, sid);
+        this.activeAcpRunsBySession.set(sid, run);
+        this.broadcast('run_update', run);
+
+        const pics = this.promptImages.get(prompt);
+        if (pics) this.promptImages.delete(prompt);
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<never>((_, rej) => {
+          timer = setTimeout(() => {
+            driver.cancelTurn(sid);
+            rej(new Error(`这一轮超过 ${ACPX_TURN_TIMEOUT_SEC} 秒没结束，已叫停`));
+          }, ACPX_TURN_TIMEOUT_SEC * 1000);
+        });
+        const turn = driver.promptTurn(sid, pics ? [{ type: 'text', text: prompt }, ...pics] : prompt);
+        const res = await Promise.race([turn, timeout]).finally(() => clearTimeout(timer));
+        this.handleAcpFrame(run, { result: res.raw || { stopReason: res.stopReason } });
+        if (!run.text.trim() && res.text) run.text = res.text;
+        if ((run.status as string) === 'cancelling' || (run.status as string) === 'aborted') {
+          run.status = 'aborted';
+        } else {
+          const outcome = this.judgeAcpxTurn(run, 0, '');
+          run.status = outcome.status;
+          if (outcome.error) run.error = outcome.error;
+        }
+        if (ownRecord) {
+          this.saveDriverSessionRecord({
+            channel: prof.id,
+            sessionName,
+            nativeId: sid,
+            cwd,
+            model: run.model,
+            driverName: 'acp-resident',
+            prompt,
+            reply: run.text,
+          });
+        }
+      } catch (e: any) {
+        if ((run.status as string) === 'cancelling' || (run.status as string) === 'aborted') {
+          run.status = 'aborted';
+        } else {
+          run.status = 'failed';
+          run.error = e?.message || String(e);
+        }
+      } finally {
+        if (!handedOff) {
+          if (sid && this.activeAcpRunsBySession.get(sid) === run) this.activeAcpRunsBySession.delete(sid);
+          if (prof.id === 'hermes') this.hermesCache = null;
+          if (this.activeRuns.get(this.slotKey(prof.id, sessionName))?.runId === run.runId) this.finalizeRun(run, opts);
+        }
+      }
+    })();
+    return run;
+  }
+
+  /** The resident bridge for this product and folder, started on first use; idle ones close after ACP_IDLE_MS. */
+  private async ensureAcpDriver(prof: ChannelProfile, cwd: string): Promise<AcpResidentDriver> {
+    const key = `${prof.id}|${cwd.toLowerCase()}`;
+    let driver = this.acpDrivers.get(key);
+    if (!driver) {
+      const d = new AcpResidentDriver({
+        product: prof.id,
+        cwd,
+        bridge: { ...resolveAcpBridgeCommand(prof.acpxAgent), env: { ...agentBaseEnv(), ...prof.buildEnv() } },
+        onApprovalRequest: (req) => this.handleAcpApproval(prof, req),
+      });
+      d.on('frame', (msg: any) => {
+        const r = this.activeAcpRunsBySession.get(msg?.params?.sessionId);
+        if (r) this.handleAcpFrame(r, msg);
+      });
+      d.on('exit', () => {
+        if (this.acpDrivers.get(key) === d) this.acpDrivers.delete(key);
+      });
+      this.acpDrivers.set(key, d);
+      driver = d;
+      if (!this.acpIdleTimer) {
+        this.acpIdleTimer = setInterval(() => {
+          for (const [k, x] of this.acpDrivers) {
+            if (!x.busy && Date.now() - x.lastUsedAt > ACP_IDLE_MS) {
+              this.acpDrivers.delete(k);
+              x.close().catch(() => {});
+            }
+          }
+        }, 60_000);
+        this.acpIdleTimer.unref?.();
+      }
+    }
+    try {
+      await driver.start();
+    } catch (e) {
+      this.acpDrivers.delete(key);
+      await driver.close().catch(() => {});
+      throw e;
+    }
+    return driver;
+  }
+
+  /** The resident bridge that has this ACP session loaded, if any. */
+  private acpDriverOf(sid: string): AcpResidentDriver | undefined {
+    for (const d of this.acpDrivers.values()) if (d.getSession(sid)) return d;
+    return undefined;
+  }
+
+  /**
+   * A permission ask from a resident ACP bridge. "all" allows, "deny" refuses; "reads" allows reading kinds
+   * and holds anything else as an in-turn approval the person answers (the turn waits, as with Codex and Claude).
+   */
+  private async handleAcpApproval(prof: ChannelProfile, req: AcpPermissionRequest): Promise<AcpApprovalDecision> {
+    const run = this.activeAcpRunsBySession.get(req.sessionId);
+    if (!run) return 'reject_once';
+    const last = run.tools[run.tools.length - 1];
+    const title = String(req.toolCall?.title || '').trim() || run.permissionAsk || (last ? last.name : '某个工具');
+    const settle = (allow: boolean): AcpApprovalDecision => {
+      run.permissionAsk = undefined;
+      if (!allow) (run.deniedTools ||= []).push(title);
+      return allow ? 'allow_once' : 'reject_once';
+    };
+    // Leaving plan mode is the plan itself waiting for a yes: it always goes to the person, whatever the permission.
+    const planExit = String(req.toolCall?.kind || '') === 'switch_mode' || /exit plan mode/i.test(title);
+    if (run.permissions === 'deny') return settle(false);
+    if (run.permissions === 'all' && !planExit) return settle(true);
+    if (!planExit && ['read', 'search', 'fetch', 'think'].includes(String(req.toolCall?.kind || ''))) return settle(true);
+
+    const apprId = `appr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    this.pendingApprovals.unshift({
+      id: apprId,
+      runId: run.runId,
+      channel: prof.id,
+      sessionName: run.sessionName,
+      traceSessionId: run.traceSessionId,
+      cwd: run.cwd,
+      model: run.model,
+      prompt: run.prompt,
+      toolName: title,
+      toolInput: JSON.stringify(req.toolCall?.rawInput || req.toolCall || {}).slice(0, 600),
+      reason: `${prof.label} 轮内请求：${title}。批准后这一轮继续`,
+      createdAt: new Date().toISOString(),
+      status: 'pending',
+      inTurn: true,
+      mode: 'in-turn',
+    });
+    if (this.pendingApprovals.length > 20) this.pendingApprovals.pop();
+    run.waitingApprovalId = apprId;
+    (run.warnings ||= []).push(`轮内等待审批: ${title}`);
+    this.broadcast('run_update', run);
+    this.broadcast('state', this.getState());
+    return new Promise<AcpApprovalDecision>((resolve) => {
+      this.liveApprovalResolvers.set(apprId, { runId: run.runId, channel: prof.id, resolve: (allow: boolean) => resolve(settle(allow)) });
+    });
+  }
+
+  private startRunInternal(opts: RunOpts): ActiveRun {
     const { prof, sessionName, cwd, prompt, model, permissions, source } = opts;
     const key = this.slotKey(prof.id, sessionName);
     const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -6327,7 +6725,16 @@ foreach ($p in $procs) {
     if (prof.id === 'claude') {
       return this.startClaudeStreamRun(run, opts);
     }
+    if (prof.route === 'acp-resident') {
+      return this.startAcpResidentRun(run, opts);
+    }
+    return this.startAcpxRun(run, opts);
+  }
 
+  /** One turn through acpx: `sessions ensure`, then `prompt`, one process per turn. */
+  private startAcpxRun(run: ActiveRun, opts: RunOpts): ActiveRun {
+    const { prof, sessionName, cwd, prompt, model, permissions } = opts;
+    const key = this.slotKey(prof.id, sessionName);
     const env = { ...agentBaseEnv(), ...prof.buildEnv() };
     const permFlag =
       permissions === 'all'
@@ -6519,8 +6926,23 @@ foreach ($p in $procs) {
   }
 
   private handleAcpxLine(run: ActiveRun, line: string) {
+    let obj: any;
     try {
-      const obj = JSON.parse(line);
+      obj = JSON.parse(line);
+    } catch {
+      // Plain text fallback
+      if (!line.startsWith('{')) {
+        run.text += (run.text ? '\n' : '') + line;
+        this.broadcast('run_update', run);
+      }
+      return;
+    }
+    this.handleAcpFrame(run, obj);
+  }
+
+  /** One ACP frame of a turn, from acpx's `--format json` output or from a resident bridge. */
+  private handleAcpFrame(run: ActiveRun, obj: any) {
+    try {
       if (obj.acpxSessionId || obj.acpxRecordId) {
         const linked = this.listAcpxSessions().find(
           (s) => s.acpxRecordId === obj.acpxRecordId || s.acpSessionId === obj.acpxSessionId,
@@ -6624,13 +7046,7 @@ foreach ($p in $procs) {
         (run.warnings ||= []).push((obj.error.message || JSON.stringify(obj.error)) + details);
         this.broadcast('run_update', run);
       }
-    } catch {
-      // Plain text fallback
-      if (!line.startsWith('{')) {
-        run.text += (run.text ? '\n' : '') + line;
-        this.broadcast('run_update', run);
-      }
-    }
+    } catch {}
   }
 
   /** Sync current turn's Thinking / ToolUse / Text from `~/.acpx/sessions/*.json` ONLY for messages added in THIS run. */

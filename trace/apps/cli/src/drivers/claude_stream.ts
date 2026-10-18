@@ -121,6 +121,8 @@ export class ClaudeStreamSession extends EventEmitter {
   private pendingControlRequests = new Map<string, { resolve: (res: any) => void; reject: (err: any) => void; timeout?: NodeJS.Timeout }>();
   private pendingTurns: Array<{ resolve: (res: ClaudeTurnResult) => void; reject: (err: any) => void; startedAt: number }> = [];
   private isAlive = false;
+  /** The slash commands Claude Code lists in its system/init message (filled after the first turn). */
+  public slashCommands: string[] = [];
   private currentTurnEvents: any[] = [];
   private cwd: string;
 
@@ -182,6 +184,7 @@ export class ClaudeStreamSession extends EventEmitter {
     this.cp = spawn(exe, args, {
       cwd: this.cwd,
       env,
+      windowsHide: true,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
@@ -208,7 +211,7 @@ export class ClaudeStreamSession extends EventEmitter {
 
     // 握手逻辑：新建会话发送 initialize 控制请求；恢复/分叉会话进程就绪即可接收输入（system.init 会在首个输入进入后由服务端推送）
     if (mode === 'new') {
-      await this.sendControlRequest('init-' + crypto.randomUUID().slice(0, 8), 'initialize', {}, 15000);
+      await this.sendControlRequest('init-' + crypto.randomUUID().slice(0, 8), 'initialize', {}, 45000);
     }
 
     return { sessionId: this.sessionId };
@@ -397,6 +400,7 @@ export class ClaudeStreamSession extends EventEmitter {
 
     // 1. 初始化事件捕获 (用于分叉新 session_id 提取)
     if (event.type === 'system' && event.subtype === 'init') {
+      if (Array.isArray(event.slash_commands)) this.slashCommands = event.slash_commands.map(String);
       this.emit('systemInit', event);
       if (event.session_id && this.sessionId !== event.session_id) {
         this.sessionId = event.session_id;

@@ -1,6 +1,24 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import readline from 'node:readline';
 import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+
+export function resolveCodexExecutable(): { bin: string; useShell: boolean } {
+  if (process.platform === 'win32') {
+    const npmRoot = path.join(os.homedir(), 'AppData', 'Roaming', 'npm', 'node_modules');
+    const candidates = [
+      path.join(npmRoot, '@openai', 'codex', 'node_modules', '@openai', 'codex-win32-x64', 'vendor', 'x86_64-pc-windows-msvc', 'bin', 'codex.exe'),
+      path.join(npmRoot, '@openai', 'codex-win32-x64', 'vendor', 'x86_64-pc-windows-msvc', 'bin', 'codex.exe'),
+      path.join(npmRoot, '@openai', 'codex', 'vendor', 'x86_64-pc-windows-msvc', 'bin', 'codex.exe'),
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return { bin: c, useShell: false };
+    }
+  }
+  return { bin: 'codex', useShell: process.platform === 'win32' };
+}
 
 export interface CodexAppServerOptions {
   cwd?: string;
@@ -138,13 +156,15 @@ export class CodexAppServerDriver extends EventEmitter {
     delete env.CLAUDECODE;
     delete env.CLAUDE_CODE_ENTRY;
 
-    const command = this.options.command || ['codex', 'app-server', '--listen', 'stdio://'];
+    const resolved = resolveCodexExecutable();
+    const command = this.options.command || [resolved.bin, 'app-server', '--listen', 'stdio://'];
     const [bin, ...args] = command;
 
     this.cp = spawn(bin, args, {
       cwd: this.options.cwd || process.cwd(),
       env,
-      shell: process.platform === 'win32',
+      shell: this.options.command ? process.platform === 'win32' : resolved.useShell,
+      windowsHide: true,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 

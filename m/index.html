@@ -350,6 +350,8 @@ function renderActiveListDebounced() {
 }
 
 function handleSseMessage(msg) {
+  if ((msg.type === 'goal_update' || msg.type === 'dispatch_update') && typeof window.__goalRender === 'function') window.__goalRender(msg);
+  if ((msg.type === 'goal_update' || msg.type === 'dispatch_update') && S.activeView === 'collab' && typeof window.__collabRender === 'function') window.__collabRender();
   if (msg.type === 'gateway_snapshot' || msg.type === 'state') {
     S.gw = msg;
     if (S.activeView === 'feed') renderActiveListDebounced();
@@ -444,12 +446,14 @@ let timer = 0, viewId = 0;
 function route() {
   clearTimeout(timer); viewId++;
   $('#swBtn').hidden = true;
+  $('#newBtn').textContent = '＋ 新任务';
   document.body.classList.remove('has-composer');
   const old = $('.composer'); if (old) old.remove();
   const h = decodeURIComponent(location.hash.slice(1));
   initSSE();
   if (h.startsWith('/s/')) { S.activeView = 'session'; return viewSession(h.slice(3)); }
   if (h.startsWith('/p/')) { S.activeView = 'project'; return viewProject(h.slice(3)); }
+  if (h.startsWith('/g/')) { S.activeView = 'goal'; return viewGoal(h.slice(3)); }
   const tab = h === '/projects' ? 'projects' : h === '/collab' ? 'collab' : 'feed';
   S.activeView = tab;
   document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.n === tab));
@@ -760,6 +764,7 @@ function sessionIdOf(end) {
   return s ? s.id : '';
 }
 function endLink(end) {
+  if (!end.channel) return '中心';
   const id = sessionIdOf(end);
   const text = `${esc(FAM[end.channel] || end.channel)} · ${esc(end.sessionName || '')}`;
   return id ? `<a href="#/s/${encodeURIComponent(id)}">${text}</a>` : text;
@@ -779,26 +784,237 @@ function dispatchCard(d) {
     <div class="sub" style="margin-top:6px;${wrap};line-height:2">${steps}</div>${reports}${back}${wake}
     <div class="sub">${esc(d.id)} · ${esc(ago(d.updatedAt))}</div></div>`;
 }
+// Dispatch from the page (POST /api/gateway/dispatch). From a session: that session is the caller and can be woken
+// when the work comes back. From the collaboration page: the person is the caller.
+async function dispatchSheet(from) {
+  if (!S.caps) toast('读取中…');
+  await loadCaps().catch(() => {});
+  const fams = Object.keys(S.caps ? S.caps.channels : {}).filter((f) => getBackendCap(f, 'spawn-subagent') && FAM[f]);
+  const last = store.get('dispFam') || fams[0];
+  const el = sheet(`<b>派活${from ? '：从 ' + esc(cleanTitle(from.title || from.name).slice(0, 24)) : ''}</b>
+    <label>交给谁</label><select id="df">${fams.map((f) => `<option value="${f}" ${f === last ? 'selected' : ''}>${esc(FAM[f])}</option>`).join('')}</select>
+    <label>在哪个会话里做</label><select id="ds"></select>
+    <label>模型</label><select id="dm"></select>
+    <label>要它做什么</label><textarea id="dt" placeholder="做完让它交回什么"></textarea>
+    ${from ? '<label class="row" style="gap:8px"><input type="checkbox" id="dw" checked> 交回后叫醒这个会话接着做</label>' : ''}
+    <div class="row" style="margin-top:14px;gap:10px"><button class="btn ghost btn-touch grow" id="dx">取消</button><button class="btn btn-touch grow" id="dgo">派出去</button></div>`);
+  const fill = () => {
+    const f = $('#df', el).value;
+    const ch = ((S.gw && S.gw.channels) || []).find((c) => c.id === f) || {};
+    $('#dm', el).innerHTML = (ch.recommendedModels || []).map((m) => `<option value="${esc(m)}" ${m === ch.defaultModel ? 'selected' : ''}>${esc(modelLabel(f, m))}</option>`).join('') || '<option value="">默认</option>';
+    // Never a session a person has open elsewhere (ownership external-active), nor a sub-agent.
+    const recent = S.sessions.filter((s) => s.channel === f && isMain(s) && s.ownership !== 'external-active' && s.ownership !== 'subagent' && (!from || s.id !== from.id)).slice(0, 30);
+    $('#ds', el).innerHTML = '<option value="">新开一个会话</option>' + recent.map((s) => `<option value="${esc(s.id)}">${esc(cleanTitle(s.title).slice(0, 30))} · ${esc(ago(s.updatedAt))}</option>`).join('');
+  };
+  $('#df', el).onchange = fill; fill();
+  $('#dx', el).onclick = () => el.remove();
+  $('#dgo', el).onclick = async () => {
+    const task = $('#dt', el).value.trim();
+    if (!task) return toast('写一下要它做什么');
+    const f = $('#df', el).value, to = S.sessions.find((s) => s.id === $('#ds', el).value);
+    store.set('dispFam', f);
+    $('#dgo', el).disabled = true;
+    try {
+      const r = await api('/api/gateway/dispatch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        toChannel: f,
+        toSessionName: to ? controlName(to) : 'm-disp-' + new Date().toISOString().replace(/\D/g, '').slice(4, 14),
+        toTraceId: to ? to.id : undefined,
+        toModel: $('#dm', el).value || undefined,
+        task,
+        fromChannel: from ? from.channel : undefined,
+        fromSessionName: from ? controlName(from) : undefined,
+        fromTraceId: from ? from.id : undefined,
+        wakeCaller: Boolean(from && $('#dw', el) && $('#dw', el).checked),
+      }) });
+      el.remove();
+      toast('已派出 ' + ((r.dispatch && r.dispatch.id) || ''));
+      location.hash = '#/collab';
+    } catch (e) { toast('没派出去：' + e.message); $('#dgo', el).disabled = false; }
+  };
+}
+
 async function viewCollab() {
   const my = viewId;
   $('#title').textContent = '协作';
-  $('#back').hidden = true; $('#newBtn').hidden = true;
-  const main = $('#main');
-  main.innerHTML = '<div class="empty">读取派活单…</div>';
+  $('#back').hidden = true; $('#newBtn').hidden = false; $('#newBtn').textContent = '＋ 派活'; $('#newBtn').onclick = () => dispatchSheet(null);
+  // The header and its button are built once; only the lists below are redrawn, so a tap never lands on a replaced node.
+  $('#main').innerHTML = `<div class="row" style="margin:14px 2px 4px"><span class="grow" id="goalHead" style="color:var(--mute);font-size:13px">目标（一群会话：拆成几件事，派给不同智能体，验收后接着往下做）</span><button class="btn ghost" id="goalNew" style="min-height:36px">＋ 目标</button></div><div id="collabBody"><div class="empty">读取派活单…</div></div>`;
+  $('#goalNew').onclick = goalSheet;
+  const main = $('#collabBody');
+  let last = '';
   // Dispatches first; the session list (for links to the caller's session) fills in when it has loaded.
-  if (!S.sessions.length) loadSessions().then(() => { if (my === viewId) { clearTimeout(timer); render(); } }).catch(() => {});
+  if (!S.sessions.length) loadSessions().then(() => { if (my === viewId) { clearTimeout(timer); last = ''; render(); } }).catch(() => {});
   const render = async () => {
     if (my !== viewId) return;
-    let r;
-    try { r = await api('/api/gateway/dispatches'); } catch (e) { main.innerHTML = '<div class="empty">读不到派活单：' + esc(e.message) + '</div>'; return; }
+    let r, gs;
+    try { [r, gs] = await Promise.all([api('/api/gateway/dispatches'), api('/api/gateway/goals').catch(() => ({ goals: [] }))]); } catch (e) { main.innerHTML = '<div class="empty">读不到派活单：' + esc(e.message) + '</div>'; return; }
     if (my !== viewId) return;
+    const goals = gs.goals || [];
+    $('#goalHead').textContent = `目标 ${goals.length} · 进行中 ${goals.filter((g) => g.status === 'running').length}（一群会话：拆成几件事，派给不同智能体，验收后接着往下做）`;
+    const goalHtml = goals.length ? goals.slice(0, 20).map(goalCard).join('') : '<div class="sub" style="margin:0 2px">还没有目标。</div>';
     const ds = (r.dispatches || []).slice().sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     const s = r.summary || {};
     const waiting = (r.waitingEdges || []).map((w) => `<div class="sub">⌛ ${esc(JSON.stringify(w).slice(0, 160))}</div>`).join('');
-    main.innerHTML = `<div class="sec">派活单 ${s.total || ds.length} · 进行中 ${s.running || 0} · 让出等待 ${s.yielded || 0} · 交回 ${s.completed || 0} · 失败 ${s.failed || 0}</div>${waiting}` +
+    const html = goalHtml + `<div class="sec">派活单 ${s.total || ds.length} · 进行中 ${s.running || 0} · 让出等待 ${s.yielded || 0} · 交回 ${s.completed || 0} · 失败 ${s.failed || 0}</div>${waiting}` +
       (ds.length ? ds.map(dispatchCard).join('') : '<div class="empty">还没有派活。智能体可以用命令行网关 dispatch 派活，见 README“管线”。</div>');
+    // Unchanged content is not rewritten (the relative times alone would change it, so they are left out of the key).
+    const key = html.replace(/\d+ (分钟|小时|天)前|刚刚/g, '');
+    if (key !== last) { main.innerHTML = html; last = key; }
+    clearTimeout(timer);
     timer = setTimeout(render, 10000);
   };
+  // Throttled: while agents work, dispatch updates arrive every second; one redraw per 2 s is enough and keeps taps landing.
+  let pending = false;
+  window.__collabRender = () => { if (my === viewId && !pending) { pending = true; clearTimeout(timer); timer = setTimeout(() => { pending = false; render(); }, 2000); } };
+  render();
+}
+
+// ---------- 协作：一群会话（目标 → 任务 → 派活单；中心每一步决定派给谁、给什么、停不停） ----------
+// Data: GET /api/gateway/goals[?id=], POST /api/gateway/goals, /goal-action, /task-action (collab/taskboard.ts).
+const GOAL_ST = { running: ['进行中', 'st-working'], paused: ['暂停', 'st-stale'], fused: ['熔断停下', 'st-failed'], completed: ['完成', ''], cancelled: ['取消', ''] };
+const TASK_ST = { blocked: ['等前置', ''], queued: ['排队', 'st-stale'], dispatched: ['在做', 'st-working'], verifying: ['等验收', 'st-stale'], completed: ['通过', ''], failed: ['停下', 'st-failed'], cancelled: ['取消', ''] };
+const STEP_TEXT = {
+  goal_created: '开了目标', task_created: '建了任务', dependency_unblocked: '前置都过了，可以开始', dispatch_issued: '派出', dispatch_delivered: '交回',
+  dispatch_failed: '派活没交回，重派', verify_dispatched: '请另一个智能体验收', verify_inconclusive: '验收结论不明，等人定', verify_dispatch_failed: '验收没派出去',
+  verdict_passed: '验收通过', rework_requested: '打回返工', loop_fused: '熔断停下', task_cancelled: '取消任务', cancelled_with_goal: '随目标取消', retry: '重来', reassign: '改派',
+  goal_running: '目标恢复', goal_paused: '目标暂停', goal_fused: '目标熔断', goal_completed: '目标完成', goal_cancelled: '目标取消',
+};
+const VERIFY_TEXT = (v) => (v === 'auto' ? '自动验收' : v === 'human' ? '人验收' : String(v).startsWith('agent:') ? `${FAM[v.slice(6)] || v.slice(6)} 验收` : v);
+const post = (path, body) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+function goalCard(g) {
+  const [st, cls] = GOAL_ST[g.status] || [g.status, ''];
+  const total = g.taskIds.length, done = (g.counts && g.counts.completed) || 0;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  return `<a class="card" href="#/g/${encodeURIComponent(g.id)}"><div class="row"><span class="t grow">${esc(g.title)}</span><span class="tag ${cls}">${st}</span></div>
+    <div class="sub">${done}/${total} 个任务通过 · 派活 ${g.usage.dispatches}/${g.budget.maxDispatches}${g.reason && g.status !== 'running' ? ' · ' + esc(g.reason) : ''}</div>
+    <div style="height:4px;background:var(--line);border-radius:2px;margin-top:8px"><div style="height:4px;width:${pct}%;background:var(--ok);border-radius:2px"></div></div></a>`;
+}
+
+async function goalSheet() {
+  if (!S.caps) toast('读取中…');
+  await loadCaps().catch(() => {});
+  const fams = Object.keys(S.caps ? S.caps.channels : {}).filter((f) => getBackendCap(f, 'spawn-subagent') && FAM[f]);
+  const opts = (sel) => fams.map((f) => `<option value="${f}" ${f === sel ? 'selected' : ''}>${esc(FAM[f])}</option>`).join('');
+  const def = store.get('dispFam') || fams[0];
+  const row = (i) => `<div class="card" data-row style="padding:8px"><input data-k="title" placeholder="第 ${i} 件事：要做什么">
+      <div class="row" style="gap:8px;margin-top:6px"><select data-k="channel" class="grow">${opts(def)}</select>
+      ${i > 1 ? '<label class="row" style="gap:4px;font-size:13px"><input type="checkbox" data-k="dep" checked> 等上一件做完</label>' : ''}</div>
+      <input data-k="acceptance" placeholder="怎样算做好（验收标准，可不填）" style="margin-top:6px"></div>`;
+  const el = sheet(`<b>开一个目标</b>
+    <label>标题</label><input id="gt" placeholder="例如：给登录页加校验并测试">
+    <label>要做成什么</label><textarea id="go" placeholder="一两句话说清最终结果"></textarea>
+    <label>拆成几件事（按顺序；可以不等上一件，同时做）</label><div id="grows">${row(1)}${row(2)}</div>
+    <button class="btn ghost btn-touch" id="gadd" style="width:100%">＋ 再加一件</button>
+    <label>谁验收每件事</label><select id="gv"><option value="human">我来验收</option><option value="auto">有交回就算过</option>${fams.map((f) => `<option value="agent:${f}">交给 ${esc(FAM[f])} 验收</option>`).join('')}</select>
+    <label>最多派活几次（含返工和验收）</label><input id="gb" type="number" min="1" value="12">
+    <div class="row" style="margin-top:14px;gap:10px"><button class="btn ghost btn-touch grow" id="gx">取消</button><button class="btn btn-touch grow" id="ggo">开始</button></div>`);
+  let n = 2;
+  $('#gadd', el).onclick = () => { n++; $('#grows', el).insertAdjacentHTML('beforeend', row(n)); };
+  $('#gx', el).onclick = () => el.remove();
+  $('#ggo', el).onclick = async () => {
+    const rows = [...el.querySelectorAll('[data-row]')].map((r, i) => ({
+      key: 't' + (i + 1),
+      title: r.querySelector('[data-k=title]').value.trim(),
+      channel: r.querySelector('[data-k=channel]').value,
+      acceptance: r.querySelector('[data-k=acceptance]').value.trim() || undefined,
+      dep: Boolean(r.querySelector('[data-k=dep]') && r.querySelector('[data-k=dep]').checked),
+    })).filter((r) => r.title);
+    // "等上一件做完" points at the previous task that was filled in.
+    const tasks = rows.map((r, i) => ({ key: r.key, title: r.title, channel: r.channel, acceptance: r.acceptance, dependsOn: r.dep && i > 0 ? [rows[i - 1].key] : [] }));
+    const title = $('#gt', el).value.trim(), objective = $('#go', el).value.trim() || title;
+    if (!title) return toast('写一个标题');
+    if (!tasks.length) return toast('至少写一件事');
+    $('#ggo', el).disabled = true;
+    try {
+      const r = await post('/api/gateway/goals', { title, objective, verifyBy: $('#gv', el).value, budget: { maxDispatches: Number($('#gb', el).value) || 12 }, tasks });
+      el.remove();
+      location.hash = '#/g/' + encodeURIComponent(r.goal.id);
+    } catch (e) { toast('没开成：' + e.message); $('#ggo', el).disabled = false; }
+  };
+}
+
+function taskNode(t) {
+  const [st, cls] = TASK_ST[t.status] || [t.status, ''];
+  const sid = sessionIdOf({ channel: t.channel, sessionName: t.sessionName });
+  const who = `${esc(FAM[t.channel] || t.channel)}${t.model ? ' · ' + esc(modelLabel(t.channel, t.model)) : ''}`;
+  const d = t.delivery;
+  const v = t.verdict;
+  const acts = [];
+  if (t.status === 'verifying' && !t.verifierDispatchId) acts.push(`<button class="btn btn-touch" data-ta="pass" data-id="${t.id}">通过</button><button class="btn ghost btn-touch" data-ta="rework" data-id="${t.id}">打回</button>`);
+  if (t.status === 'failed' || t.status === 'cancelled') acts.push(`<button class="btn btn-touch" data-ta="retry" data-id="${t.id}">重来</button><button class="btn ghost btn-touch" data-ta="reassign" data-id="${t.id}">改派</button>`);
+  if (['queued', 'blocked', 'dispatched', 'verifying'].includes(t.status)) acts.push(`<button class="btn ghost btn-touch" data-ta="cancel" data-id="${t.id}">取消</button>`);
+  return `<div class="card" style="margin:6px 0"><div class="row"><span class="t grow">${esc(t.title)}</span><span class="tag ${cls}">${st}</span></div>
+    <div class="sub">${sid ? `<a href="#/s/${encodeURIComponent(sid)}">${who}</a>` : who} · ${esc(VERIFY_TEXT(t.verifyBy))}${t.epoch ? ` · 第 ${t.epoch} 次派` : ''}${t.reworkCount ? ` · 返工 ${t.reworkCount}` : ''}</div>
+    ${t.dependsOn.length ? `<div class="sub">等：${t.dependsOn.map(esc).join('、')}</div>` : ''}
+    ${t.acceptance ? `<div class="sub">验收：${esc(t.acceptance)}</div>` : ''}
+    ${d ? `<details class="sub" style="margin-top:4px"><summary>交回 ${clock(d.at)}：${esc((d.summary || d.reply).slice(0, 80))}</summary><div style="white-space:pre-wrap;margin-top:4px">${esc(d.reply || d.summary)}</div>${d.files.length ? `<div>文件：${d.files.map(esc).join('、')}</div>` : ''}</details>` : ''}
+    ${v ? `<div class="sub">${v.passed ? '✓ 通过' : '✗ 没过'}（${esc(VERIFY_TEXT(v.by))}）${v.note ? '：' + esc(v.note.slice(0, 160)) : ''}</div>` : ''}
+    ${t.fuse ? `<div class="sub" style="color:var(--bad)">停下的原因：${esc(t.fuse)}</div>` : ''}
+    ${acts.length ? `<div class="cardrow">${acts.join('')}</div>` : ''}</div>`;
+}
+
+async function viewGoal(id) {
+  const my = viewId;
+  $('#back').hidden = false; $('#newBtn').hidden = true;
+  const main = $('#main');
+  main.innerHTML = '<div class="empty">读取目标…</div>';
+  if (!S.sessions.length) loadSessions().then(() => { if (my === viewId) render(); }).catch(() => {});
+  const render = async () => {
+    if (my !== viewId) return;
+    let v;
+    try { v = await api('/api/gateway/goals?id=' + encodeURIComponent(id)); } catch (e) { main.innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; return; }
+    if (my !== viewId) return;
+    const g = v.goal;
+    const [st, cls] = GOAL_ST[g.status] || [g.status, ''];
+    $('#title').textContent = g.title;
+    // The graph: one column per depth (a task's depth = 1 + its deepest prerequisite); on a phone the columns stack.
+    const depthOf = Object.fromEntries(v.graph.nodes.filter((x) => x.type === 'task').map((x) => [x.id, x.depth]));
+    const cols = [];
+    for (const t of v.tasks) (cols[depthOf[t.id] || 0] ||= []).push(t);
+    const gbtn = g.status === 'running' ? '<button class="btn ghost btn-touch" data-ga="pause">暂停</button>' : g.status === 'paused' || g.status === 'fused' ? '<button class="btn btn-touch" data-ga="resume">恢复</button>' : '';
+    main.innerHTML = `<div class="card"><div class="row"><span class="t grow">${esc(g.objective)}</span><span class="tag ${cls}">${st}</span></div>
+        ${g.reason && g.status !== 'running' ? `<div class="sub">${esc(g.reason)}</div>` : ''}
+        <div class="sub">派活 ${g.usage.dispatches}/${g.budget.maxDispatches} · 同时最多 ${g.budget.maxParallel} 件 · 每件最多返工 ${g.budget.maxRework} 次 · 开始于 ${esc(ago(g.createdAt))}</div>
+        ${g.status === 'completed' || g.status === 'cancelled' ? '' : `<div class="cardrow">${gbtn}<button class="btn ghost btn-touch" data-ga="cancel">取消目标</button></div>`}</div>
+      <div class="sec">任务（从左到右按依赖先后）</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start">${cols.map((c, i) => `<div style="flex:1 1 260px;min-width:0"><div class="sub">第 ${i + 1} 步</div>${c.map(taskNode).join('')}</div>`).join('')}</div>
+      <div class="sec">轨迹</div>
+      <div class="card">${v.trajectory.slice().reverse().slice(0, 80).map((h) => `<div class="sub">${clock(h.at)} ${h.scope === 'goal' ? '目标' : esc(h.scope)} · ${esc(STEP_TEXT[h.action] || h.action)}${h.detail && (h.detail.reason || h.detail.rework || h.detail.to || h.detail.summary) ? '：' + esc(String(h.detail.reason || h.detail.rework || h.detail.to || h.detail.summary).slice(0, 120)) : ''}</div>`).join('')}</div>`;
+    main.querySelectorAll('[data-ga]').forEach((b) => (b.onclick = async () => {
+      const action = b.dataset.ga;
+      const body = { id: g.id, action };
+      if (action === 'resume' && g.usage.dispatches >= g.budget.maxDispatches) {
+        const more = prompt('派活次数用完了，把上限加到多少？', String(g.budget.maxDispatches + 6));
+        if (!more) return;
+        body.budget = { maxDispatches: Number(more) };
+      }
+      if (action === 'cancel' && !confirm('取消这个目标？在做的任务也会一起停下记账。')) return;
+      try { await post('/api/gateway/goal-action', body); render(); } catch (e) { toast(e.message); }
+    }));
+    main.querySelectorAll('[data-ta]').forEach((b) => (b.onclick = async () => {
+      const a = b.dataset.ta, tid = b.dataset.id;
+      let body = { id: tid };
+      if (a === 'pass') body = { ...body, action: 'verify', passed: true, note: '人验收通过' };
+      else if (a === 'rework') { const r = prompt('要它怎么改？'); if (!r) return; body = { ...body, action: 'verify', passed: false, note: r, rework: r }; }
+      else if (a === 'reassign') {
+        const fams = Object.keys(FAM).filter((f) => getBackendCap(f, 'spawn-subagent'));
+        const pick = prompt('改派给哪个产品？可选：' + fams.map((f) => `${f}（${FAM[f]}）`).join('，'), fams[0]);
+        if (!pick) return;
+        body = { ...body, action: 'reassign', channel: pick.trim() };
+      } else body = { ...body, action: a };
+      b.disabled = true;
+      try { await post('/api/gateway/task-action', body); render(); } catch (e) { toast(e.message); b.disabled = false; }
+    }));
+    clearTimeout(timer);
+    timer = setTimeout(render, S.sseConnected ? 30000 : 8000);
+  };
+  let pending = false;
+  window.__goalRender = (msg) => {
+    if (my !== viewId || pending || (msg && msg.type === 'goal_update' && msg.run && msg.run.id !== id)) return;
+    pending = true; clearTimeout(timer); timer = setTimeout(() => { pending = false; render(); }, 1000);
+  };
+  await loadCaps().catch(() => {});
   render();
 }
 
@@ -985,12 +1201,14 @@ function renderApprovalBanner(meta) {
     return;
   }
   bannerEl.hidden = false;
+  // In-turn: the turn is paused and continues on a yes. Otherwise the turn already ended and a yes reruns it with full access.
+  const inTurn = Boolean(match.inTurn);
   bannerEl.innerHTML = `
     <div class="approval-card">
       <div class="row">
         <span style="font-size:18px">⚠️</span>
-        <b class="grow" style="color:var(--warn)">权限审批请求</b>
-        <span class="tag tag-fill">补齐·会话级重发</span>
+        <b class="grow" style="color:var(--warn)">${inTurn ? '这一轮停着等你批' : '权限审批请求'}</b>
+        <span class="tag ${inTurn ? 'st-working' : 'tag-fill'}">${inTurn ? '轮内审批' : '补齐·会话级重发'}</span>
       </div>
       <div class="sub" style="margin:4px 0 2px">智能体请求执行受限操作：</div>
       <div style="font-weight:600;font-size:14px">${esc(match.toolName || '工具操作')}</div>
@@ -998,7 +1216,7 @@ function renderApprovalBanner(meta) {
       <div class="sub" style="margin-top:4px;color:var(--mute)"><b>拦截原因：</b>${esc(match.reason || '当前权限门禁拦截')}</div>
       <div class="row" style="margin-top:10px;justify-content:flex-end;gap:8px">
         <button class="btn ghost btn-touch" data-appr-act="reject" data-appr-id="${esc(match.id)}">驳回</button>
-        <button class="btn btn-touch" style="background:var(--ok)" data-appr-act="approve" data-appr-id="${esc(match.id)}">✓ 同意放行（全权限重跑）</button>
+        <button class="btn btn-touch" style="background:var(--ok)" data-appr-act="approve" data-appr-id="${esc(match.id)}">${inTurn ? '✓ 批准，这一轮继续' : '✓ 同意放行（全权限重跑）'}</button>
       </div>
     </div>`;
 }
@@ -1047,6 +1265,56 @@ function status(sess) {
   if (typeof activeSessionStatusFn === 'function') activeSessionStatusFn(sess);
 }
 
+// The whole session (every turn, not only the loaded ones) as a Markdown file: the person's words, the agent's text,
+// and one line per tool call.
+async function exportSession(id) {
+  const j = await api('/api/sessions/' + encodeURIComponent(id));
+  const s = j.session || j;
+  const out = [`# ${cleanTitle(s.title || id)}`, '', `${FAM[s.agent && s.agent.family] || (s.agent && s.agent.family) || ''} · ${s.cwd || ''} · ${s.startedAt || ''} → ${s.updatedAt || ''}`, ''];
+  for (const t of s.turns || []) {
+    out.push(`## 第 ${t.index} 轮（${t.status || ''}）`, '');
+    for (const st of t.steps || []) {
+      if (st.kind === 'message' && st.text) out.push(st.role === 'user' ? `**人：** ${st.text}` : String(st.text), '');
+      else if (st.kind === 'tool') out.push(`> 工具 ${st.name || ''}${st.status ? '（' + st.status + '）' : ''}${st.input ? '：' + String(typeof st.input === 'string' ? st.input : JSON.stringify(st.input)).slice(0, 200) : ''}`, '');
+    }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([out.join('\n')], { type: 'text/markdown;charset=utf-8' }));
+  a.download = (cleanTitle(s.title || id).slice(0, 40).replace(/[\\/:*?"<>|]/g, '_') || 'session') + '.md';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('已导出 ' + (s.turns || []).length + ' 轮');
+}
+
+// The session operations the product has (from the unit → action table); choices that need a value open a second list.
+function sessionControlSheet(meta, ops) {
+  const ch = ((S.gw && S.gw.channels) || []).find((c) => c.id === meta.channel) || {};
+  const EFFORTS = [['low', '低（默认）'], ['medium', '中'], ['high', '高'], ['xhigh', '很高']];
+  const el = sheet(`<b>会话操作</b><div class="sub">${esc(FAM[meta.channel] || meta.channel)} · ${esc(cleanTitle(meta.title || '').slice(0, 30))}</div>` +
+    ops.map((x) => `<button class="card btn-touch ${x.act.cls}" data-op="${x.op}" title="${esc(x.act.title)}">${esc(x.act.label)}</button>`).join(''));
+  const run = async (op, value, extra = {}) => {
+    try {
+      const r = await api('/api/gateway/session-control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta), traceSessionId: meta.id, op, value, ...extra }) });
+      el.remove();
+      if (op === 'fork' && r.traceSessionId) { toast('已分叉成新会话'); location.hash = '#/s/' + encodeURIComponent(r.traceSessionId); return; }
+      toast(op === 'compact' ? '开始压缩上下文' : op === 'mode' ? '已切到 ' + value : '推理力度：' + value);
+    } catch (e) { toast('没做成：' + e.message); }
+  };
+  el.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-op]');
+    if (b) {
+      const op = b.dataset.op;
+      if (op === 'compact') return run('compact');
+      if (op === 'fork') return run('fork');
+      const choices = op === 'mode' ? (ch.modes || []).map((m) => [m, m]) : EFFORTS;
+      if (!choices.length) { const v = prompt('模式名'); if (v) run(op, v.trim()); return; }
+      el.querySelector('.box').innerHTML = `<b>${op === 'mode' ? '切到哪个模式' : '推理力度'}</b>` + choices.map(([v, l]) => `<button class="card btn-touch" data-v="${esc(v)}" data-for="${op}">${esc(l)}</button>`).join('');
+      return;
+    }
+    const v = e.target.closest('[data-v]');
+    if (v) run(v.dataset.for, v.dataset.v);
+  });
+}
+
 async function viewSession(id) {
   const my = viewId;
   $('#back').hidden = false; $('#newBtn').hidden = true; $('#swBtn').hidden = false;
@@ -1082,12 +1350,21 @@ async function viewSession(id) {
     }
     const coordPill = meta.entry ? `<span class="tag tag-built" title="会话坐标：产品 × 入口 × 所有权">${esc(FAM[meta.channel] || meta.channel)} · ${esc(meta.entry)} · ${esc(meta.ownership || st.status)}</span>` : '';
     const conflictPill = meta.pointCapabilities?.resume?.conflictWarning ? `<span class="tag tag-fill" title="${esc(meta.pointCapabilities.resume.conflictWarning)}">⚠️ 外部活跃中</span>` : '';
-    const artifactBtnHtml = '<button class="pinb" id="filesBtn">产出</button>';
+    const artifactBtnHtml = '<button class="pinb" id="filesBtn">产出</button><button class="pinb" id="exportBtn" title="把整个会话导出成 Markdown 文件">导出</button>';
+    const dispatchBtnHtml = '<button class="pinb" id="dispBtn" title="spawn-subagent：从这个会话派活给另一个智能体">派给别人</button>';
+    // Session operations other than a turn (POST /api/gateway/session-control), each shown only when the unit → action
+    // table has it for this product.
+    const ctlOps = [['mode-switch', 'mode', '切模式'], ['compact', 'compact', '压缩上下文'], ['fork', 'fork', '分叉'], ['reasoning-effort', 'effort', '推理力度']]
+      .map(([unit, op, label]) => ({ op, act: unitAction(meta.channel, unit, label) })).filter((x) => x.act);
+    const moreBtnHtml = ctlOps.length ? '<button class="pinb" id="moreBtn" title="切模式、压缩、分叉等会话操作">更多</button>' : '';
 
     $('#sl').innerHTML = `${stTag(st.status)} ${coordPill} ${conflictPill}<span>${esc(st.detail || '')}</span> · ${esc(FAM[meta.channel] || meta.channel)}${meta.model ? ' · ' + esc(meta.model) : ''}${usageText(sess)}
-      <button class="pinb" id="pinBtn">${store.get('pin:' + id) ? '取消置顶' : '置顶'}</button>${modelBtnHtml}${artifactBtnHtml}`;
-    
+      <button class="pinb" id="pinBtn">${store.get('pin:' + id) ? '取消置顶' : '置顶'}</button>${modelBtnHtml}${artifactBtnHtml}${dispatchBtnHtml}${moreBtnHtml}`;
+
+    if ($('#moreBtn')) $('#moreBtn').onclick = () => sessionControlSheet(meta, ctlOps);
+    if ($('#exportBtn')) $('#exportBtn').onclick = () => exportSession(id).catch((e) => toast('导出失败：' + e.message));
     if ($('#filesBtn')) $('#filesBtn').onclick = () => filesSheet(id);
+    if ($('#dispBtn')) $('#dispBtn').onclick = () => dispatchSheet(meta);
     if ($('#pinBtn')) $('#pinBtn').onclick = () => { store.set('pin:' + id, store.get('pin:' + id) ? null : '1'); activeSessionStatusFn(sess); };
     
     const mb = $('#modelBtn');
@@ -1240,6 +1517,7 @@ function buildComposer(meta) {
   const stopBtnTitle = acts.cancelAction ? acts.cancelAction.title : '';
 
   el.innerHTML = `<div class="thumbs" id="cimgs" style="max-width:820px;margin:0 auto 6px"></div>
+    <div class="chips" id="cmdMenu" hidden style="max-width:820px;margin:0 auto 6px;max-height:132px;overflow-y:auto"></div>
     <div class="in">
       ${imgBtnHtml}
       <textarea id="msg" rows="1" placeholder="给它发话，可粘贴截图">${esc(store.get(key) || '')}</textarea>
@@ -1251,7 +1529,24 @@ function buildComposer(meta) {
 
   const ta = $('#msg');
   const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(160, ta.scrollHeight) + 'px'; };
-  ta.oninput = () => { store.set(key, ta.value || null); grow(); }; grow();
+  // "/" at the start opens the agent's own commands (session-control op=commands), for products whose unit → action
+  // table has cmd-list; the list is fetched once per session.
+  const cmdAct = unitAction(meta.channel, 'cmd-list', '命令');
+  const menu = $('#cmdMenu');
+  const showCmds = async () => {
+    const m = /^\/(\S*)$/.exec(ta.value);
+    if (!cmdAct || !m) { menu.hidden = true; return; }
+    S.cmds = S.cmds || {};
+    if (!S.cmds[meta.id]) {
+      S.cmds[meta.id] = api('/api/gateway/session-control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta), traceSessionId: meta.id, op: 'commands' }) })
+        .then((r) => r.commands || []).catch((e) => { delete S.cmds[meta.id]; toast('拿不到命令清单：' + e.message); return []; });
+    }
+    const list = (await S.cmds[meta.id]).filter((c) => c.name.startsWith(m[1]));
+    menu.innerHTML = list.map((c) => `<button class="chip" data-cmd="${esc(c.name)}" title="${esc(c.description || '')}">/${esc(c.name)}${c.hint ? ' <span class="sub">' + esc(c.hint) + '</span>' : ''}</button>`).join('');
+    menu.hidden = !list.length;
+  };
+  menu.onclick = (e) => { const b = e.target.closest('[data-cmd]'); if (!b) return; ta.value = '/' + b.dataset.cmd + ' '; menu.hidden = true; ta.focus(); store.set(key, ta.value); };
+  ta.oninput = () => { store.set(key, ta.value || null); grow(); showCmds(); }; grow();
 
   const imgs = [];
   const showImgs = () => { $('#cimgs').innerHTML = imgs.map((s, i) => `<img src="${s}" data-i="${i}">`).join(''); };

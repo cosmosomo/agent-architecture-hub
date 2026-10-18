@@ -19,7 +19,7 @@ import { CONTRACT_VERSION, overview, type RootInfo, type Session, type SessionDo
 import { sessionToOtlp } from '@hub-trace/otel';
 import type { SearchIndex, SearchQuery } from './search.ts';
 import type { SessionStore } from './store.ts';
-import { AgentGatewayHub } from './gateway.ts';
+import { AgentGatewayHub, CHANNEL_PROFILES } from './gateway.ts';
 
 
 
@@ -380,11 +380,34 @@ export function createService(opts: ServeOptions): Server {
   const { search } = opts;
   const gateway = new AgentGatewayHub(repoRoot, store);
   hubRuns = () => gateway.hubRunStates();
+  // Sessions the gateway lists from outside the store (Antigravity brain, WorkBuddy desktop, Hermes) go into the
+  // search index too, as sources keyed by their update time and turn count; parsed by the gateway. The list is
+  // taken at most every 5 minutes and kept on failure, so the index does not drop and rebuild them.
+  let outsideSources: { at: number; list: any[] } = { at: 0, list: [] };
+  const OUTSIDE = new Set(['antigravity', 'workbuddy', 'hermes']);
+  const outsideFiles = (have: Set<string>) => {
+    if (Date.now() - outsideSources.at > 300_000) {
+      try {
+        const list = gateway
+          .listAcpxSessions()
+          .filter((s) => OUTSIDE.has(s.channel) && s.traceSessionId && !have.has(s.traceSessionId))
+          .map((s) => ({ id: s.traceSessionId, path: '', kind: 'gateway', adapter: 'gateway:' + s.channel, size: s.turnCount || 0, mtimeMs: Date.parse(s.updatedAt || s.createdAt || '') || 0, summary: { updatedAt: s.updatedAt } }));
+        outsideSources = { at: Date.now(), list };
+      } catch {}
+    }
+    return outsideSources.list;
+  };
   /** Rescan if due, then let the search index catch up in the background. */
   const refresh = async () => {
     if (store.isScanning()) return;
     await store.refresh(refreshMs);
-    if (search) search.sync(store.files(), (f) => store.parseSource(f)).catch(() => {});
+    if (search) {
+      const files = store.files();
+      const all = [...files, ...outsideFiles(new Set(files.map((f) => f.id)))];
+      search
+        .sync(all, (f) => (f.adapter.startsWith('gateway:') ? Promise.resolve(gateway.getAcpxSessionAsContract(f.id) as Session) : store.parseSource(f)))
+        .catch(() => {});
+    }
   };
   let allowedHosts: Set<string> = new Set();
 
@@ -496,6 +519,52 @@ export function createService(opts: ServeOptions): Server {
         return json(res, 200, result);
       }
 
+      // The "一群会话" level: goals made of tasks (collab/taskboard.ts). Errors are the board's own words, as 400.
+      if (req.method === 'POST' && path === '/api/gateway/goals') {
+        const body = await readJsonBody(req);
+        try {
+          const goal = gateway.taskboard.createGoal({
+            title: String(body.title || ''),
+            objective: String(body.objective || ''),
+            acceptance: body.acceptance ? String(body.acceptance) : undefined,
+            channel: body.channel ? String(body.channel) : undefined,
+            model: body.model ? String(body.model) : undefined,
+            verifyBy: body.verifyBy ? String(body.verifyBy) as any : undefined,
+            cwd: body.cwd ? String(body.cwd) : undefined,
+            budget: body.budget && typeof body.budget === 'object' ? body.budget : undefined,
+            tasks: Array.isArray(body.tasks) ? body.tasks : [],
+          });
+          return json(res, 200, { ok: true, goal });
+        } catch (e: any) {
+          return json(res, 400, { ok: false, error: e?.message || String(e) });
+        }
+      }
+      if (req.method === 'POST' && path === '/api/gateway/goal-action') {
+        const body = await readJsonBody(req);
+        try {
+          const goal = gateway.taskboard.goalAction(String(body.id || ''), String(body.action || ''), { budget: body.budget, reason: body.reason });
+          return json(res, 200, { ok: true, goal });
+        } catch (e: any) {
+          return json(res, 400, { ok: false, error: e?.message || String(e) });
+        }
+      }
+      if (req.method === 'POST' && path === '/api/gateway/task-action') {
+        const body = await readJsonBody(req);
+        try {
+          const task = gateway.taskboard.taskAction(String(body.id || ''), String(body.action || ''), {
+            passed: body.passed,
+            note: body.note,
+            rework: body.rework,
+            channel: body.channel,
+            model: body.model,
+            reason: body.reason,
+          });
+          return json(res, 200, { ok: true, task });
+        } catch (e: any) {
+          return json(res, 400, { ok: false, error: e?.message || String(e) });
+        }
+      }
+
       if (req.method === 'POST' && path === '/api/gateway/collab-event') {
         const body = await readJsonBody(req);
         const result = await gateway.recordCollabEvent({
@@ -539,6 +608,23 @@ export function createService(opts: ServeOptions): Server {
           model: String(body.model || ''),
         });
         return json(res, 200, result);
+      }
+
+      if (req.method === 'POST' && path === '/api/gateway/session-control') {
+        const body = await readJsonBody(req);
+        try {
+          const result = await gateway.sessionControl({
+            channel: String(body.channel || ''),
+            sessionName: body.sessionName ? String(body.sessionName) : undefined,
+            traceSessionId: body.traceSessionId ? String(body.traceSessionId) : undefined,
+            op: String(body.op || ''),
+            value: body.value !== undefined ? String(body.value) : undefined,
+            newSessionName: body.newSessionName ? String(body.newSessionName) : undefined,
+          });
+          return json(res, 200, result);
+        } catch (e: any) {
+          return json(res, 400, { ok: false, error: e?.message || String(e) });
+        }
       }
 
       if (req.method === 'POST' && path === '/api/gateway/cwd') {
@@ -735,6 +821,12 @@ export function createService(opts: ServeOptions): Server {
       if (path === '/api/gateway/state') {
         return json(res, 200, gateway.getState());
       }
+      if (path === '/api/gateway/goals') {
+        const id = url.searchParams.get('id');
+        if (!id) return json(res, 200, { ok: true, goals: gateway.taskboard.listGoals() });
+        const v = gateway.taskboard.view(String(id));
+        return v ? json(res, 200, { ok: true, ...v }) : json(res, 404, { ok: false, error: `没有这个目标：${id}` });
+      }
       if (path === '/api/gateway/dispatches') {
         const id = url.searchParams.get('id') ? String(url.searchParams.get('id')) : undefined;
         const channel = url.searchParams.get('channel') ? String(url.searchParams.get('channel')) : undefined;
@@ -787,23 +879,11 @@ export function createService(opts: ServeOptions): Server {
           const b = bindings.get(id) || bindings.get(rawSid);
           const h = runs.get(rawSid);
           const controlName = b?.sessionName || fallbackName || ('m-' + rawSid.replace(/[^\w-]/g, '').slice(0, 12));
-          const entry: 'subagent' | 'agentapi' | 'app-server' | 'stream-json' | 'acpx' | 'local-store' = isSubagent
+          const entry: string = isSubagent
             ? 'subagent'
-            : ch === 'antigravity'
-              ? b?.fromAcpxStore
-                ? 'agentapi'
-                : 'local-store'
-              : ch === 'codex'
-                ? b?.fromAcpxStore
-                  ? 'app-server'
-                  : 'local-store'
-                : ch === 'claude'
-                  ? b?.fromAcpxStore
-                    ? 'stream-json'
-                    : 'local-store'
-                  : b?.fromAcpxStore
-                    ? 'acpx'
-                    : 'local-store';
+            : b?.fromAcpxStore
+              ? CHANNEL_PROFILES[ch as keyof typeof CHANNEL_PROFILES]?.route || 'acpx'
+              : 'local-store';
           const ownership: 'subagent' | 'hub-running' | 'external-active' | 'hub-idle' | 'unclaimed' = isSubagent
             ? 'subagent'
             : h?.status === 'working'
@@ -1037,23 +1117,11 @@ export function createService(opts: ServeOptions): Server {
         const h = hubRuns().get(sid.split(':').pop() || sid);
         const stStatus = (rawSession as any).state?.status || '';
         const controlName = b?.sessionName || rawSession.agent?.name || ('m-' + (sid.split(':').pop() || sid).replace(/[^\w-]/g, '').slice(0, 12));
-        const entry: 'subagent' | 'agentapi' | 'app-server' | 'stream-json' | 'acpx' | 'local-store' = isSub
+        const entry: string = isSub
           ? 'subagent'
-          : ch === 'antigravity'
-            ? b?.fromAcpxStore
-              ? 'agentapi'
-              : 'local-store'
-            : ch === 'codex'
-              ? b?.fromAcpxStore
-                ? 'app-server'
-                : 'local-store'
-              : ch === 'claude'
-                ? b?.fromAcpxStore
-                  ? 'stream-json'
-                  : 'local-store'
-                : b?.fromAcpxStore
-                  ? 'acpx'
-                  : 'local-store';
+          : b?.fromAcpxStore
+            ? CHANNEL_PROFILES[ch as keyof typeof CHANNEL_PROFILES]?.route || 'acpx'
+            : 'local-store';
         const ownership: 'subagent' | 'hub-running' | 'external-active' | 'hub-idle' | 'unclaimed' = isSub
           ? 'subagent'
           : h?.status === 'working'
@@ -1282,7 +1350,8 @@ export function createService(opts: ServeOptions): Server {
     // Warm up before the first request, then rescan on a timer: no request ever waits
     // for (or shares a thread with) a rescan any more. The cadence keeps the directory
     // cache warm, which is what makes the rescan itself cheap.
-    refresh().catch(() => {});
+    const warmup = setTimeout(() => { refresh().catch(() => {}); }, 250);
+    if (typeof warmup.unref === 'function') warmup.unref();
     const timer = setInterval(() => { refresh().catch(() => {}); }, 60000);
     if (typeof timer.unref === 'function') timer.unref();
   });

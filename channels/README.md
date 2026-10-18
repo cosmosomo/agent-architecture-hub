@@ -198,8 +198,21 @@ node hub/tools/agent_gateway.js tables
 
 - **调用**：单元 → 动作 → 产品的路线上的命令。网页的按钮和命令行网关的子命令是同一个动作的两种外观。运行中的系统也给同样的东西：`GET http://127.0.0.1:8899/api/capabilities` 返回四张表的汇总。
 - **维护**：加一个单元，在“单元 → 动作”加一行；接一个产品，在产品表加一行，路线没有的话在同一个文件的 routes 里加；加一个动作，在路由和动作表各加一行。然后跑 `tables` 核对，跑 `node probe/scripts/build_coverage.js` 重出现状。核对对不上的地方会逐条列出来。
-- **出了 bug**：沿网页 → 后端接口 → 运行记录（`~/.agent-hub/runs.jsonl`、`~/.agent-hub/hub-8899.log`）→ 产品表里那条命令手动跑一遍 → 产品表里写的会话记录位置，逐层对。断在哪层修哪层，修完在黑板补一行实测，再重出现状。改后端先 `node -e "import('./trace/apps/cli/src/server.ts')"` 能加载，再按 8899 端口停进程，用命令行网关 `read` 让它自动拉起。
-- **还不干净的**：网页的控件已照“单元 → 动作”渲染（`m/index.html` 的 `unitAction`，实现未测的用虚线框标出），但每个控件放在哪里仍写在页面代码里；Codex、Claude 能力最全的路线（app-server、stream-json）驱动已有、还没接进后端；能力开关还有一层由黑板生成的 `hub/data/capabilities.json` 去关掉实测不通的；产品编号的类型 `ChannelId` 在 `gateway.ts` 里还手写着七个；acpx 跑一轮仍经 `cmd.exe`；Hermes 没有档案卡。
+- **出了 bug**：沿网页 → 后端接口 → 运行记录（`~/.agent-hub/runs.jsonl`、`~/.agent-hub/hub-8899.log`）→ 产品表里那条命令手动跑一遍 → 产品表里写的会话记录位置，逐层对。断在哪层修哪层，修完在黑板补一行实测，再重出现状。改后端先 `node -e "import('./trace/apps/cli/src/server.ts')"` 能加载，再按 8899 端口停进程，用命令行网关任一子命令让它自动拉起。
+- **回归**：`node hub/tools/agent_gateway.js verify [--product zcode,hermes] [--unit open,cancel,task-board]` 照四张表逐产品、逐单元真跑一遍，每格写一行黑板。另有三个专项：`probe/scripts/test_taskboard.mjs`（一群会话的判定，不调智能体，几秒）、`probe_acp_approval.js`（常驻 ACP 的轮内审批）、`probe_session_control.js`（切模式、压缩、分叉、推理力度）。
+
+后端各块在哪（一块一个归属，同时改不同的块不冲突）：
+
+| 块 | 代码 |
+|---|---|
+| 跑一轮，按产品表的 route 分路 | `gateway.ts` 的 `startRunInternal` → `startCodexAppServerRun`（app-server）、`startClaudeStreamRun`（stream-json）、`startAcpResidentRun`（acp-resident：ZCode、WorkBuddy、OpenCode、Hermes）、`startAntigravityRun`（agentapi）、`startAcpxRun`（acpx，其余产品和载入失败时的退路）；驱动在 `drivers/` |
+| 一轮里的审批、停止、换模型 | `gateway.ts` 的 `handleCodexApproval` 等三个审批入口、`cancelRun`、`setSessionModel` |
+| 一轮以外的会话操作 | `gateway.ts` 的 `sessionControl`（mode、compact、fork、effort） |
+| 两个会话之间 | `gateway.ts` 的 `dispatchTask`、`saveDispatch`、collab-event |
+| 一群会话 | `collab/taskboard.ts`（目标、任务、每一步的三个决定、熔断、预算），后端持有一个 `gateway.taskboard` |
+| 接口 | `server.ts`；命令行网关 `hub/tools/agent_gateway.js`；网页 `m/index.html` |
+
+- **还不干净的**：`gateway.ts` 还有七千行（10-18 一次拆分没接上线，已撤回；新的一级放自己的模块，如 `drivers/`、`collab/`）；网页每个控件放在哪里仍写在页面代码里；能力开关还有一层由黑板生成的 `hub/data/capabilities.json`；产品编号的类型 `ChannelId` 在 `gateway.ts` 里还手写着七个；OpenCode 的“只读”权限不生效（它的 ACP 不报模式、写文件不来请求）；超过 16MB 的会话文件，列表摘要最多 2 分钟、全文索引最多 10 分钟才重读一次（每 30 秒整份重读曾把服务卡住几十秒），所以这类会话的状态会晚一点。
 
 ## 要动某一块时读什么（按坐标去找）
 

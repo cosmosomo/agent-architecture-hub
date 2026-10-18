@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local Capability Hub Sync Targets Registry",
+  "description": "全机 local-capability-hub 技能正本源、同步脚本与各宿主副本路径唯一定义真值表（单点登记，不随处硬编码）",
+  "canonical": {
+    "path": "C:\\Users\\COLORFIRE\\.cc-switch\\skills\\local-capability-hub",
+    "description": "CC-Switch 统一技能管理目录（全机技能正本权威源）"
+  },
+  "synchronizers": {
+    "scriptNode": "scripts/sync_skill.js",
+    "hubToolNode": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\hub\\tools\\sync_skill.js",
+    "hubToolPowerShell": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\hub\\tools\\sync_capability_skill.ps1"
+  },
+  "backupRoot": "C:\\Users\\COLORFIRE\\.agent-hub\\skill-backups",
+  "targets": [
+    {
+      "id": "hub-private",
+      "product": "Agent-Architecture-Hub (Private Vault)",
+      "path": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\channels\\_private\\local-capability-hub",
+      "managed": true,
+      "notes": "协作中枢私有全量归档（不进公开仓库）"
+    },
+    {
+      "id": "claude",
+      "product": "Claude Code / Claude Desktop",
+      "path": "C:\\Users\\COLORFIRE\\.claude\\skills\\local-capability-hub",
+      "managed": true,
+      "notes": "Claude Code 官方及桌面端用户技能目录"
+    },
+    {
+      "id": "codex",
+      "product": "Codex (CLI & Desktop)",
+      "path": "C:\\Users\\COLORFIRE\\.codex\\skills\\local-capability-hub",
+      "managed": true,
+      "notes": "Codex 原生/app-server 技能目录"
+    },
+    {
+      "id": "zcode",
+      "product": "ZCode (智谱 Code)",
+      "path": "C:\\Users\\COLORFIRE\\.zcode\\skills\\local-capability-hub",
+      "managed": true,
+      "notes": "ZCode 宿主技能目录"
+    },
+    {
+      "id": "workbuddy",
+      "product": "WorkBuddy (CodeBuddy)",
+      "path": "C:\\Users\\COLORFIRE\\.workbuddy\\skills\\local-capability-hub",
+      "managed": true,
+      "notes": "WorkBuddy 技能目录"
+    },
+    {
+      "id": "opencode",
+      "product": "OpenCode",
+      "path": "C:\\Users\\COLORFIRE\\.config\\opencode\\skills\\local-capability-hub",
+      "managed": true,
+      "notes": "OpenCode 技能目录 (~/.config/opencode/skills)"
+    },
+    {
+      "id": "gemini-antigravity",
+      "product": "Antigravity / Gemini CLI",
+      "path": "C:\\Users\\COLORFIRE\\.gemini\\config\\skills\\local-capability-hub",
+      "managed": true,
+      "notes": "Google Antigravity 及 Gemini CLI 自定义技能目录 (~/.gemini/config/skills)"
+    },
+    {
+      "id": "agents",
+      "product": "Agents (通用智能体环境)",
+      "path": "C:\\Users\\COLORFIRE\\.agents\\skills\\local-capability-hub",
+      "managed": true,
+      "notes": "~/.agents 通用技能目录"
+    },
+    {
+      "id": "doubaowork-profile3",
+      "product": "DoubaoWork (Profile 3)",
+      "path": "C:\\Users\\COLORFIRE\\AppData\\Local\\DoubaoWork\\User Data\\Profile 3\\.doubaowork\\agent_mode\\workspace\\.user_skills\\local-capability-hub",
+      "managed": true,
+      "notes": "豆包工作台 Profile 3 Agent Mode 用户技能目录"
+    },
+    {
+      "id": "doubaowork-default",
+      "product": "DoubaoWork (Default)",
+      "path": "C:\\Users\\COLORFIRE\\AppData\\Local\\DoubaoWork\\User Data\\Default\\.doubaowork\\agent_mode\\workspace\\.user_skills\\local-capability-hub",
+      "managed": true,
+      "notes": "豆包工作台 Default Profile Agent Mode 用户技能目录"
+    },
+    {
+      "id": "doubao-default",
+      "product": "Doubao (Default)",
+      "path": "C:\\Users\\COLORFIRE\\AppData\\Local\\Doubao\\User Data\\Default\\.doubao\\agent_mode\\workspace\\.user_skills\\local-capability-hub",
+      "managed": true,
+      "notes": "豆包桌面版 Default Agent Mode 用户技能目录"
+    }
+  ]
+}

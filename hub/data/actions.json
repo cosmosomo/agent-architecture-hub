@@ -22,7 +22,8 @@
       "id": "set-model",
       "method": "POST",
       "path": "/api/gateway/model",
-      "does": "给产品或某个会话换模型（acpx 产品同时调 set-model）"
+      "does": "给产品或某个会话换模型（acpx 产品同时调 set-model）",
+      "cli": "model"
     },
     {
       "id": "set-cwd",
@@ -46,7 +47,8 @@
       "id": "approve",
       "method": "POST",
       "path": "/api/gateway/approve",
-      "does": "答复待审批项。现在是补齐：一轮因没权限失败后才生成待审批项，同意就全放行重跑一轮（搬到一个会话这一级）"
+      "does": "答复待审批项。现在是补齐：一轮因没权限失败后才生成待审批项，同意就全放行重跑一轮（搬到一个会话这一级）",
+      "cli": "approve"
     },
     {
       "id": "handoff",
@@ -84,13 +86,15 @@
       "id": "sessions",
       "method": "GET",
       "path": "/api/sessions",
-      "does": "电脑上全部会话（slim=1 给列表字段：标题、项目、状态、父子）"
+      "does": "电脑上全部会话（slim=1 给列表字段：标题、项目、状态、父子）",
+      "cli": "sessions"
     },
     {
       "id": "session",
       "method": "GET",
       "path": "/api/sessions/<编号>",
-      "does": "一个会话的每一轮每一步（tail、compact 控制取多少）"
+      "does": "一个会话的每一轮每一步（tail、compact 控制取多少）",
+      "cli": "session"
     },
     {
       "id": "session-tree",
@@ -114,7 +118,8 @@
       "id": "search",
       "method": "GET",
       "path": "/api/search",
-      "does": "全部会话全文搜索"
+      "does": "全部会话全文搜索",
+      "cli": "search"
     },
     {
       "id": "search-stats",
@@ -133,7 +138,8 @@
       "id": "gateway-state",
       "method": "GET",
       "path": "/api/gateway/state",
-      "does": "后端此刻的状态：各产品、在跑的轮、队列、待审批"
+      "does": "后端此刻的状态：各产品、在跑的轮、队列、待审批",
+      "cli": "state"
     },
     {
       "id": "stream",
@@ -204,6 +210,41 @@
       "method": "GET",
       "path": "/api/health",
       "does": "服务在不在、扫描进度"
+    },
+    {
+      "id": "goals",
+      "method": "GET",
+      "path": "/api/gateway/goals",
+      "does": "一群会话：列出全部目标（每个目标的任务按状态计数）；带 id 给出一个目标的任务、协作图（任务、会话、依赖边、运行边）和轨迹（目标与各任务的每一步，按时间排）",
+      "cli": "goals"
+    },
+    {
+      "id": "goal-new",
+      "method": "POST",
+      "path": "/api/gateway/goals",
+      "does": "一群会话：开一个目标——几件有依赖的任务、派给哪个产品、谁验收（human / auto / agent:<产品>）、预算（派活次数、并发、返工上限、停滞上限、时限）；由中心逐步派活、收交回、验收、决定停不停",
+      "cli": "goal"
+    },
+    {
+      "id": "goal-action",
+      "method": "POST",
+      "path": "/api/gateway/goal-action",
+      "does": "一群会话：暂停、恢复（可加预算）、取消一个目标",
+      "cli": "goal-action"
+    },
+    {
+      "id": "task-action",
+      "method": "POST",
+      "path": "/api/gateway/task-action",
+      "does": "一群会话：对一件任务验收（通过或打回并写返工要求）、重来、改派给别的产品、取消",
+      "cli": "task-action"
+    },
+    {
+      "id": "session-control",
+      "method": "POST",
+      "path": "/api/gateway/session-control",
+      "does": "对一个会话做轮以外的操作，按产品分到它自己的驱动：mode 中途切模式（ACP 桥 session/set_mode，Claude set_permission_mode）、compact 压缩上下文（Codex thread/compact/start，Claude 和 ACP 发 /compact）、fork 分叉成新会话（Codex thread/fork）、effort 推理力度（Codex）；做不到的产品直接报错说明",
+      "cli": "session-control"
     }
   ]
 }
