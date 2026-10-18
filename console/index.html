@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Agent Architecture Hub · 极速控制台：低负担、零画布开销的多智能体实况对话、任务看板与元智能体护航中枢。">
+<meta name="color-scheme" content="dark light">
+<title>极速控制台 · Agent Architecture Hub</title>
+<script>
+  try {
+    var t = localStorage.getItem('hub.theme');
+    if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch (e) {}
+</script>
+<link rel="stylesheet" href="console.css">
+</head>
+<body>
+<div class="nx-app" id="nxApp">
+  <!-- Top Bar: Brand + Dual-Mode Switcher + Workspace View Tabs + Live Run Strip + Quick Actions -->
+  <header class="nx-topbar">
+    <div class="nx-tb-left">
+      <button type="button" class="nx-icon-btn" id="nxLeftToggle" title="收起/展开左侧渠道与会话栏 (Ctrl+B)" aria-label="切换左栏">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+      </button>
+      <div class="nx-brand">
+        <span class="nx-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 36 36" width="22" height="22">
+            <defs>
+              <linearGradient id="nxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6366F1"/>
+                <stop offset="50%" stop-color="#06B6D4"/>
+                <stop offset="100%" stop-color="#10B981"/>
+              </linearGradient>
+            </defs>
+            <rect x="2" y="2" width="32" height="32" rx="9" fill="url(#nxGrad)" opacity="0.18"/>
+            <circle cx="18" cy="18" r="5" fill="url(#nxGrad)"/>
+            <path d="M18 6v5M18 25v5M6 18h5M25 18h5M9.5 9.5l3.5 3.5M23 23l3.5 3.5M26.5 9.5L23 13M13 23l-3.5 3.5" stroke="url(#nxGrad)" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <div class="nx-brand-text">
+          <span class="nx-brand-title">NEXUS CONSOLE</span>
+          <span class="nx-brand-sub">多智能体极速操控中枢</span>
+        </div>
+      </div>
+
+      <!-- Dual-Mode Switcher: Mode 1 (Hub) <-> Mode 2 (Console) -->
+      <nav class="nx-mode-switch" aria-label="双模式切换">
+        <a class="nx-mode-pill" id="nxHubLink" href="../" title="切换至模式一：60 智能体复杂协作拓扑、流程泳道与架构对账观察台">
+          <span>🌌 架构拓扑 Hub</span>
+        </a>
+        <span class="nx-mode-pill active" title="当前处于模式二：零画布负载、毫秒级响应的独立极速控制台">
+          <span>⚡ 极速控制台</span>
+        </span>
+      </nav>
+    </div>
+
+    <!-- Center View Switcher: Conversation | Kanban Board | Supervisor & Health -->
+    <div class="nx-tb-center" role="tablist" aria-label="工作台视图模式">
+      <button type="button" class="nx-view-tab active" data-view="chat" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>实况对话台</span>
+      </button>
+      <button type="button" class="nx-view-tab" data-view="board" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>
+        <span>协作看板</span>
+        <b class="nx-tab-badge" id="nxBoardBadge" hidden>0</b>
+      </button>
+      <button type="button" class="nx-view-tab" data-view="supervisor" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>护航总管与健康度</span>
+        <b class="nx-tab-badge warn" id="nxAlertBadge" hidden>0</b>
+      </button>
+    </div>
+
+    <!-- Right Actions: Connection status + Command Palette + Theme + Right Drawer -->
+    <div class="nx-tb-right">
+      <div class="nx-conn-pill" id="nxConnPill" title="本地 :8899 共享守护进程实时状态">
+        <span class="nx-pulse-dot" id="nxConnDot"></span>
+        <span id="nxConnText">连接中…</span>
+      </div>
+      <button type="button" class="nx-cmd-trigger" id="nxCmdBtn" title="打开全局命令与快速跳转面板 (Ctrl+K)">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span>快速指令…</span>
+        <kbd>Ctrl+K</kbd>
+      </button>
+      <button type="button" class="nx-icon-btn" id="nxThemeBtn" title="切换深色/浅色主题" aria-label="切换主题">☀</button>
+      <button type="button" class="nx-icon-btn" id="nxRightToggle" title="收起/展开右侧接力与遥测抽屉" aria-label="切换右栏">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Multi-Run Live Strip (shown automatically when >= 1 run or approval is active) -->
+  <div class="nx-live-strip" id="nxLiveStrip" hidden></div>
+
+  <!-- Three-Column Main Workspace -->
+  <div class="nx-workspace" id="nxWorkspace">
+    <!-- Left Sidebar: 7-Channel Matrix + Active Sessions + On-Demand Archive Search -->
+    <aside class="nx-sidebar-l" id="nxSidebarL" aria-label="渠道与会话导航">
+      <div class="nx-sl-header">
+        <div class="nx-sl-title-row">
+          <span class="nx-section-lbl">7 大本机能力渠道</span>
+          <button type="button" class="nx-mini-btn primary" id="nxNewSessionBtn" title="在当前渠道新建独立命名会话">+ 新建会话</button>
+        </div>
+        <div class="nx-channel-grid" id="nxChannelGrid"></div>
+      </div>
+
+      <div class="nx-sl-search">
+        <input type="search" id="nxSessionFilter" placeholder="筛选当前受管会话或输入关键词…" autocomplete="off">
+      </div>
+
+      <div class="nx-sl-tree thin-scroll" id="nxSessionTree"></div>
+
+      <!-- On-demand external historical sessions drawer inside sidebar -->
+      <div class="nx-sl-archive" id="nxArchiveBox">
+        <button type="button" class="nx-archive-toggle" id="nxArchiveToggle">
+          <span>📂 按需检索本机历史档案库</span>
+          <span class="nx-archive-arrow" id="nxArchiveArrow">▸</span>
+        </button>
+        <div class="nx-archive-body" id="nxArchiveBody" hidden>
+          <div class="nx-archive-controls">
+            <input type="search" id="nxArchiveSearch" placeholder="搜标题/目录/渠道 (按需加载)…" autocomplete="off">
+          </div>
+          <div class="nx-archive-list thin-scroll" id="nxArchiveList"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Main Area -->
+    <main class="nx-center" id="nxCenter">
+      <!-- View 1: Conversation Workbench -->
+      <section class="nx-view-pane active" id="nxViewChat" data-pane="chat">
+        <!-- Session Context Header -->
+        <div class="nx-chat-header" id="nxChatHeader"></div>
+
+        <!-- Pending Approval Banner (if any for current session or global) -->
+        <div class="nx-approval-banner" id="nxApprovalBanner" hidden></div>
+
+        <!-- Scrollable Message & Compact Turn Trace Stream -->
+        <div class="nx-chat-stream thin-scroll" id="nxChatStream"></div>
+
+        <!-- Docked Composer Stack: QueueStrip + Autocomplete Popover + Resize Handle + Input Card -->
+        <div class="nx-composer-stack" id="nxComposerStack">
+          <div class="nx-queue-strip" id="nxQueueStrip" hidden></div>
+          <div class="nx-ac-popover" id="nxAcPopover" hidden></div>
+          <div class="nx-composer-card" id="nxComposerCard">
+            <div class="nx-composer-resize" id="nxComposerResize" title="上下拖拽调整输入框高度"></div>
+            <div class="nx-composer-top" id="nxComposerToolbar"></div>
+            <div class="nx-composer-body">
+              <textarea id="nxPromptInput" rows="3" placeholder="输入指令直接下发（Enter 发送，Shift+Enter 换行；输入 @ 跨渠道接力，输入 / 呼出快捷命令）…"></textarea>
+            </div>
+            <div class="nx-composer-foot" id="nxComposerFoot"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 2: Multi-Column Kanban Task & Session Board -->
+      <section class="nx-view-pane" id="nxViewBoard" data-pane="board" hidden>
+        <div class="nx-board-header" id="nxBoardHeader"></div>
+        <div class="nx-board-columns thin-scroll" id="nxBoardColumns"></div>
+      </section>
+
+      <!-- View 3: Meta-Agent Supervisor & Channel Circuit-Breaker Health -->
+      <section class="nx-view-pane thin-scroll" id="nxViewSupervisor" data-pane="supervisor" hidden>
+        <div class="nx-sup-container" id="nxSupContainer"></div>
+      </section>
+    </main>
+
+    <!-- Right Resizable Inspector Drawer -->
+    <aside class="nx-sidebar-r" id="nxSidebarR" aria-label="跨渠道接力与会话遥测">
+      <div class="nx-sr-resize" id="nxSrResize" title="左右拖拽调整抽屉宽度"></div>
+      <div class="nx-sr-tabs" role="tablist">
+        <button type="button" class="nx-sr-tab active" data-srtab="handoff">⇄ 跨渠道接力</button>
+        <button type="button" class="nx-sr-tab" data-srtab="tools">🔧 工具与变更</button>
+        <button type="button" class="nx-sr-tab" data-srtab="telemetry">📊 遥测与CLI</button>
+      </div>
+      <div class="nx-sr-body thin-scroll" id="nxSrBody"></div>
+    </aside>
+  </div>
+
+  <!-- Command Palette Modal (Ctrl+K) -->
+  <div class="nx-modal-backdrop" id="nxCmdModal" hidden>
+    <div class="nx-cmd-dialog" role="dialog" aria-modal="true" aria-label="全局快速指令面板">
+      <div class="nx-cmd-input-wrap">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="nxCmdInput" placeholder="输入渠道名、会话名或动作（如：新建会话、接力、巡检、切换主题、架构拓扑）…" autocomplete="off">
+        <kbd>ESC</kbd>
+      </div>
+      <div class="nx-cmd-list thin-scroll" id="nxCmdList"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="nx-toast" id="nxToast" role="status" aria-live="polite"></div>
+</div>
+<script src="console.js"></script>
+</body>
+</html>

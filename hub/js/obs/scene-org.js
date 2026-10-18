@@ -258,14 +258,18 @@
       blocks.push(bl);
     });
 
-    /* the person on the left; the maintainer lives with the channels it maintains */
+    /* the person on the left; the meta-agents live with the channels they govern */
     var showHuman = s.overlays.human !== false && idx.ind.has('human');
-    var maint = idx.ind.get('meta_maint');
+    var metaInds = def.individuals.filter(function (ind) {
+      if (ind.kind !== 'meta' || hidden(ind.id)) return false;
+      if (HUB.obsChat && HUB.obsChat.isMetaEnabled) return HUB.obsChat.isMetaEnabled(ind.id);
+      return true;
+    });
     var peopleW = showHuman ? NW : 0;
     var x0 = peopleW ? peopleW + BLOCKGAP : 0;
 
     /* the capability layer: every channel is a unit of the main graph (status, users, load against its limit),
-       framed together with the maintainer that keeps them running */
+       framed together with the meta-agents that govern and maintain them */
     var defOnly = s.compare === 'def';
     var chCard = function (c) {
       var cs = a.channelStats[c.id] || {};
@@ -281,10 +285,10 @@
     var KIND_ORDER = { model: 0, function: 1, tool: 2 };
     var isLocal = function (c) { return c.tier === 'basic'; };
     // the capability layer is the layered tool systems (everyone's basics, the shared functions); a model is a property of the
-    // individual (its badge and its details), not a card, and the maintainer only appears when there is something to maintain
+    // individual (its badge and its details), not a card, and the meta-agents appear when there is something to govern
     var chs = def.channels.filter(function (c) { return c.tier === 'shared' && c.kind !== 'model'; }).sort(function (p, q) { return (KIND_ORDER[p.kind] || 1) - (KIND_ORDER[q.kind] || 1); });
     var locals = def.channels.filter(isLocal);
-    var chItems = (maint && chs.length ? [indCard('meta_maint')] : []).concat(chs.map(chCard));
+    var chItems = ((chs.length || locals.length) ? metaInds.map(function (mi) { return indCard(mi.id); }) : []).concat(chs.map(chCard));
     if (locals.length) {
       var lusers = U.uniq([].concat.apply([], locals.map(function (c) { return c.users || []; }))).filter(function (u) { return idx.ind.has(u) && !hidden(u); });
       chItems.push({ key: 'c:__local', kind: 'channel', w: CHW, h: 58, sel: { type: 'channel', id: '__local' }, anchor: ['b:__channels'],
@@ -344,9 +348,9 @@
     var bad = chs.filter(function (c) { var st = (a.channelStats[c.id] || {}).status; return !defOnly && st && st !== 'ok'; }).length;
     var full = chs.filter(function (c) { var cs = a.channelStats[c.id] || {}; return !defOnly && c.limit && (cs.waiting || cs.active >= c.limit); }).length;
     frames.push({ key: 'b:__channels', kind: 'chframe', x: fx, y: fy, w: fw, h: fh, sel: { type: 'channels', id: 'all' }, anchor: [],
-      data: { n: chItems.filter(function (it) { return it.kind === 'channel'; }).length, bad: bad, full: full, def: defOnly, unmeasured: !HUB.model.measured(m, 'channel'),
+      data: { n: chItems.filter(function (it) { return it.kind === 'channel'; }).length, metaCount: metaInds.length, bad: bad, full: full, def: defOnly, unmeasured: !HUB.model.measured(m, 'channel'),
         queued: defOnly ? 0 : U.sum(chs, function (c) { return (a.channelStats[c.id] || {}).queued || 0; }) } });
-    chItems.forEach(function (it) { it.x = fx + FP + it.px; it.y = fy + FT + it.py; if (it.key === 'i:meta_maint') it.anchor = ['b:__channels']; cards.push(it); });
+    chItems.forEach(function (it) { it.x = fx + FP + it.px; it.y = fy + FT + it.py; if (it.kind === 'ind') it.anchor = ['b:__channels']; cards.push(it); });
     }
 
     var cardByKey = new Map(cards.map(function (c) { return [c.key, c]; }));

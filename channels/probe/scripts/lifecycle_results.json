@@ -1,0 +1,94 @@
+[
+  {
+    "product": "zcode",
+    "sessionId": "1b4e8363-2d80-42f0-a061-cfacc365f3eb",
+    "turn1": {
+      "text": "PROBE_ZCODE_TURN1_SUCCESS",
+      "stopReason": "end_turn",
+      "duration": 22292
+    },
+    "turn2": {
+      "text": "热态续写",
+      "stopReason": "end_turn",
+      "duration": 5962
+    },
+    "turn3_cancel": {
+      "stopReason": "cancelled",
+      "textLen": 0
+    },
+    "turn4_recovery": {
+      "text": "恢复正常",
+      "stopReason": "end_turn",
+      "duration": 12235
+    }
+  },
+  {
+    "product": "workbuddy",
+    "sessionId": "01a14eeb-0a6a-7a3e-808d-e59c7b53c906",
+    "turn1": {
+      "text": "PROBE_WORKBUDDY_TURN1_SUCCESS",
+      "stopReason": "end_turn",
+      "duration": 11228
+    },
+    "turn2": {
+      "text": "热态续写",
+      "stopReason": "end_turn",
+      "duration": 6017
+    },
+    "turn3_cancel": {
+      "stopReason": "cancelled",
+      "textLen": 0
+    },
+    "turn4_recovery": {
+      "text": "",
+      "stopReason": "cancelled",
+      "duration": 42
+    }
+  },
+  {
+    "product": "opencode",
+    "sessionId": "ses_eb1147457ffeFpC5qYcnJdfei6",
+    "turn1": {
+      "text": "PROBE_OPENCODE_TURN1_SUCCESS",
+      "stopReason": "end_turn",
+      "duration": 14970
+    },
+    "turn2": {
+      "text": "热态续写",
+      "stopReason": "end_turn",
+      "duration": 7606
+    },
+    "turn3_cancel": {
+      "stopReason": "cancelled",
+      "textLen": 0
+    },
+    "turn4_recovery": {
+      "text": "恢复正常",
+      "stopReason": "end_turn",
+      "duration": 8034
+    }
+  },
+  {
+    "product": "hermes",
+    "sessionId": "3a151c24-2f82-41db-82c8-8f4229ca32e6",
+    "turn1": {
+      "text": "PROBE_HERMES_TURN1_SUCCESS",
+      "stopReason": "end_turn",
+      "duration": 10081
+    },
+    "turn2": {
+      "text": "热态续写",
+      "stopReason": "end_turn",
+      "duration": 6049
+    },
+    "turn3_cancel": {
+      "stopReason": "cancelled",
+      "textLen": 0
+    },
+    "turn4_recovery": {
+      "text": "恢复正常",
+      "stopReason": "end_turn",
+      "duration": 4892
+    }
+  }
+]

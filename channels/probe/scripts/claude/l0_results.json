@@ -1,0 +1,93 @@
+{
+  "open": {
+    "pass": true,
+    "evidence": "{\"sessionId\":\"e7bb63b1-f61a-47e9-b51a-e1842913067b\",\"model\":\"claude-haiku-4-5\",\"result\":\"ACK\",\"duration\":55212}",
+    "cmd": "claude -p \"记住暗号 PROBE_L0_KAPPA_921，回复 ACK\" --session-id e7bb63b1-f61a-47e9-b51a-e1842913067b --model claude-haiku-4-5 --output-format stream-json --verbose"
+  },
+  "model-new": {
+    "pass": true,
+    "evidence": "init.model=claude-haiku-4-5",
+    "cmd": "claude -p ... --model claude-haiku-4-5"
+  },
+  "observe-live": {
+    "pass": true,
+    "evidence": "received 7 stream events during turn; first chunk at 22224ms: {\"type\":\"assistant\",\"message\":{\"model\":\"claude-haiku-4-5\",\"id\":\"msg_011Cg7bKfrjvRQCOLtDe1OXF\",\"type\"",
+    "cmd": "claude -p ... --output-format stream-json --verbose --include-partial-messages"
+  },
+  "resume": {
+    "pass": true,
+    "evidence": "result=\"PROBE_L0_KAPPA_921\" (code=0)",
+    "cmd": "claude -p \"刚才暗号是什么？只回复暗号\" --resume e7bb63b1-f61a-47e9-b51a-e1842913067b --model claude-haiku-4-5 --output-format stream-json --verbose"
+  },
+  "resume-native": {
+    "pass": true,
+    "evidence": "resumed native session e7bb63b1-f61a-47e9-b51a-e1842913067b successfully, response=\"PROBE_L0_KAPPA_921\"",
+    "cmd": "claude -p \"刚才暗号是什么？只回复暗号\" --resume e7bb63b1-f61a-47e9-b51a-e1842913067b --model claude-haiku-4-5 --output-format stream-json --verbose"
+  },
+  "model-switch": {
+    "pass": true,
+    "evidence": "previous_model=claude-haiku-4-5, switched_model=claude-sonnet-5-5[1M], result=\"SONNET_SWITCH_ACK\"",
+    "cmd": "claude -p \"回复 SONNET_SWITCH_ACK\" --resume e7bb63b1-f61a-47e9-b51a-e1842913067b --model sonnet --output-format stream-json --verbose"
+  },
+  "cancel": {
+    "pass": false,
+    "evidence": "interrupted after 2589ms; resume code=1, result=undefined",
+    "cmd": "claude -p \"从 1 数到 200...\" --session-id 6cc5d289-09e0-4df8-9071-3085a9ab69c5 -> SIGTERM after 2.5s -> claude -p \"刚才被中断了...\" --resume 6cc5d289-09e0-4df8-9071-3085a9ab69c5"
+  },
+  "fork": {
+    "pass": true,
+    "evidence": "original_session=e7bb63b1-f61a-47e9-b51a-e1842913067b, forked_session=8158da48-5256-415d-96ab-b0fc18f2ed33, recalled=true",
+    "cmd": "claude -p \"刚才的暗号是什么？只回复暗号\" --resume e7bb63b1-f61a-47e9-b51a-e1842913067b --fork-session --model claude-haiku-4-5 --output-format stream-json --verbose"
+  },
+  "observe-history": {
+    "pass": true,
+    "evidence": "transcript file found at C:\\Users\\COLORFIRE\\.claude\\projects\\E--program-GIT-Agent-multi-Agent-Architecture-Hub\\e7bb63b1-f61a-47e9-b51a-e1842913067b.jsonl with 61 jsonl lines",
+    "cmd": "fs.readFileSync(\"C:\\Users\\COLORFIRE\\.claude\\projects\\E--program-GIT-Agent-multi-Agent-Architecture-Hub\\e7bb63b1-f61a-47e9-b51a-e1842913067b.jsonl\")"
+  },
+  "state": {
+    "pass": true,
+    "evidence": "claude agents --json returned 7 items: {\"pid\":85768,\"cwd\":\"E:\\\\program\\\\GIT\\\\Jobs\",\"kind\":\"interactive\",\"startedAt\":1792133458503,\"sessionI",
+    "cmd": "claude agents --json"
+  },
+  "close": {
+    "pass": true,
+    "evidence": "claude stop output: code=1, out=\"\", err=\"No job matching 'e7bb63b1-f61a-47e9-b51a-e1842913067b'. Run 'claude agents' to list running sessions.\"",
+    "cmd": "claude stop e7bb63b1-f61a-47e9-b51a-e1842913067b"
+  },
+  "permission": {
+    "pass": false,
+    "result": "fail",
+    "evidence": "in -p non-interactive mode with --permission-mode manual: receivedMidTurnPrompt=false, exit_code=0, stdout_snippet=\"{\\\"type\\\":\\\"system\\\",\\\"subtype\\\":\\\"init\\\",\\\"cwd\\\":\\\"E:\\\\\\\\program\\\\\\\\GIT\\\\\\\\Agent\\\\\\\\multi\\\\\\\\Agent-Architecture-Hub\\\",\\\"session_id\\\":\\\"b996dfd8-4bc4-407e-a0d0-57e93ae07342\\\",\\\"\"",
+    "cmd": "claude -p \"请在 ... 写入 L0_PERM\" --session-id b996dfd8-4bc4-407e-a0d0-57e93ae07342 --permission-mode manual --model claude-haiku-4-5 --output-format stream-json --verbose",
+    "note": "Claude CLI -p flag does not support mid-turn interactive prompt approval without an external host handler; in print mode with host prompts absent it fails or denies"
+  },
+  "steer": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "steerInTurn=true, exit_code=0, out_snippet=\"14,\\\"type\\\":\\\"result\\\",\\\"duration_ms\\\":8304,\\\"uuid\\\":\\\"46fd249d-b639-4d7e-93d3-cbdf6ec1f039\\\",\\\"ttft_stream_ms\\\":6034,\\\"time_to_request_ms\\\":55,\\\"first_content_frame_ms\\\":6034,\\\"queued_turn_count\\\":0,\\\"result_index\\\":1}\\n\"",
+    "cmd": "claude -p --input-format stream-json --output-format stream-json (pipe 2 user messages during turn)"
+  },
+  "compact": {
+    "pass": true,
+    "evidence": "code=0, result=\"\"",
+    "cmd": "claude -p \"/compact\" --resume e7bb63b1-f61a-47e9-b51a-e1842913067b --model claude-haiku-4-5 --output-format stream-json --verbose"
+  },
+  "model-list": {
+    "pass": false,
+    "result": "n/a",
+    "evidence": "claude models exit_code=1, err=\"\"",
+    "cmd": "claude models",
+    "note": "Claude CLI has no built-in models listing subcommand; model aliases are static in --model help"
+  },
+  "mode-switch": {
+    "pass": true,
+    "evidence": "resumed with --permission-mode plan, init.permissionMode=plan, code=0",
+    "cmd": "claude -p \"回复 MODE_PLAN_ACK\" --resume e7bb63b1-f61a-47e9-b51a-e1842913067b --permission-mode plan --output-format stream-json --verbose"
+  },
+  "quota": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "code=0, result=\"Total cost:            $0.52\\nTotal duration (API):  2m 5s\\nTotal duration (wall): 2m 22s\\nTotal code changes:    18 lines \"",
+    "cmd": "claude -p \"/usage\" --resume e7bb63b1-f61a-47e9-b51a-e1842913067b --model claude-haiku-4-5 --output-format stream-json --verbose"
+  }
+}

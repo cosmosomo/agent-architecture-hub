@@ -1,0 +1,117 @@
+{
+  "open": {
+    "threadId": "01a14e5e-0b81-7853-9f6b-3738d402d9ad",
+    "sessionName": "probe-appserver-1792316149154",
+    "tStart": {
+      "thread": {
+        "id": "01a14e5e-0b81-7853-9f6b-3738d402d9ad",
+        "environments": [
+          {
+            "environmentId": "local",
+            "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+            "runtimeWorkspaceRoots": [
+              "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub"
+            ]
+          }
+        ],
+        "extra": null,
+        "sessionId": "01a14e5e-0b81-7853-9f6b-3738d402d9ad",
+        "forkedFromId": null,
+        "parentThreadId": null,
+        "preview": "",
+        "ephemeral": false,
+        "section": null,
+        "sectionEnteredAt": null,
+        "projectId": null,
+        "historyMode": "paginated",
+        "modelProvider": "custom",
+        "model": "gpt-6.1-sol",
+        "reasoningEffort": "high",
+        "createdAt": 1792316149,
+        "updatedAt": 1792316149,
+        "recencyAt": 1792316149,
+        "status": {
+          "type": "idle"
+        },
+        "path": "C:\\Users\\COLORFIRE\\.codex\\sessions\\2026\\10\\18\\rollout-2026-10-18T17-35-48-01a14e5e-0b81-7853-9f6b-3738d402d9ad.jsonl",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "cliVersion": "0.159.2",
+        "originator": "probe-appserver",
+        "source": "vscode",
+        "canAcceptDirectInput": true,
+        "threadSource": null,
+        "agentNickname": null,
+        "agentRole": null,
+        "gitInfo": null,
+        "name": null,
+        "daybreakEnabled": null,
+        "turns": []
+      },
+      "model": "gpt-6.1-sol",
+      "modelProvider": "custom",
+      "serviceTier": "default",
+      "disabledPluginIds": [],
+      "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "runtimeWorkspaceRoots": [
+        "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub"
+      ],
+      "instructionSources": [
+        "C:\\Users\\COLORFIRE\\.codex\\AGENTS.md"
+      ],
+      "approvalPolicy": "never",
+      "approvalsReviewer": "user",
+      "sandbox": {
+        "type": "workspaceWrite",
+        "writableRoots": [],
+        "networkAccess": false,
+        "excludeTmpdirEnvVar": false,
+        "excludeSlashTmp": false
+      },
+      "activePermissionProfile": null,
+      "reasoningEffort": "high",
+      "multiAgentMode": "explicitRequestOnly"
+    }
+  },
+  "first_turn": {
+    "turn1Id": "01a14e5e-0fd0-7700-9e1c-1aa76094aecf",
+    "status": "completed",
+    "text": "HELLO_CODEX_APPSERVER"
+  },
+  "steer": {
+    "turn2Id": "01a14e5e-38fe-7300-a4c6-5980b24ae3e2",
+    "steerSecret": "STEER_INJECTED_KEY_1782",
+    "steerAdopted": true,
+    "steerRes": {
+      "turnId": "01a14e5e-38fe-7300-a4c6-5980b24ae3e2"
+    }
+  },
+  "interrupt": {
+    "turn3Id": "01a14e5e-7756-7f72-bfd5-f37803bf1f87",
+    "status": "interrupted",
+    "interrupted": true
+  },
+  "fork": {
+    "forkedThreadId": "01a14e5e-7c6a-7f63-8590-693db2417233",
+    "parentThreadId": "01a14e5e-0b81-7853-9f6b-3738d402d9ad",
+    "forkInherited": true,
+    "forkedFromId": "01a14e5e-0b81-7853-9f6b-3738d402d9ad"
+  },
+  "compact": {
+    "success": true,
+    "compactRes": {},
+    "compactNotif": null
+  },
+  "modelSwitch": {
+    "success": false,
+    "error": "failed to submit turn input: ActiveTurnNotSteerable { turn_kind: Compact }"
+  },
+  "approval": {
+    "success": false,
+    "resolved": false,
+    "turnStatus": "completed"
+  },
+  "read": {
+    "historyMode": "paginated",
+    "turnsCount": 4
+  }
+}

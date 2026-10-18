@@ -73,11 +73,29 @@
     };
     var maint = {
       id: 'meta_maint', agentId: null, kind: 'meta', name: '渠道维护者', model: 'haiku', phase: null, groupId: null,
-      role: '盯着模型和工具渠道，出故障时生成维护任务并跟进恢复',
-      trigger: '渠道检查失败或额度告警', watches: [], docs: [], channels: [], natives: [], host: 'Claude Code', tools: ['Read', 'Bash'],
+      role: '盯着 6 大宿主渠道与模型额度，出故障或限流时自动切换备选模型并跟进恢复',
+      trigger: '渠道检查失败或额度告警', watches: [], docs: [], channels: [], natives: [], host: 'Hub Meta-Engine', tools: ['Read', 'Bash'],
       x: maxX + spanX * 0.18, y: maxY, isHub: false, enhanced: true
     };
-    individuals.push(human, maint);
+    var approver = {
+      id: 'meta_approver', agentId: null, kind: 'meta', name: '自动批准督导', model: 'haiku', phase: null, groupId: null,
+      role: '自动放行工具读写与命令调用（--approve-all），消除 PERMISSION_DENIED 阻塞并自动批准低风险门禁',
+      trigger: '工具权限请求或人工门禁等待', watches: [], docs: [], channels: [], natives: [], host: 'Hub Meta-Engine', tools: ['Read', 'Bash'],
+      x: maxX + spanX * 0.18, y: maxY - 110, isHub: false, enhanced: true
+    };
+    var resumer = {
+      id: 'meta_resumer', agentId: null, kind: 'meta', name: '断网与Bug续跑', model: 'haiku', phase: null, groupId: null,
+      role: '监测断网超时、进程异常退出、工具报错或流中断，自动注入断点上下文并续跑会话',
+      trigger: '断网中断、进程异常退出或工具报错', watches: [], docs: [], channels: [], natives: [], host: 'Hub Meta-Engine', tools: ['Read', 'Bash'],
+      x: maxX + spanX * 0.18, y: maxY - 55, isHub: false, enhanced: true
+    };
+    var auditor = {
+      id: 'meta_auditor', agentId: null, kind: 'meta', name: '防死循环督导', model: 'haiku', phase: null, groupId: null,
+      role: '监控连续重复工具报错与长会话上下文膨胀，发现死循环苗头时自动注入纠偏提示',
+      trigger: '单轮连续报错达到阈值', watches: [], docs: [], channels: [], natives: [], host: 'Hub Meta-Engine', tools: ['Read'],
+      x: maxX + spanX * 0.18, y: maxY + 55, isHub: false, enhanced: true
+    };
+    individuals.push(human, approver, resumer, maint, auditor);
     var indMap = U.byId(individuals);
     var nodeIds = individuals.filter(function (x) { return x.kind === 'agent'; }).map(function (x) { return x.id; });
     /* ---------- groups ---------- */
@@ -189,9 +207,12 @@
     individuals.forEach(function (x) {
       (x.watches || []).forEach(function (w) { if (indMap.has(w)) addRel('watch', 'watch', x.id, w, ''); });
     });
+    var metaIds = ['meta_approver', 'meta_resumer', 'meta_maint', 'meta_auditor'];
     channels.forEach(function (ch) {
       ch.users.forEach(function (u) { addRel('channel', 'use', u, ch.id, ''); });
-      addRel('channel', 'maintain', 'meta_maint', ch.id, '');
+      metaIds.forEach(function (mid) {
+        if (indMap.has(mid)) addRel('channel', 'maintain', mid, ch.id, '');
+      });
     });
     relations.forEach(function (r) {
       if (r.type === 'watch') {
@@ -199,7 +220,11 @@
         if (w && w.watches.indexOf(r.to) < 0) w.watches.push(r.to);
       }
     });
-    maint.watches = channels.map(function (c) { return c.id; });
+    var chIds = channels.map(function (c) { return c.id; });
+    metaIds.forEach(function (mid) {
+      var mInd = indMap.get(mid);
+      if (mInd) mInd.watches = chIds.slice();
+    });
 
     /* ---------- docs ---------- */
     var title = presetName(presetId);

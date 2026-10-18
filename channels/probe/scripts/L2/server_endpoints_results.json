@@ -1,0 +1,1085 @@
+{
+  "session_new": {
+    "codex": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "codex",
+        "channelId": "codex",
+        "sessionName": "probe-L2b-codex-new",
+        "traceSessionId": "new:codex:probe-L2b-codex-new",
+        "currentModel": "gpt-6-luna",
+        "session": {
+          "id": "new:codex:probe-L2b-codex-new",
+          "sourceId": "probe-L2b-codex-new",
+          "source": {
+            "kind": "codex",
+            "format": "acpx/session-v1",
+            "adapter": "acpx@0.19.5",
+            "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-codex-new.json",
+            "size": 0,
+            "mtimeMs": 1792243073475
+          },
+          "title": "新会话 · Codex (probe-L2b-codex-new)",
+          "agent": {
+            "product": "Codex",
+            "name": "probe-L2b-codex-new",
+            "role": "main",
+            "model": "gpt-6-luna",
+            "originator": "codex"
+          },
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "startedAt": "2026-10-17T13:17:52.522Z",
+          "updatedAt": "2026-10-17T13:17:52.522Z",
+          "links": [],
+          "turns": [],
+          "state": {
+            "status": "idle",
+            "detail": "新建会话槽: probe-L2b-codex-new"
+          },
+          "stats": {
+            "turns": 0,
+            "modelCalls": 0,
+            "toolCalls": 0,
+            "toolErrors": 0,
+            "messages": 0,
+            "compactions": 0,
+            "subagents": 0,
+            "records": 0,
+            "skipped": 0
+          },
+          "notes": []
+        }
+      },
+      "createdAcpxFile": null,
+      "memoryDraftRegistered": true,
+      "contractSessionReturned": {
+        "id": "new:codex:probe-L2b-codex-new",
+        "sourceId": "probe-L2b-codex-new",
+        "source": {
+          "kind": "codex",
+          "format": "acpx/session-v1",
+          "adapter": "acpx@0.19.5",
+          "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-codex-new.json",
+          "size": 0,
+          "mtimeMs": 1792243073475
+        },
+        "title": "新会话 · Codex (probe-L2b-codex-new)",
+        "agent": {
+          "product": "Codex",
+          "name": "probe-L2b-codex-new",
+          "role": "main",
+          "model": "gpt-6-luna",
+          "originator": "codex"
+        },
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "startedAt": "2026-10-17T13:17:52.522Z",
+        "updatedAt": "2026-10-17T13:17:52.522Z",
+        "links": [],
+        "turns": [],
+        "state": {
+          "status": "idle",
+          "detail": "新建会话槽: probe-L2b-codex-new"
+        },
+        "stats": {
+          "turns": 0,
+          "modelCalls": 0,
+          "toolCalls": 0,
+          "toolErrors": 0,
+          "messages": 0,
+          "compactions": 0,
+          "subagents": 0,
+          "records": 0,
+          "skipped": 0
+        },
+        "notes": []
+      }
+    },
+    "claude": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "claude",
+        "channelId": "claude",
+        "sessionName": "probe-L2b-claude-new",
+        "traceSessionId": "new:claude:probe-L2b-claude-new",
+        "currentModel": "sonnet",
+        "session": {
+          "id": "new:claude:probe-L2b-claude-new",
+          "sourceId": "probe-L2b-claude-new",
+          "source": {
+            "kind": "claude-code",
+            "format": "acpx/session-v1",
+            "adapter": "acpx@0.19.5",
+            "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-claude-new.json",
+            "size": 0,
+            "mtimeMs": 1792243073960
+          },
+          "title": "新会话 · Claude (probe-L2b-claude-new)",
+          "agent": {
+            "product": "Claude Code",
+            "name": "probe-L2b-claude-new",
+            "role": "main",
+            "model": "sonnet",
+            "originator": "claude"
+          },
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "startedAt": "2026-10-17T13:17:53.485Z",
+          "updatedAt": "2026-10-17T13:17:53.485Z",
+          "links": [],
+          "turns": [],
+          "state": {
+            "status": "idle",
+            "detail": "新建会话槽: probe-L2b-claude-new"
+          },
+          "stats": {
+            "turns": 0,
+            "modelCalls": 0,
+            "toolCalls": 0,
+            "toolErrors": 0,
+            "messages": 0,
+            "compactions": 0,
+            "subagents": 0,
+            "records": 0,
+            "skipped": 0
+          },
+          "notes": []
+        }
+      },
+      "createdAcpxFile": null,
+      "memoryDraftRegistered": true,
+      "contractSessionReturned": {
+        "id": "new:claude:probe-L2b-claude-new",
+        "sourceId": "probe-L2b-claude-new",
+        "source": {
+          "kind": "claude-code",
+          "format": "acpx/session-v1",
+          "adapter": "acpx@0.19.5",
+          "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-claude-new.json",
+          "size": 0,
+          "mtimeMs": 1792243073960
+        },
+        "title": "新会话 · Claude (probe-L2b-claude-new)",
+        "agent": {
+          "product": "Claude Code",
+          "name": "probe-L2b-claude-new",
+          "role": "main",
+          "model": "sonnet",
+          "originator": "claude"
+        },
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "startedAt": "2026-10-17T13:17:53.485Z",
+        "updatedAt": "2026-10-17T13:17:53.485Z",
+        "links": [],
+        "turns": [],
+        "state": {
+          "status": "idle",
+          "detail": "新建会话槽: probe-L2b-claude-new"
+        },
+        "stats": {
+          "turns": 0,
+          "modelCalls": 0,
+          "toolCalls": 0,
+          "toolErrors": 0,
+          "messages": 0,
+          "compactions": 0,
+          "subagents": 0,
+          "records": 0,
+          "skipped": 0
+        },
+        "notes": []
+      }
+    },
+    "zcode": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "zcode",
+        "channelId": "zcode",
+        "sessionName": "probe-L2b-zcode-new",
+        "traceSessionId": "new:zcode:probe-L2b-zcode-new",
+        "currentModel": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+        "session": {
+          "id": "new:zcode:probe-L2b-zcode-new",
+          "sourceId": "probe-L2b-zcode-new",
+          "source": {
+            "kind": "zcode",
+            "format": "acpx/session-v1",
+            "adapter": "acpx@0.19.5",
+            "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-zcode-new.json",
+            "size": 0,
+            "mtimeMs": 1792243074008
+          },
+          "title": "新会话 · ZCode (probe-L2b-zcode-new)",
+          "agent": {
+            "product": "ZCode",
+            "name": "probe-L2b-zcode-new",
+            "role": "main",
+            "model": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+            "originator": "zcode"
+          },
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "startedAt": "2026-10-17T13:17:53.963Z",
+          "updatedAt": "2026-10-17T13:17:53.963Z",
+          "links": [],
+          "turns": [],
+          "state": {
+            "status": "idle",
+            "detail": "新建会话槽: probe-L2b-zcode-new"
+          },
+          "stats": {
+            "turns": 0,
+            "modelCalls": 0,
+            "toolCalls": 0,
+            "toolErrors": 0,
+            "messages": 0,
+            "compactions": 0,
+            "subagents": 0,
+            "records": 0,
+            "skipped": 0
+          },
+          "notes": []
+        }
+      },
+      "createdAcpxFile": null,
+      "memoryDraftRegistered": true,
+      "contractSessionReturned": {
+        "id": "new:zcode:probe-L2b-zcode-new",
+        "sourceId": "probe-L2b-zcode-new",
+        "source": {
+          "kind": "zcode",
+          "format": "acpx/session-v1",
+          "adapter": "acpx@0.19.5",
+          "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-zcode-new.json",
+          "size": 0,
+          "mtimeMs": 1792243074008
+        },
+        "title": "新会话 · ZCode (probe-L2b-zcode-new)",
+        "agent": {
+          "product": "ZCode",
+          "name": "probe-L2b-zcode-new",
+          "role": "main",
+          "model": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+          "originator": "zcode"
+        },
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "startedAt": "2026-10-17T13:17:53.963Z",
+        "updatedAt": "2026-10-17T13:17:53.963Z",
+        "links": [],
+        "turns": [],
+        "state": {
+          "status": "idle",
+          "detail": "新建会话槽: probe-L2b-zcode-new"
+        },
+        "stats": {
+          "turns": 0,
+          "modelCalls": 0,
+          "toolCalls": 0,
+          "toolErrors": 0,
+          "messages": 0,
+          "compactions": 0,
+          "subagents": 0,
+          "records": 0,
+          "skipped": 0
+        },
+        "notes": []
+      }
+    },
+    "workbuddy": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "workbuddy",
+        "channelId": "workbuddy",
+        "sessionName": "probe-L2b-workbuddy-new",
+        "traceSessionId": "new:workbuddy:probe-L2b-workbuddy-new",
+        "currentModel": "custom-local:glm-5.3",
+        "session": {
+          "id": "new:workbuddy:probe-L2b-workbuddy-new",
+          "sourceId": "probe-L2b-workbuddy-new",
+          "source": {
+            "kind": "workbuddy",
+            "format": "acpx/session-v1",
+            "adapter": "acpx@0.19.5",
+            "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-workbuddy-new.json",
+            "size": 0,
+            "mtimeMs": 1792243074060
+          },
+          "title": "新会话 · WorkBuddy (probe-L2b-workbuddy-new)",
+          "agent": {
+            "product": "WorkBuddy",
+            "name": "probe-L2b-workbuddy-new",
+            "role": "main",
+            "model": "custom-local:glm-5.3",
+            "originator": "workbuddy"
+          },
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "startedAt": "2026-10-17T13:17:54.018Z",
+          "updatedAt": "2026-10-17T13:17:54.018Z",
+          "links": [],
+          "turns": [],
+          "state": {
+            "status": "idle",
+            "detail": "新建会话槽: probe-L2b-workbuddy-new"
+          },
+          "stats": {
+            "turns": 0,
+            "modelCalls": 0,
+            "toolCalls": 0,
+            "toolErrors": 0,
+            "messages": 0,
+            "compactions": 0,
+            "subagents": 0,
+            "records": 0,
+            "skipped": 0
+          },
+          "notes": []
+        }
+      },
+      "createdAcpxFile": null,
+      "memoryDraftRegistered": true,
+      "contractSessionReturned": {
+        "id": "new:workbuddy:probe-L2b-workbuddy-new",
+        "sourceId": "probe-L2b-workbuddy-new",
+        "source": {
+          "kind": "workbuddy",
+          "format": "acpx/session-v1",
+          "adapter": "acpx@0.19.5",
+          "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-workbuddy-new.json",
+          "size": 0,
+          "mtimeMs": 1792243074060
+        },
+        "title": "新会话 · WorkBuddy (probe-L2b-workbuddy-new)",
+        "agent": {
+          "product": "WorkBuddy",
+          "name": "probe-L2b-workbuddy-new",
+          "role": "main",
+          "model": "custom-local:glm-5.3",
+          "originator": "workbuddy"
+        },
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "startedAt": "2026-10-17T13:17:54.018Z",
+        "updatedAt": "2026-10-17T13:17:54.018Z",
+        "links": [],
+        "turns": [],
+        "state": {
+          "status": "idle",
+          "detail": "新建会话槽: probe-L2b-workbuddy-new"
+        },
+        "stats": {
+          "turns": 0,
+          "modelCalls": 0,
+          "toolCalls": 0,
+          "toolErrors": 0,
+          "messages": 0,
+          "compactions": 0,
+          "subagents": 0,
+          "records": 0,
+          "skipped": 0
+        },
+        "notes": []
+      }
+    },
+    "opencode": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "opencode",
+        "channelId": "opencode",
+        "sessionName": "probe-L2b-opencode-new",
+        "traceSessionId": "new:opencode:probe-L2b-opencode-new",
+        "currentModel": "zhipuai-coding-plan/glm-5.3-flash",
+        "session": {
+          "id": "new:opencode:probe-L2b-opencode-new",
+          "sourceId": "probe-L2b-opencode-new",
+          "source": {
+            "kind": "opencode",
+            "format": "acpx/session-v1",
+            "adapter": "acpx@0.19.5",
+            "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-opencode-new.json",
+            "size": 0,
+            "mtimeMs": 1792243074112
+          },
+          "title": "新会话 · OpenCode (probe-L2b-opencode-new)",
+          "agent": {
+            "product": "OpenCode",
+            "name": "probe-L2b-opencode-new",
+            "role": "main",
+            "model": "zhipuai-coding-plan/glm-5.3-flash",
+            "originator": "opencode"
+          },
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "startedAt": "2026-10-17T13:17:54.076Z",
+          "updatedAt": "2026-10-17T13:17:54.076Z",
+          "links": [],
+          "turns": [],
+          "state": {
+            "status": "idle",
+            "detail": "新建会话槽: probe-L2b-opencode-new"
+          },
+          "stats": {
+            "turns": 0,
+            "modelCalls": 0,
+            "toolCalls": 0,
+            "toolErrors": 0,
+            "messages": 0,
+            "compactions": 0,
+            "subagents": 0,
+            "records": 0,
+            "skipped": 0
+          },
+          "notes": []
+        }
+      },
+      "createdAcpxFile": null,
+      "memoryDraftRegistered": true,
+      "contractSessionReturned": {
+        "id": "new:opencode:probe-L2b-opencode-new",
+        "sourceId": "probe-L2b-opencode-new",
+        "source": {
+          "kind": "opencode",
+          "format": "acpx/session-v1",
+          "adapter": "acpx@0.19.5",
+          "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-opencode-new.json",
+          "size": 0,
+          "mtimeMs": 1792243074112
+        },
+        "title": "新会话 · OpenCode (probe-L2b-opencode-new)",
+        "agent": {
+          "product": "OpenCode",
+          "name": "probe-L2b-opencode-new",
+          "role": "main",
+          "model": "zhipuai-coding-plan/glm-5.3-flash",
+          "originator": "opencode"
+        },
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "startedAt": "2026-10-17T13:17:54.076Z",
+        "updatedAt": "2026-10-17T13:17:54.076Z",
+        "links": [],
+        "turns": [],
+        "state": {
+          "status": "idle",
+          "detail": "新建会话槽: probe-L2b-opencode-new"
+        },
+        "stats": {
+          "turns": 0,
+          "modelCalls": 0,
+          "toolCalls": 0,
+          "toolErrors": 0,
+          "messages": 0,
+          "compactions": 0,
+          "subagents": 0,
+          "records": 0,
+          "skipped": 0
+        },
+        "notes": []
+      }
+    },
+    "hermes": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "hermes",
+        "channelId": "hermes",
+        "sessionName": "probe-L2b-hermes-new",
+        "traceSessionId": "new:hermes:probe-L2b-hermes-new",
+        "currentModel": "custom:glm-5.3",
+        "session": {
+          "id": "new:hermes:probe-L2b-hermes-new",
+          "sourceId": "probe-L2b-hermes-new",
+          "source": {
+            "kind": "hermes",
+            "format": "acpx/session-v1",
+            "adapter": "acpx@0.19.5",
+            "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-hermes-new.json",
+            "size": 0,
+            "mtimeMs": 1792243074161
+          },
+          "title": "新会话 · Hermes (probe-L2b-hermes-new)",
+          "agent": {
+            "product": "Hermes Agent",
+            "name": "probe-L2b-hermes-new",
+            "role": "main",
+            "model": "custom:glm-5.3",
+            "originator": "hermes"
+          },
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "startedAt": "2026-10-17T13:17:54.123Z",
+          "updatedAt": "2026-10-17T13:17:54.123Z",
+          "links": [],
+          "turns": [],
+          "state": {
+            "status": "idle",
+            "detail": "新建会话槽: probe-L2b-hermes-new"
+          },
+          "stats": {
+            "turns": 0,
+            "modelCalls": 0,
+            "toolCalls": 0,
+            "toolErrors": 0,
+            "messages": 0,
+            "compactions": 0,
+            "subagents": 0,
+            "records": 0,
+            "skipped": 0
+          },
+          "notes": []
+        }
+      },
+      "createdAcpxFile": null,
+      "memoryDraftRegistered": true,
+      "contractSessionReturned": {
+        "id": "new:hermes:probe-L2b-hermes-new",
+        "sourceId": "probe-L2b-hermes-new",
+        "source": {
+          "kind": "hermes",
+          "format": "acpx/session-v1",
+          "adapter": "acpx@0.19.5",
+          "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-hermes-new.json",
+          "size": 0,
+          "mtimeMs": 1792243074161
+        },
+        "title": "新会话 · Hermes (probe-L2b-hermes-new)",
+        "agent": {
+          "product": "Hermes Agent",
+          "name": "probe-L2b-hermes-new",
+          "role": "main",
+          "model": "custom:glm-5.3",
+          "originator": "hermes"
+        },
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "startedAt": "2026-10-17T13:17:54.123Z",
+        "updatedAt": "2026-10-17T13:17:54.123Z",
+        "links": [],
+        "turns": [],
+        "state": {
+          "status": "idle",
+          "detail": "新建会话槽: probe-L2b-hermes-new"
+        },
+        "stats": {
+          "turns": 0,
+          "modelCalls": 0,
+          "toolCalls": 0,
+          "toolErrors": 0,
+          "messages": 0,
+          "compactions": 0,
+          "subagents": 0,
+          "records": 0,
+          "skipped": 0
+        },
+        "notes": []
+      }
+    },
+    "antigravity": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "antigravity",
+        "channelId": "antigravity",
+        "sessionName": "probe-L2b-antigravity-new",
+        "traceSessionId": "new:antigravity:probe-L2b-antigravity-new",
+        "currentModel": "flash",
+        "session": {
+          "id": "new:antigravity:probe-L2b-antigravity-new",
+          "sourceId": "probe-L2b-antigravity-new",
+          "source": {
+            "kind": "antigravity",
+            "format": "antigravity/transcript-jsonl",
+            "adapter": "antigravity-ls@1.0",
+            "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-antigravity-new.json",
+            "size": 0,
+            "mtimeMs": 1792243074202
+          },
+          "title": "新会话 · AGY (probe-L2b-antigravity-new)",
+          "agent": {
+            "product": "Antigravity",
+            "name": "probe-L2b-antigravity-new",
+            "role": "main",
+            "model": "flash",
+            "originator": "antigravity"
+          },
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "startedAt": "2026-10-17T13:17:54.166Z",
+          "updatedAt": "2026-10-17T13:17:54.166Z",
+          "links": [],
+          "turns": [],
+          "state": {
+            "status": "idle",
+            "detail": "新建会话槽: probe-L2b-antigravity-new"
+          },
+          "stats": {
+            "turns": 0,
+            "modelCalls": 0,
+            "toolCalls": 0,
+            "toolErrors": 0,
+            "messages": 0,
+            "compactions": 0,
+            "subagents": 0,
+            "records": 0,
+            "skipped": 0
+          },
+          "notes": []
+        }
+      },
+      "createdAcpxFile": null,
+      "memoryDraftRegistered": true,
+      "contractSessionReturned": {
+        "id": "new:antigravity:probe-L2b-antigravity-new",
+        "sourceId": "probe-L2b-antigravity-new",
+        "source": {
+          "kind": "antigravity",
+          "format": "antigravity/transcript-jsonl",
+          "adapter": "antigravity-ls@1.0",
+          "path": "C:\\Users\\COLORFIRE\\.acpx\\sessions\\probe-L2b-antigravity-new.json",
+          "size": 0,
+          "mtimeMs": 1792243074202
+        },
+        "title": "新会话 · AGY (probe-L2b-antigravity-new)",
+        "agent": {
+          "product": "Antigravity",
+          "name": "probe-L2b-antigravity-new",
+          "role": "main",
+          "model": "flash",
+          "originator": "antigravity"
+        },
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "startedAt": "2026-10-17T13:17:54.166Z",
+        "updatedAt": "2026-10-17T13:17:54.166Z",
+        "links": [],
+        "turns": [],
+        "state": {
+          "status": "idle",
+          "detail": "新建会话槽: probe-L2b-antigravity-new"
+        },
+        "stats": {
+          "turns": 0,
+          "modelCalls": 0,
+          "toolCalls": 0,
+          "toolErrors": 0,
+          "messages": 0,
+          "compactions": 0,
+          "subagents": 0,
+          "records": 0,
+          "skipped": 0
+        },
+        "notes": []
+      }
+    }
+  },
+  "model": {
+    "codex": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "codex",
+        "sessionName": "probe-L2b-codex-model",
+        "model": "gpt-5.4-mini"
+      }
+    },
+    "claude": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "claude",
+        "sessionName": "probe-L2b-claude-model",
+        "model": "haiku"
+      }
+    },
+    "zcode": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "zcode",
+        "sessionName": "probe-L2b-zcode-model",
+        "model": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash"
+      }
+    },
+    "workbuddy": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "workbuddy",
+        "sessionName": "probe-L2b-workbuddy-model",
+        "model": "custom-local:glm-5.3"
+      }
+    },
+    "opencode": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "opencode",
+        "sessionName": "probe-L2b-opencode-model",
+        "model": "zhipuai-coding-plan/glm-5.3-flash"
+      }
+    },
+    "hermes": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "hermes",
+        "sessionName": "probe-L2b-hermes-model",
+        "model": "custom:glm-5.3"
+      }
+    },
+    "antigravity": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "channel": "antigravity",
+        "sessionName": "probe-L2b-antigravity-model",
+        "model": "flash"
+      }
+    }
+  },
+  "cwd": {
+    "codex": {
+      "validStatus": 200,
+      "validResponse": {
+        "ok": true,
+        "channel": "codex",
+        "sessionName": "probe-L2b-codex-cwd",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "workspaceDirs": [
+          "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "E:\\program\\GIT\\Agent\\multi",
+          "E:\\program\\GIT\\Agent\\agent-hub",
+          "E:\\program\\GIT\\Agent\\ap-vibe",
+          "E:\\program\\sota"
+        ]
+      },
+      "invalidStatus": 500
+    },
+    "claude": {
+      "validStatus": 200,
+      "validResponse": {
+        "ok": true,
+        "channel": "claude",
+        "sessionName": "probe-L2b-claude-cwd",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "workspaceDirs": [
+          "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "E:\\program\\GIT\\Agent\\multi",
+          "E:\\program\\GIT\\Agent\\agent-hub",
+          "E:\\program\\GIT\\Agent\\ap-vibe",
+          "E:\\program\\sota"
+        ]
+      },
+      "invalidStatus": 500
+    },
+    "zcode": {
+      "validStatus": 200,
+      "validResponse": {
+        "ok": true,
+        "channel": "zcode",
+        "sessionName": "probe-L2b-zcode-cwd",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "workspaceDirs": [
+          "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "E:\\program\\GIT\\Agent\\multi",
+          "E:\\program\\GIT\\Agent\\agent-hub",
+          "E:\\program\\GIT\\Agent\\ap-vibe",
+          "E:\\program\\sota"
+        ]
+      },
+      "invalidStatus": 500
+    },
+    "workbuddy": {
+      "validStatus": 200,
+      "validResponse": {
+        "ok": true,
+        "channel": "workbuddy",
+        "sessionName": "probe-L2b-workbuddy-cwd",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "workspaceDirs": [
+          "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "E:\\program\\GIT\\Agent\\multi",
+          "E:\\program\\GIT\\Agent\\agent-hub",
+          "E:\\program\\GIT\\Agent\\ap-vibe",
+          "E:\\program\\sota"
+        ]
+      },
+      "invalidStatus": 500
+    },
+    "opencode": {
+      "validStatus": 200,
+      "validResponse": {
+        "ok": true,
+        "channel": "opencode",
+        "sessionName": "probe-L2b-opencode-cwd",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "workspaceDirs": [
+          "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "E:\\program\\GIT\\Agent\\multi",
+          "E:\\program\\GIT\\Agent\\agent-hub",
+          "E:\\program\\GIT\\Agent\\ap-vibe",
+          "E:\\program\\sota"
+        ]
+      },
+      "invalidStatus": 500
+    },
+    "hermes": {
+      "validStatus": 200,
+      "validResponse": {
+        "ok": true,
+        "channel": "hermes",
+        "sessionName": "probe-L2b-hermes-cwd",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "workspaceDirs": [
+          "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "E:\\program\\GIT\\Agent\\multi",
+          "E:\\program\\GIT\\Agent\\agent-hub",
+          "E:\\program\\GIT\\Agent\\ap-vibe",
+          "E:\\program\\sota"
+        ]
+      },
+      "invalidStatus": 500
+    },
+    "antigravity": {
+      "validStatus": 200,
+      "validResponse": {
+        "ok": true,
+        "channel": "antigravity",
+        "sessionName": "probe-L2b-antigravity-cwd",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "workspaceDirs": [
+          "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "E:\\program\\GIT\\Agent\\multi",
+          "E:\\program\\GIT\\Agent\\agent-hub",
+          "E:\\program\\GIT\\Agent\\ap-vibe",
+          "E:\\program\\sota"
+        ]
+      },
+      "invalidStatus": 500
+    }
+  },
+  "approve": {
+    "missingIdCheck": {
+      "status": 500,
+      "text": "{\"error\":\"未找到待审批项或已处理: appr_non_existent\"}"
+    }
+  },
+  "handoff": {
+    "codex_to_zcode": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "status": "running",
+        "action": "started",
+        "runId": "run_1792243075162_euvv",
+        "channel": "zcode",
+        "sessionName": "probe-L2b-zcode-target",
+        "run": {
+          "runId": "run_1792243075162_euvv",
+          "channel": "zcode",
+          "channelId": "zcode",
+          "sessionName": "probe-L2b-zcode-target",
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "model": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+          "permissions": "all",
+          "source": "web",
+          "prompt": "【跨智能体协同接力 (Session Handoff): Codex -> ZCode】\n- 源会话: Codex (probe-L2b-codex-src)\n- 工作目录: E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\n- 前序会话暂无历史轮次记录\n---\n【接力执行指令】: 请接力完成测试暗号验证: HANDOFF_VERIFY_9912",
+          "status": "running",
+          "startedAt": "2026-10-17T13:17:55.162Z",
+          "thoughts": "",
+          "text": "",
+          "tools": [],
+          "initialMsgCount": 0,
+          "retryCount": 0
+        },
+        "fromChannel": "codex",
+        "fromSessionName": "probe-L2b-codex-src",
+        "toChannel": "zcode",
+        "toSessionName": "probe-L2b-zcode-target",
+        "toModel": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "traceSessionId": "new:zcode:probe-L2b-zcode-target"
+      }
+    }
+  },
+  "meta_agents": {
+    "get": {
+      "status": 200,
+      "agentsCount": 4,
+      "agents": [
+        {
+          "id": "meta_approver",
+          "name": "自动批准与代理审批督导",
+          "enabled": true,
+          "policy": "all",
+          "engineMode": "agent_brain"
+        },
+        {
+          "id": "meta_resumer",
+          "name": "断网与Bug续跑督导",
+          "enabled": true,
+          "engineMode": "agent_brain"
+        },
+        {
+          "id": "meta_maint",
+          "name": "渠道熔断与模型容灾督导",
+          "enabled": true,
+          "engineMode": "agent_brain"
+        },
+        {
+          "id": "meta_auditor",
+          "name": "看门狗去噪与防死循环督导",
+          "enabled": true,
+          "engineMode": "agent_brain"
+        }
+      ]
+    },
+    "update": {
+      "status": 200,
+      "approver": {
+        "id": "meta_approver",
+        "name": "自动批准与代理审批督导",
+        "role": "Auto-Approval & Proxy Gate Meta-Agent",
+        "badge": "⚡ 自动批准",
+        "accent": "#10B981",
+        "enabled": true,
+        "policy": "all",
+        "engineMode": "agent_brain",
+        "brainChannel": "zcode",
+        "brainModel": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+        "brainSessionName": "meta-brain-supervisor",
+        "patrolIntervalSec": 15,
+        "persona": "你是智能体控制室的元智能体护航总管与系统维护督导。先核对事实，再安排工作；不夸大战果，客观严谨。语言简短清晰，明确谁接手、接什么、故障根因与下一步维护动作。",
+        "runtimeStatus": "standby",
+        "description": "自动放行安全工具读写与命令调用（--approve-all），并在无人值守时由元智能体大脑代理常规门禁审批，高危操作升级人类",
+        "triggersCount": 0,
+        "lastPatrolAt": "2026-10-15T05:31:27.885Z"
+      }
+    },
+    "permissionEscalation": {
+      "sendResult": {
+        "ok": true,
+        "status": "running",
+        "action": "started",
+        "runId": "run_1792243075594_9383",
+        "channel": "codex",
+        "sessionName": "probe-L2b-escalate-test",
+        "run": {
+          "runId": "run_1792243075594_9383",
+          "channel": "codex",
+          "channelId": "codex",
+          "sessionName": "probe-L2b-escalate-test",
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "model": "gpt-5.4-mini",
+          "permissions": "all",
+          "source": "web",
+          "prompt": "echo permission escalation test",
+          "status": "running",
+          "startedAt": "2026-10-17T13:17:55.594Z",
+          "thoughts": "",
+          "text": "",
+          "tools": [],
+          "initialMsgCount": 0,
+          "retryCount": 0
+        }
+      },
+      "detectedEscalationLog": {
+        "id": "mlog_1792243075594_vugw",
+        "metaId": "meta_approver",
+        "metaName": "自动批准与代理审批督导",
+        "channel": "codex",
+        "sessionName": "probe-L2b-escalate-test",
+        "action": "自动批准升级",
+        "detail": "已将工具权限从只读 (reads) 自动升级为全自动读写 (--approve-all)",
+        "brainUsed": "ZCode · builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+        "at": "2026-10-17T13:17:55.594Z"
+      },
+      "escalationOccurred": true
+    },
+    "patrol": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "mode": "agent_brain",
+        "runId": "run_1792243075736_ci5l",
+        "brainChannel": "zcode",
+        "brainModel": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+        "brainSessionName": "meta-brain-supervisor",
+        "brainTraceSessionId": "new:zcode:meta-brain-supervisor"
+      }
+    }
+  },
+  "control": {
+    "codex": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "ts": "2026-10-17T13:17:55.823Z",
+        "writtenFiles": [
+          "agents/codex/inbox.md",
+          "traces/human_actions.jsonl"
+        ]
+      }
+    },
+    "claude": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "ts": "2026-10-17T13:17:55.838Z",
+        "writtenFiles": [
+          "agents/claude/inbox.md",
+          "traces/human_actions.jsonl"
+        ]
+      }
+    },
+    "zcode": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "ts": "2026-10-17T13:17:55.854Z",
+        "writtenFiles": [
+          "agents/zcode/inbox.md",
+          "traces/human_actions.jsonl"
+        ]
+      }
+    },
+    "workbuddy": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "ts": "2026-10-17T13:17:55.870Z",
+        "writtenFiles": [
+          "agents/workbuddy/inbox.md",
+          "traces/human_actions.jsonl"
+        ]
+      }
+    },
+    "opencode": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "ts": "2026-10-17T13:17:55.884Z",
+        "writtenFiles": [
+          "agents/opencode/inbox.md",
+          "traces/human_actions.jsonl"
+        ]
+      }
+    },
+    "hermes": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "ts": "2026-10-17T13:17:55.900Z",
+        "writtenFiles": [
+          "agents/hermes/inbox.md",
+          "traces/human_actions.jsonl"
+        ]
+      }
+    },
+    "antigravity": {
+      "status": 200,
+      "response": {
+        "ok": true,
+        "ts": "2026-10-17T13:17:55.916Z",
+        "writtenFiles": [
+          "agents/antigravity/inbox.md",
+          "traces/human_actions.jsonl"
+        ]
+      }
+    }
+  }
+}

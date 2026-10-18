@@ -1,0 +1,1656 @@
+{
+ "permissionCalls": [
+  {
+   "toolTitle": "退出计划模式",
+   "options": [
+    {
+     "optionId": "approve",
+     "name": "同意——退出计划模式",
+     "kind": "allow_once"
+    },
+    {
+     "optionId": "reject",
+     "name": "拒绝——继续规划",
+     "kind": "reject_once"
+    }
+   ],
+   "replied": {
+    "outcome": "selected",
+    "optionId": "reject"
+   }
+  }
+ ],
+ "modeUpdates": [
+  {
+   "currentModeId": "plan",
+   "sessionUpdate": "current_mode_update"
+  },
+  {
+   "currentModeId": "yolo",
+   "sessionUpdate": "current_mode_update"
+  },
+  {
+   "currentModeId": "yolo",
+   "sessionUpdate": "current_mode_update"
+  },
+  {
+   "currentModeId": "yolo",
+   "sessionUpdate": "current_mode_update"
+  },
+  {
+   "currentModeId": "yolo",
+   "sessionUpdate": "current_mode_update"
+  },
+  {
+   "currentModeId": "yolo",
+   "sessionUpdate": "current_mode_update"
+  },
+  {
+   "currentModeId": "yolo",
+   "sessionUpdate": "current_mode_update"
+  }
+ ],
+ "updates": [
+  {
+   "sessionUpdate": "available_commands_update",
+   "at": 1792230366035
+  },
+  {
+   "sessionUpdate": "available_commands_update",
+   "at": 1792230366271
+  },
+  {
+   "sessionUpdate": "available_commands_update",
+   "at": 1792230367742
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230368435
+  },
+  {
+   "sessionUpdate": "current_mode_update",
+   "at": 1792230368522
+  },
+  {
+   "sessionUpdate": "session_info_update",
+   "at": 1792230369048
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230369258
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230370959
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230384760
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230385035
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230385291
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230385578
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230385868
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230386138
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230386455
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230386713
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230386974
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230387239
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230387492
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230387785
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230388065
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230388320
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230388574
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230388908
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230389190
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230389449
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230389701
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230389953
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230390176
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230390178
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230390358
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230392006
+  },
+  {
+   "sessionUpdate": "tool_call",
+   "at": 1792230392007
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230392117
+  },
+  {
+   "sessionUpdate": "tool_call",
+   "at": 1792230392117
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230392118
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230392426
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230392426
+  },
+  {
+   "sessionUpdate": "plan",
+   "at": 1792230392426
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230392889
+  },
+  {
+   "sessionUpdate": "current_mode_update",
+   "at": 1792230393009
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230393812
+  },
+  {
+   "sessionUpdate": "session_info_update",
+   "at": 1792230394164
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230395175
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230397785
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230398071
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230398499
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230398504
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230398831
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230399002
+  },
+  {
+   "sessionUpdate": "tool_call",
+   "at": 1792230399002
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230399002
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230400378
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230404585
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230404687
+  },
+  {
+   "sessionUpdate": "tool_call",
+   "at": 1792230404687
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230404688
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230404688
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230404919
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230408813
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230409074
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230409117
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230409208
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230409306
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230409481
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230409774
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230409871
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230410038
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230411547
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230420388
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230421553
+  },
+  {
+   "sessionUpdate": "current_mode_update",
+   "at": 1792230421553
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230421666
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230422007
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230424177
+  },
+  {
+   "sessionUpdate": "current_mode_update",
+   "at": 1792230424178
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230424282
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230424538
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230428691
+  },
+  {
+   "sessionUpdate": "current_mode_update",
+   "at": 1792230428691
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230428785
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230429071
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230433217
+  },
+  {
+   "sessionUpdate": "current_mode_update",
+   "at": 1792230433217
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230433303
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230434819
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230435559
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230439720
+  },
+  {
+   "sessionUpdate": "current_mode_update",
+   "at": 1792230439720
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230439813
+  },
+  {
+   "sessionUpdate": "user_message_chunk",
+   "at": 1792230444402
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230444402
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230444404
+  },
+  {
+   "sessionUpdate": "user_message_chunk",
+   "at": 1792230444404
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230444404
+  },
+  {
+   "sessionUpdate": "user_message_chunk",
+   "at": 1792230444404
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230444404
+  },
+  {
+   "sessionUpdate": "user_message_chunk",
+   "at": 1792230444404
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230444404
+  },
+  {
+   "sessionUpdate": "tool_call",
+   "at": 1792230444405
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230444405
+  },
+  {
+   "sessionUpdate": "user_message_chunk",
+   "at": 1792230444405
+  },
+  {
+   "sessionUpdate": "plan",
+   "at": 1792230444529
+  },
+  {
+   "sessionUpdate": "available_commands_update",
+   "at": 1792230444980
+  },
+  {
+   "sessionUpdate": "config_option_update",
+   "at": 1792230445172
+  },
+  {
+   "sessionUpdate": "available_commands_update",
+   "at": 1792230445226
+  },
+  {
+   "sessionUpdate": "available_commands_update",
+   "at": 1792230445930
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230446695
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230458536
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230458816
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230459070
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230459326
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230459579
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230459864
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230460144
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230460395
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230460673
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230460949
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230461234
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230461523
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230462100
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230462385
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230462636
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230462902
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230463192
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230463453
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230463740
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230464021
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230464276
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230464532
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230464798
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230465050
+  },
+  {
+   "sessionUpdate": "agent_thought_chunk",
+   "at": 1792230465220
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230465876
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230465956
+  },
+  {
+   "sessionUpdate": "tool_call",
+   "at": 1792230465957
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230465957
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230465958
+  },
+  {
+   "sessionUpdate": "tool_call_update",
+   "at": 1792230466122
+  },
+  {
+   "sessionUpdate": "agent_message_chunk",
+   "at": 1792230471653
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230471817
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230471910
+  },
+  {
+   "sessionUpdate": "usage_update",
+   "at": 1792230472090
+  }
+ ],
+ "setPlan": {
+  "ok": true
+ },
+ "planWriteTurn": {
+  "stopReason": "end_turn",
+  "usage": {
+   "totalTokens": 22393,
+   "inputTokens": 10199,
+   "outputTokens": 674,
+   "thoughtTokens": 0,
+   "cachedReadTokens": 11520,
+   "cachedWriteTokens": 0
+  }
+ },
+ "setYolo": {
+  "ok": true
+ },
+ "yoloWriteTurn": {
+  "stopReason": "end_turn",
+  "usage": {
+   "totalTokens": 67830,
+   "inputTokens": 1032,
+   "outputTokens": 174,
+   "thoughtTokens": 0,
+   "cachedReadTokens": 66624,
+   "cachedWriteTokens": 0
+  }
+ },
+ "setModel": {
+  "ok": true,
+  "to": "new-provider\\deepseek-v4.1-flash"
+ },
+ "afterSwitchTurn": {
+  "error": "Internal error"
+ },
+ "switchEpochMs": 1792230440001,
+ "acpSessionId": "a966b9c8-794c-4739-bedc-1401d033d812",
+ "bridgeNativeSessionId": "sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53",
+ "forkAgain": {
+  "forkedSessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+  "parentSessionId": "sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53",
+  "targetMessageId": "msg_mvc7pa5y_b2ff295b-bc2b-4f0c-906f-a3c24f39075d",
+  "targetCheckpointId": "checkpoint_c25800ff-2e4f-477b-a4fb-5e5a2f8d69ec",
+  "response": "Forked session sess_13272191-b3d3-41fe-9670-ec5cf573a1f5 from checkpoint checkpoint_c25800ff-2e4f-477b-a4fb-5e5a2f8d69ec: copied 4 messages and restored 1 file.",
+  "snapshot": {
+   "messages": [
+    {
+     "info": {
+      "agent": "zcode-agent",
+      "messageId": "msg_mvc7qa3f_c519818f-3ec5-4dd2-a5fe-4d0fa3eda3e6",
+      "model": {
+       "providerId": "account:bigmodel-individual-coding-plan",
+       "modelId": "GLM-5.3",
+       "options": {
+        "reasoningLevel": "max"
+       }
+      },
+      "metadata": {
+       "forkOrigin": {
+        "sessionId": "sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53",
+        "messageId": "msg_mvc7orko_cf73165e-9448-4cc4-9324-f44e74a4eecd"
+       }
+      },
+      "role": "user",
+      "semantics": {
+       "origin": "real_user",
+       "kind": "user_prompt",
+       "uiVisibility": "visible",
+       "providerVisibility": "visible",
+       "transcriptVisibility": "visible"
+      },
+      "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+      "time": {
+       "created": 1792230369436
+      },
+      "tools": {
+       "Agent": true,
+       "AskUserQuestion": true,
+       "Bash": true,
+       "CronCreate": true,
+       "CronDelete": true,
+       "CronList": true,
+       "CronUpdate": true,
+       "Edit": true,
+       "EnterPlanMode": true,
+       "ExitPlanMode": true,
+       "Read": true,
+       "Skill": true,
+       "TaskOutput": true,
+       "TaskStop": true,
+       "TodoRead": true,
+       "TodoWrite": true,
+       "WebFetch": true,
+       "WebSearch": true,
+       "Write": true,
+       "SendMessage": true,
+       "ReadSessionContext": true,
+       "ReplyToChannel": true
+      }
+     },
+     "parts": [
+      {
+       "messageId": "msg_mvc7qa3f_c519818f-3ec5-4dd2-a5fe-4d0fa3eda3e6",
+       "partId": "part_mvc7qa3i_e96c10bf-d52b-4680-a2c2-96ef55bcc5c9",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "text": "在 C:/Users/COLORFIRE/AppData/Local/Temp/probe-l1a 目录创建 retest-plan.txt 写入 hello",
+       "type": "text"
+      }
+     ]
+    },
+    {
+     "info": {
+      "agent": "zcode-agent",
+      "messageId": "msg_mvc7qa3n_3f4936d6-9d06-4bbc-a660-2bf4197968f6",
+      "model": {
+       "providerId": "account:bigmodel-individual-coding-plan",
+       "modelId": "GLM-5.3",
+       "options": {
+        "reasoningLevel": "max"
+       }
+      },
+      "metadata": {
+       "source": "agent_listing_delta",
+       "visibility": "model-only",
+       "forkOrigin": {
+        "sessionId": "sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53",
+        "messageId": "msg_mvc7ozxs_38c24065-060b-4018-be8c-d6611d6e4850"
+       }
+      },
+      "role": "user",
+      "semantics": {
+       "origin": "agent_runtime",
+       "kind": "system_reminder",
+       "source": "agent_listing_delta",
+       "uiVisibility": "hidden",
+       "providerVisibility": "visible",
+       "transcriptVisibility": "hidden"
+      },
+      "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+      "source": "agent_listing_delta",
+      "synthetic": true,
+      "time": {
+       "created": 1792230380272
+      },
+      "tools": {
+       "Agent": true,
+       "AskUserQuestion": true,
+       "Bash": true,
+       "CronCreate": true,
+       "CronDelete": true,
+       "CronList": true,
+       "CronUpdate": true,
+       "Edit": true,
+       "EnterPlanMode": true,
+       "ExitPlanMode": true,
+       "Read": true,
+       "Skill": true,
+       "TaskOutput": true,
+       "TaskStop": true,
+       "TodoRead": true,
+       "TodoWrite": true,
+       "WebFetch": true,
+       "WebSearch": true,
+       "Write": true,
+       "SendMessage": true,
+       "ReadSessionContext": true,
+       "ReplyToChannel": true,
+       "mcp__zai-mcp-server__ui_to_artifact": true,
+       "mcp__zai-mcp-server__extract_text_from_screenshot": true,
+       "mcp__zai-mcp-server__diagnose_error_screenshot": true,
+       "mcp__zai-mcp-server__understand_technical_diagram": true,
+       "mcp__zai-mcp-server__analyze_data_visualization": true,
+       "mcp__zai-mcp-server__ui_diff_check": true,
+       "mcp__zai-mcp-server__analyze_image": true,
+       "mcp__zai-mcp-server__analyze_video": true,
+       "mcp__zread__search_doc": true,
+       "mcp__zread__read_file": true,
+       "mcp__zread__get_repo_structure": true,
+       "mcp__node_repl__js": true
+      },
+      "visibility": "model-only"
+     },
+     "parts": [
+      {
+       "messageId": "msg_mvc7qa3n_3f4936d6-9d06-4bbc-a660-2bf4197968f6",
+       "partId": "part_mvc7qa3p_709283ca-2071-4a75-b5a4-e1a4dc315fb6",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "metadata": {
+        "runtimeMessage": {
+         "source": "agent_listing_delta",
+         "agentListingDelta": {
+          "addedTypes": [
+           "documents:visual-judge",
+           "Explore",
+           "general-purpose",
+           "pdf:visual-judge",
+           "presentations:visual-judge",
+           "spreadsheets:visual-judge"
+          ],
+          "addedLines": [
+           "- documents:visual-judge: THE single visual acceptance pass for a rendered deliverable of these types only — pptx, docx, xlsx, pdf, poster, chart; for anything else, do not use it. Use it *instead of* looking at the page images yourself, never in addition: pick one gate — spawn visual-judge, or (only if visual-judge is unavailable) inspect the images yourself — and do not pre-screen the pages before dispatching, because a preliminary look followed by a visual-judge call duplicates the same review and wastes a full render pass. Its bar is user acceptance: it judges everything the user will see on its assigned pages — visual asset quality and layout & composition — and returns one JSON verdict line per page (pass/fail + evidence-backed issues; a clean programmatic/script check is no cover and no substitute). It is read-only and edits nothing; it can only Read pre-rendered page PNGs (never pptx/docx/HTML/PDF opened as images), so render the pages to PNG, hand visual-judge the paths, and act on its verdicts — those verdicts are the visual gate's result, not an input to your own re-judging. Dispatch grouping, what to pass in, and the repair loop follow the delivery protocol's visual gate in your system prompt. (Tools: Read, Bash)",
+           "- Explore: Read-only search agent for broad fan-out searches - when answering means sweeping many files, directories, or naming conventions and you only need the conclusion, not the file dumps. It reads excerpts rather than whole files, so it locates code; it doesn't review or audit it. Specify search breadth: \"medium\" for moderate exploration, \"very thorough\" for multiple locations and naming conventions. (Tools: Read, Bash, WebFetch, WebSearch, TodoWrite)",
+           "- general-purpose: General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you. (Tools: *)",
+           "- pdf:visual-judge: THE single visual acceptance pass for a rendered deliverable of these types only — pptx, docx, xlsx, pdf, poster, chart; for anything else, do not use it. Use it *instead of* looking at the page images yourself, never in addition: pick one gate — spawn visual-judge, or (only if visual-judge is unavailable) inspect the images yourself — and do not pre-screen the pages before dispatching, because a preliminary look followed by a visual-judge call duplicates the same review and wastes a full render pass. Its bar is user acceptance: it judges everything the user will see on its assigned pages — visual asset quality and layout & composition — and returns one JSON verdict line per page (pass/fail + evidence-backed issues; a clean programmatic/script check is no cover and no substitute). It is read-only and edits nothing; it can only Read pre-rendered page PNGs (never pptx/docx/HTML/PDF opened as images), so render the pages to PNG, hand visual-judge the paths, and act on its verdicts — those verdicts are the visual gate's result, not an input to your own re-judging. Dispatch grouping, what to pass in, and the repair loop follow the delivery protocol's visual gate in your system prompt. (Tools: Read, Bash)",
+           "- presentations:visual-judge: THE single visual acceptance pass for a rendered deliverable of these types only — pptx, docx, xlsx, pdf, poster, chart; for anything else, do not use it. Use it *instead of* looking at the page images yourself, never in addition: pick one gate — spawn visual-judge, or (only if visual-judge is unavailable) inspect the images yourself — and do not pre-screen the pages before dispatching, because a preliminary look followed by a visual-judge call duplicates the same review and wastes a full render pass. Its bar is user acceptance: it judges everything the user will see on its assigned pages — visual asset quality and layout & composition — and returns one JSON verdict line per page (pass/fail + evidence-backed issues; a clean programmatic/script check is no cover and no substitute). It is read-only and edits nothing; it can only Read pre-rendered page PNGs (never pptx/docx/HTML/PDF opened as images), so render the pages to PNG, hand visual-judge the paths, and act on its verdicts — those verdicts are the visual gate's result, not an input to your own re-judging. Dispatch grouping, what to pass in, and the repair loop follow the delivery protocol's visual gate in your system prompt. (Tools: Read, Bash)",
+           "- spreadsheets:visual-judge: THE single visual acceptance pass for a rendered deliverable of these types only — pptx, docx, xlsx, pdf, poster, chart; for anything else, do not use it. Use it *instead of* looking at the page images yourself, never in addition: pick one gate — spawn visual-judge, or (only if visual-judge is unavailable) inspect the images yourself — and do not pre-screen the pages before dispatching, because a preliminary look followed by a visual-judge call duplicates the same review and wastes a full render pass. Its bar is user acceptance: it judges everything the user will see on its assigned pages — visual asset quality and layout & composition — and returns one JSON verdict line per page (pass/fail + evidence-backed issues; a clean programmatic/script check is no cover and no substitute). It is read-only and edits nothing; it can only Read pre-rendered page PNGs (never pptx/docx/HTML/PDF opened as images), so render the pages to PNG, hand visual-judge the paths, and act on its verdicts — those verdicts are the visual gate's result, not an input to your own re-judging. Dispatch grouping, what to pass in, and the repair loop follow the delivery protocol's visual gate in your system prompt. (Tools: Read, Bash)"
+          ],
+          "removedTypes": [],
+          "isInitial": true,
+          "showConcurrencyNote": true
+         }
+        },
+        "source": "agent_listing_delta",
+        "visibility": "model-only"
+       },
+       "synthetic": true,
+       "text": "Available agent types for the Agent tool:\n- documents:visual-judge: THE single visual acceptance pass for a rendered deliverable of these types only — pptx, docx, xlsx, pdf, poster, chart; for anything else, do not use it. Use it *instead of* looking at the page images yourself, never in addition: pick one gate — spawn visual-judge, or (only if visual-judge is unavailable) inspect the images yourself — and do not pre-screen the pages before dispatching, because a preliminary look followed by a visual-judge call duplicates the same review and wastes a full render pass. Its bar is user acceptance: it judges everything the user will see on its assigned pages — visual asset quality and layout & composition — and returns one JSON verdict line per page (pass/fail + evidence-backed issues; a clean programmatic/script check is no cover and no substitute). It is read-only and edits nothing; it can only Read pre-rendered page PNGs (never pptx/docx/HTML/PDF opened as images), so render the pages to PNG, hand visual-judge the paths, and act on its verdicts — those verdicts are the visual gate's result, not an input to your own re-judging. Dispatch grouping, what to pass in, and the repair loop follow the delivery protocol's visual gate in your system prompt. (Tools: Read, Bash)\n- Explore: Read-only search agent for broad fan-out searches - when answering means sweeping many files, directories, or naming conventions and you only need the conclusion, not the file dumps. It reads excerpts rather than whole files, so it locates code; it doesn't review or audit it. Specify search breadth: \"medium\" for moderate exploration, \"very thorough\" for multiple locations and naming conventions. (Tools: Read, Bash, WebFetch, WebSearch, TodoWrite)\n- general-purpose: General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you. (Tools: *)\n- pdf:visual-judge: THE single visual acceptance pass for a rendered deliverable of these types only — pptx, docx, xlsx, pdf, poster, chart; for anything else, do not use it. Use it *instead of* looking at the page images yourself, never in addition: pick one gate — spawn visual-judge, or (only if visual-judge is unavailable) inspect the images yourself — and do not pre-screen the pages before dispatching, because a preliminary look followed by a visual-judge call duplicates the same review and wastes a full render pass. Its bar is user acceptance: it judges everything the user will see on its assigned pages — visual asset quality and layout & composition — and returns one JSON verdict line per page (pass/fail + evidence-backed issues; a clean programmatic/script check is no cover and no substitute). It is read-only and edits nothing; it can only Read pre-rendered page PNGs (never pptx/docx/HTML/PDF opened as images), so render the pages to PNG, hand visual-judge the paths, and act on its verdicts — those verdicts are the visual gate's result, not an input to your own re-judging. Dispatch grouping, what to pass in, and the repair loop follow the delivery protocol's visual gate in your system prompt. (Tools: Read, Bash)\n- presentations:visual-judge: THE single visual acceptance pass for a rendered deliverable of these types only — pptx, docx, xlsx, pdf, poster, chart; for anything else, do not use it. Use it *instead of* looking at the page images yourself, never in addition: pick one gate — spawn visual-judge, or (only if visual-judge is unavailable) inspect the images yourself — and do not pre-screen the pages before dispatching, because a preliminary look followed by a visual-judge call duplicates the same review and wastes a full render pass. Its bar is user acceptance: it judges everything the user will see on its assigned pages — visual asset quality and layout & composition — and returns one JSON verdict line per page (pass/fail + evidence-backed issues; a clean programmatic/script check is no cover and no substitute). It is read-only and edits nothing; it can only Read pre-rendered page PNGs (never pptx/docx/HTML/PDF opened as images), so render the pages to PNG, hand visual-judge the paths, and act on its verdicts — those verdicts are the visual gate's result, not an input to your own re-judging. Dispatch grouping, what to pass in, and the repair loop follow the delivery protocol's visual gate in your system prompt. (Tools: Read, Bash)\n- spreadsheets:visual-judge: THE single visual acceptance pass for a rendered deliverable of these types only — pptx, docx, xlsx, pdf, poster, chart; for anything else, do not use it. Use it *instead of* looking at the page images yourself, never in addition: pick one gate — spawn visual-judge, or (only if visual-judge is unavailable) inspect the images yourself — and do not pre-screen the pages before dispatching, because a preliminary look followed by a visual-judge call duplicates the same review and wastes a full render pass. Its bar is user acceptance: it judges everything the user will see on its assigned pages — visual asset quality and layout & composition — and returns one JSON verdict line per page (pass/fail + evidence-backed issues; a clean programmatic/script check is no cover and no substitute). It is read-only and edits nothing; it can only Read pre-rendered page PNGs (never pptx/docx/HTML/PDF opened as images), so render the pages to PNG, hand visual-judge the paths, and act on its verdicts — those verdicts are the visual gate's result, not an input to your own re-judging. Dispatch grouping, what to pass in, and the repair loop follow the delivery protocol's visual gate in your system prompt. (Tools: Read, Bash)\n\nWhen you launch multiple agents for independent work, send them in a single message with multiple tool uses so they run concurrently.",
+       "type": "text"
+      }
+     ]
+    },
+    {
+     "info": {
+      "agent": "zcode-agent",
+      "cost": 0,
+      "finish": "tool-calls",
+      "messageId": "msg_mvc7qa3u_ff70e681-909f-4df9-9600-85568500d9ce",
+      "model": {
+       "providerId": "account:bigmodel-individual-coding-plan",
+       "modelId": "GLM-5.3"
+      },
+      "parentMessageId": "msg_mvc7qa3f_c519818f-3ec5-4dd2-a5fe-4d0fa3eda3e6",
+      "path": {
+       "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+       "root": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub"
+      },
+      "role": "assistant",
+      "semantics": {
+       "origin": "agent_runtime",
+       "kind": "assistant_response",
+       "uiVisibility": "visible",
+       "providerVisibility": "visible",
+       "transcriptVisibility": "visible"
+      },
+      "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+      "time": {
+       "created": 1792230380315,
+       "completed": 1792230392030
+      },
+      "tokens": {
+       "total": 22393,
+       "input": 21719,
+       "output": 674,
+       "reasoning": 0,
+       "cache": {
+        "read": 11520,
+        "write": 0
+       }
+      }
+     },
+     "parts": [
+      {
+       "messageId": "msg_mvc7qa3u_ff70e681-909f-4df9-9600-85568500d9ce",
+       "partId": "part_mvc7qa3x_c01f3279-82e0-475f-9057-d73fbcb32366",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "type": "step-start"
+      },
+      {
+       "messageId": "msg_mvc7qa3u_ff70e681-909f-4df9-9600-85568500d9ce",
+       "partId": "part_mvc7qa41_31a400f2-ceff-4a95-9579-0fd6ee7df649",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "metadata": {
+        "anthropic": {
+         "signature": "734235890fa744a88f710e73"
+        }
+       },
+       "text": "The user wants me to create a file `retest-plan.txt` in `C:/Users/COLORFIRE/AppData/Local/Temp/probe-l1a` directory with the content \"hello\".\n\nThis is an extremely simple task — create a directory (if needed) and write \"hello\" to a file. The plan mode is active, so I need to go through the plan workflow and end with ExitPlanMode.\n\nFor such a trivial task, there's no need to explore the codebase. The plan is straightforward:\n1. Create the directory `C:/Users/COLORFIRE/AppData/Local/Temp/probe-l1a` (if it doesn't exist)\n2. Write \"hello\" to `retest-plan.txt` in that directory\n\nI should just present this plan via ExitPlanMode. No exploration needed — this is a simple file creation task outside the repo. There are no questions to ask.\n\nThe plan mode instructions say I should explore the codebase first, but this task has nothing to do with the codebase — it's creating a temp file. The workflow allows skipping exploration when unnecessary (\"usually just 1\" agent, and for pure trivial tasks there's nothing to explore).\n\nLet me just call ExitPlanMode with a simple plan. The plan needs to be in the `plan` parameter.\n\nThe plan:\n- Use Write tool to create `C:\\Users\\COLORFIRE\\AppData\\Local\\Temp\\probe-l1a\\retest-plan.txt` with content `hello`. The Write tool should create parent directories automatically... actually, I'm not 100% sure Write creates parent directories. To be safe, the plan could include creating the directory first via Bash (`mkdir -p`), then writing the file. Or just use Bash directly: `mkdir -p` + write. Actually the Write tool in most harnesses does create parent dirs, but to be safe, include mkdir step.\n\nSimple plan:\n1. Create directory if not exists: `mkdir -p /c/Users/COLORFIRE/AppData/Local/Temp/probe-l1a` (Git Bash path) or use Windows path\n2. Write \"hello\" to `C:\\Users\\COLORFIRE\\AppData\\Local\\Temp\\probe-l1a\\retest-plan.txt`\n\nAllowed prompts: Bash for mkdir (if needed).\n\nThe user's instruction says plan mode requires ending with ExitPlanMode. Let me do that directly since this is trivial and no clarification is needed.",
+       "type": "reasoning"
+      },
+      {
+       "messageId": "msg_mvc7qa3u_ff70e681-909f-4df9-9600-85568500d9ce",
+       "partId": "part_mvc7qa46_7e1b96cb-e1d4-4b76-9b6f-399f6c3e73b0",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "text": "这是一个简单的临时文件创建任务，无需探索代码库，我直接给出计划。",
+       "type": "text"
+      },
+      {
+       "messageId": "msg_mvc7qa3u_ff70e681-909f-4df9-9600-85568500d9ce",
+       "partId": "part_mvc7qa4b_f1435ee8-6137-4010-bb4d-15c6cdb2e15f",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "callId": "call_f6a2c04378ec41a2b67b1e8a",
+       "state": {
+        "completedAt": 1792230392011,
+        "error": "rejected",
+        "input": {
+         "plan": "在 `C:\\Users\\COLORFIRE\\AppData\\Local\\Temp\\probe-l1a\\` 目录下创建 `retest-plan.txt`，内容为 `hello`。\n\n步骤：\n1. 用 Bash 确保目录存在（`mkdir -p`，目录可能尚不存在）\n2. 用 Write 工具将内容 `hello` 写入 `C:\\Users\\COLORFIRE\\AppData\\Local\\Temp\\probe-l1a\\retest-plan.txt`\n\n不涉及仓库内任何文件的修改。",
+         "allowedPrompts": [
+          {
+           "tool": "Bash",
+           "prompt": "create directory under Temp (mkdir -p)"
+          }
+         ]
+        },
+        "metadata": {},
+        "startedAt": 1792230392011,
+        "status": "error"
+       },
+       "tool": "ExitPlanMode",
+       "type": "tool"
+      },
+      {
+       "messageId": "msg_mvc7qa3u_ff70e681-909f-4df9-9600-85568500d9ce",
+       "partId": "part_mvc7qa4g_5937242a-6080-40ec-8f5b-b8e42e1e188a",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "cost": 0,
+       "reason": "tool-calls",
+       "tokens": {
+        "total": 22393,
+        "input": 21719,
+        "output": 674,
+        "reasoning": 0,
+        "cache": {
+         "read": 11520,
+         "write": 0
+        }
+       },
+       "type": "step-finish"
+      }
+     ]
+    },
+    {
+     "info": {
+      "agent": "zcode-agent",
+      "messageId": "msg_mvc7qa4l_f67ae83f-23b9-481f-bb88-8e123e33ca77",
+      "model": {
+       "providerId": "account:bigmodel-individual-coding-plan",
+       "modelId": "GLM-5.3",
+       "options": {
+        "reasoningLevel": "max"
+       }
+      },
+      "metadata": {
+       "forkOrigin": {
+        "sessionId": "sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53",
+        "messageId": "msg_mvc7pa5y_b2ff295b-bc2b-4f0c-906f-a3c24f39075d"
+       }
+      },
+      "role": "user",
+      "semantics": {
+       "origin": "real_user",
+       "kind": "user_prompt",
+       "uiVisibility": "visible",
+       "providerVisibility": "visible",
+       "transcriptVisibility": "visible"
+      },
+      "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+      "time": {
+       "created": 1792230393530
+      },
+      "tools": {
+       "Agent": true,
+       "AskUserQuestion": true,
+       "Bash": true,
+       "CronCreate": true,
+       "CronDelete": true,
+       "CronList": true,
+       "CronUpdate": true,
+       "Edit": true,
+       "EnterPlanMode": true,
+       "ExitPlanMode": true,
+       "Read": true,
+       "Skill": true,
+       "TaskOutput": true,
+       "TaskStop": true,
+       "TodoRead": true,
+       "TodoWrite": true,
+       "WebFetch": true,
+       "WebSearch": true,
+       "Write": true,
+       "SendMessage": true,
+       "ReadSessionContext": true,
+       "ReplyToChannel": true,
+       "mcp__zai-mcp-server__ui_to_artifact": true,
+       "mcp__zai-mcp-server__extract_text_from_screenshot": true,
+       "mcp__zai-mcp-server__diagnose_error_screenshot": true,
+       "mcp__zai-mcp-server__understand_technical_diagram": true,
+       "mcp__zai-mcp-server__analyze_data_visualization": true,
+       "mcp__zai-mcp-server__ui_diff_check": true,
+       "mcp__zai-mcp-server__analyze_image": true,
+       "mcp__zai-mcp-server__analyze_video": true,
+       "mcp__zread__search_doc": true,
+       "mcp__zread__read_file": true,
+       "mcp__zread__get_repo_structure": true,
+       "mcp__node_repl__js": true
+      }
+     },
+     "parts": [
+      {
+       "messageId": "msg_mvc7qa4l_f67ae83f-23b9-481f-bb88-8e123e33ca77",
+       "partId": "part_mvc7qa4o_4491152a-77c1-4d70-ba97-1ea041dd9cca",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "text": "在 C:/Users/COLORFIRE/AppData/Local/Temp/probe-l1a 目录创建 retest-yolo.txt 写入 hello",
+       "type": "text"
+      }
+     ]
+    },
+    {
+     "info": {
+      "agent": "zcode-agent",
+      "cost": 0,
+      "finish": "completed",
+      "messageId": "msg_mvc7qa4u_ac528965-a6fc-4ff8-ac21-c04db479a1e6",
+      "model": {
+       "providerId": "new-provider",
+       "modelId": "deepseek-v4.1-flash"
+      },
+      "parentMessageId": "msg_mvc7qa4l_f67ae83f-23b9-481f-bb88-8e123e33ca77",
+      "path": {
+       "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+       "root": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub"
+      },
+      "role": "assistant",
+      "semantics": {
+       "origin": "system",
+       "kind": "timeline_event",
+       "uiVisibility": "visible",
+       "providerVisibility": "hidden",
+       "transcriptVisibility": "visible"
+      },
+      "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+      "time": {
+       "created": 1792230440142,
+       "completed": 1792230440142
+      },
+      "tokens": {
+       "input": 0,
+       "output": 0,
+       "reasoning": 0,
+       "cache": {
+        "read": 0,
+        "write": 0
+       }
+      }
+     },
+     "parts": [
+      {
+       "messageId": "msg_mvc7qa4u_ac528965-a6fc-4ff8-ac21-c04db479a1e6",
+       "partId": "part_fork_sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53_msg_mvc7pa5y_b2ff295b-bc2b-4f0c-906f-a3c24f39075d_checkpoint_c25800ff-2e4f-477b-a4fb-5e5a2f8d69ec_timeline",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "anchorMessageId": "msg_mvc7qa4l_f67ae83f-23b9-481f-bb88-8e123e33ca77",
+       "display": "separator",
+       "parentSessionId": "sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53",
+       "restoredFileCount": 1,
+       "status": "completed",
+       "targetCheckpointId": "checkpoint_c25800ff-2e4f-477b-a4fb-5e5a2f8d69ec",
+       "targetMessageId": "msg_mvc7pa5y_b2ff295b-bc2b-4f0c-906f-a3c24f39075d",
+       "time": {
+        "start": 1792230440142,
+        "end": 1792230440142
+       },
+       "timelineType": "session_fork",
+       "type": "timeline"
+      }
+     ]
+    },
+    {
+     "info": {
+      "agent": "zcode-agent",
+      "messageId": "msg_mvc7qa53_1d3c6633-980e-4e98-b29a-6086f3011cd1",
+      "model": {
+       "providerId": "new-provider",
+       "modelId": "deepseek-v4.1-flash",
+       "options": {
+        "reasoningLevel": "max"
+       }
+      },
+      "metadata": {
+       "forkContext": {
+        "kind": "session_fork",
+        "parentSessionId": "sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53",
+        "targetMessageId": "msg_mvc7pa5y_b2ff295b-bc2b-4f0c-906f-a3c24f39075d",
+        "targetCheckpointId": "checkpoint_c25800ff-2e4f-477b-a4fb-5e5a2f8d69ec",
+        "restoredFileCount": 1
+       },
+       "source": "fork",
+       "visibility": "model-only"
+      },
+      "role": "user",
+      "semantics": {
+       "origin": "agent_runtime",
+       "kind": "fork_notice",
+       "source": "fork",
+       "uiVisibility": "hidden",
+       "providerVisibility": "visible",
+       "transcriptVisibility": "hidden"
+      },
+      "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+      "source": "fork",
+      "synthetic": true,
+      "time": {
+       "created": 1792230440151
+      },
+      "tools": {
+       "Agent": true,
+       "AskUserQuestion": true,
+       "Bash": true,
+       "CronCreate": true,
+       "CronDelete": true,
+       "CronList": true,
+       "CronUpdate": true,
+       "Edit": true,
+       "EnterPlanMode": true,
+       "ExitPlanMode": true,
+       "Read": true,
+       "Skill": true,
+       "TaskOutput": true,
+       "TaskStop": true,
+       "TodoRead": true,
+       "TodoWrite": true,
+       "WebFetch": true,
+       "WebSearch": true,
+       "Write": true,
+       "SendMessage": true,
+       "ReadSessionContext": true,
+       "ReplyToChannel": true,
+       "mcp__zai-mcp-server__ui_to_artifact": true,
+       "mcp__zai-mcp-server__extract_text_from_screenshot": true,
+       "mcp__zai-mcp-server__diagnose_error_screenshot": true,
+       "mcp__zai-mcp-server__understand_technical_diagram": true,
+       "mcp__zai-mcp-server__analyze_data_visualization": true,
+       "mcp__zai-mcp-server__ui_diff_check": true,
+       "mcp__zai-mcp-server__analyze_image": true,
+       "mcp__zai-mcp-server__analyze_video": true,
+       "mcp__zread__search_doc": true,
+       "mcp__zread__read_file": true,
+       "mcp__zread__get_repo_structure": true,
+       "mcp__node_repl__js": true
+      },
+      "visibility": "model-only"
+     },
+     "parts": [
+      {
+       "messageId": "msg_mvc7qa53_1d3c6633-980e-4e98-b29a-6086f3011cd1",
+       "partId": "part_mvc7qa58_9f58c86c-e8f3-4de5-a4cc-03213a9070da",
+       "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+       "metadata": {
+        "forkContext": {
+         "kind": "session_fork",
+         "parentSessionId": "sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53",
+         "targetMessageId": "msg_mvc7pa5y_b2ff295b-bc2b-4f0c-906f-a3c24f39075d",
+         "targetCheckpointId": "checkpoint_c25800ff-2e4f-477b-a4fb-5e5a2f8d69ec",
+         "restoredFileCount": 1
+        },
+        "runtimeMessage": {
+         "source": "rewind_notice"
+        },
+        "source": "fork",
+        "visibility": "model-only"
+       },
+       "synthetic": true,
+       "text": "This session was forked from a previous session checkpoint.\nparentSessionId: sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53\ncheckpointId: checkpoint_c25800ff-2e4f-477b-a4fb-5e5a2f8d69ec\ntargetMessageId: msg_mvc7pa5y_b2ff295b-bc2b-4f0c-906f-a3c24f39075d\nrestoredSnapshotRef: zcode-artifact://sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53/tool-result-350375a1-6348-49c7-af9c-b351ca366599\nrestoredFiles: 1\ndelete C:\\Users\\COLORFIRE\\AppData\\Local\\Temp\\probe-l1a\\retest-yolo.txt\nContinue from this fork. Do not assume messages after the fork point happened in this session.",
+       "type": "text"
+      }
+     ]
+    }
+   ],
+   "projection": {
+    "activeToolCalls": [],
+    "backgroundJobs": [],
+    "contextUsed": 0,
+    "contextWindow": 200000,
+    "mode": "build",
+    "pendingPermissions": [],
+    "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+    "status": "idle",
+    "target": null,
+    "totalTokenCount": 0,
+    "turnCount": 0
+   },
+   "protocol": {
+    "name": "ZCode Protocol",
+    "version": 1
+   },
+   "runtime": {
+    "eventSeq": 2,
+    "pendingRequestIds": [],
+    "contextUsage": {
+     "cache": {
+      "inputTokens": 21719,
+      "cacheReadTokens": 11520,
+      "cacheWriteTokens": 0,
+      "latestHitRate": 0.5304111607348405,
+      "hitRate": 0.5304111607348405,
+      "hitRateRequestCount": 1,
+      "totalInputTokens": 21719,
+      "totalCacheReadTokens": 11520,
+      "totalCacheWriteTokens": 0
+     },
+     "cost": null,
+     "size": 200000,
+     "used": 22393
+    },
+    "goalVerifications": [],
+    "goalVerificationTimeline": [],
+    "stateRevision": 2
+   },
+   "session": {
+    "createdAt": 1792230440085,
+    "mode": "build",
+    "model": {
+     "providerId": "new-provider",
+     "modelId": "deepseek-v4.1-flash"
+    },
+    "parentSessionId": "sess_f6d5ebf3-5a25-433e-a03b-2bd50367bb53",
+    "traceId": "90da162e-69b0-4295-8093-9c5c126f7464",
+    "sessionId": "sess_13272191-b3d3-41fe-9670-ec5cf573a1f5",
+    "sessionKind": "fork",
+    "status": "idle",
+    "target": null,
+    "title": "Fork of 创建 retest-plan.txt 写入内容",
+    "titleSource": "generated",
+    "updatedAt": 1792230440156,
+    "workspace": {
+     "workspacePath": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+     "workspaceKey": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub"
+    }
+   },
+   "settings": {
+    "mode": {
+     "current": "yolo"
+    },
+    "model": {
+     "available": [
+      {
+       "ref": {
+        "providerId": "account:bigmodel-individual-coding-plan",
+        "modelId": "GLM-5.3"
+       },
+       "label": "GLM-5.3",
+       "providerLabel": "BigModel Individual Coding Plan",
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "reasoning": {
+        "levels": [
+         {
+          "value": "low",
+          "label": "low"
+         },
+         {
+          "value": "high",
+          "label": "high"
+         },
+         {
+          "value": "max",
+          "label": "max"
+         }
+        ],
+        "defaultLevel": "max"
+       },
+       "properties": {
+        "inputFormat": {
+         "supportsText": true,
+         "supportsImage": true,
+         "supportsVideo": true,
+         "supportsAudio": false,
+         "supportsPdf": false
+        },
+        "outputFormat": {
+         "supportsText": true
+        }
+       }
+      },
+      {
+       "ref": {
+        "providerId": "account:bigmodel-individual-coding-plan",
+        "modelId": "GLM-5.3-Flash"
+       },
+       "label": "GLM-5.3-Flash",
+       "providerLabel": "BigModel Individual Coding Plan",
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "reasoning": {
+        "levels": [
+         {
+          "value": "low",
+          "label": "low"
+         },
+         {
+          "value": "high",
+          "label": "high"
+         },
+         {
+          "value": "max",
+          "label": "max"
+         }
+        ],
+        "defaultLevel": "max"
+       },
+       "properties": {
+        "inputFormat": {
+         "supportsText": true,
+         "supportsImage": true,
+         "supportsVideo": true,
+         "supportsAudio": false,
+         "supportsPdf": true
+        },
+        "outputFormat": {
+         "supportsText": true
+        }
+       }
+      },
+      {
+       "ref": {
+        "providerId": "account:bigmodel-start-plan",
+        "modelId": "GLM-5.3-Flash"
+       },
+       "label": "GLM-5.3-Flash",
+       "providerLabel": "Start Plan",
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "reasoning": {
+        "levels": [
+         {
+          "value": "low",
+          "label": "low"
+         },
+         {
+          "value": "high",
+          "label": "high"
+         },
+         {
+          "value": "max",
+          "label": "max"
+         }
+        ],
+        "defaultLevel": "max"
+       },
+       "properties": {
+        "inputFormat": {
+         "supportsText": true,
+         "supportsImage": true,
+         "supportsVideo": true,
+         "supportsAudio": false,
+         "supportsPdf": true
+        },
+        "outputFormat": {
+         "supportsText": true
+        }
+       }
+      },
+      {
+       "ref": {
+        "providerId": "account:bigmodel-start-plan",
+        "modelId": "GLM-5.2"
+       },
+       "label": "GLM-5.2",
+       "providerLabel": "Start Plan",
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "reasoning": {
+        "levels": [
+         {
+          "value": "disabled",
+          "label": "disabled"
+         },
+         {
+          "value": "high",
+          "label": "high"
+         },
+         {
+          "value": "max",
+          "label": "max"
+         }
+        ],
+        "defaultLevel": "max"
+       },
+       "properties": {
+        "inputFormat": {
+         "supportsText": true,
+         "supportsImage": true,
+         "supportsVideo": true,
+         "supportsAudio": false,
+         "supportsPdf": false
+        },
+        "outputFormat": {
+         "supportsText": true
+        }
+       }
+      },
+      {
+       "ref": {
+        "providerId": "account:bigmodel-start-plan",
+        "modelId": "GLM-5-Turbo"
+       },
+       "label": "GLM-5-Turbo",
+       "providerLabel": "Start Plan",
+       "contextWindow": 200000,
+       "maxOutputTokens": 64000,
+       "reasoning": {
+        "levels": [
+         {
+          "value": "disabled",
+          "label": "disabled"
+         },
+         {
+          "value": "enabled",
+          "label": "enabled"
+         }
+        ],
+        "defaultLevel": "enabled"
+       },
+       "properties": {
+        "inputFormat": {
+         "supportsText": true,
+         "supportsImage": true,
+         "supportsVideo": true,
+         "supportsAudio": false,
+         "supportsPdf": false
+        },
+        "outputFormat": {
+         "supportsText": true
+        }
+       }
+      },
+      {
+       "ref": {
+        "providerId": "new-provider",
+        "modelId": "deepseek-v4.1-flash"
+       },
+       "label": "deepseek-v4.1-flash",
+       "providerLabel": "银子",
+       "contextWindow": 1000000,
+       "maxOutputTokens": 384000,
+       "reasoning": {
+        "levels": [
+         {
+          "value": "disabled",
+          "label": "disabled"
+         },
+         {
+          "value": "low",
+          "label": "low"
+         },
+         {
+          "value": "high",
+          "label": "high"
+         },
+         {
+          "value": "max",
+          "label": "max"
+         }
+        ],
+        "defaultLevel": "max"
+       },
+       "properties": {
+        "inputFormat": {
+         "supportsText": true,
+         "supportsImage": true,
+         "supportsVideo": false,
+         "supportsAudio": false,
+         "supportsPdf": false
+        },
+        "outputFormat": {
+         "supportsText": true
+        }
+       }
+      },
+      {
+       "ref": {
+        "providerId": "new-provider",
+        "modelId": "glm-5.3"
+       },
+       "label": "glm-5.3",
+       "providerLabel": "银子",
+       "contextWindow": 1000000,
+       "maxOutputTokens": 128000,
+       "reasoning": {
+        "levels": [
+         {
+          "value": "low",
+          "label": "low"
+         },
+         {
+          "value": "high",
+          "label": "high"
+         },
+         {
+          "value": "max",
+          "label": "max"
+         }
+        ],
+        "defaultLevel": "max"
+       },
+       "properties": {
+        "inputFormat": {
+         "supportsText": true,
+         "supportsImage": false,
+         "supportsVideo": false,
+         "supportsAudio": false,
+         "supportsPdf": false
+        },
+        "outputFormat": {
+         "supportsText": true
+        }
+       }
+      },
+      {
+       "ref": {
+        "providerId": "new-provider-2",
+        "modelId": "ark-code-latest"
+       },
+       "label": "ark-code-latest",
+       "providerLabel": "字节火山",
+       "contextWindow": 200000,
+       "maxOutputTokens": 32000,
+       "reasoning": {
+        "levels": [
+         {
+          "value": "disabled",
+          "label": "disabled"
+         },
+         {
+          "value": "enabled",
+          "label": "enabled"
+         }
+        ],
+        "defaultLevel": "enabled"
+       },
+       "properties": {
+        "inputFormat": {
+         "supportsText": true,
+         "supportsImage": false,
+         "supportsVideo": false,
+         "supportsAudio": false,
+         "supportsPdf": false
+        },
+        "outputFormat": {
+         "supportsText": true
+        }
+       }
+      }
+     ],
+     "current": {
+      "providerId": "new-provider",
+      "modelId": "deepseek-v4.1-flash",
+      "options": {
+       "reasoningLevel": "max"
+      }
+     },
+     "lastUsed": {
+      "providerId": "new-provider",
+      "modelId": "deepseek-v4.1-flash"
+     }
+    },
+    "permission": {
+     "mode": "yolo"
+    },
+    "thoughtLevel": {
+     "available": [
+      {
+       "label": "disabled",
+       "value": "disabled"
+      },
+      {
+       "label": "low",
+       "value": "low"
+      },
+      {
+       "label": "high",
+       "value": "high"
+      },
+      {
+       "label": "max",
+       "value": "max"
+      }
+     ],
+     "current": "max",
+     "enabled": true
+    }
+   },
+   "slashCommands": [
+    {
+     "description": "Show or set the current session goal.",
+     "inputHint": "/goal [pause|resume|clear|replace <objective>|<objective>]",
+     "name": "goal",
+     "source": "builtin"
+    },
+    {
+     "description": "Compact the current conversation with optional instructions.",
+     "inputHint": "/compact [instructions]",
+     "name": "compact",
+     "source": "builtin"
+    },
+    {
+     "description": "Create or update workspace AGENTS.md instructions.",
+     "inputHint": "/init [notes]",
+     "name": "init",
+     "source": "builtin"
+    },
+    {
+     "description": "Switch to Plan mode and optionally send a task.",
+     "inputHint": "/plan [task]",
+     "name": "plan",
+     "source": "builtin"
+    }
+   ],
+   "todos": [],
+   "todoGroups": []
+  }
+ },
+ "sessionLoad": {
+  "ok": true,
+  "keys": [
+   "modes",
+   "configOptions",
+   "replayMeta"
+  ]
+ },
+ "loadTurn": {
+  "stopReason": "end_turn",
+  "usage": {
+   "totalTokens": 44340,
+   "inputTokens": 874,
+   "outputTokens": 522,
+   "thoughtTokens": 0,
+   "cachedReadTokens": 42944,
+   "cachedWriteTokens": 0
+  }
+ }
+}

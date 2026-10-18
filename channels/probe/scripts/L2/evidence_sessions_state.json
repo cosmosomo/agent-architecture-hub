@@ -1,0 +1,276 @@
+{
+  "stateResults": {
+    "codex": {
+      "found": true,
+      "status": "idle",
+      "activeRuns": 0,
+      "queuedCount": 0,
+      "currentModel": "gpt-6-luna",
+      "canSendPrompt": true,
+      "sessionCountInState": 10
+    },
+    "claude": {
+      "found": true,
+      "status": "idle",
+      "activeRuns": 0,
+      "queuedCount": 0,
+      "currentModel": "sonnet",
+      "canSendPrompt": true,
+      "sessionCountInState": 4
+    },
+    "zcode": {
+      "found": true,
+      "status": "idle",
+      "activeRuns": 0,
+      "queuedCount": 0,
+      "currentModel": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+      "canSendPrompt": true,
+      "sessionCountInState": 12
+    },
+    "workbuddy": {
+      "found": true,
+      "status": "idle",
+      "activeRuns": 0,
+      "queuedCount": 0,
+      "currentModel": "custom-local:glm-5.3-flash",
+      "canSendPrompt": true,
+      "sessionCountInState": 59
+    },
+    "opencode": {
+      "found": true,
+      "status": "idle",
+      "activeRuns": 0,
+      "queuedCount": 0,
+      "currentModel": "zai-coding-plan/glm-5.3-flash",
+      "canSendPrompt": true,
+      "sessionCountInState": 2
+    },
+    "antigravity": {
+      "found": true,
+      "status": "idle",
+      "activeRuns": 0,
+      "queuedCount": 0,
+      "currentModel": "pro",
+      "canSendPrompt": true,
+      "sessionCountInState": 128
+    },
+    "hermes": {
+      "found": true,
+      "status": "idle",
+      "activeRuns": 0,
+      "queuedCount": 0,
+      "currentModel": "custom:glm-5.3",
+      "canSendPrompt": true,
+      "sessionCountInState": 16
+    }
+  },
+  "breakdown": {
+    "codex": {
+      "nativeCount": 76,
+      "acpxCount": 6,
+      "otherCount": 0,
+      "sampleNativeId": "codex:01a14366-e657-7af2-8e24-4064d3a80609",
+      "sampleAcpxId": "acpx:70162049-2db1-46e0-a0e8-5a35ada0889f"
+    },
+    "claude": {
+      "nativeCount": 131,
+      "acpxCount": 0,
+      "otherCount": 0,
+      "sampleNativeId": "claude-code:455376bf-3926-4c9b-8324-e29d545a99fe",
+      "sampleAcpxId": null
+    },
+    "zcode": {
+      "nativeCount": 717,
+      "acpxCount": 12,
+      "otherCount": 0,
+      "sampleNativeId": "zcode:sess_2f9d76a9-0152-48a2-9b09-7525811c9715",
+      "sampleAcpxId": "acpx:8d6d7642-a044-4412-96b0-7f0414fc4538"
+    },
+    "workbuddy": {
+      "nativeCount": 49,
+      "acpxCount": 10,
+      "otherCount": 0,
+      "sampleNativeId": "workbuddy:01a14975-9dcc-7828-8b10-3c03856d77dc",
+      "sampleAcpxId": "acpx:91fd52e7-75e6-4002-9ead-fd5c962e2d75"
+    },
+    "opencode": {
+      "nativeCount": 3,
+      "acpxCount": 2,
+      "otherCount": 0,
+      "sampleNativeId": "opencode:ses_2c0f71da2ffetCou462F6MuYPi",
+      "sampleAcpxId": "acpx:d0e69ba2-0b46-4f6f-b168-7d218f45e65d"
+    },
+    "antigravity": {
+      "nativeCount": 128,
+      "acpxCount": 0,
+      "otherCount": 0,
+      "sampleNativeId": "antigravity:1b07e8ee-2b57-4420-9651-2239b4f8a439",
+      "sampleAcpxId": null
+    },
+    "hermes": {
+      "nativeCount": 9,
+      "acpxCount": 6,
+      "otherCount": 0,
+      "sampleNativeId": "hermes:c5808c50-d59a-4e42-b384-ed795c9cee52",
+      "sampleAcpxId": "acpx:2445e5f5-0de5-4787-b584-e6e0f83a0006"
+    }
+  },
+  "detailResults": {
+    "codex": {
+      "native": {
+        "id": "codex:01a14366-e657-7af2-8e24-4064d3a80609",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "完整的诊断报告和出差保障手册已生成（手机/电脑都能打开，含证据、操作步骤和命令速查）。核心结论： **三层根因**（前两个是你这台机器特有的，解释了\"比别人频…",
+        "turnsCount": 9,
+        "state": {
+          "status": "idle",
+          "since": "2026-10-16T12:18:06.962Z",
+          "detail": "这一轮已完成，等下一条输入"
+        }
+      },
+      "acpx": {
+        "id": "acpx:70162049-2db1-46e0-a0e8-5a35ada0889f",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "Reply with only M1_OK",
+        "turnsCount": 2,
+        "state": {
+          "status": "idle",
+          "detail": "acpx 命名会话: probe-codex-mswitch-1792235009384"
+        }
+      }
+    },
+    "claude": {
+      "native": {
+        "id": "claude-code:455376bf-3926-4c9b-8324-e29d545a99fe",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "HUB人机交互架构清晰化",
+        "turnsCount": 20,
+        "state": {
+          "status": "working",
+          "since": "2026-10-17T13:11:51.576Z",
+          "detail": "在生成回复"
+        }
+      },
+      "acpx": {
+        "note": "No acpx session found in store"
+      }
+    },
+    "zcode": {
+      "native": {
+        "id": "zcode:sess_2f9d76a9-0152-48a2-9b09-7525811c9715",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "每2小时手机工作台连接与功能测试",
+        "turnsCount": 260,
+        "state": {
+          "status": "idle",
+          "since": "2026-10-17T12:05:30.192Z",
+          "detail": "这一轮已完成，等下一条输入"
+        }
+      },
+      "acpx": {
+        "id": "acpx:8d6d7642-a044-4412-96b0-7f0414fc4538",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "你是测试员，测我们的前端层（L3）。你的名字：zcode-glm-L3。\n\n先读：\n- 任务书 E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\channels\\probe\\README.",
+        "turnsCount": 1,
+        "state": {
+          "status": "idle",
+          "detail": "acpx 命名会话: probe-L3"
+        }
+      }
+    },
+    "workbuddy": {
+      "native": {
+        "id": "workbuddy:01a14975-9dcc-7828-8b10-3c03856d77dc",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "请只回复四个字：日月盈昃",
+        "turnsCount": 1,
+        "state": {
+          "status": "idle",
+          "detail": "WorkBuddy 桌面会话: wb-01a14975"
+        }
+      },
+      "acpx": {
+        "id": "acpx:91fd52e7-75e6-4002-9ead-fd5c962e2d75",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "请只回复四个字：辰宿列张",
+        "turnsCount": 2,
+        "state": {
+          "status": "idle",
+          "detail": "acpx 命名会话: probe-wb-l1b-model-1792233925297"
+        }
+      }
+    },
+    "opencode": {
+      "native": {
+        "id": "opencode:ses_2c0f71da2ffetCou462F6MuYPi",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "Tailscale device unreachable",
+        "turnsCount": 3,
+        "state": {
+          "status": "idle",
+          "since": "2026-03-30T14:09:41.295Z",
+          "detail": "这一轮已完成，等下一条输入"
+        }
+      },
+      "acpx": {
+        "id": "acpx:d0e69ba2-0b46-4f6f-b168-7d218f45e65d",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "请牢记暗号：L1B_SEC_729704，只回复收到",
+        "turnsCount": 3,
+        "state": {
+          "status": "idle",
+          "detail": "acpx 命名会话: probe-opencode-l1b-main"
+        }
+      }
+    },
+    "antigravity": {
+      "native": {
+        "id": "antigravity:1b07e8ee-2b57-4420-9651-2239b4f8a439",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "你是测试员，测我们自己的网关层（L2）。 先读： - 任务书 E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\channels\\probe\\README.md 第 3.",
+        "turnsCount": 1,
+        "state": {
+          "status": "idle",
+          "detail": "Antigravity Brain: agy-1b07e8ee (1b07e8ee)"
+        }
+      },
+      "acpx": {
+        "note": "No acpx session found in store"
+      }
+    },
+    "hermes": {
+      "native": {
+        "id": "hermes:c5808c50-d59a-4e42-b384-ed795c9cee52",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "获取暗号",
+        "turnsCount": 9,
+        "state": {
+          "status": "idle",
+          "detail": "Hermes 会话 (acp): hermes-c5808c50"
+        }
+      },
+      "acpx": {
+        "id": "acpx:2445e5f5-0de5-4787-b584-e6e0f83a0006",
+        "httpStatus": 200,
+        "contractOk": true,
+        "title": "暗号是L1BWORD-5501（只在对话里记住）。只回复两个字:收到",
+        "turnsCount": 11,
+        "state": {
+          "status": "idle",
+          "detail": "acpx 命名会话: probe-hermes-l1b1"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "open": {
+    "result": "fail",
+    "evidence": "{\"code\":5,\"sessionName\":\"probe-workbuddy-l1b-mem-1792230998737\",\"stdout_sample\":\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":0,\\\"method\\\":\\\"initialize\\\",\\\"params\\\":{\\\"protocolVersion\\\":1,\\\"clientCapabilities\\\":{\\\"fs\\\":{\\\"readTextFile\\\":true,\\\"writeTextFile\\\":true},\\\"terminal\\\":true},\\\"clientInfo\\\":{\\\"name\\\":\\\"acpx\\\",\\\"version\\\":\\\"0.19.5\\\"}}}\\n{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":0,\\\"result\\\":{\\\"protocolVersion\\\":1,\\\"agentCapabilities\\\":{\\\"promptCapabilities\\\":{\\\"image\\\":true,\\\"embeddedContext\\\":true},\\\"mcpCapabilities\\\":{\\\"http\\\":true,\\\"sse\\\":true},\\\"loadSessi\"}",
+    "cmd": "acpx --format json --model custom-local:glm-5.3 workbuddy -s probe-workbuddy-l1b-mem-1792230998737 \"请记住暗号：WB-L1B-TOKEN-60717。只回复已记住。\""
+  },
+  "observe-live": {
+    "result": "pass",
+    "evidence": "{\"chunks_count\":6,\"first_chunk\":{\"at\":1792231040475,\"chunk\":\"[thinking] The user is asking me to count from1 to5. This is a simple, straightf\"},\"last_chunk\":{\"at\":1792231041212,\"chunk\":\"[done] cancelled\\n\"}}",
+    "cmd": "acpx workbuddy -s probe-workbuddy-l1b-mem-1792230998737 \"从1数到5\""
+  },
+  "resume": {
+    "result": "fail",
+    "evidence": "{\"code\":5,\"expected\":\"WB-L1B-TOKEN-60717\",\"recalled\":false,\"stdout_sample\":\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":5,\\\"method\\\":\\\"session/prompt\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494a-d821-7ae2-bf15-173355e77652\\\",\\\"prompt\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"刚才让你记住的暗号是什么？直接输出暗号。\\\"}]}}\\n{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"session/update\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494a-d821-7ae2-bf15-173355e77652\\\",\\\"update\\\":{\\\"sessionUpdate\\\":\\\"session_info_update\\\",\\\"_meta\\\":{\\\"codebuddy.ai/agentPhase\\\":{\\\"phase\\\":\\\"idle\\\",\\\"startedAt\\\":1792231041037},\"}",
+    "cmd": "acpx --format json --model custom-local:glm-5.3 workbuddy -s probe-workbuddy-l1b-mem-1792230998737 \"刚才让你记住的暗号是什么？直接输出暗号。\""
+  },
+  "resume-native": {
+    "result": "n/a",
+    "evidence": "{\"error\":\"NO_HEADLESS_NATIVE_SESSION_CREATOR\",\"reason\":\"桌面端是运行中的 Electron GUI 进程，未暴露无头创建新会话 CLI 或 CDP 端口；按测试规范只读查看不触碰用户已有会话，且不可代用户点击桌面 GUI，故无前置 probe- 会话可供续接。\"}",
+    "cmd": "acpx workbuddy -s <desktop_session_id>",
+    "note": "acpx 绑定 acpx-managed 会话注册表；桌面端会话无无头创建方式故记 n/a"
+  },
+  "observe-history": {
+    "result": "pass",
+    "evidence": "{\"code\":0,\"history_result\":{\"id\":\"41528d7a-c5d7-4e55-8918-c11200506c7d\",\"sessionId\":\"01a1494a-d821-7ae2-bf15-173355e77652\",\"limit\":20,\"count\":6,\"entries\":[{\"role\":\"user\",\"timestamp\":\"2026-10-17T09:57:27.578Z\",\"textPreview\":\"请记住暗号：WB-L1B-TOKEN-60717。只回复已记住。\"},{\"role\":\"assistant\",\"timestamp\":\"2026-10-17T09:57:27.578Z\",\"textPreview\":\"The user wants me to remember a passphrase/codename: WB-L1B-TOKEN-60717, and only reply \\\"已记住\\\" (remembered/saved).\\n\\nThis looks like a token or code the user wants me to store in memory for future reference. I should save it to my persistent memory system, then reply with just \\\"已记住\\\".\\n\\nI'll write it as a memory file. It seems like a reference or project-type memory — a token/codename. I'll classify it as \\\"reference\\\" since it's a pointer to an external identifier. Actually, it's just a passphrase the user wants remembered. I'll save it simply.\\n\\nThe user explicitly said to only reply \\\"已记住\\\", so my response should be exactly that. [tool:Write C:\\\\Users\\\\COLORFIRE\\\\.workbuddy\\\\projects\\\\e-program-GIT-Agent-multi-Agent-Architecture-Hub\\\\memory\\\\reference_wb_token.md]\"},{\"role\":\"user\",\"timestamp\":\"2026-10-17T09:57:27.578Z\",\"textPreview\":\"从1数到5\"},{\"role\":\"assistant\",\"timestamp\":\"2026-10-17T09:57:27.578Z\",\"textPreview\":\"The user is asking me to count from1 to5. This is a simple, straightforward request in Chinese. I'll just provide the numbers directly. Also, I previously saved a memory file with the token, but I haven't yet created an entry in MEMORY.md to index it — I should add that pointer so the memory is properly discoverable. [tool:Write C:\\\\Users\\\\COLORFIRE\\\\.workbuddy\\\\projects\\\\e-program-GIT-Agent-multi-Agent-Architecture-Hub\\\\memory\\\\MEMORY.md]\"},{\"role\":\"user\",\"timestamp\":\"2026-10-17T09:57:27.578Z\",\"textPreview\":\"刚才让你记住的暗号是什么？直接输出暗号。\"},{\"role\":\"assistant\",\"timestamp\":\"2026-10-17T09:57:27.578Z\",\"textPreview\":\"The user wants me to recall the passphrase they asked me to remember earlier. I stored it in my memory file in a previous turn, and the memory index confirms it's there. I just need to read the memory file to verify the exact value and output it directly. [tool:Read C:\\\\Users\\\\COLORFIRE\\\\.workbuddy\\\\projects\\\\e-program-GIT-Agent-multi-Agent-Architecture-Hub\\\\memory\\\\reference_wb_token.md]\"}]}}",
+    "cmd": "acpx --format json workbuddy sessions history probe-workbuddy-l1b-mem-1792230998737"
+  },
+  "state": {
+    "result": "pass",
+    "evidence": "{\"code\":0,\"status_snapshot\":{\"action\":\"status_snapshot\",\"status\":\"alive\",\"summary\":\"queue owner healthy\",\"acpxRecordId\":\"41528d7a-c5d7-4e55-8918-c11200506c7d\",\"acpxSessionId\":\"01a1494a-d821-7ae2-bf15-173355e77652\",\"pid\":94448,\"model\":\"custom-local:glm-5.3\",\"availableModels\":[\"hy4-preview\",\"hy3\",\"hy3-x\",\"step-5-preview\",\"space-bunny\",\"deepseek-v4.1-flash\",\"glm-5.3\",\"glm-5.3-flash\",\"glm-5.2\",\"glm-5.1\",\"glm-5v-turbo\",\"minimax-m3\",\"minimax-m2.7\",\"kimi-k3-1\",\"kimi-k2.8-preview\",\"kimi-k2.7\",\"kimi-k2.6\",\"deepseek-v4-pro\",\"custom-local:glm-5.3\",\"custom-local:glm-5.3-flash\"],\"uptime\":\"00:00:33\",\"lastPromptTime\":\"2026-10-17T09:57:22.640Z\"}}",
+    "cmd": "acpx --format json workbuddy status -s probe-workbuddy-l1b-mem-1792230998737"
+  },
+  "model-list": {
+    "result": "pass",
+    "evidence": "{\"count\":20,\"models\":[\"hy4-preview\",\"hy3\",\"hy3-x\",\"step-5-preview\",\"space-bunny\",\"deepseek-v4.1-flash\",\"glm-5.3\",\"glm-5.3-flash\",\"glm-5.2\",\"glm-5.1\",\"glm-5v-turbo\",\"minimax-m3\",\"minimax-m2.7\",\"kimi-k3-1\",\"kimi-k2.8-preview\",\"kimi-k2.7\",\"kimi-k2.6\",\"deepseek-v4-pro\",\"custom-local:glm-5.3\",\"custom-local:glm-5.3-flash\"]}",
+    "cmd": "acpx --format json workbuddy status -s probe-workbuddy-l1b-mem-1792230998737 -> availableModels"
+  },
+  "model-new": {
+    "result": "pass",
+    "evidence": "{\"code\":0,\"stdout_sample\":\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":0,\\\"method\\\":\\\"initialize\\\",\\\"params\\\":{\\\"protocolVersion\\\":1,\\\"clientCapabilities\\\":{\\\"fs\\\":{\\\"readTextFile\\\":true,\\\"writeTextFile\\\":true},\\\"terminal\\\":true},\\\"clientInfo\\\":{\\\"name\\\":\\\"acpx\\\",\\\"version\\\":\\\"0.19.5\\\"}}}\\n{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":0,\\\"result\\\":{\\\"protocolVersion\\\":1,\\\"agentCapabilities\\\":{\\\"promptCapab\"}",
+    "cmd": "acpx --format json --model custom-local:glm-5.3 workbuddy -s probe-workbuddy-l1b-mnew-1792231049533 \"回复 MODEL_NEW_OK\""
+  },
+  "model-switch": {
+    "result": "pass",
+    "evidence": "{\"set_model_result\":\"{\\\"action\\\":\\\"model_set\\\",\\\"modelId\\\":\\\"custom-local:glm-5.3-flash\\\",\\\"resumed\\\":false,\\\"acpxRecordId\\\":\\\"cd96c54b-e04c-4959-9af8-0447d175f05e\\\",\\\"acpxSessionId\\\":\\\"01a1494b-9d63-796a-9e35-c3930cb94225\\\"}\",\"status_model\":\"custom-local:glm-5.3-flash\",\"turn_exit_code\":0,\"turn_sample\":\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":5,\\\"method\\\":\\\"session/prompt\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494b-9d63-796a-9e35-c3930cb94225\\\",\\\"prompt\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"回复 MODEL_SWITCH_CONFIRMED\\\"}]}}\\n{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"session/update\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494b-9d63-796a-9e35-c3930cb94225\\\",\\\"update\\\":{\\\"sessionUpd\"}",
+    "cmd": "acpx --format json workbuddy set model custom-local:glm-5.3-flash -s probe-workbuddy-l1b-mnew-1792231049533 -> acpx --format json workbuddy -s probe-workbuddy-l1b-mnew-1792231049533 \"回复 MODEL_SWITCH_CONFIRMED\" -> acpx --format json workbuddy status -s probe-workbuddy-l1b-mem-1792230998737"
+  },
+  "mode-switch": {
+    "result": "pass",
+    "evidence": "{\"action\":\"mode_set\",\"modeId\":\"plan\",\"resumed\":false,\"acpxRecordId\":\"41528d7a-c5d7-4e55-8918-c11200506c7d\",\"acpxSessionId\":\"01a1494a-d821-7ae2-bf15-173355e77652\"}",
+    "cmd": "acpx --format json workbuddy set-mode plan -s probe-workbuddy-l1b-mem-1792230998737"
+  },
+  "permission": {
+    "result": "fail",
+    "evidence": "{\"exitCode\":5,\"stdout\":\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":7,\\\"method\\\":\\\"session/prompt\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494a-d821-7ae2-bf15-173355e77652\\\",\\\"prompt\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"请在 channels/probe/scripts/tmp/l1b_perm.txt 写入 L1B_TEST\\\"}]}}\\n{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"session/update\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494a-d821-7ae2-bf15-173355e77652\\\",\\\"update\\\":{\\\"sessionUpdate\\\":\\\"session_info_update\\\",\\\"_meta\\\":{\\\"codebuddy.ai/agentPhase\\\":{\\\"phase\\\":\",\"reason\":\"acpx 非交互模式默认 nonInteractivePermissions=deny，文件写操作被拒绝，未能在中途向外部调用方提出交互式审批请求\"}",
+    "cmd": "acpx --format json workbuddy -s probe-workbuddy-l1b-mem-1792230998737 \"请在 channels/probe/scripts/tmp/l1b_perm.txt 写入 L1B_TEST\"",
+    "note": "acpx 命令行仅支持预设策略（--approve-*），非交互调用时无法中途接收审批并回调"
+  },
+  "steer": {
+    "result": "partial",
+    "evidence": "{\"steer1\":\"[queued] 0d6e0b88-dc7a-40b8-9fb0-534765776612\",\"steer2\":\"[queued] e43c07b1-15ca-4abd-a678-f6c9b724a840\",\"mechanism\":\"acpx 通过 Queue Owner IPC 支持 --no-wait 排队消息，但该消息在当前 turn 完成后以 next_turn 排队执行，而非轮内流式注入\"}",
+    "cmd": "acpx workbuddy -s probe-workbuddy-l1b-steer-1792231113894 --no-wait \"...\"",
+    "note": "排队到下一轮生效，不能在本轮内打断修改当前正在生成的回复"
+  },
+  "cancel": {
+    "result": "pass",
+    "evidence": "{\"cancel_output\":{\"action\":\"cancel_result\",\"acpxRecordId\":\"d3afb632-6d4a-4aef-8312-3d45ef467c3f\",\"cancelled\":true},\"after_cancel_code\":0,\"after_cancel_sample\":\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":2,\\\"method\\\":\\\"session/prompt\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494c-d182-70d7-918c-9a1209c39522\\\",\\\"prompt\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"刚才打断了，回复 CANCEL_L1B_OK\\\"}]}}\\n{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"session/update\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494c-d182-70d7-918c-9a1209c39522\\\",\\\"update\\\":{\\\"sessionUpdate\"}",
+    "cmd": "acpx --format json workbuddy cancel -s probe-workbuddy-l1b-cancel-1792231127743 -> acpx --format json workbuddy -s probe-workbuddy-l1b-cancel-1792231127743 \"刚才打断了，回复 CANCEL_L1B_OK\""
+  },
+  "fork": {
+    "result": "fail",
+    "evidence": "acpx CLI 与 sessions 命令均无 fork 子命令；acpx sessions --help 仅含 list, new, ensure, close, show, history, read, watch, export, import, prune",
+    "cmd": "acpx sessions fork (unsupported)",
+    "note": "acpx 命令行未暴露 fork 会话指令"
+  },
+  "compact": {
+    "result": "fail",
+    "evidence": "{\"code\":null,\"stdout\":\"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":8,\\\"method\\\":\\\"session/prompt\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494a-d821-7ae2-bf15-173355e77652\\\",\\\"prompt\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"/compact\\\"}]}}\\n{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"session/update\\\",\\\"params\\\":{\\\"sessionId\\\":\\\"01a1494a-d821-7ae2-bf15-173355e77652\\\",\\\"update\\\":{\\\"sessionUpdate\\\":\\\"session_inf\"}",
+    "cmd": "acpx workbuddy -s probe-workbuddy-l1b-mem-1792230998737 \"/compact\""
+  },
+  "close": {
+    "result": "pass",
+    "evidence": "{\"action\":\"session_closed\",\"acpxRecordId\":\"41528d7a-c5d7-4e55-8918-c11200506c7d\",\"acpxSessionId\":\"01a1494a-d821-7ae2-bf15-173355e77652\"}",
+    "cmd": "acpx --format json workbuddy sessions close probe-workbuddy-l1b-mem-1792230998737"
+  },
+  "quota": {
+    "result": "partial",
+    "evidence": "acpx 自身无独立 quota 查询命令；在 --format json 模式下，每轮输出附带 input/output/cache_read token 消耗统计",
+    "cmd": "acpx quota (unsupported)",
+    "note": "用量指标随每轮执行结果回显，无独立配额查询端点"
+  }
+}

@@ -15,6 +15,18 @@
     model: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>'
   };
   var KIND_COLOR = { human: '#FBBF24', meta: '#22C4E6' };
+  var META_BADGE = {
+    meta_approver: '自动批准',
+    meta_resumer: '断网续跑',
+    meta_maint: '渠道容灾',
+    meta_auditor: '防死循环'
+  };
+  var META_COLOR = {
+    meta_approver: '#10B981',
+    meta_resumer: '#38BDF8',
+    meta_maint: '#F59E0B',
+    meta_auditor: '#A78BFA'
+  };
 
   function agentColor(agentId, name) { return HUB.obsAvatar.color(agentId, name); }
   function agentIcon(agentId, size, name) { return HUB.obsAvatar.svg(agentId, name, size); }
@@ -25,13 +37,13 @@
   function individual(c) {
     var d = c.data;
     var special = d.kind === 'human' || d.kind === 'meta';
-    var ic = special ? KIND_COLOR[d.kind] : agentColor(d.agentId, d.name);
+    var ic = special ? (META_COLOR[d.id] || KIND_COLOR[d.kind]) : agentColor(d.agentId, d.name);
     var st = d.status;
     var cls = 'nd ob-card ob-ind ' + (special ? 'ob-k-' + d.kind : colorClass(d.agentId) + (d.phase ? ' ph-' + d.phase : ''));
     if (st === 'working') cls += ' sim-active ob-st-working';
     else if (st) cls += ' ob-st-' + st;
     if (d.isHub) cls += ' ob-hub';
-    var badge = special ? '<span class="nd-mdl ob-mdl-k">' + (d.kind === 'human' ? '人' : '维护') + '</span>'
+    var badge = special ? '<span class="nd-mdl ob-mdl-k">' + (d.kind === 'human' ? '人' : (META_BADGE[d.id] || '维护')) + '</span>'
       : '<span class="nd-mdl ' + (MODEL_CLS[d.model] || 'b-so') + '">' + esc(String(d.model || '').toUpperCase()) + '</span>';
     var load = d.runs == null ? 0 : Math.round(100 * Math.min(1, d.runs / Math.max(1, d.maxRuns)));
     var lc = st === 'error' ? 'var(--accent4)' : load >= 70 ? 'var(--accent3)' : 'var(--accent2)';

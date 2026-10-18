@@ -798,11 +798,21 @@ html{scroll-padding-block:56px 24px}
    mowi to bez zadnego napisu. `!important` nie jest fanaberia - `.btn-hooki` nizej
    w pliku (blok CSS trybu Hooki) ustawia kolor i ramke z `!important`, wiec bez tego
    Hooki wygladalyby inaczej niz Wzorce, a maja byc para. */
-.tb-actions .btn-wzorce,.tb-actions .btn-hooki{height:40px;padding:0 13px;font-size:11px;border-radius:10px;
+.tb-actions .btn-wzorce,.tb-actions .btn-hooki,.tb-actions .btn-units{height:40px;padding:0 13px;font-size:11px;border-radius:10px;
   background:linear-gradient(180deg,rgba(129,140,248,0.16),rgba(129,140,248,0.05))!important;
   border-color:rgba(129,140,248,0.34)!important;color:var(--accent1)!important}
-.tb-actions .btn-wzorce:hover,.tb-actions .btn-hooki:hover{
+.tb-actions .btn-wzorce:hover,.tb-actions .btn-hooki:hover,.tb-actions .btn-units:hover{
   border-color:rgba(129,140,248,0.55)!important;box-shadow:0 4px 14px rgba(129,140,248,.20)}
+.tb-actions .btn-units{
+  background:linear-gradient(180deg,rgba(52,211,153,0.18),rgba(52,211,153,0.06))!important;
+  border-color:rgba(52,211,153,0.38)!important;color:var(--accent2)!important}
+.tb-actions .btn-units:hover{
+  border-color:rgba(52,211,153,0.62)!important;box-shadow:0 4px 14px rgba(52,211,153,.22)}
+.tb-actions .btn-units.on{background:var(--accent2)!important;color:#06060A!important;border-color:transparent!important}
+.btn-hub-back{text-decoration:none;height:32px;padding:0 10px;font-size:11px;border-radius:9px;
+  background:linear-gradient(135deg,rgba(245,158,11,0.16),rgba(129,140,248,0.10))!important;
+  border:1px solid rgba(245,158,11,0.38)!important;color:var(--gold,#F59E0B)!important;flex-shrink:0}
+.btn-hub-back:hover{border-color:rgba(245,158,11,0.65)!important;color:var(--t1)!important;box-shadow:0 4px 14px rgba(245,158,11,.18)}
 
 /* Buttons -- Glassmorphic glow */
 .btn{padding:5px 12px;border-radius:8px;font-family:var(--hd);font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--brd);background:rgba(22,22,42,0.8);backdrop-filter:blur(12px);color:var(--t2);display:flex;align-items:center;gap:4px;white-space:nowrap}
@@ -896,11 +906,11 @@ html{scroll-padding-block:56px 24px}
    Panel lewy 260px -> kolumna ~117px, na sam napis zostaje ~66px. Najdluzsza nazwa "Ops / Infra"
    (11 znakow) przy 10px monospace potrzebuje dokladnie tyle i sie lamala, dlatego 10px -> 9px.
    Przycisk "Wszystkie" idzie przez caly rzad. */
-#agCatFilter,#prCatFilter{display:grid;grid-template-columns:1fr 1fr;gap:5px;align-items:stretch}
-#agCatFilter .prcf-chip,#prCatFilter .prcf-chip{width:100%;justify-content:flex-start;padding:3px 7px;
+#agCatFilter,#prCatFilter,#unCatFilter{display:grid;grid-template-columns:1fr 1fr;gap:5px;align-items:stretch}
+#agCatFilter .prcf-chip,#prCatFilter .prcf-chip,#unCatFilter .prcf-chip{width:100%;justify-content:flex-start;padding:3px 7px;
   overflow:hidden;white-space:nowrap;font-size:9px}
-#agCatFilter .prcf-chip:first-child,#prCatFilter .prcf-chip:first-child{grid-column:1/-1;justify-content:center}
-#agCatFilter .prcf-cnt,#prCatFilter .prcf-cnt{margin-left:auto;flex-shrink:0;font-size:8.5px}
+#agCatFilter .prcf-chip:first-child,#prCatFilter .prcf-chip:first-child,#unCatFilter .prcf-chip:first-child{grid-column:1/-1;justify-content:center}
+#agCatFilter .prcf-cnt,#prCatFilter .prcf-cnt,#unCatFilter .prcf-cnt{margin-left:auto;flex-shrink:0;font-size:8.5px}
 .prcf-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;border:1px solid var(--brd);background:transparent;color:var(--t2);font:500 10px/1.2 var(--mn);cursor:pointer;user-select:none;transition:border-color .15s,color .15s,background .15s}
 .prcf-chip:hover{color:var(--t1);border-color:var(--ctc,var(--t2))}
 .prcf-chip i{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -2917,18 +2927,20 @@ button.chip:hover{
 <header class="topbar">
   <!-- v41 DD80: w rogu zostaje samo logo i nazwa. Plakietka z numerem wersji zniknela
        razem z pozostalymi wzmiankami o wersji (banery encyklopedii, stala APP_VER). -->
-  <div class="tb-brand"><span class="tb-logo" id="tbLogo" role="img" aria-label="Logo"></span><h1 style="margin:0">AGENT ARCHITECTURE DESIGNER</h1></div>
-  <div class="tb-problem"><textarea id="probIn" placeholder="Opisz projekt lub problem..." aria-label="Opis projektu"></textarea></div>
+  <div class="tb-brand"><span class="tb-logo" id="tbLogo" role="img" aria-label="Logo"></span><h1 style="margin:0">AGENT ARCHITECTURE · 概念画板</h1></div>
+  <div class="tb-problem"><textarea id="probIn" placeholder="描述你的项目或问题..." aria-label="项目描述"></textarea></div>
   <div class="tb-actions">
-    <button class="btn btn-wzorce" id="wzorceBtn" onclick="toggleWzorce()" title="Wzorce architektury agentów" aria-label="Przełącz tryb Wzorce">&#128208; Wzorce</button>
-    <button class="btn btn-hooki" id="hookiBtn" onclick="toggleHooki()" title="Hooki - kiedy Claude Code odpala Twój kod" aria-label="Przełącz tryb Hooki">&#129693; Hooki</button>
+    <a class="btn btn-hub-back" id="hubBackBtn" href="../" title="返回多智能体协作观察台（文档即编排 · 实跑对照 · 反向调控）">🔭 返回观察台</a>
+    <button class="btn btn-units" id="unitsBtn" onclick="toggleUnits()" title="基本协作单元——模型基本能力与原子级协作单元概念演示（预留设计区）" aria-label="切换基本协作单元">&#129513; 基本协作单元</button>
+    <button class="btn btn-wzorce" id="wzorceBtn" onclick="toggleWzorce()" title="智能体架构协作模式" aria-label="切换协作模式">&#128208; 协作模式</button>
+    <button class="btn btn-hooki" id="hookiBtn" onclick="toggleHooki()" title="钩子——Claude Code 何时运行你的代码" aria-label="切换钩子模式">&#129693; 钩子</button>
     <!-- v41: przycisk samouczka. Latarka, nie biret ani kompas: samouczek SWIECI
          PUNKTOWO na jeden element, a nie uczy - Hooki i Wzorce maja wlasne lekcje.
          Kompas odpadl, bo uzywa go juz wzorzec Routing. Uzasadnienie: DD56.
          MIEJSCE: miedzy Hookami a paskiem kosztu (Maciej, 2026-09-14). Wczesniej stal
          w .tb-util obok znaku zapytania i poszerzal prawa grupe, a .tb-cost ma
          flex:1 1 auto - wiec zwezal sie o niego wlasnie pasek kosztu. -->
-    <button class="btn" id="tutBtn" onclick="tutStart(1)" title="Samouczek - pokazuje, gdzie co jest" aria-label="Uruchom samouczek">&#128294;</button>
+    <button class="btn" id="tutBtn" onclick="tutStart(1)" title="导览教程——逐步指出界面各处功能" aria-label="启动导览教程">&#128294;</button>
     <!-- v38: cztery przyciski zjechaly stad do stopki prawego panelu (.sr-foot).
          Powod: brac gotowy zespol i robic z niego cos na zewnatrz to jedna rodzina,
          a tu kazdy z nich odbieral szerokosc polu opisu problemu (.tb-problem ma flex:1,
@@ -2936,13 +2948,13 @@ button.chip:hover{
          W naglowku zostaja tylko rzeczy stale obecne: Wzorce i Hooki (drzwi do sekcji
          pelnoekranowych), koszt, pomoc, motyw, jezyk. -->
     <div class="tb-right">
-    <button class="tb-cost sev-safe" id="costHud" onclick="pokazCostBreakdown()" aria-label="Otwórz szczegóły kosztów"></button><!-- v41 Z4: skasowane drugie id o nazwie costHudTip - przegladarka honorowala tylko pierwsze, martwe id nie bylo nigdzie uzywane. Kotwica kroku 3 samouczka. -->
+    <button class="tb-cost sev-safe" id="costHud" onclick="pokazCostBreakdown()" aria-label="打开成本明细"></button><!-- v41 Z4: skasowane drugie id o nazwie costHudTip - przegladarka honorowala tylko pierwsze, martwe id nie bylo nigdzie uzywane. Kotwica kroku 3 samouczka. -->
     <div class="tb-util">
     <!-- v41 Z2: dopisane id (kotwica samouczka dla Aktu 2). Reszta znacznika bez zmian. -->
-    <button class="btn" id="skrotyBtn" onclick="pokazSkroty()" aria-label="Skróty klawiszowe">?</button>
+    <button class="btn" id="skrotyBtn" onclick="pokazSkroty()" aria-label="键盘快捷键">?</button>
     <!-- v41: start jest ciemny, wiec ikona pokazuje slonce - czyli to, co dostaniesz po kliknieciu. 9728 slonce, 9790 ksiezyc. -->
-    <button class="theme-toggle" id="themeToggle" onclick="przelMotyw()" aria-label="Przełącz motyw">&#9728;</button>
-    <button id="langBtn" onclick="switchLang()" title="Switch language / Zmien język" aria-label="Switch language" style="width:32px;height:32px;border-radius:10px;border:1px solid var(--brd);background:var(--bg-card);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:11px;font-weight:700;font-family:var(--mn);flex-shrink:0;padding:0;color:var(--accent1)">EN</button>
+    <button class="theme-toggle" id="themeToggle" onclick="przelMotyw()" aria-label="切换明暗主题">&#9728;</button>
+    <button id="langBtn" onclick="switchLang()" title="切换语言 / Switch language" aria-label="Switch language" style="width:32px;height:32px;border-radius:10px;border:1px solid var(--brd);background:var(--bg-card);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:11px;font-weight:700;font-family:var(--mn);flex-shrink:0;padding:0;color:var(--accent1)">中文</button>
     </div>
     </div>
   </div>
@@ -2952,11 +2964,13 @@ button.chip:hover{
     <div class="sl-tabs" role="tablist">
       <button class="sl-tab on" role="tab" aria-selected="true" onclick="zmienTab('ag',this)">Agenci</button>
       <button class="sl-tab" role="tab" aria-selected="false" onclick="zmienTab('pr',this)">Presety</button>
+      <button class="sl-tab" id="slTabUn" role="tab" aria-selected="false" onclick="zmienTab('un',this)">协作单元</button>
       <button class="sl-tab" role="tab" aria-selected="false" onclick="zmienTab('sv',this)">Zapisane</button>
     </div>
     <div class="sl-panels">
       <div class="sl-pan on" id="panAg"><div class="pa-search-wrap"><input class="pa-search" id="paS" placeholder="&#128269; Szukaj agenta..." oninput="filtrujPalete();aktSearchClear()" aria-label="Szukaj agenta"><button type="button" class="pa-search-clear" id="paSClear" onclick="wyczyscSzukaj()" aria-label="Wyczyść wyszukiwanie" hidden>&#215;</button></div><button class="btn btn-p" id="customAgBtn" onclick="otworzKreator()" style="margin:4px 10px;width:calc(100% - 20px);font-size:10px">+ Custom Agent</button><button type="button" class="prcf-toggle" id="agCatToggle" onclick="toggleCatFilter('ag')" aria-expanded="true" aria-controls="agCatFilter"><span class="prcf-tg-lbl">Kategorie</span><span class="prcf-tg-dot" title="Aktywny filtr" aria-hidden="true"></span><span class="prcf-chev" aria-hidden="true">&#9662;</span></button><div id="agCatFilter" class="prcf-bar" role="group" aria-label="Filtr kategorii agentów"></div><div id="paL"></div></div>
       <div class="sl-pan" id="panPr"><div class="pa-search-wrap"><input class="pa-search" id="prS" placeholder="&#128269; Szukaj presetu..." oninput="filtrujPresety(this.value)" aria-label="Szukaj presetu"><button type="button" class="pa-search-clear" id="prSClear" onclick="wyczyscSzukajPr()" aria-label="Wyczyść wyszukiwanie" hidden>&#215;</button></div><button type="button" class="prcf-toggle" id="prCatToggle" onclick="toggleCatFilter('pr')" aria-expanded="true" aria-controls="prCatFilter"><span class="prcf-tg-lbl">Kategorie</span><span class="prcf-tg-dot" title="Aktywny filtr" aria-hidden="true"></span><span class="prcf-chev" aria-hidden="true">&#9662;</span></button><div id="prCatFilter" class="prcf-bar" role="group" aria-label="Filtr kategorii"></div><div id="prL"></div></div>
+      <div class="sl-pan" id="panUn"><div class="pa-search-wrap"><input class="pa-search" id="unS" placeholder="&#128269; 搜索基本协作单元…" oninput="filtrujUnits(this.value)" aria-label="搜索基本协作单元"><button type="button" class="pa-search-clear" id="unSClear" onclick="wyczyscSzukajUn()" aria-label="清除搜索" hidden>&#215;</button></div><button type="button" class="prcf-toggle" id="unCatToggle" onclick="toggleCatFilter('un')" aria-expanded="true" aria-controls="unCatFilter"><span class="prcf-tg-lbl">四级推演分类</span><span class="prcf-tg-dot" title="筛选已激活" aria-hidden="true"></span><span class="prcf-chev" aria-hidden="true">&#9662;</span></button><div id="unCatFilter" class="prcf-bar" role="group" aria-label="协作单元四级推演分类筛选"></div><div id="unL"></div></div>
       <div class="sl-pan" id="panSv"><div style="padding:6px 10px"><button class="btn btn-a" onclick="zapiszKfg()" style="width:100%">&#128190; Zapisz konfiguracje</button></div><div class="sv-list" id="svL"><div class="sv-empty">Brak zapisanych.</div></div></div>
     </div>
   </aside>
@@ -15814,12 +15828,7 @@ const GLOSSARY={
    i sam musial znalezc przelacznik w rogu. Zapisany wybor ma ZAWSZE pierwszenstwo przed
    przegladarka - inaczej odbieralibysmy komus swiadoma decyzje przy kazdej wizycie.
    try/catch, bo navigator potrafi rzucic w niektorych osadzeniach (iframe z sandboxem). */
-let currentLang = (function(){var v=localStorage.getItem('acV32_lang');if(v==='en'){v='zh';try{localStorage.setItem('acV32_lang','zh')}catch(e){}}return v})() || (function(){
-  try{
-    var n=(navigator.languages&&navigator.languages[0])||navigator.language||'';
-    return /^zh/i.test(n)?'zh':'pl';
-  }catch(e){return 'zh'}
-})();
+let currentLang = (function(){var v=localStorage.getItem('acV32_lang');if(v==='en'){v='zh';try{localStorage.setItem('acV32_lang','zh')}catch(e){}}return v})() || 'zh';
 document.documentElement.lang = currentLang==='zh'?'zh-CN':currentLang;
 
 const I18N_EN = {
@@ -32151,10 +32160,11 @@ function switchLang() {
      i dlatego ich przycisk dzialal. Przerysowanie etapow zostaje pod warunkiem, bo to jest
      kosztowne i ma sens tylko dla widocznej nakladki. */
   if (typeof hkSyncLang === 'function') { hkSyncLang(); if (G('hkOverlay') && G('hkOverlay').classList.contains('show') && typeof hkRysujEtapy === 'function') hkRysujEtapy(); }
+  if (typeof unSyncLang === 'function') unSyncLang();
   // Update all static HTML elements
   aktStatHTML();
   // Re-render all dynamic UI
-  rPalete(); rPresety(); rZapisy(); aktPasekFaz(); rWez();
+  rPalete(); rPresety(); if (typeof rUnits === 'function') rUnits(); rZapisy(); aktPasekFaz(); rWez();
   if (sel.size === 1) pokazWezel(sel.values().next().value);
   else if (sel.size > 1) pokazZazn();
   if (actPr) pokazInfoPr(actPr);
@@ -32458,8 +32468,8 @@ function renderAgCatFilter(){
   const tg=G('agCatToggle');if(tg){tg.classList.toggle('has-filter',agCatFilter.size>0);const lb=tg.querySelector('.prcf-tg-lbl');if(lb)lb.textContent=(currentLang==='zh'?'分类':'Kategorie')}
 }
 function toggleCatFilter(which){
-  const bar=G(which==='ag'?'agCatFilter':'prCatFilter');
-  const tg=G(which==='ag'?'agCatToggle':'prCatToggle');
+  const bar=G(which==='ag'?'agCatFilter':(which==='un'?'unCatFilter':'prCatFilter'));
+  const tg=G(which==='ag'?'agCatToggle':(which==='un'?'unCatToggle':'prCatToggle'));
   if(!bar||!tg)return;
   const collapse=bar.style.display!=='none';
   bar.style.display=collapse?'none':'';
@@ -32468,9 +32478,9 @@ function toggleCatFilter(which){
   try{localStorage.setItem('catFilterHidden_'+which,collapse?'1':'0')}catch(e){}
 }
 function initCatFilterToggle(){
-  ['ag','pr'].forEach(function(which){
-    const bar=G(which==='ag'?'agCatFilter':'prCatFilter');
-    const tg=G(which==='ag'?'agCatToggle':'prCatToggle');
+  ['ag','pr','un'].forEach(function(which){
+    const bar=G(which==='ag'?'agCatFilter':(which==='un'?'unCatFilter':'prCatFilter'));
+    const tg=G(which==='ag'?'agCatToggle':(which==='un'?'unCatToggle':'prCatToggle'));
     if(!bar||!tg)return;
     let hidden=false;try{hidden=localStorage.getItem('catFilterHidden_'+which)==='1'}catch(e){}
     bar.style.display=hidden?'none':'';
@@ -34264,7 +34274,7 @@ if(PM[pid]&&PM[pid].tier==='premium')walidujPremiumCtx(pid);
 dopasujWidok();
 if(pid==='deep_five_minds')pokazHero(pid)}
 
-function podswPreset(pid){document.querySelectorAll('.pr-item').forEach(e=>e.classList.remove('on'));if(pid){const el=G('pi_'+pid);if(el)el.classList.add('on')}G('sP').querySelector('.st-v').textContent=pid?getPresetName(pid):'-'}
+function podswPreset(pid){document.querySelectorAll('.pr-item').forEach(e=>e.classList.remove('on'));if(pid){const el=G('pi_'+pid);if(el)el.classList.add('on');const uel=G('ui_'+pid);if(uel)uel.classList.add('on')}G('sP').querySelector('.st-v').textContent=pid?getPresetName(pid):'-';if(typeof syncUnitsTopBtn==='function')syncUnitsTopBtn(pid)}
 
 function pokazInfoPr(pid){const m=PM[pid];if(!m)return;
 const pr=PR[pid]||[];const mc={opus:0,sonnet:0,haiku:0};
@@ -34290,6 +34300,7 @@ const domModel=(nN&&actPr===pid)?(MODEL_KEYS.find(function(k){return mc[k]===nN}
 G('srS').innerHTML=
 (isFeatured?'<div style="text-align:center;padding:8px;margin-bottom:8px;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(248,113,113,0.05));border:1px solid rgba(245,158,11,0.2);border-radius:12px"><div style="font-family:var(--mn);font-size:7px;color:var(--gold);letter-spacing:.1em;margin-bottom:2px">'+t('ULTIMATE PRESET')+'</div><div style="font-family:var(--hd);font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--accent4));-webkit-background-clip:text;-webkit-text-fill-color:transparent">'+m.c+' '+t('agentów')+' | '+getPresetPt(pid)+'</div></div>':'')+
 '<div class="ds-card"><div class="ds-avatar"><div class="ds-avatar-orb"'+(isFeatured?' style="border-color:rgba(245,158,11,0.4);box-shadow:0 0 20px rgba(245,158,11,0.15)"':'')+'>'+svgPresetu(pid,32)+'</div><div class="ds-avatar-info"><h4>'+escHtml(getPresetName(pid))+'</h4><div class="ds-role">'+m.c+' '+t('agentów')+' | '+getPresetPt(pid)+'</div>'+compHtml+'</div></div></div>'+
+((function(){return typeof renderUnitMetaCard==='function'?renderUnitMetaCard(pid):''})())+
 /* v32.11: KIEDY UZYWAC -> VERDICT PANEL (replaces 5 stacked sections ZALETY/WADY/CZYM JEST/CO ROBI/CZEGO NIE ROBI) -> collapsible SZCZEGOLOWY OPIS -> rest. Verdict positioned high as "should I bother reading more" gate per R1 research. */
 ((function(){var _m=getPresetMidPl(pid);return _m?'<div class="ds"><div class="ds-l" style="color:var(--mc-haiku)">'+t('KIEDY UŻYWAĆ')+'</div><div style="font-size:11px;color:var(--t1);line-height:1.55;background:linear-gradient(180deg,rgba(var(--mc-haiku-rgb),0.07),rgba(var(--mc-haiku-rgb),0.02));padding:11px 13px;border-radius:10px;border:1px solid rgba(var(--mc-haiku-rgb),0.22)">'+_m+'</div></div>':''})())+
 ((function(){var _g=getPresetGreenPl(pid),_r=getPresetRedPl(pid);return (_g.length||_r.length)?'<div class="ds vd" role="group" aria-label="'+t('Nadaje się do')+' / '+t('Nie dla')+'">'+
@@ -34347,7 +34358,9 @@ G('s$').textContent=nodes.length?mc2.toFixed(2)+'-'+xc.toFixed(2):'0.00'}
 // AUTO-LAYOUT
 // ================================================================
 // V35: layout core extracted so presety load with the same arrangement as the Layout button
-function ukladWezlow(){if(!nodes.length)return;const adj={},ind={};nodes.forEach(n=>{adj[n.id]=[];ind[n.id]=0});
+function ukladWezlow(){if(!nodes.length)return;
+if(actPr&&PM[actPr]&&PM[actPr].unitCoords&&PR[actPr]&&nodes.length===PR[actPr].length){const pr=PR[actPr],cw=cvA.clientWidth||900,sc=scale||1,xs=pr.map(p=>p.x),minX=Math.min(...xs),maxX=Math.max(...xs)+112,offX=Math.round((cw/sc-(maxX-minX))/2-minX);nodes.forEach((n,i)=>{n.x=pr[i].x+offX;n.y=pr[i].y});return}
+const adj={},ind={};nodes.forEach(n=>{adj[n.id]=[];ind[n.id]=0});
 conns.forEach(c=>{if(adj[c.fi])adj[c.fi].push(c.ti);if(ind[c.ti]!==undefined)ind[c.ti]++});
 const layers={};const vis=new Set();let q=[];nodes.forEach(n=>{if(ind[n.id]===0){q.push(n.id);layers[n.id]=0;vis.add(n.id)}});
 if(!q.length){q.push(nodes[0].id);layers[nodes[0].id]=0;vis.add(nodes[0].id)}
@@ -35229,9 +35242,12 @@ const _langBtn=G('langBtn');if(_langBtn)_langBtn.textContent=currentLang==='zh'?
 function aktTabCounts(){
   const tabs=document.querySelectorAll('.sl-tab');
   const cnt=function(n){return '<span class="sl-tab-cnt">'+n+'</span>';};
+  const unitCnt=(typeof UNIT_IDS!=='undefined')?UNIT_IDS.length:18;
+  const prCnt=Object.keys(PM).filter(function(k){return !(PM[k]&&PM[k].isUnit)}).length;
   if(tabs[0])tabs[0].innerHTML=escHtml(t('Agenci'))+cnt(AD.length);
-  if(tabs[1])tabs[1].innerHTML=escHtml(t('Presety'))+cnt(Object.keys(PM).length);
-  if(tabs[2])tabs[2].textContent=t('Zapisane');
+  if(tabs[1])tabs[1].innerHTML=escHtml(t('Presety'))+cnt(prCnt);
+  if(tabs[2])tabs[2].innerHTML=escHtml(currentLang==='zh'?'单元':'Jednostki')+cnt(unitCnt);
+  if(tabs[3])tabs[3].textContent=t('Zapisane');
 }
 function aktStatHTML(){if(typeof aktKreatorJezyk==='function')aktKreatorJezyk();
   // Tab labels (z licznikami)
@@ -39691,6 +39707,8 @@ function tutStart(akt){
       if(w&&w.classList.contains('show')&&typeof zamknijWzorce==='function')zamknijWzorce()}catch(e){}
   try{var h=document.getElementById('hkOverlay');
       if(h&&h.classList.contains('show')&&typeof zamknijHooki==='function')zamknijHooki()}catch(e){}
+  try{var u=document.getElementById('unitsOverlay');
+      if(u&&u.classList.contains('show')&&typeof zamknijUnits==='function')zamknijUnits()}catch(e){}
 
   tutZbuduj();
   tutLista=tutZbierzKroki(akt||1);
@@ -39724,18 +39742,6 @@ function tutKoniec(powod){
 
 /* ===================================================================
    AUTOMATYCZNY START. Faza 4. Decyzja D1.
-
-   Maciej wybral start automatyczny, a synteza postawila do niego trzy warunki.
-   Dwa z nich byly juz spelnione przez sam silnik: jeden widoczny przycisk wyjscia
-   (krzyzyk, decyzja D7) i zero blokowania interakcji poza dymkiem (pierscien ma
-   pointer-events:none). Trzeci - "start po PELNYM zaladowaniu interfejsu, nie
-   w trakcie animacji wejscia" - to wlasnie ta sekcja.
-
-   TRZECI WARUNEK NIE JEST TEORETYCZNY. Przy pierwszym wejsciu ladujPreset wola
-   pokazHero(), ktore zakrywa canvas pelna zaslona (.hero-overlay, inset:0,
-   tlo rgba(6,6,10,0.92), blur 12px) i samo znika dopiero po 3 SEKUNDACH albo
-   po kliknieciu. Samouczek odpalony wczesniej podswietlalby elementy ZA zaslona -
-   uzytkownik zobaczylby dymek opisujacy cos, czego nie widac.
    =================================================================== */
 
 function tutOverlayOtwarty(id){
@@ -39743,23 +39749,16 @@ function tutOverlayOtwarty(id){
   return !!(el&&el.classList&&el.classList.contains&&el.classList.contains('show'));
 }
 
-/* Czy automat MA PRAWO wystartowac w tej chwili.
-   Wydzielone z tutAutoStart celowo: dzieki temu cala decyzja daje sie sprawdzic
-   testem bez czekania na zegary, a tutAutoStart zostaje sama orkiestracja czasu. */
 function tutAutoDozwolony(){
   if(tutOpen)return false;
   var zapis=null;
   try{zapis=localStorage.getItem('acV32_tut')}catch(e){return false}
-  /* Kto juz widzial samouczek - przeszedl go albo zamknal - nie dostaje go ponownie.
-     Decyzja D6: NIE pytamy drugi raz na podstawie liczby wizyt. Przycisk z latarka
-     zostaje na swoim miejscu i to on jest droga powrotna. */
   if(zapis)return false;
-  /* Jesli uzytkownik zdazyl sam otworzyc tryb pelnoekranowy, nie wchodzimy mu w droge.
-     Recznie odpalony samouczek te tryby ZAMYKA, automat NIE - to jest roznica miedzy
-     "poprosilem o oprowadzenie" a "wtargnal na ekran". */
   if(typeof learnOpen!=='undefined'&&learnOpen)return false;
   if(tutOverlayOtwarty('wzOverlay'))return false;
   if(tutOverlayOtwarty('hkOverlay'))return false;
+  if(tutOverlayOtwarty('unitsOverlay'))return false;
+  if(location.hash==='#units'||location.hash==='#wzorce'||location.hash==='#hooki')return false;
   return true;
 }
 
@@ -39769,26 +39768,22 @@ function tutAutoStart(){
   function sprobuj(){
     if(!tutAutoDozwolony())return;
     if(tutOverlayOtwarty('heroOverlay')){
-      /* Ekran powitalny jeszcze stoi. Czekamy, ale ze skonczona cierpliwoscia:
-         40 prob co 250 ms to 10 sekund. Gdyby zaslona z jakiegos powodu nie znikla,
-         samouczek ma sie PODDAC, a nie odpalic sie na slepo pod nia. */
       if(proby<40){proby++;setTimeout(sprobuj,250);return}
       return;
     }
     tutStart(1);
   }
-  /* 600 ms zapasu po zaladowaniu: tyle, zeby uklad sie ustal i zeby samouczek
-     nie wyskoczyl w tej samej klatce, w ktorej znika ekran powitalny. */
   setTimeout(sprobuj,600);
 }
 
-/* Podpiecie do zdarzenia load, a nie do konca parsowania. load czeka na obrazy,
-   czcionki i reszte - czyli na to, co warunek trzeci nazywa "pelnym zaladowaniem". */
 if(typeof window!=='undefined'&&window.addEventListener){
   if(typeof document!=='undefined'&&document.readyState==='complete')setTimeout(tutAutoStart,0);
   else window.addEventListener('load',tutAutoStart);
 }
 /* ===== SAMOUCZEK: KONIEC ===== */
 </script>
+
+<!-- ===== 基本协作单元 (NATIVE CONCEPT BOARD INTEGRATION) ===== -->
+<script src="/hub/js/collab-units.js"></script>
 </body>
 </html>

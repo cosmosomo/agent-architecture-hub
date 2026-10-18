@@ -1,0 +1,94 @@
+{
+  "open": {
+    "result": "pass",
+    "evidence": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"已记住。\",\"uuid\":\"01a1493b-51fa-7a0e-9931-838eb8bdb23f\",\"session_id\":\"probe-workbuddy-l0-mem-1792229970823\",\"duration_ms\":12133,\"duration_api_ms\":12132,\"num_turns\":5,\"total_cost_usd\":0,\"usage\":{\"input_tokens\":56943,\"output_tokens\":165,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":56576,\"cache_creation\":null,\"server_tool_use\":null,\"service_tier\":null},\"permission_denials\":[],\"__timestamp\":\"2026-10-17T09:39:46.810Z\"}",
+    "cmd": "codebuddy -p \"请记住这个暗号：WB-SECRET-51692。只回复已记住。\" --session-id probe-workbuddy-l0-mem-1792229970823 --model custom-local:glm-5.3 --output-format json"
+  },
+  "resume": {
+    "result": "pass",
+    "evidence": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"WB-SECRET-51692\",\"uuid\":\"01a1493b-7466-720d-a2c0-a2dd9cecffdb\",\"session_id\":\"probe-workbuddy-l0-mem-1792229970823\",\"duration_ms\":5743,\"duration_api_ms\":5742,\"num_turns\":8,\"total_cost_usd\":0,\"usage\":{\"input_tokens\":85598,\"output_tokens\":305,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":85184,\"cache_creation\":null,\"server_tool_use\":null,\"service_tier\":null},\"permission_denials\":[],\"__timestamp\":\"2026-10-17T09:39:55.622Z\"}",
+    "cmd": "codebuddy -r probe-workbuddy-l0-mem-1792229970823 -p \"刚才让你记住的暗号是什么？直接输出暗号，不要有其他字。\" --model custom-local:glm-5.3 --output-format json"
+  },
+  "resume-native": {
+    "result": "n/a",
+    "evidence": "{\"error\":\"NO_HEADLESS_NATIVE_SESSION_CREATOR\",\"desktop\":\"Electron GUI active\",\"sessions_in_db\":135,\"rule\":\"read-only inspect, do not inject messages to user active sessions\"}",
+    "cmd": "codebuddy -r <desktop_session_id>",
+    "note": "桌面端是运行中的 Electron GUI 进程，未暴露无头创建新会话 CLI 或 CDP 端口；按测试规范只读查看不触碰用户已有会话，且不可代用户点击桌面 GUI，故无前置 probe- 会话可供续接。"
+  },
+  "observe-live": {
+    "result": "pass",
+    "evidence": "{\"chunks_count\":5,\"sample_first\":{\"at\":1792230000770,\"chunk\":\"{\\\"type\\\":\\\"system\\\",\\\"subtype\\\":\\\"init\\\",\\\"uuid\\\":\\\"01a1493b-7f92-79b2-ad6d-5788248d2425\\\",\\\"session_id\\\":\\\"01a149\"},\"sample_last\":{\"at\":1792230003498,\"chunk\":\"{\\\"type\\\":\\\"result\\\",\\\"subtype\\\":\\\"success\\\",\\\"is_error\\\":false,\\\"result\\\":\\\"1, 2, 3, 4, 5\\\",\\\"uuid\\\":\\\"01a1493b-922e\"}}",
+    "cmd": "codebuddy -p \"从1数到5\" --model custom-local:glm-5.3 --output-format stream-json"
+  },
+  "observe-history": {
+    "result": "partial",
+    "evidence": "{\"cli_history_stderr\":\"401 Authentication required. Please use /login command to sign in to your account (auth-type:custom-token,token-type:Bearer,token-length:13) (proxy: http://127.0.0.1:7892 -> https://copilot.tencent.com) (01a1493bb9c07335a2ee45194c5dae7f/01a1493b-ac03-70fc-84c5-171ca856b6e3)\",\"fileExists\":true,\"jsonlFile\":\"C:\\\\Users\\\\COLORFIRE\\\\.workbuddy\\\\projects\\\\e-program-GIT-Agent-multi-Agent-Architecture-Hub\\\\probe-workbuddy-l0-mem-1792229970823.jsonl\",\"sample_line\":{\"id\":\"01a1493b-5e2c-7aa1-8da7-0228082ef72a\",\"parentId\":\"01a1493b-5e2c-7aa1-8da7-02293028b1b9\",\"timestamp\":1792229995450,\"type\":\"message\",\"role\":\"assistant\",\"providerData\":{\"conversationRequestId\":\"01a1493b5ac875a788f10d68ff3575cf\",\"messageId\":\"01a1493b5e2c7aa18da70227f30e4401\",\"stepSeq\":3,\"model\":\"glm-5.3\",\"requestModelId\":\"custom-local:glm-5.3\",\"requestModelName\":\"GLM-5.3\",\"traceId\":\"1fbf2e0cd005538f550c593562bfefcf\",\"rawUsage\":{\"prompt_tokens\":28655,\"completion_tokens\":140,\"total_tokens\":28795,\"prompt_tokens_details\":{\"cached_tokens\":28608},\"completion_tokens_details\":{\"reasoning_tokens\":131}},\"agent\":\"cli\",\"usage\":{\"requests\":1,\"inputTokens\":28655,\"outputTokens\":140,\"totalTokens\":28795,\"inputTokensDetails\":[{\"cached_tokens\":28608}],\"outputTokensDetails\":[{\"reasoning_tokens\":131}]}},\"status\":\"completed\",\"content\":[{\"providerData\":{\"annotations\":[]},\"type\":\"output_text\",\"text\":\"WB-SECRET-51692\"}],\"sessionId\":\"probe-workbuddy-l0-mem-1792229970823\",\"message\":{\"usage\":{\"input_tokens\":28655,\"output_tokens\":140,\"total_tokens\":28795,\"cache_read_input_tokens\":28608}},\"cwd\":\"e:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\",\"_meta\":{\"traceparent\":\"00-1fbf2e0cd005538f550c593562bfefcf-11ad273a08141339-01\",\"baggage\":\"codebuddy.session_id=probe-workbuddy-l0-mem-1792229970823,codebuddy.conversation_request_id=01a1493b5ac875a788f10d68ff3575cf\"}}}",
+    "cmd": "codebuddy history probe-workbuddy-l0-mem-1792229970823 (CLI fail) vs cat C:\\Users\\COLORFIRE\\.workbuddy\\projects\\e-program-GIT-Agent-multi-Agent-Architecture-Hub\\probe-workbuddy-l0-mem-1792229970823.jsonl",
+    "note": "codebuddy CLI 缺少 history 命令，但本地 projects 目录下存在完整会话 jsonl 文件"
+  },
+  "state": {
+    "result": "partial",
+    "evidence": "{\"ps_stdout\":\"No active sessions.\",\"ps_code\":0,\"exit_behavior\":\"one-shot -p process exits immediately on turn completion\"}",
+    "cmd": "codebuddy ps",
+    "note": "单次 -p 执行完毕即退出，无常驻会话状态机，但提供了 codebuddy ps 检查活跃会话"
+  },
+  "cancel": {
+    "result": "fail",
+    "evidence": "{\"interrupted_exit_code\":null}",
+    "cmd": "spawn -p -> kill(SIGINT) -> codebuddy -r probe-workbuddy-l0-cancel-1792230016506 -p \"刚才打断了，请只回复数字 999\" --model custom-local:glm-5.3 --output-format json"
+  },
+  "close": {
+    "result": "fail",
+    "evidence": "{\"code\":1,\"stdout\":\"Error: Session not found: probe-workbuddy-l0-cancel-1792230016506\",\"stderr\":\"\"}",
+    "cmd": "codebuddy rm probe-workbuddy-l0-cancel-1792230016506"
+  },
+  "steer": {
+    "result": "fail",
+    "evidence": "{\"error\":\"CLI_DOES_NOT_SUPPORT_MID_TURN_INPUT\",\"stdin_mode\":\"pipe_at_start_only\"}",
+    "cmd": "codebuddy -p (no mid-turn steer mechanism)",
+    "note": "非交互 CLI 单次运行在模型生成期间无法从外部 stdin 注入插话"
+  },
+  "permission": {
+    "result": "fail",
+    "evidence": "{\"raw_result\":\"我无法完成此操作：写入 `channels/probe/scripts/tmp/wb_l0_perm.txt` 需要文件写入权限，但当前会话运行在非交互模式下，权限审批不可用，`Write` 和 `Bash` 工具均被拒绝。\\n\\n如需继续，可以：\\n1. 以交互模式重新运行（或使用 `codebuddy -p -y \\\"<prompt>\\\"` / `--permission-mode bypassPermissions`）\\n2. 在 settings 的 `permissions.allow` 列表中添加 `Write` 权限\\n\\n请告知你希望如何处理。\",\"permission_denials\":[]}",
+    "cmd": "codebuddy -p \"请在 channels/probe/scripts/tmp/wb_l0_perm.txt 写入 HELLO\" --model custom-local:glm-5.3 --output-format json",
+    "note": "非交互 CLI 模式无法中途向调用方抛出审批请求并等待答复，自动依据策略拒绝未授权写操作"
+  },
+  "fork": {
+    "result": "pass",
+    "evidence": "{\"origin_session_id\":\"probe-workbuddy-l0-mem-1792229970823\",\"new_session_id\":\"01a1493c-5b18-7207-abc9-d9775696fbc2\",\"result\":\"FORK_SUCCESS\"}",
+    "cmd": "codebuddy -r probe-workbuddy-l0-mem-1792229970823 --fork-session -p \"分叉测试，请回复 FORK_SUCCESS\" --model custom-local:glm-5.3 --output-format json"
+  },
+  "compact": {
+    "result": "fail",
+    "evidence": "{\"code\":null}",
+    "cmd": "codebuddy -p \"测试整理\" --autocompact 100k --model custom-local:glm-5.3 --output-format json"
+  },
+  "model-list": {
+    "result": "pass",
+    "evidence": "{\"cli_help_models\":\"hy4-preview, hy3, hy3-x, step-5-preview, space-bunny, deepseek-v4.1-flash, glm-5.3, glm-5.3-flash, glm-5.2, glm-5.1, glm-5v-turbo, minimax-m3, minimax-m2.7, kimi-k3-1, kimi-k2.8-preview, kimi-k2.7, kimi-k2.6, deepseek-v4-pro, custom-local:glm-5.3, custom-local:glm-5.3-flash\",\"custom_models_file\":\"~/.workbuddy/models.json\"}",
+    "cmd": "codebuddy --help",
+    "note": "codebuddy --help 原生回显支持的模型列表；自定义模型存储在 models.json"
+  },
+  "model-new": {
+    "result": "pass",
+    "evidence": "{\"session_id\":\"probe-workbuddy-l0-mnew-1792230101409\",\"model_arg\":\"custom-local:glm-5.3\",\"result\":\"MODEL_NEW_OK\",\"usage\":{\"input_tokens\":28307,\"output_tokens\":40,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":28288,\"cache_creation\":null,\"server_tool_use\":null,\"service_tier\":null}}",
+    "cmd": "codebuddy -p \"请回复 MODEL_NEW_OK\" --session-id probe-workbuddy-l0-mnew-1792230101409 --model custom-local:glm-5.3 --output-format json"
+  },
+  "model-switch": {
+    "result": "pass",
+    "evidence": "{\"session_id\":\"probe-workbuddy-l0-mnew-1792230101409\",\"switched_model\":\"custom-local:glm-5.3-flash\",\"result\":\"SWITCH_MODEL_OK\",\"usage\":{\"input_tokens\":56637,\"output_tokens\":77,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":29696,\"cache_creation\":null,\"server_tool_use\":null,\"service_tier\":null}}",
+    "cmd": "codebuddy -r probe-workbuddy-l0-mnew-1792230101409 -p \"请回复 SWITCH_MODEL_OK\" --model custom-local:glm-5.3-flash --output-format json"
+  },
+  "mode-switch": {
+    "result": "pass",
+    "evidence": "{\"permission_mode\":\"plan\",\"result\":\"MODE_SWITCH_OK\\n\\n计划模式已激活。当前还没有具体的任务需要规划——请告诉我您想要实现什么，我会先探索代码库、制定方案，经您确认后再执行。\",\"subtype\":\"success\"}",
+    "cmd": "codebuddy -r probe-workbuddy-l0-mnew-1792230101409 -p \"请回复 MODE_SWITCH_OK\" --permission-mode plan --model custom-local:glm-5.3 --output-format json"
+  },
+  "quota": {
+    "result": "partial",
+    "evidence": "{\"cli_quota_stderr\":\"401 Authentication required. Please use /login command to sign in to your account (auth-type:custom-token,token-type:Bearer,token-length:13) (proxy: http://127.0.0.1:7892 -> https://copilot.tencent.com) (01a1493dc7fe70b99421ebe10f325edb/01a1493d-c2a4-779a-a17d-1cd077333cc5)\",\"fallback\":\"usage reported per turn in usage metadata and stored in workbuddy.db session_usage table\"}",
+    "cmd": "codebuddy quota",
+    "note": "codebuddy CLI 缺少独立的 quota 命令，用量和额度在每一轮的 usage 结构中返回并在 SQLite 中落盘"
+  }
+}

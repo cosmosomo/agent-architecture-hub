@@ -12,6 +12,8 @@ export type FinishOptions = {
   now: number;
   /** An open turn whose source has not changed for this long counts as stale. */
   staleMs?: number;
+  /** Optional subset of session sourceIds to parse from a multi-session SQLite store. */
+  onlySourceIds?: ReadonlySet<string>;
 };
 
 /** Push-based so the CLI can stream big files and the browser can feed a dropped file. */

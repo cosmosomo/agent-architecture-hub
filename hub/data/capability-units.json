@@ -1,0 +1,1140 @@
+{
+ "generatedFrom": "能力单元登记表_20261017.md",
+ "generatedAt": "2026-10-18T06:08:51.362Z",
+ "units": [
+  {
+   "id": "open",
+   "name": "新建会话",
+   "category": "必需操作",
+   "bitmap": "control_lifecycle.start",
+   "definition": "新建一个会话并给它第一份输入",
+   "judge": "新会话完成一轮",
+   "source": "核心抽象 §2.2；基础能力推演“新建”"
+  },
+  {
+   "id": "resume",
+   "name": "恢复会话",
+   "category": "必需操作",
+   "bitmap": "control_lifecycle.resume",
+   "definition": "给待命的会话一份新输入，开始新的一轮（热待命或冷待命都算）",
+   "judge": "第二轮回复引用了第一轮内容",
+   "source": "核心抽象 §2.4；基础能力推演“恢复”"
+  },
+  {
+   "id": "resume-native",
+   "name": "接管原生会话",
+   "category": "必需操作（扩展）",
+   "bitmap": "control_lifecycle.resume",
+   "definition": "恢复一个不是中心新建的会话：人在桌面或终端打开的、别的程序新建的",
+   "judge": "从中心恢复后回复引用原会话内容；人正占用时如何表现（锁、排队、拒绝）要记下",
+   "source": "用户 10-17 入口区分；HANDOFF 第五节"
+  },
+  {
+   "id": "observe-live",
+   "name": "观察·实时",
+   "category": "必需操作",
+   "bitmap": "observe_only",
+   "definition": "一轮进行中看实时事件：文本、工具调用、用量、状态变化、结构化的步骤计划；也包括不接管进程、只跟随会话日志的被动观察（10-18 补）",
+   "judge": "进行中拿到流式事件",
+   "source": "核心抽象 §2.3"
+  },
+  {
+   "id": "observe-history",
+   "name": "观察·历史",
+   "category": "必需操作",
+   "bitmap": "observe_only",
+   "definition": "读回会话的完整记录，包括不是中心开的会话",
+   "judge": "读回全部轮次，丢弃为零",
+   "source": "核心抽象 §2.4；档案卡 external_session_read"
+  },
+  {
+   "id": "state",
+   "name": "状态识别",
+   "category": "必需操作",
+   "bitmap": "observe_only",
+   "definition": "区分执行中（工作中、等回应）、待命（热、冷）、关闭、出错",
+   "judge": "有可靠判据，不靠猜",
+   "source": "核心抽象 §2.2"
+  },
+  {
+   "id": "cancel",
+   "name": "打断",
+   "category": "必需操作",
+   "bitmap": "control_lifecycle.stop",
+   "definition": "结束这一轮，保留会话",
+   "judge": "那一轮停下，之后还能恢复",
+   "source": "核心抽象 §2.3；基础能力推演“停”"
+  },
+  {
+   "id": "close",
+   "name": "关闭会话",
+   "category": "必需操作",
+   "bitmap": "control_lifecycle.stop",
+   "definition": "连会话一起结束，不再接收输入",
+   "judge": "会话关闭",
+   "source": "核心抽象 §2.3"
+  },
+  {
+   "id": "steer",
+   "name": "插话（注入）",
+   "category": "可选操作",
+   "bitmap": "steer_in_turn.in_turn",
+   "definition": "往进行中的这一轮加一句，这一轮继续",
+   "judge": "插入的话在本轮内体现",
+   "source": "核心抽象 §2.3；基础能力推演“发”"
+  },
+  {
+   "id": "inject-next",
+   "name": "注入·下一轮",
+   "category": "可选操作（扩展）",
+   "bitmap": "steer_in_turn.next_turn",
+   "definition": "一轮进行中送来的话排到下一轮执行",
+   "judge": "本轮结束后自动作为下一轮输入",
+   "source": "能力核对 v2.0 §2.3"
+  },
+  {
+   "id": "inject-tool",
+   "name": "注入·工具结果捎带",
+   "category": "可选操作（扩展）",
+   "bitmap": null,
+   "definition": "智能体调用中心提供的 MCP 工具时，把待送的话夹在工具结果里一并返回",
+   "judge": "智能体在本轮下一步里看到并照做；带请求编号可去重",
+   "source": "AP-Vibe 09-10 实测（评估文档第十节第 3、5 条）；agent-hub"
+  },
+  {
+   "id": "inject-inbox",
+   "name": "注入·收件箱",
+   "category": "可选操作（扩展）",
+   "bitmap": "steer_in_turn.inbox_file",
+   "definition": "把话写进约定的文件，智能体在合适时读",
+   "judge": "智能体下一次读文件时照做",
+   "source": "能力核对 v2.0 §2.3；tap 文件优先协议"
+  },
+  {
+   "id": "inject-silent",
+   "name": "注入·只入上下文",
+   "category": "可选操作（扩展）",
+   "bitmap": null,
+   "definition": "把内容写进会话上下文，但不触发新的一轮推理",
+   "judge": "下一轮的回复引用了注入的内容，注入时没有产生回复",
+   "source": "Codex app-server `thread/inject_items`（评估文档第十节第 5 条）"
+  },
+  {
+   "id": "goal",
+   "name": "目标与预算",
+   "category": "可选操作（扩展）",
+   "bitmap": null,
+   "definition": "给会话设定一个目标和预算，智能体持续推进到达成或预算用完",
+   "judge": "会话按目标继续，预算到了停下",
+   "source": "Codex app-server `thread/goal/*`（同上）"
+  },
+  {
+   "id": "permission",
+   "name": "答复审批",
+   "category": "可选操作",
+   "bitmap": null,
+   "definition": "答复智能体在一轮中途提出的审批或问题，它接着做",
+   "judge": "中途收到请求原文，答复后行为随之改变",
+   "source": "核心抽象 §2.3"
+  },
+  {
+   "id": "fork",
+   "name": "分叉",
+   "category": "可选操作",
+   "bitmap": "control_lifecycle.fork",
+   "definition": "从会话（或其中某一步）复制出新会话，原会话不动",
+   "judge": "新会话问得出原会话内容",
+   "source": "核心抽象 §2.4"
+  },
+  {
+   "id": "compact",
+   "name": "压缩上下文",
+   "category": "可选操作",
+   "bitmap": null,
+   "definition": "压缩会话记忆，腾出上下文",
+   "judge": "上下文用量下降",
+   "source": "核心抽象 §2.4"
+  },
+  {
+   "id": "model-list",
+   "name": "列模型",
+   "category": "模型与模式（扩展）",
+   "bitmap": null,
+   "definition": "拿到真实可用的模型列表",
+   "judge": "列表与实际可用一致",
+   "source": "用户 10-17“能不能切模型”"
+  },
+  {
+   "id": "model-new",
+   "name": "新建时选模型",
+   "category": "模型与模式（扩展）",
+   "bitmap": null,
+   "definition": "开会话时指定模型",
+   "judge": "本地记录里这一轮的实际模型就是所选",
+   "source": "同上"
+  },
+  {
+   "id": "model-switch",
+   "name": "中途切模型",
+   "category": "模型与模式（扩展）",
+   "bitmap": null,
+   "definition": "会话中途换模型",
+   "judge": "下一轮实际模型变了",
+   "source": "同上"
+  },
+  {
+   "id": "mode-switch",
+   "name": "切模式",
+   "category": "模型与模式（扩展）",
+   "bitmap": null,
+   "definition": "新建时指定，或中途切换权限和工作模式（只读、计划、全放行等）（10-18 扩充定义）",
+   "judge": "切换后行为随之改变",
+   "source": "核心抽象 §2.8"
+  },
+  {
+   "id": "quota",
+   "name": "查额度",
+   "category": "渠道级操作",
+   "bitmap": null,
+   "definition": "查整条渠道或账号池的剩余额度与窗口",
+   "judge": "拿到剩余额度或窗口",
+   "source": "核心抽象 §2.7、§2.8"
+  },
+  {
+   "id": "channel-route",
+   "name": "按调用选渠道",
+   "category": "渠道级操作（扩展）",
+   "bitmap": null,
+   "definition": "只给这一次调用换中转或 key，全局配置不动",
+   "judge": "请求确实走了指定渠道",
+   "source": "生态接入_CCSwitch §6；框架基本能力分析 #37"
+  },
+  {
+   "id": "channel-health",
+   "name": "渠道健康与熔断",
+   "category": "渠道级操作（扩展）",
+   "bitmap": null,
+   "definition": "看到渠道可用性与最近失败类别，并能据此停用",
+   "judge": "渠道出错时被标记并停止派活",
+   "source": "核心抽象 §2.8 状态位；框架基本能力分析 #29、#30"
+  },
+  {
+   "id": "guard",
+   "name": "守卫",
+   "category": "守卫",
+   "bitmap": null,
+   "definition": "开会话时带上的规则，到点自动生效（如工具调用前后的钩子、压缩后重新注入说明）",
+   "judge": "规则在约定时机自动触发",
+   "source": "核心抽象 §2.3"
+  },
+  {
+   "id": "act-deliver",
+   "name": "交付",
+   "category": "智能体的动作",
+   "bitmap": null,
+   "definition": "智能体交出产出，结束这一轮",
+   "judge": "中心取到结构化产出",
+   "source": "核心抽象 §2.6"
+  },
+  {
+   "id": "act-request",
+   "name": "请求",
+   "category": "智能体的动作",
+   "bitmap": null,
+   "definition": "智能体要审批、资源或问别人",
+   "judge": "中心收到请求并能答复",
+   "source": "核心抽象 §2.6"
+  },
+  {
+   "id": "act-yield",
+   "name": "让出",
+   "category": "智能体的动作",
+   "bitmap": null,
+   "definition": "智能体结束这一轮，写明在等什么",
+   "judge": "中心读得到“在等什么”",
+   "source": "核心抽象 §2.6"
+  },
+  {
+   "id": "act-report",
+   "name": "上报",
+   "category": "智能体的动作",
+   "bitmap": null,
+   "definition": "智能体汇报进度或问题，自己继续",
+   "judge": "中心收到且这一轮不中断",
+   "source": "核心抽象 §2.6"
+  },
+  {
+   "id": "wait-visible",
+   "name": "等待可见",
+   "category": "待命的属性",
+   "bitmap": null,
+   "definition": "待命的两个属性外部可读：怎么进来的、在等什么",
+   "judge": "中心读得到原因和在等什么",
+   "source": "核心抽象 §2.5、§2.7"
+  },
+  {
+   "id": "wake-bg",
+   "name": "后台任务唤醒",
+   "category": "待命与唤醒（扩展）",
+   "bitmap": null,
+   "definition": "慢事放后台、先让出，结束后被叫醒并带着结果恢复会话",
+   "judge": "不靠轮询被叫醒",
+   "source": "能力单元登记（10-17 唤醒议题）；框架基本能力分析 #13"
+  },
+  {
+   "id": "wake-timer",
+   "name": "定时唤醒",
+   "category": "待命与唤醒（扩展）",
+   "bitmap": null,
+   "definition": "约定时间或周期到点被叫醒",
+   "judge": "到点自动恢复会话",
+   "source": "同上"
+  },
+  {
+   "id": "wake-msg",
+   "name": "消息唤醒",
+   "category": "待命与唤醒（扩展）",
+   "bitmap": null,
+   "definition": "外部消息唤醒让出或待命中的会话",
+   "judge": "消息一到会话就恢复",
+   "source": "同上"
+  },
+  {
+   "id": "wake-stall",
+   "name": "卡住可发现",
+   "category": "待命与唤醒（扩展）",
+   "bitmap": null,
+   "definition": "等的东西不来时有超时或能被外部发现",
+   "judge": "卡住被标出，不永远挂着",
+   "source": "同上"
+  },
+  {
+   "id": "wake-persist",
+   "name": "唤醒撑过重启",
+   "category": "待命与唤醒（扩展）",
+   "bitmap": null,
+   "definition": "保管等待的一方重启或关闭后，约好的唤醒还在",
+   "judge": "重启后仍按时叫醒",
+   "source": "同上"
+  },
+  {
+   "id": "spawn-subagent",
+   "name": "派子智能体",
+   "category": "团队协同（扩展）",
+   "bitmap": "coordinate_team.spawn_subagent",
+   "definition": "开出子智能体或子会话并拿回结果",
+   "judge": "子会话可见且结果回到父会话",
+   "source": "能力核对 v2.0 §2.3；框架基本能力分析 #18"
+  },
+  {
+   "id": "peer-message",
+   "name": "智能体间发消息",
+   "category": "团队协同（扩展）",
+   "bitmap": "coordinate_team.peer_message",
+   "definition": "一个会话给另一个会话发消息",
+   "judge": "对方收到",
+   "source": "同上"
+  },
+  {
+   "id": "handoff",
+   "name": "交接",
+   "category": "团队协同（扩展）",
+   "bitmap": null,
+   "definition": "把任务与上下文交给另一个会话继续，责任随之转移",
+   "judge": "接手者从交接点继续",
+   "source": "核心设计总览 §5；框架基本能力分析 #19"
+  },
+  {
+   "id": "task-board",
+   "name": "共享任务板",
+   "category": "团队协同（扩展）",
+   "bitmap": "coordinate_team.task_board",
+   "definition": "多个智能体读写同一份任务清单",
+   "judge": "各方读到的是同一份",
+   "source": "能力核对 v2.0 §2.3"
+  },
+  {
+   "id": "ask-user",
+   "name": "向人提问",
+   "category": "人在环（扩展）",
+   "bitmap": null,
+   "definition": "智能体中途向人提问并拿到回答",
+   "judge": "问题到人，回答回到智能体",
+   "source": "核心设计总览 §2 公理；核心抽象 §3.1"
+  },
+  {
+   "id": "notify-user",
+   "name": "通知人",
+   "category": "人在环（扩展）",
+   "bitmap": null,
+   "definition": "把消息推到人看得见的地方",
+   "judge": "人在桌面或手机收到",
+   "source": "同上"
+  },
+  {
+   "id": "human-steer",
+   "name": "人中途插话",
+   "category": "人在环（扩展）",
+   "bitmap": null,
+   "definition": "人在智能体自己的界面里，在一轮进行中插话",
+   "judge": "智能体本轮内看到",
+   "source": "同上"
+  },
+  {
+   "id": "artifact",
+   "name": "产出物发布",
+   "category": "宿主环境（扩展）",
+   "bitmap": null,
+   "definition": "把文档、页面发布成人可打开的形式",
+   "judge": "人能打开",
+   "source": "用户 10-17“Claude desktop本身很多能力”"
+  },
+  {
+   "id": "browser",
+   "name": "浏览器",
+   "category": "宿主环境（扩展）",
+   "bitmap": null,
+   "definition": "操作浏览器读写网页",
+   "judge": "能读、能操作",
+   "source": "同上"
+  },
+  {
+   "id": "terminal",
+   "name": "终端",
+   "category": "宿主环境（扩展）",
+   "bitmap": null,
+   "definition": "执行命令并取回输出",
+   "judge": "取回输出",
+   "source": "同上"
+  },
+  {
+   "id": "dev-preview",
+   "name": "开发预览",
+   "category": "宿主环境（扩展）",
+   "bitmap": null,
+   "definition": "起本地服务并在预览里查看",
+   "judge": "能看到页面",
+   "source": "同上"
+  },
+  {
+   "id": "mount-tools",
+   "name": "挂接工具",
+   "category": "新建时的配置（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "给会话挂上指定的工具和 MCP 服务（包括中心提供的工具），新建时挂上，或运行中增减",
+   "judge": "会话里能调用挂上的工具，没挂的调不到",
+   "source": "完整性检查_20261018 §2.5、§三（MCP 工具变更通知、Codex 动态工具）"
+  },
+  {
+   "id": "instructions",
+   "name": "设定角色说明",
+   "category": "新建时的配置（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "给会话设定角色说明和做法（系统提示词）；新建后改不了",
+   "judge": "回复体现了说明里的约束",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "workspace",
+   "name": "指定工作目录",
+   "category": "新建时的配置（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "指定会话在哪个目录干活，或给它一个新的隔离目录",
+   "judge": "智能体的文件操作落在指定目录",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "output-contract",
+   "name": "产出约定",
+   "category": "新建时的配置（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "规定这一轮产出要满足的格式（守卫的一种）",
+   "judge": "交出的产出符合格式，不符合时被拦下或标出",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "open-idle",
+   "name": "只建不跑",
+   "category": "会话管理（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "建出会话、拿到编号，但不跑第一轮",
+   "judge": "会话存在、编号可查、没有产生回复",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "label",
+   "name": "命名与标注",
+   "category": "会话管理（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "给会话起名、打标签，关联任务编号和运行编号",
+   "judge": "按名字或标签查得到这个会话",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "ownership",
+   "name": "所有权识别",
+   "category": "状态（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "识别会话现在归谁：我们、应用、人在终端、已放手、不知道",
+   "judge": "有可靠依据；推断只能用来禁止写入",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "discover-sessions",
+   "name": "列出会话",
+   "category": "观察（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "列出有哪些会话，包括别人开的和子会话",
+   "judge": "列表和实际一致，不漏子会话",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "probe-host",
+   "name": "探测本机",
+   "category": "渠道级操作（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "查本机装了哪几家、版本、登录状态、协议版本，并读各家对自己能力的自述（A2A 的智能体名片、ACP 握手声明）",
+   "judge": "结果和实际一致；版本写进每条能力标记",
+   "source": "完整性检查_20261018 §2.5、§三"
+  },
+  {
+   "id": "capacity",
+   "name": "并发容量",
+   "category": "渠道级状态（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "一家或一条渠道能同时跑几个、现在占了几个",
+   "judge": "读得到上限和当前占用",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "rewind",
+   "name": "回退到某一步",
+   "category": "可选操作（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "让原会话就地退回到某一步，可选连文件改动一起退（分叉是复制，回退是就地改）",
+   "judge": "退回后会话不记得之后的内容；选了连文件退时文件也恢复",
+   "source": "完整性检查_20261018 §2.5、§三（Codex `thread/revert`、LangGraph 时间回溯）；两个方向都推出"
+  },
+  {
+   "id": "archive",
+   "name": "归档与取回",
+   "category": "会话管理（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "把关闭的会话收起，需要时取回",
+   "judge": "归档后不在活动列表，取回后能恢复会话",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "delete",
+   "name": "删除会话",
+   "category": "会话管理（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "永久删除会话记录；每次都要人批准",
+   "judge": "记录不复存在",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "handover-human",
+   "name": "交给人接手",
+   "category": "人在环（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "把会话在它自己的应用里打开，人接着做",
+   "judge": "人在原应用里看到并能继续这个会话",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "reclaim",
+   "name": "回收",
+   "category": "团队协同（候选，10-18 推理补登）",
+   "bitmap": null,
+   "definition": "停掉某个实例、放手它的会话、把任务退回（拉起的反向）",
+   "judge": "实例停下、会话放手、任务回到可派状态",
+   "source": "完整性检查_20261018 §2.5"
+  },
+  {
+   "id": "cmd-list",
+   "name": "可用命令清单",
+   "category": "观察（候选，10-18 外部对照补登）",
+   "bitmap": null,
+   "definition": "读到智能体当前可用的斜杠命令（名称、说明、参数）",
+   "judge": "读到的清单和实际可用的一致",
+   "source": "完整性检查_20261018 §三（外部对照）：ACP `available_commands_update`、acpx 状态里的可用命令"
+  },
+  {
+   "id": "sampling",
+   "name": "借道采样",
+   "category": "渠道级操作（候选，10-18 外部对照补登）",
+   "bitmap": null,
+   "definition": "工具或子智能体自己没有模型渠道时，反过来请宿主代它调用模型，计入宿主的账",
+   "judge": "请求按宿主的渠道完成并记账",
+   "source": "完整性检查_20261018 §三（外部对照）：MCP `sampling/createMessage`"
+  },
+  {
+   "id": "memory-mode",
+   "name": "记忆开关",
+   "category": "新建时的配置（候选，10-18 外部对照补登）",
+   "bitmap": null,
+   "definition": "指定会话读不读、写不写跨会话的长期记忆",
+   "judge": "关掉写入后，会话结束时长期记忆没有变化",
+   "source": "完整性检查_20261018 §三（外部对照）：Codex `thread/memoryMode/set`；也接上“记忆写入在登记表里没有对应单元”这个缺口"
+  },
+  {
+   "id": "loop-guard",
+   "name": "循环熔断",
+   "category": "守卫（候选，10-18 失败倒推补登）",
+   "bitmap": null,
+   "definition": "发现智能体反复做同一个失败动作时，先提醒它换思路，仍重复就打断这一轮，并记下“因循环停下”",
+   "judge": "重复到设定次数时被拦下，状态里看得到原因",
+   "source": "完整性检查_20261018 §3.2（失败倒推）：MAST 1.3 步骤重复、AP-Vibe P07"
+  },
+  {
+   "id": "channel-lease",
+   "name": "渠道租约",
+   "category": "渠道级操作（候选，10-18 失败倒推补登）",
+   "bitmap": null,
+   "definition": "调用有并发或频次上限的渠道前先拿租约，超出上限就排队，持有者崩溃后租约到时自动释放",
+   "judge": "多个调用方同时来时按上限依次放行，不触发限流",
+   "source": "完整性检查_20261018 §3.2（失败倒推）：第 1 轮四个调研员同时打 arXiv 被 429；框架基本能力分析 #29、#30"
+  },
+  {
+   "id": "host-drain",
+   "name": "宿主排空",
+   "category": "宿主级操作（候选，10-18 失败倒推补登）",
+   "bitmap": null,
+   "definition": "让一个宿主（网关、守护进程）停止接新活、等在跑的轮次做完再退出，新活暂存",
+   "judge": "排空期间在跑的轮次都正常结束，新活不丢",
+   "source": "完整性检查_20261018 §3.2（失败倒推）：AP-Vibe P03 重启打断在跑任务"
+  },
+  {
+   "id": "permission-scope",
+   "name": "权限作用域",
+   "category": "守卫（候选，10-18 失败倒推补登）",
+   "bitmap": null,
+   "definition": "按目录分级给权限：智能体自己的数据目录总是放行，工作目录按模式，工作目录以外的敏感位置一律要审批",
+   "judge": "只读模式下智能体能写自己的记忆文件，越界写入被拦下等审批",
+   "source": "完整性检查_20261018 §3.2（失败倒推）：10-18 WorkBuddy 只读下写自己的记忆被拒、整轮没有回复"
+  },
+  {
+   "id": "native-meta",
+   "name": "读原生会话元数据",
+   "category": "观察（候选，10-18 体验反推补登）",
+   "bitmap": null,
+   "definition": "读各家应用自己记的会话元数据：应用里显示的名字、项目、置顶、分组、归档、未读、分支",
+   "judge": "读出的和应用窗口里显示的一致",
+   "source": "完整性检查_20261018 §3.4“体验反推接口能力”；用户 10-18：“我们得从做好网页接近原生桌面端的使用体验的角度，反推需要哪些接口能力”"
+  },
+  {
+   "id": "content-search",
+   "name": "全文检索",
+   "category": "观察（候选，10-18 体验反推补登）",
+   "bitmap": null,
+   "definition": "按内容在全部会话的每一步里找，返回会话、轮次和片段",
+   "judge": "搜一个词，能找到它出现的会话和位置",
+   "source": "完整性检查_20261018 §3.4“体验反推接口能力”；用户 10-18：“我们得从做好网页接近原生桌面端的使用体验的角度，反推需要哪些接口能力”"
+  },
+  {
+   "id": "context-usage",
+   "name": "上下文占用",
+   "category": "状态（候选，10-18 体验反推补登）",
+   "bitmap": null,
+   "definition": "读出会话当前上下文用了多少、离上限还有多远",
+   "judge": "数字和应用里显示的一致",
+   "source": "完整性检查_20261018 §3.4“体验反推接口能力”；用户 10-18：“我们得从做好网页接近原生桌面端的使用体验的角度，反推需要哪些接口能力”"
+  },
+  {
+   "id": "reasoning-effort",
+   "name": "推理力度",
+   "category": "模型与模式（候选，10-18 体验反推补登）",
+   "bitmap": null,
+   "definition": "新建或中途设定模型的推理力度（思考深度）",
+   "judge": "设了之后实际推理按这一档",
+   "source": "完整性检查_20261018 §3.4“体验反推接口能力”；用户 10-18：“我们得从做好网页接近原生桌面端的使用体验的角度，反推需要哪些接口能力”"
+  },
+  {
+   "id": "list-projects",
+   "name": "列项目",
+   "category": "观察（候选，10-18 体验反推补登）",
+   "bitmap": null,
+   "definition": "列出这一家应用登记的项目或工作区",
+   "judge": "列表和应用里的项目一致",
+   "source": "完整性检查_20261018 §3.4“体验反推接口能力”；用户 10-18：“我们得从做好网页接近原生桌面端的使用体验的角度，反推需要哪些接口能力”"
+  },
+  {
+   "id": "workspace-files",
+   "name": "列工作区文件",
+   "category": "观察（候选，10-18 体验反推补登）",
+   "bitmap": null,
+   "definition": "列出会话工作目录里的文件，供引用",
+   "judge": "列出的文件和目录里实际一致",
+   "source": "完整性检查_20261018 §3.4“体验反推接口能力”；用户 10-18：“我们得从做好网页接近原生桌面端的使用体验的角度，反推需要哪些接口能力”"
+  },
+  {
+   "id": "native-meta-write",
+   "name": "写回原生元数据",
+   "category": "会话管理（候选，10-18 体验反推补登）",
+   "bitmap": null,
+   "definition": "把改名、置顶、分组、归档写回应用自己的存储",
+   "judge": "改完后应用窗口里看到同样的变化",
+   "source": "完整性检查_20261018 §3.4“体验反推接口能力”；用户 10-18：“我们得从做好网页接近原生桌面端的使用体验的角度，反推需要哪些接口能力”"
+  },
+  {
+   "id": "app-sync",
+   "name": "原生应用同步可见",
+   "category": "观察（候选，10-18 体验反推补登）",
+   "bitmap": null,
+   "definition": "外部对一个会话的发话和变化，在这一家自己的应用窗口里也看得到（反过来也一样）",
+   "judge": "网页发一句，桌面端那个会话窗口里几秒内出现",
+   "source": "完整性检查_20261018 §3.4“体验反推接口能力”；用户 10-18：“我们得从做好网页接近原生桌面端的使用体验的角度，反推需要哪些接口能力”"
+  },
+  {
+   "id": "project-view",
+   "name": "按项目归集",
+   "category": "人机交互·显示与导航（候选，10-18 用户要求补登）",
+   "bitmap": null,
+   "definition": "把各家的会话按项目（工作目录）归到一起看，不分是谁开的",
+   "judge": "一个项目下列出所有家在这个目录里的会话，和本机实际一致",
+   "source": "用户 10-18 原话：“功能太少了，看不到对话的项目，好多电脑上的会话看不到，一次对话明明有很多可以读的东西也不让读，智能体不是一问一答，而是自主推进每轮都有产出！”“前端需要的功能也可以作为能力单元注册”"
+  },
+  {
+   "id": "observe-steps",
+   "name": "读一轮全过程",
+   "category": "人机交互·显示与导航（候选，10-18 用户要求补登）",
+   "bitmap": null,
+   "definition": "读一轮里的每一步：思考、工具调用及其输入和结果、中间文字、改了哪些文件",
+   "judge": "记录里有的步骤都能读到，不只给最后一句回复",
+   "source": "用户 10-18 原话：“功能太少了，看不到对话的项目，好多电脑上的会话看不到，一次对话明明有很多可以读的东西也不让读，智能体不是一问一答，而是自主推进每轮都有产出！”“前端需要的功能也可以作为能力单元注册”"
+  },
+  {
+   "id": "follow-progress",
+   "name": "跟随自主推进",
+   "category": "人机交互·显示与导航（候选，10-18 用户要求补登）",
+   "bitmap": null,
+   "definition": "智能体一轮里自己连续推进时，新的每一步出来就看得到，不必等这一轮结束",
+   "judge": "在干活的会话每出一步，几秒内显示出来",
+   "source": "用户 10-18 原话：“功能太少了，看不到对话的项目，好多电脑上的会话看不到，一次对话明明有很多可以读的东西也不让读，智能体不是一问一答，而是自主推进每轮都有产出！”“前端需要的功能也可以作为能力单元注册”"
+  },
+  {
+   "id": "search-sessions",
+   "name": "搜索会话",
+   "category": "人机交互·显示与导航（候选，10-18 用户要求补登）",
+   "bitmap": null,
+   "definition": "按标题、内容、目录、家找会话",
+   "judge": "输入关键词能找到对应会话",
+   "source": "用户 10-18 原话：“功能太少了，看不到对话的项目，好多电脑上的会话看不到，一次对话明明有很多可以读的东西也不让读，智能体不是一问一答，而是自主推进每轮都有产出！”“前端需要的功能也可以作为能力单元注册”"
+  },
+  {
+   "id": "attach",
+   "name": "发图与附件",
+   "category": "人机交互·显示与导航（候选，10-18 用户要求补登）",
+   "bitmap": null,
+   "definition": "给会话发话时带上图片或文件",
+   "judge": "智能体的回复说明它读到了附件内容",
+   "source": "用户 10-18 要求页面能粘贴截图"
+  },
+  {
+   "id": "ui-sidebar",
+   "name": "会话侧栏",
+   "category": "人机交互·导航（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "常驻列出会话：标题、哪一家、状态、更新时间，点开即看",
+   "judge": "和本机实际会话一致，人开的、智能体开的都在",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：discover-sessions、state"
+  },
+  {
+   "id": "ui-filter",
+   "name": "筛选",
+   "category": "人机交互·导航（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "按家、状态、项目、时间筛会话",
+   "judge": "筛出的结果和条件一致",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：discover-sessions、state"
+  },
+  {
+   "id": "ui-pin",
+   "name": "置顶",
+   "category": "人机交互·导航（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "把常用会话固定在列表顶部",
+   "judge": "置顶的会话始终在最上面，刷新后还在",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：label"
+  },
+  {
+   "id": "ui-unread",
+   "name": "新产出标记",
+   "category": "人机交互·导航（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "有新产出、在等人处理（审批、提问）、出错的会话标出来",
+   "judge": "有新步骤或在等人时几秒内标出，看过后消失",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：state、follow-progress"
+  },
+  {
+   "id": "ui-running-overview",
+   "name": "运行总览",
+   "category": "人机交互·导航（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "一眼看到所有在干活、在等审批、出错的会话，跨家",
+   "judge": "和各家实际状态一致",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：state、channel-health"
+  },
+  {
+   "id": "ui-markdown",
+   "name": "富文本显示",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "Markdown、代码块（高亮、可复制）、表格、链接、图片按格式显示",
+   "judge": "智能体写的格式原样呈现，不是一坨纯文本",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：observe-history"
+  },
+  {
+   "id": "ui-thinking",
+   "name": "思考过程显示",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "模型的思考内容可折叠显示",
+   "judge": "记录里有思考的，能展开看到",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：observe-steps"
+  },
+  {
+   "id": "ui-tool-card",
+   "name": "工具调用卡片",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "每次工具调用一张卡：工具名、参数、结果、成败、耗时，可展开",
+   "judge": "记录里每次调用都有卡，参数和结果能看全",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：observe-steps"
+  },
+  {
+   "id": "ui-diff",
+   "name": "文件改动显示",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "改了哪些文件、增删多少行，能看具体改动",
+   "judge": "改动的文件和行数与实际一致",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：observe-steps、artifact"
+  },
+  {
+   "id": "ui-terminal-output",
+   "name": "命令输出显示",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "智能体跑的命令和输出按终端样式显示，长的可折叠",
+   "judge": "命令和输出完整可读",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：observe-steps"
+  },
+  {
+   "id": "ui-subagent-view",
+   "name": "子智能体显示",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "子智能体在做什么嵌套显示，可点进去看它自己的过程",
+   "judge": "子智能体的步骤能看到，和父会话关联",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：spawn-subagent、discover-sessions"
+  },
+  {
+   "id": "ui-plan-view",
+   "name": "计划与待办显示",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "智能体的任务清单和每项进度",
+   "judge": "清单内容和勾选状态与智能体一致",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：observe-steps"
+  },
+  {
+   "id": "ui-status-line",
+   "name": "当前状态显示",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "此刻在思考、在跑哪个工具、在等审批、在等人回答，已用多久",
+   "judge": "几秒内反映实际状态",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：state、follow-progress"
+  },
+  {
+   "id": "ui-usage",
+   "name": "用量显示",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "上下文占用、token、费用、额度",
+   "judge": "数字和各家记录一致",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：quota、observe-history"
+  },
+  {
+   "id": "ui-long-history",
+   "name": "长会话浏览",
+   "category": "人机交互·显示（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "早的轮次按需加载，能跳到某一轮",
+   "judge": "几百轮的会话也能打开、能翻到最早",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：observe-history"
+  },
+  {
+   "id": "ui-composer",
+   "name": "输入框",
+   "category": "人机交互·输入（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "多行输入，回车或按钮发送，没发出的草稿保留",
+   "judge": "发出去的话智能体收到；切走再回来草稿还在",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：resume、steer"
+  },
+  {
+   "id": "ui-mention",
+   "name": "引用文件或会话",
+   "category": "人机交互·输入（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "输入时引用项目里的文件或别的会话",
+   "judge": "智能体读到了引用的内容",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：attach"
+  },
+  {
+   "id": "ui-command-menu",
+   "name": "命令菜单",
+   "category": "人机交互·输入（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "输入 / 弹出这一家可用的命令",
+   "judge": "列出的命令和这一家实际可用的一致，选了能执行",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：cmd-list"
+  },
+  {
+   "id": "ui-model-picker",
+   "name": "模型与推理力度选择",
+   "category": "人机交互·输入（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "新建或中途选模型、推理力度",
+   "judge": "选了之后实际用的就是它",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：model-list、model-new、model-switch"
+  },
+  {
+   "id": "ui-mode-picker",
+   "name": "权限模式选择",
+   "category": "人机交互·输入（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "选只读、自动、全放行等模式",
+   "judge": "选了之后智能体按这个模式要不要审批",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：mode-switch、permission-scope"
+  },
+  {
+   "id": "ui-stop",
+   "name": "停止按钮",
+   "category": "人机交互·运行控制（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "干活时一键停下",
+   "judge": "几秒内停下，状态显示已停",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：cancel"
+  },
+  {
+   "id": "ui-queue-steer",
+   "name": "运行中发话",
+   "category": "人机交互·运行控制（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "智能体干活时继续发话，显示是插进本轮还是排到下一轮",
+   "judge": "话被收到，界面写明落在哪一级",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：steer、inject-next"
+  },
+  {
+   "id": "ui-approval",
+   "name": "审批卡片",
+   "category": "人机交互·运行控制（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "智能体要权限时弹卡：允许一次、始终允许、拒绝",
+   "judge": "点了之后这一轮按选择继续，不是事后重发",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：permission"
+  },
+  {
+   "id": "ui-question",
+   "name": "回答智能体提问",
+   "category": "人机交互·运行控制（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "智能体问人时显示问题和选项，人选了它接着干",
+   "judge": "回答送达，同一轮继续",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：ask-user"
+  },
+  {
+   "id": "ui-retry-edit",
+   "name": "重试与编辑重发",
+   "category": "人机交互·运行控制（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "重来这一轮，或改了上一句再发",
+   "judge": "新的一轮按改后的话跑，旧的可回看",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：rewind、fork"
+  },
+  {
+   "id": "ui-artifact-preview",
+   "name": "产出预览",
+   "category": "人机交互·产出物（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "网页、图片、文档等产出在旁边打开看",
+   "judge": "打开的就是智能体交出的那份",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：artifact、dev-preview"
+  },
+  {
+   "id": "ui-copy-export",
+   "name": "复制与导出",
+   "category": "人机交互·产出物（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "复制一条消息、导出整段对话",
+   "judge": "复制和导出的内容完整",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：observe-history"
+  },
+  {
+   "id": "ui-notify",
+   "name": "通知",
+   "category": "人机交互·通知（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "完成、要审批、出错、提问时提醒人，手机上也收得到",
+   "judge": "事件发生后很快收到提醒",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：notify-user、state"
+  },
+  {
+   "id": "ui-multidevice",
+   "name": "多端同一状态",
+   "category": "人机交互·通知（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "手机、网页、桌面看到同一个会话的同一进度",
+   "judge": "一端发话，另一端几秒内看到",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：observe-live"
+  },
+  {
+   "id": "ui-theme",
+   "name": "外观",
+   "category": "人机交互·设置（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "深浅色跟随系统，字号适合手机",
+   "judge": "手机上不用放大就能读",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：（无）"
+  },
+  {
+   "id": "ui-feedback",
+   "name": "页面反馈",
+   "category": "人机交互·设置（候选，10-18 桌面端对照补登）",
+   "bitmap": null,
+   "definition": "在页面上直接写意见、粘贴截图，留给维护的人",
+   "judge": "提交后在 ~/.agent-hub/feedback 里看得到",
+   "source": "桌面端对照：Claude 桌面应用（负责人所在宿主，手上工具可证）；Codex、Antigravity、ZCode 桌面端待核；依赖：（hub 自己的功能）"
+  },
+  {
+   "id": "ui-attention-feed",
+   "name": "待处理流",
+   "category": "人机交互·导航（候选，10-18 开源对照补登）",
+   "bitmap": null,
+   "definition": "跨会话把事件归成要你处理、要你审批、已交付、在推进、旁观五类，要你决定的排最前；可划掉、可撤销",
+   "judge": "每个事件都归到一类，没有悄悄丢掉的；要你决定的始终在最上面",
+   "source": "开源对照：OpenRig 网页工作台（docs/as-built/ui/*.md，10-18 补读）；依赖：state、ask-user、permission、act-deliver、notify-user"
+  },
+  {
+   "id": "ui-activity-ring",
+   "name": "活动标记",
+   "category": "人机交互·显示（候选，10-18 开源对照补登）",
+   "bitmap": null,
+   "definition": "每个会话卡片标出在干活、在等输入、卡住，以及上下文占用和 token",
+   "judge": "标记和实际状态一致，几秒内变化",
+   "source": "开源对照：OpenRig 网页工作台（docs/as-built/ui/*.md，10-18 补读）；依赖：state、wake-stall、observe-history"
+  },
+  {
+   "id": "ui-project-tabs",
+   "name": "项目分栏",
+   "category": "人机交互·显示（候选，10-18 开源对照补登）",
+   "bitmap": null,
+   "definition": "项目页按概览、进度、产出物、证据（截图视频）、队列分栏看",
+   "judge": "每一栏的内容来自这个项目下的会话，和实际一致",
+   "source": "开源对照：OpenRig 网页工作台（docs/as-built/ui/*.md，10-18 补读）；依赖：project-view、artifact、task-board"
+  },
+  {
+   "id": "ui-terminal-preview",
+   "name": "终端镜像预览",
+   "category": "人机交互·显示（候选，10-18 开源对照补登）",
+   "bitmap": null,
+   "definition": "先给智能体终端的静态镜像，点了才连实时，并限制同时连的数量",
+   "judge": "镜像和终端实际内容一致，实时连接数不超过上限",
+   "source": "开源对照：OpenRig 网页工作台（docs/as-built/ui/*.md，10-18 补读）；依赖：observe-live、terminal"
+  },
+  {
+   "id": "ui-live-indicator",
+   "name": "实时连接提示",
+   "category": "人机交互·显示（候选，10-18 开源对照补登）",
+   "bitmap": null,
+   "definition": "实时更新断了就明确写出来，恢复后自动补齐",
+   "judge": "断线几秒内出现提示，恢复后数据补全",
+   "source": "开源对照：OpenRig 网页工作台（docs/as-built/ui/*.md，10-18 补读）；依赖：observe-live"
+  },
+  {
+   "id": "ui-todo-board",
+   "name": "待办看板",
+   "category": "人机交互·显示（候选，10-18 桌面端调研补登）",
+   "bitmap": null,
+   "definition": "智能体自己拆的任务清单按待办、进行中、完成显示，带优先级和顺序",
+   "judge": "清单内容和状态与智能体记录一致",
+   "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：ZCode 本地库 todo 表 2351 条；WorkBuddy、Antigravity 任务清单；依赖：observe-steps"
+  },
+  {
+   "id": "ui-thread-sections",
+   "name": "自定义分组",
+   "category": "人机交互·导航（候选，10-18 桌面端调研补登）",
+   "bitmap": null,
+   "definition": "人自己建分组，把会话归进去，不只按工作目录",
+   "judge": "分组和组内会话刷新后还在",
+   "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：Codex state_5.sqlite thread_sections；WorkBuddy group_id；依赖：label"
+  },
+  {
+   "id": "ui-git-badge",
+   "name": "分支与提交标记",
+   "category": "人机交互·显示（候选，10-18 桌面端调研补登）",
+   "bitmap": null,
+   "definition": "会话卡片上写它在哪个分支、哪个提交上干活",
+   "judge": "标记和会话记录的分支、提交一致",
+   "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：Codex threads.git_branch、git_sha；依赖：workspace"
+  },
+  {
+   "id": "ui-generative-embed",
+   "name": "对话内交互组件",
+   "category": "人机交互·显示（候选，10-18 桌面端调研补登）",
+   "bitmap": null,
+   "definition": "智能体在回复里放可操作的图表、表单等小组件，直接在对话里用",
+   "judge": "组件能显示、能操作，和智能体给的一致",
+   "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：Antigravity generative_ui、agent-embed；依赖：artifact"
+  },
+  {
+   "id": "ui-automation-scheduler",
+   "name": "定时任务台",
+   "category": "人机交互·运行控制（候选，10-18 桌面端调研补登）",
+   "bitmap": null,
+   "definition": "建、改、暂停周期定时任务，看每次执行记录",
+   "judge": "到点自动跑，记录可查",
+   "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：WorkBuddy workbuddy.db automations、automation_runs；依赖：wake-timer"
+  },
+  {
+   "id": "ui-share-link",
+   "name": "分享链接",
+   "category": "人机交互·产出物（候选，10-18 桌面端调研补登）",
+   "bitmap": null,
+   "definition": "一键生成会话的只读链接给别人看",
+   "judge": "别人打开链接能看到这段会话",
+   "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：ZCode session.share_url；依赖：observe-history"
+  },
+  {
+   "id": "ui-input-history",
+   "name": "输入历史",
+   "category": "人机交互·输入（候选，10-18 桌面端调研补登）",
+   "bitmap": null,
+   "definition": "在输入框里翻出以前发过的话再发",
+   "judge": "翻出的内容和以前发的一致",
+   "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：ZCode input_history 表；依赖：ui-composer"
+  },
+  {
+   "id": "ui-credit-ledger",
+   "name": "扣费明细",
+   "category": "人机交互·显示（候选，10-18 桌面端调研补登）",
+   "bitmap": null,
+   "definition": "每一轮花了多少钱或积分",
+   "judge": "数字和各家账本一致",
+   "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：WorkBuddy session_usage.credit_json；依赖：quota"
+  },
+  {
+   "id": "ui-quota-bar",
+   "name": "剩余额度条",
+   "category": "人机交互·显示（候选，10-18 桌面端调研补登）",
+   "bitmap": null,
+   "definition": "当前套餐还剩多少、窗口什么时候重置",
+   "judge": "和各家额度接口一致",
+   "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：Antigravity RetrieveUserQuotaSummary；ZCode /quota；依赖：quota"
+  }
+ ]
+}

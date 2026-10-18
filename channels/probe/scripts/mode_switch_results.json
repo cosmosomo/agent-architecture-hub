@@ -1,0 +1,783 @@
+[
+  {
+    "product": "zcode",
+    "sessionId": "c223cf7b-0530-466c-bbc3-e4a09e4d8b71",
+    "initialMode": "yolo",
+    "targetMode": "plan",
+    "setModeResult": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {
+        "messages": [],
+        "projection": {
+          "activeToolCalls": [],
+          "backgroundJobs": [],
+          "contextUsed": 0,
+          "contextWindow": 200000,
+          "mode": "yolo",
+          "pendingPermissions": [],
+          "sessionId": "sess_cf8e28aa-3ff2-4184-9be8-7fe5e5d6151d",
+          "status": "idle",
+          "target": null,
+          "totalTokenCount": 0,
+          "turnCount": 0
+        },
+        "protocol": {
+          "name": "ZCode Protocol",
+          "version": 1
+        },
+        "runtime": {
+          "eventSeq": 1,
+          "pendingRequestIds": [],
+          "goalVerifications": [],
+          "goalVerificationTimeline": [],
+          "stateRevision": 1
+        },
+        "session": {
+          "createdAt": 1792325259067,
+          "mode": "yolo",
+          "model": {
+            "providerId": "account:bigmodel-individual-coding-plan",
+            "modelId": "GLM-5.3"
+          },
+          "traceId": "fe504032-8f25-47a9-a60f-8693c2d88a2e",
+          "sessionId": "sess_cf8e28aa-3ff2-4184-9be8-7fe5e5d6151d",
+          "sessionKind": "interactive",
+          "status": "idle",
+          "target": null,
+          "title": "",
+          "updatedAt": 1792325259067,
+          "workspace": {
+            "workspacePath": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+            "workspaceKey": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub"
+          }
+        },
+        "settings": {
+          "mode": {
+            "current": "yolo"
+          },
+          "model": {
+            "available": [
+              {
+                "ref": {
+                  "providerId": "account:bigmodel-individual-coding-plan",
+                  "modelId": "GLM-5.3"
+                },
+                "label": "GLM-5.3",
+                "providerLabel": "BigModel Individual Coding Plan",
+                "contextWindow": 200000,
+                "maxOutputTokens": 128000,
+                "reasoning": {
+                  "levels": [
+                    {
+                      "value": "low",
+                      "label": "low"
+                    },
+                    {
+                      "value": "high",
+                      "label": "high"
+                    },
+                    {
+                      "value": "max",
+                      "label": "max"
+                    }
+                  ],
+                  "defaultLevel": "max"
+                },
+                "properties": {
+                  "inputFormat": {
+                    "supportsText": true,
+                    "supportsImage": true,
+                    "supportsVideo": true,
+                    "supportsAudio": false,
+                    "supportsPdf": false
+                  },
+                  "outputFormat": {
+                    "supportsText": true
+                  }
+                }
+              }
+            ],
+            "current": {
+              "providerId": "account:bigmodel-individual-coding-plan",
+              "modelId": "GLM-5.3",
+              "options": {
+                "reasoningLevel": "max"
+              }
+            },
+            "lastUsed": {
+              "providerId": "account:bigmodel-individual-coding-plan",
+              "modelId": "GLM-5.3"
+            }
+          },
+          "permission": {
+            "mode": "yolo"
+          },
+          "thoughtLevel": {
+            "available": [
+              {
+                "label": "low",
+                "value": "low"
+              },
+              {
+                "label": "high",
+                "value": "high"
+              },
+              {
+                "label": "max",
+                "value": "max"
+              }
+            ],
+            "current": "max",
+            "enabled": true
+          }
+        },
+        "slashCommands": [
+          {
+            "description": "Show or set the current session goal.",
+            "inputHint": "/goal [pause|resume|clear|replace <objective>|<objective>]",
+            "name": "goal",
+            "source": "builtin"
+          },
+          {
+            "description": "Compact the current conversation with optional instructions.",
+            "inputHint": "/compact [instructions]",
+            "name": "compact",
+            "source": "builtin"
+          },
+          {
+            "description": "Create or update workspace AGENTS.md instructions.",
+            "inputHint": "/init [notes]",
+            "name": "init",
+            "source": "builtin"
+          },
+          {
+            "description": "Switch to Plan mode and optionally send a task.",
+            "inputHint": "/plan [task]",
+            "name": "plan",
+            "source": "builtin"
+          }
+        ],
+        "todos": [],
+        "todoGroups": []
+      }
+    },
+    "setConfigResult": {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "result": {
+        "configOptions": [
+          {
+            "id": "model",
+            "name": "Model",
+            "category": "model",
+            "type": "select",
+            "currentValue": "builtin:bigmodel-coding-plan\\GLM-5.3",
+            "options": [
+              {
+                "value": "builtin:bigmodel-coding-plan\\GLM-5.3",
+                "name": "BigModel - Coding Plan › GLM-5.3"
+              },
+              {
+                "value": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+                "name": "BigModel - Coding Plan › GLM-5.3-Flash"
+              },
+              {
+                "value": "builtin:bigmodel-start-plan\\GLM-5.3",
+                "name": "BigModel- Coding Plan › GLM-5.3"
+              },
+              {
+                "value": "builtin:bigmodel-start-plan\\GLM-5.3-Flash",
+                "name": "BigModel- Coding Plan › GLM-5.3-Flash"
+              },
+              {
+                "value": "new-provider\\deepseek-v4.1-flash",
+                "name": "银子 › deepseek-v4.1-flash"
+              },
+              {
+                "value": "new-provider\\glm-5.3",
+                "name": "银子 › glm-5.3"
+              },
+              {
+                "value": "new-provider-2\\ark-code-latest",
+                "name": "字节火山 › ark-code-latest"
+              }
+            ]
+          },
+          {
+            "id": "mode",
+            "name": "Mode",
+            "category": "mode",
+            "type": "select",
+            "currentValue": "plan",
+            "options": [
+              {
+                "value": "plan",
+                "name": "plan"
+              },
+              {
+                "value": "build",
+                "name": "build"
+              },
+              {
+                "value": "edit",
+                "name": "edit"
+              },
+              {
+                "value": "guarded",
+                "name": "guarded"
+              },
+              {
+                "value": "yolo",
+                "name": "yolo"
+              }
+            ]
+          },
+          {
+            "id": "thought",
+            "name": "Thought Level",
+            "category": "thought_level",
+            "type": "select",
+            "currentValue": "max",
+            "options": [
+              {
+                "value": "low",
+                "name": "low"
+              },
+              {
+                "value": "high",
+                "name": "high"
+              },
+              {
+                "value": "max",
+                "name": "max"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "product": "workbuddy",
+    "sessionId": "01a14ee9-1c17-7ce3-88c1-90f7cb14a126",
+    "initialMode": "default",
+    "targetMode": "plan",
+    "setModeResult": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {}
+    },
+    "setConfigResult": {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "result": {
+        "configOptions": [
+          {
+            "type": "select",
+            "id": "mode",
+            "name": "Permission Mode",
+            "description": "Controls how the agent requests permission before making changes",
+            "category": "mode",
+            "currentValue": "plan",
+            "options": [
+              {
+                "value": "default",
+                "name": "Always Ask",
+                "description": "Prompts for permission on first use of each tool"
+              },
+              {
+                "value": "acceptEdits",
+                "name": "Accept Edits",
+                "description": "Automatically accepts file edit permissions for the session"
+              },
+              {
+                "value": "plan",
+                "name": "Plan",
+                "description": "Agent can analyze but not modify files or execute commands"
+              },
+              {
+                "value": "auto",
+                "name": "Auto",
+                "description": "An AI classifier reviews actions that would normally prompt: safe ones are auto-approved, risky ones are denied. If the classifier is unavailable, the action falls back to a prompt (or is denied when prompts cannot be shown)"
+              },
+              {
+                "value": "dontAsk",
+                "name": "Don't Ask",
+                "description": "Does not show permission prompts; pre-approved and safe read-only actions run, everything else that would prompt is denied"
+              },
+              {
+                "value": "bypassPermissions",
+                "name": "Bypass Permissions",
+                "description": "Skips all permission prompts"
+              },
+              {
+                "value": "fullAccess",
+                "name": "Full Access",
+                "description": "Skips ALL permission checks including dangerous commands for all agents"
+              },
+              {
+                "value": "delegate",
+                "name": "Delegate",
+                "description": "Permissions managed by parent session"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "id": "model",
+            "name": "Model",
+            "description": "Select the AI model to use for this session",
+            "category": "model",
+            "currentValue": "hy4-preview",
+            "options": [
+              {
+                "value": "hy4-preview",
+                "name": "Hy4 preview",
+                "description": "x0.29 credits"
+              },
+              {
+                "value": "hy3",
+                "name": "Hy3",
+                "description": "x0.00 credits"
+              },
+              {
+                "value": "hy3-x",
+                "name": "Hy3",
+                "description": "x0.05 credits"
+              },
+              {
+                "value": "step-5-preview",
+                "name": "Step-5-Preview",
+                "description": "x0.00 credits"
+              },
+              {
+                "value": "space-bunny",
+                "name": "Space-Bunny",
+                "description": "x0.08 credits"
+              },
+              {
+                "value": "deepseek-v4.1-flash",
+                "name": "Deepseek-V4.1-Flash",
+                "description": "x0.11 credits"
+              },
+              {
+                "value": "glm-5.3",
+                "name": "GLM-5.3",
+                "description": "x0.79 credits"
+              },
+              {
+                "value": "glm-5.3-flash",
+                "name": "GLM-5.3-Flash",
+                "description": "x0.06 credits"
+              },
+              {
+                "value": "glm-5.2",
+                "name": "GLM-5.2",
+                "description": "x0.79 credits"
+              },
+              {
+                "value": "glm-5.1",
+                "name": "GLM-5.1",
+                "description": "x0.79 credits"
+              },
+              {
+                "value": "glm-5v-turbo",
+                "name": "GLM-5v-Turbo",
+                "description": "x0.71 credits"
+              },
+              {
+                "value": "minimax-m3",
+                "name": "MiniMax-M3",
+                "description": "x0.25 credits"
+              },
+              {
+                "value": "minimax-m2.7",
+                "name": "MiniMax-M2.7",
+                "description": "x0.19 credits"
+              },
+              {
+                "value": "kimi-k3-1",
+                "name": "Kimi-K3",
+                "description": "x1.62 credits"
+              },
+              {
+                "value": "kimi-k2.8-preview",
+                "name": "Kimi-K2.8-Preview",
+                "description": "x0.77 credits"
+              },
+              {
+                "value": "kimi-k2.7",
+                "name": "Kimi-K2.7-Code",
+                "description": "x0.57 credits"
+              },
+              {
+                "value": "kimi-k2.6",
+                "name": "Kimi-K2.6",
+                "description": "x0.52 credits"
+              },
+              {
+                "value": "deepseek-v4-pro",
+                "name": "Deepseek-V4-Pro",
+                "description": "x0.51 credits"
+              },
+              {
+                "value": "custom-local:glm-5.3",
+                "name": "GLM-5.3"
+              },
+              {
+                "value": "custom-local:glm-5.3-flash",
+                "name": "GLM-5.3-Flash"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "id": "thought_level",
+            "name": "Deep Thinking",
+            "description": "Choose reasoning effort level for this session",
+            "category": "thought_level",
+            "currentValue": "enabled",
+            "options": [
+              {
+                "value": "high",
+                "name": "High",
+                "description": "Deep reasoning"
+              },
+              {
+                "value": "enabled",
+                "name": "On (default)",
+                "description": "Use the model default effort"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "id": "sandbox",
+            "name": "Sandbox",
+            "description": "Run shell commands inside the sandbox-cli isolation layer",
+            "category": "sandbox",
+            "currentValue": "false",
+            "options": [
+              {
+                "value": "true",
+                "name": "Sandbox Environment",
+                "description": "Bash/PowerShell commands run inside the sandbox and require escalation to touch the host"
+              },
+              {
+                "value": "false",
+                "name": "Local Environment",
+                "description": "Commands run with full user permissions (no sandbox isolation)"
+              }
+            ]
+          },
+          {
+            "type": "boolean",
+            "id": "multitask",
+            "name": "Multitask",
+            "description": "Coordinate detached workers while keeping the current agent mode",
+            "category": "_codebuddy.ai/multitask",
+            "currentValue": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "product": "opencode",
+    "sessionId": "ses_eb116ac87ffeO1Um9p2aG6t7ac",
+    "initialMode": "build",
+    "targetMode": "plan",
+    "setModeResult": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {}
+    },
+    "setConfigResult": {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "result": {
+        "configOptions": [
+          {
+            "id": "model",
+            "name": "Model",
+            "category": "model",
+            "type": "select",
+            "currentValue": "opencode/big-pickle",
+            "options": [
+              {
+                "value": "zai/glm-4.5",
+                "name": "Z.AI/GLM-4.5"
+              },
+              {
+                "value": "zai/glm-4.5-air",
+                "name": "Z.AI/GLM-4.5-Air"
+              },
+              {
+                "value": "zai/glm-4.5-flash",
+                "name": "Z.AI/GLM-4.5-Flash"
+              },
+              {
+                "value": "zai/glm-4.5v",
+                "name": "Z.AI/GLM-4.5V"
+              },
+              {
+                "value": "zai/glm-4.6",
+                "name": "Z.AI/GLM-4.6"
+              },
+              {
+                "value": "zai/glm-4.6v",
+                "name": "Z.AI/GLM-4.6V"
+              },
+              {
+                "value": "zai/glm-4.6v-flash",
+                "name": "Z.AI/GLM-4.6V-Flash"
+              },
+              {
+                "value": "zai/glm-4.7",
+                "name": "Z.AI/GLM-4.7"
+              },
+              {
+                "value": "zai/glm-4.7-flash",
+                "name": "Z.AI/GLM-4.7-Flash"
+              },
+              {
+                "value": "zai/glm-4.7-flashx",
+                "name": "Z.AI/GLM-4.7-FlashX"
+              },
+              {
+                "value": "zai/glm-5",
+                "name": "Z.AI/GLM-5"
+              },
+              {
+                "value": "zai/glm-5-turbo",
+                "name": "Z.AI/GLM-5-Turbo"
+              },
+              {
+                "value": "zai/glm-5.1",
+                "name": "Z.AI/GLM-5.1"
+              },
+              {
+                "value": "zai/glm-5.2",
+                "name": "Z.AI/GLM-5.2"
+              },
+              {
+                "value": "zai/glm-5.3",
+                "name": "Z.AI/GLM-5.3"
+              },
+              {
+                "value": "zai/glm-5.3-flash",
+                "name": "Z.AI/GLM-5.3-Flash"
+              },
+              {
+                "value": "zai/glm-5.3-flashx",
+                "name": "Z.AI/GLM-5.3-FlashX"
+              },
+              {
+                "value": "zai/glm-5v-turbo",
+                "name": "Z.AI/GLM-5V-Turbo"
+              },
+              {
+                "value": "deepseek/deepseek-v4-pro",
+                "name": "DeepSeek/DeepSeek V4 Pro"
+              },
+              {
+                "value": "deepseek/deepseek-flash",
+                "name": "DeepSeek/DeepSeek V4.1 Flash 1017"
+              },
+              {
+                "value": "zhipuai-coding-plan/glm-4.6v",
+                "name": "Zhipu AI Coding Plan/GLM-4.6V"
+              },
+              {
+                "value": "zhipuai-coding-plan/glm-5.3",
+                "name": "Zhipu AI Coding Plan/GLM-5.3"
+              },
+              {
+                "value": "zhipuai-coding-plan/glm-5.3-highspeed",
+                "name": "Zhipu AI Coding Plan/GLM-5.3 Highspeed"
+              },
+              {
+                "value": "zhipuai-coding-plan/glm-5.3-flash",
+                "name": "Zhipu AI Coding Plan/GLM-5.3-Flash"
+              },
+              {
+                "value": "zai-coding-plan/glm-4.7",
+                "name": "Z.AI Coding Plan/GLM-4.7"
+              },
+              {
+                "value": "zai-coding-plan/glm-5-turbo",
+                "name": "Z.AI Coding Plan/GLM-5-Turbo"
+              },
+              {
+                "value": "zai-coding-plan/glm-5.2",
+                "name": "Z.AI Coding Plan/GLM-5.2"
+              },
+              {
+                "value": "zai-coding-plan/glm-5.2-highspeed",
+                "name": "Z.AI Coding Plan/GLM-5.2 Highspeed"
+              },
+              {
+                "value": "zai-coding-plan/glm-5.3",
+                "name": "Z.AI Coding Plan/GLM-5.3"
+              },
+              {
+                "value": "zai-coding-plan/glm-5.3-highspeed",
+                "name": "Z.AI Coding Plan/GLM-5.3 Highspeed"
+              },
+              {
+                "value": "zai-coding-plan/glm-5.3-flash",
+                "name": "Z.AI Coding Plan/GLM-5.3-Flash"
+              },
+              {
+                "value": "zhipuai/glm-4.5",
+                "name": "Zhipu AI/GLM-4.5"
+              },
+              {
+                "value": "zhipuai/glm-4.5-air",
+                "name": "Zhipu AI/GLM-4.5-Air"
+              },
+              {
+                "value": "zhipuai/glm-4.5-flash",
+                "name": "Zhipu AI/GLM-4.5-Flash"
+              },
+              {
+                "value": "zhipuai/glm-4.5v",
+                "name": "Zhipu AI/GLM-4.5V"
+              },
+              {
+                "value": "zhipuai/glm-4.6",
+                "name": "Zhipu AI/GLM-4.6"
+              },
+              {
+                "value": "zhipuai/glm-4.6v",
+                "name": "Zhipu AI/GLM-4.6V"
+              },
+              {
+                "value": "zhipuai/glm-4.6v-flash",
+                "name": "Zhipu AI/GLM-4.6V-Flash"
+              },
+              {
+                "value": "zhipuai/glm-4.7",
+                "name": "Zhipu AI/GLM-4.7"
+              },
+              {
+                "value": "zhipuai/glm-4.7-flash",
+                "name": "Zhipu AI/GLM-4.7-Flash"
+              },
+              {
+                "value": "zhipuai/glm-4.7-flashx",
+                "name": "Zhipu AI/GLM-4.7-FlashX"
+              },
+              {
+                "value": "zhipuai/glm-5",
+                "name": "Zhipu AI/GLM-5"
+              },
+              {
+                "value": "zhipuai/glm-5.1",
+                "name": "Zhipu AI/GLM-5.1"
+              },
+              {
+                "value": "zhipuai/glm-5.2",
+                "name": "Zhipu AI/GLM-5.2"
+              },
+              {
+                "value": "zhipuai/glm-5.3",
+                "name": "Zhipu AI/GLM-5.3"
+              },
+              {
+                "value": "zhipuai/glm-5.3-flash",
+                "name": "Zhipu AI/GLM-5.3-Flash"
+              },
+              {
+                "value": "zhipuai/glm-5.3-flashx",
+                "name": "Zhipu AI/GLM-5.3-FlashX"
+              },
+              {
+                "value": "zhipuai/glm-5v-turbo",
+                "name": "Zhipu AI/GLM-5V-Turbo"
+              },
+              {
+                "value": "opencode/beam-free",
+                "name": "OpenCode/Beam Free"
+              },
+              {
+                "value": "opencode/big-pickle",
+                "name": "OpenCode/Big Pickle"
+              },
+              {
+                "value": "opencode/deepseek-v4.1-flash-free",
+                "name": "OpenCode/DeepSeek V4.1 Flash Free"
+              },
+              {
+                "value": "opencode/glm-5.3-flash-free",
+                "name": "OpenCode/GLM-5.3-Flash Free"
+              },
+              {
+                "value": "opencode/longcat-2.5-preview-free",
+                "name": "OpenCode/LongCat 2.5 Preview Free"
+              },
+              {
+                "value": "opencode/mimo-v2.6-flash-free",
+                "name": "OpenCode/MiMo-V2.6-Flash Free"
+              },
+              {
+                "value": "opencode/nemotron-3-ultra-free",
+                "name": "OpenCode/Nemotron 3 Ultra Free"
+              },
+              {
+                "value": "opencode/nemotron-3.5-lightning-free",
+                "name": "OpenCode/Nemotron 3.5 Lightning Free"
+              },
+              {
+                "value": "opencode/nemotron-3.5-super-vl-free",
+                "name": "OpenCode/Nemotron 3.5 Super VL Free"
+              },
+              {
+                "value": "opencode/space-bunny-free",
+                "name": "OpenCode/Space Bunny Free"
+              }
+            ]
+          },
+          {
+            "id": "mode",
+            "name": "Session Mode",
+            "category": "mode",
+            "type": "select",
+            "currentValue": "plan",
+            "options": [
+              {
+                "value": "build",
+                "name": "build",
+                "description": "The default agent. Executes tools based on configured permissions."
+              },
+              {
+                "value": "plan",
+                "name": "plan",
+                "description": "Plan mode. Disallows all edit tools."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "product": "hermes",
+    "sessionId": "bc15edef-b189-4bb9-afcd-8ae6ebf45ae4",
+    "initialMode": "default",
+    "targetMode": "accept_edits",
+    "setModeResult": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {}
+    },
+    "setConfigResult": {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "result": {
+        "configOptions": []
+      }
+    }
+  }
+]

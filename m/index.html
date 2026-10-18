@@ -1,0 +1,1425 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<title>督工台</title>
+<!--
+  手机督工台 v2.1（2026-10-18 乙任务：照四张表渲染，实时推进，审批与提问网页直答）。
+  1. 照四张表（products / actions / integration-map / capabilities）与会话所在的“产品 × 入口 × 所有权”渲染控件；
+     对 real 实测、built 实现了未测、fill 补齐诚实标记且不碍事。
+  2. 接入 GET /api/gateway/stream（SSE），实时流式推进每一步（思考、工具执行、正文回复），不等轮询。
+  3. 智能体请求审批（permission / ui-approval）在网页上直按同意/驳回并自动全权限重跑；
+     智能体提问（ask-user / ui-question）生成交互式胶囊选项，一键点选答复。
+  4. 触控面积全面满足 ≥44px 标准，红绿差异行 Diff 显示。
+-->
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#14171a;--mute:#69707a;--line:#e3e6ea;--acc:#2563eb;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--code:#f1f3f5;--think:#f5f3ff}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1215;--card:#171b20;--fg:#e8eaed;--mute:#9aa1aa;--line:#272d34;--acc:#60a5fa;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--code:#1e242b;--think:#1d1a2b}}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+.untested{outline:2px dashed currentColor;outline-offset:-5px}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,system-ui,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-text-size-adjust:100%}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:var(--acc)}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;display:flex;gap:8px;align-items:center}
+header h1{font-size:17px;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.ib{min-width:44px;height:44px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:0 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+main{padding:10px 12px 130px;max-width:820px;margin:0 auto}
+.search{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:0 12px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:8px 0;scrollbar-width:none}
+.chip{flex:none;height:44px;padding:0 16px;border:1px solid var(--line);border-radius:22px;background:var(--card);font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.card{color:inherit;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;display:block;width:100%;text-align:left}
+.row{display:flex;gap:8px;align-items:center}
+.grow{flex:1;min-width:0}
+.t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .t{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.35}
+.sub{color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font-size:12px;padding:2px 8px;border-radius:9px;border:1px solid var(--line);color:var(--mute);flex:none;display:inline-flex;align-items:center;gap:4px}
+.tag-fill{color:var(--warn);border-color:var(--warn);background:rgba(180,83,9,.08)}
+.tag-built{color:var(--acc);border-color:var(--acc);background:rgba(37,99,235,.08)}
+.st-working{color:var(--ok);border-color:var(--ok)}
+.st-failed,.st-aborted{color:var(--bad);border-color:var(--bad)}
+.st-stale{color:var(--warn);border-color:var(--warn)}
+.sec{margin:14px 2px 4px;color:var(--mute);font-size:13px}
+.more{width:100%;height:44px;border:1px dashed var(--line);border-radius:10px;background:transparent;color:var(--mute);cursor:pointer}
+.turn{margin:14px 0}
+.who{font-size:12px;color:var(--mute);margin:2px 2px}
+.user{background:var(--acc);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;margin-left:12%;white-space:pre-wrap;word-break:break-word}
+.user.long{max-height:220px;overflow:hidden;position:relative}
+.text{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:6px 0;word-break:break-word}
+.text p{margin:6px 0}.text pre{background:var(--code);padding:8px;border-radius:8px;overflow-x:auto;font-size:13px;position:relative}
+.text code{background:var(--code);padding:1px 4px;border-radius:4px;font-size:13.5px}.text pre code{background:none;padding:0}
+.text table{border-collapse:collapse;display:block;overflow-x:auto;font-size:14px}.text td,.text th{border:1px solid var(--line);padding:4px 6px}
+.text h1,.text h2,.text h3,.text h4{font-size:16px;margin:10px 0 4px}
+.text ul,.text ol{padding-left:22px;margin:6px 0}
+.copy{position:absolute;top:4px;right:4px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);padding:2px 8px;min-height:28px;cursor:pointer}
+details.step{border:1px solid var(--line);border-radius:10px;margin:6px 0;background:var(--card)}
+details.step>summary{list-style:none;padding:8px 10px;display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+details.step>summary::-webkit-details-marker{display:none}
+details.think{background:var(--think)}
+.sname{font-weight:600;flex:none}.sarg{color:var(--mute);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+.sbody{padding:0 10px 10px}
+.sbody pre{background:var(--code);padding:8px;border-radius:8px;overflow-x:auto;font-size:12.5px;max-height:420px;white-space:pre-wrap;word-break:break-all;margin:6px 0}
+.lbl{font-size:12px;color:var(--mute)}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.group{font-size:13px;color:var(--mute);padding:8px 10px;border:1px dashed var(--line);border-radius:10px;margin:6px 0;width:100%;text-align:left;background:transparent}
+.statusline{position:sticky;top:57px;z-index:4;background:var(--bg);font-size:13px;color:var(--mute);padding:6px 2px;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.composer{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:8px 10px calc(env(safe-area-inset-bottom) + 8px);z-index:6}
+.composer .in{display:flex;gap:8px;max-width:820px;margin:0 auto;align-items:flex-end}
+.composer textarea{flex:1;min-height:44px;max-height:160px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:9px 12px;resize:none}
+.btn{min-height:44px;min-width:44px;border:0;border-radius:12px;background:var(--acc);color:#fff;padding:0 16px;flex:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn.stop{background:var(--bad)}
+.btn.ghost{background:var(--card);color:var(--fg);border:1px solid var(--line)}
+.btn-touch{min-height:44px;min-width:44px}
+.hint{max-width:820px;margin:4px auto 0;font-size:12px;color:var(--mute);display:flex;align-items:center;gap:4px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:flex;align-items:flex-end}
+.sheet .box{background:var(--bg);width:100%;max-height:90vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 14px calc(env(safe-area-inset-bottom) + 16px)}
+.sheet label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+.sheet input,.sheet select,.sheet textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:10px;min-height:44px}
+.sheet textarea{min-height:120px}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.fab{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom) + 18px);z-index:7;border-radius:22px;height:44px;min-width:44px;padding:0 16px;border:1px solid var(--line);background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav.bottom a{flex:1;text-align:center;padding:12px 0;color:var(--mute);text-decoration:none;font-size:15px;min-height:44px;display:flex;align-items:center;justify-content:center}
+nav.bottom a.on{color:var(--acc);font-weight:600}
+body.has-composer nav.bottom{display:none}
+.fab{bottom:calc(env(safe-area-inset-bottom) + 64px)}
+.kind{font-size:12px;font-weight:600;flex:none}
+.k-action{color:var(--bad)}.k-shipped{color:var(--ok)}.k-progress{color:var(--acc)}.k-observation{color:var(--mute)}
+.cardrow{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}.cardrow .btn{min-height:44px;font-size:14px;display:inline-flex;align-items:center;text-decoration:none}
+.card[data-open]{cursor:pointer}
+.diff{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;white-space:pre-wrap;word-break:break-all;border-radius:8px;padding:6px 8px;margin:4px 0;max-height:360px;overflow:auto}
+.diff.del{background:rgba(220,38,38,.12);border-left:3px solid var(--bad);color:var(--bad)}
+.diff.add{background:rgba(22,163,74,.14);border-left:3px solid var(--ok);color:var(--ok)}
+.todo{list-style:none;padding:0;margin:4px 0}.todo li{padding:3px 0}.todo .done{color:var(--mute);text-decoration:line-through}.todo .doing{color:var(--acc);font-weight:600}
+.pinb{min-height:44px;min-width:44px;border:1px solid var(--line);border-radius:18px;background:var(--card);font-size:13px;padding:0 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+body.has-composer .fab{bottom:calc(env(safe-area-inset-bottom) + 86px)}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:30;font-size:14px;max-width:90%;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.empty{color:var(--mute);text-align:center;padding:40px 0}
+
+/* Approval & Question interactive widgets */
+.approval-card{background:var(--card);border:2px solid var(--warn);border-radius:12px;padding:12px;margin:8px 0;box-shadow:0 2px 8px rgba(180,83,9,.12)}
+.approval-pre{background:var(--code);padding:8px;border-radius:8px;font-size:12px;max-height:120px;overflow:auto;margin:6px 0;white-space:pre-wrap;word-break:break-all}
+.question-box{background:var(--think);border:1.5px solid var(--acc);border-radius:12px;padding:12px;margin:10px 0}
+.q-title{font-size:14px;font-weight:600;color:var(--acc);display:flex;align-items:center;gap:6px}
+.q-opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.q-opt-chip{min-height:44px;padding:0 14px;border-radius:12px;background:var(--card);border:1.5px solid var(--acc);color:var(--acc);font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center}
+.q-opt-chip:active{background:var(--acc);color:#fff}
+
+/* Live indicators */
+@keyframes pulseDot{0%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}100%{opacity:1;transform:scale(1)}}
+.live-dot{display:inline-block;color:var(--ok);font-size:12px;margin-right:4px;animation:pulseDot 1.4s infinite}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.live-spin{display:inline-block;animation:spin 1s linear infinite}
+.live-turn{border-left:3px solid var(--acc);padding-left:8px;margin:14px 0}
+.sse-badge{font-size:11px;padding:1px 6px;border-radius:6px;border:1px solid var(--line);color:var(--mute);margin-left:6px;display:inline-flex;align-items:center;gap:4px}
+.sse-badge.on{color:var(--ok);border-color:var(--ok)}
+</style>
+</head>
+<body>
+<header>
+  <button class="ib" id="back" hidden aria-label="返回">‹</button>
+  <h1 id="title">督工台 <span class="sse-badge" id="sseBadge">● 离线</span></h1>
+  <button class="ib" id="swBtn" hidden>切换</button>
+  <button class="ib" id="newBtn" hidden>＋ 新任务</button>
+</header>
+<main id="main"></main>
+<button class="fab" id="fbBtn">反馈</button>
+<nav class="bottom" id="nav"><a href="#/" data-n="feed">待处理</a><a href="#/projects" data-n="projects">项目</a><a href="#/collab" data-n="collab">协作</a></nav>
+<script>
+'use strict';
+// ---------- data ----------
+const FAM = { claude:'Claude', codex:'Codex', antigravity:'Antigravity', zcode:'ZCode', workbuddy:'WorkBuddy', opencode:'OpenCode', hermes:'Hermes', gemini:'Gemini', factory:'Droid' };
+const STATE = { working:'在干活', idle:'停了', stale:'没动静', failed:'出错', aborted:'已停止', empty:'空', waiting:'在等' };
+const S = { sessions: [], caps: null, gw: null, fam: 'all', q: '', loadedAt: 0, sseConnected: false, es: null, currentMeta: null, activeView: 'feed' };
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} } };
+
+function ago(t) {
+  const d = (Date.now() - Date.parse(t)) / 1000;
+  if (!isFinite(d)) return '';
+  if (d < 60) return '刚刚'; if (d < 3600) return Math.floor(d / 60) + ' 分钟前'; if (d < 86400) return Math.floor(d / 3600) + ' 小时前';
+  return Math.floor(d / 86400) + ' 天前';
+}
+function toast(msg) { const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg; document.body.appendChild(el); setTimeout(() => el.remove(), 2600); }
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok || j.ok === false) throw new Error(j.error || j.message || ('HTTP ' + res.status));
+  return j;
+}
+async function loadSessions(force) {
+  if (S.activeView === 'session' && S.sessions.length > 0) return;
+  if (!force && Date.now() - S.loadedAt < 4000) return;
+  const j = await api('/api/sessions?slim=1');
+  S.sessions = j.sessions || [];
+  S.loadedAt = Date.now();
+}
+async function loadCaps() {
+  if (!S.caps) S.caps = await api('/api/capabilities');
+  if (!S.gw) S.gw = await api('/api/gateway/state').catch(() => ({ channels: [], pendingApprovals: [] }));
+}
+
+// ---------- 四张表能力决断（按“产品 × 入口 × 所有权”推导） ----------
+function getBackendCap(fam, unit) {
+  const c = S.caps && S.caps.channels && S.caps.channels[fam] && S.caps.channels[fam][unit];
+  return (c && c.backend) || null;
+}
+
+// A unit shows as a control when the backend has it for this product (any status but todo). Its status from the
+// unit → action table decides the label and the tooltip, the same way for every unit.
+const STATUS_TEXT = { real: '实测通过', partial: '部分做到', built: '后端已实现，这个产品还没实测', fill: '补齐' };
+function unitAction(fam, unit, label) {
+  const c = getBackendCap(fam, unit);
+  if (!c || c.status === 'todo') return null;
+  const how = c.status === 'fill' ? `补齐（搬到${c.fillLevel || '上一级'}去做）` : STATUS_TEXT[c.status] || c.status;
+  // Untested ones keep their short label (the composer is narrow on a phone) and get a dashed outline instead.
+  return { status: c.status, label, cls: c.status === 'built' ? 'untested' : '', title: `${unit}：${how}` };
+}
+
+function resolveSessionActions(meta) {
+  const fam = meta.channel;
+  const cSteer = getBackendCap(fam, 'steer');
+  const cInject = getBackendCap(fam, 'inject-next');
+  const cArtifact = getBackendCap(fam, 'artifact');
+  const cPermission = getBackendCap(fam, 'permission');
+  const cancelAction = unitAction(fam, 'cancel', '停');
+  const modelSwitchAction = unitAction(fam, 'model-switch', '换模型');
+  const attachAction = unitAction(fam, 'attach', '图');
+
+  // send while working: Antigravity has steer (real); Claude/ZCode/OpenCode/Hermes/WorkBuddy/Codex have inject-next (partial)
+  let workingSend = null;
+  if (meta.pointCapabilities && meta.pointCapabilities.steer) {
+    if (meta.pointCapabilities.steer.mode === 'steer' && meta.pointCapabilities.steer.enabled) {
+      workingSend = { type: 'steer', label: '插话', hint: '● 智能体在干活：发的话会插进当前这一轮', actionTitle: 'steer: 实时插话' };
+    } else {
+      workingSend = { type: 'inject-next', label: '排下一轮', hint: '● 智能体在忙：发的话排到下一轮结束后发出', actionTitle: 'inject-next: 轮后排队' };
+    }
+  } else if (cSteer && cSteer.status === 'real') {
+    workingSend = {
+      type: 'steer',
+      label: '插话',
+      hint: '● 智能体在干活：发的话会插进当前这一轮',
+      actionTitle: 'steer: 实时插进当前轮',
+    };
+  } else if (cInject && (cInject.status === 'partial' || cInject.status === 'real' || cInject.status === 'built')) {
+    workingSend = {
+      type: 'inject-next',
+      label: '排下一轮',
+      hint: '● 智能体在忙：发的话排到下一轮结束后发出',
+      actionTitle: 'inject-next: 排到下一轮',
+    };
+  }
+
+  // send while idle: the backend can resume this product's sessions
+  const canSendIdle = Boolean(unitAction(fam, 'resume', '发送'));
+
+  return {
+    fam,
+    cancelAction,
+    modelSwitchAction,
+    attachAction,
+    workingSend,
+    canSendIdle,
+    capArtifact: cArtifact && (cArtifact.status === 'real' || cArtifact.status === 'built'),
+    capPermission: cPermission,
+  };
+}
+
+// A model as people know it: the product table's modelNames when the product only takes tier names (Antigravity).
+function modelLabel(fam, m) {
+  const p = ((S.caps && S.caps.products) || []).find((x) => x.id === fam);
+  const real = p && p.modelNames && p.modelNames[m];
+  return real ? `${real}（${m}）` : m;
+}
+
+function findSessionApproval(meta) {
+  const apprs = (S.gw && S.gw.pendingApprovals) || [];
+  const cName = controlName(meta);
+  return apprs.find((a) => a.traceSessionId === meta.id || a.sessionName === meta.name || a.sessionName === cName) || null;
+}
+
+function findInteractiveQuestion(turns) {
+  if (!turns || !turns.length) return null;
+  const lastTurn = turns[turns.length - 1];
+  const steps = lastTurn.steps || [];
+  for (let i = steps.length - 1; i >= 0; i--) {
+    const st = steps[i];
+    if (st.kind === 'tool' && (st.name === 'ask_question' || st.name === 'AskUserQuestion')) {
+      const o = inputObj(st.input);
+      if (o) {
+        const qs = Array.isArray(o.questions) ? o.questions : (o.question ? [o] : null);
+        if (qs && qs.length) return qs[0];
+      }
+    }
+  }
+  return null;
+}
+
+const cleanTitle = (t) => String(t || '').replace(/^[#>\s*]+/, '').trim();
+const projName = (p) => (p ? p.split('\\').filter(Boolean).pop() : '（没记目录）');
+const famOf = (s) => s.channel;
+const matchQ = (s) => !S.q || (s.title + ' ' + s.project + ' ' + s.name + ' ' + s.model).toLowerCase().includes(S.q);
+const matchF = (s) => S.fam === 'all' || famOf(s) === S.fam;
+const isMain = (s) => !s.subagent;
+const pinned = (s) => Boolean(store.get('pin:' + s.id));
+function stTag(st) { return `<span class="tag st-${esc(st)}">${esc(STATE[st] || st || '?')}</span>`; }
+
+// ---------- markdown ----------
+function inline(t) {
+  return t
+    .replace(/`([^`]+)`/g, (_, c) => '<code>' + c + '</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>')
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+function md(src) {
+  const parts = String(src ?? '').split(/^```[^\n]*\n?/m);
+  let out = '';
+  parts.forEach((p, i) => {
+    if (i % 2 === 1) { out += '<pre><button class="copy">复制</button><code>' + esc(p.replace(/\n$/, '')) + '</code></pre>'; return; }
+    const lines = esc(p).split('\n');
+    let list = '', para = [], table = [];
+    const flushP = () => { if (para.length) out += '<p>' + inline(para.join('<br>')) + '</p>'; para = []; };
+    const flushL = () => { if (list) out += '</' + list + '>'; list = ''; };
+    const flushT = () => {
+      if (!table.length) return;
+      const rows = table.filter((r) => !/^\s*\|?\s*:?-{2,}/.test(r)).map((r) => r.replace(/^\s*\||\|\s*$/g, '').split('|'));
+      out += '<table>' + rows.map((r, k) => '<tr>' + r.map((c) => (k ? '<td>' : '<th>') + inline(c.trim()) + (k ? '</td>' : '</th>')).join('') + '</tr>').join('') + '</table>';
+      table = [];
+    };
+    for (const l of lines) {
+      let m;
+      if (/^\s*\|.*\|\s*$/.test(l)) { flushP(); flushL(); table.push(l); continue; } else flushT();
+      if ((m = /^(#{1,4})\s+(.*)/.exec(l))) { flushP(); flushL(); out += `<h${m[1].length + 1}>` + inline(m[2]) + `</h${m[1].length + 1}>`; }
+      else if ((m = /^\s*&gt;\s?(.*)/.exec(l))) { flushP(); flushL(); out += '<div style="border-left:3px solid var(--line);padding-left:8px;color:var(--mute)">' + inline(m[1]) + '</div>'; }
+      else if ((m = /^\s*[-*]\s+(.*)/.exec(l))) { flushP(); if (list !== 'ul') { flushL(); out += '<ul>'; list = 'ul'; } out += '<li>' + inline(m[1]) + '</li>'; }
+      else if ((m = /^\s*\d+[.)]\s+(.*)/.exec(l))) { flushP(); if (list !== 'ol') { flushL(); out += '<ol>'; list = 'ol'; } out += '<li>' + inline(m[1]) + '</li>'; }
+      else if (!l.trim()) { flushP(); flushL(); }
+      else { flushL(); para.push(l); }
+    }
+    flushP(); flushL(); flushT();
+  });
+  return out;
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.copy');
+  if (!b) return;
+  navigator.clipboard?.writeText(b.parentElement.querySelector('code').textContent).then(() => toast('已复制'), () => toast('复制失败'));
+});
+
+// ---------- SSE 实时推送与流式渲染 ----------
+function updateHeaderLive() {
+  const b = $('#sseBadge');
+  if (!b) return;
+  if (S.sseConnected) {
+    b.className = 'sse-badge on';
+    b.innerHTML = '<span class="live-dot">●</span> 实时';
+  } else {
+    b.className = 'sse-badge';
+    b.textContent = '● 轮询中';
+  }
+}
+
+function initSSE() {
+  if (S.es || !window.EventSource) return;
+  const es = new EventSource('/api/gateway/stream');
+  S.es = es;
+  es.onopen = () => { S.sseConnected = true; updateHeaderLive(); };
+  es.onerror = () => { S.sseConnected = false; updateHeaderLive(); };
+  es.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      handleSseMessage(msg);
+    } catch {}
+  };
+}
+
+let activeRerenderTimer = 0;
+function renderActiveListDebounced() {
+  clearTimeout(activeRerenderTimer);
+  activeRerenderTimer = setTimeout(() => {
+    if (S.activeView === 'feed' && typeof window.__feedRender === 'function') window.__feedRender();
+    if (S.activeView === 'projects' && typeof window.__homeRender === 'function') window.__homeRender();
+    if (S.activeView === 'project' && typeof window.__projRender === 'function') window.__projRender();
+  }, 200);
+}
+
+function handleSseMessage(msg) {
+  if (msg.type === 'gateway_snapshot' || msg.type === 'state') {
+    S.gw = msg;
+    if (S.activeView === 'feed') renderActiveListDebounced();
+    if (S.activeView === 'session' && S.currentMeta) {
+      renderApprovalBanner(S.currentMeta);
+    }
+    updateHeaderLive();
+  } else if (msg.type === 'run_start') {
+    const r = msg.run;
+    if (!r) return;
+    const s = S.sessions.find((x) => x.id === r.traceSessionId || x.name === r.sessionName);
+    if (s) s.state = 'working';
+    if (S.activeView === 'session' && S.currentMeta && (S.currentMeta.id === r.traceSessionId || S.currentMeta.name === r.sessionName || controlName(S.currentMeta) === r.sessionName)) {
+      setComposer(true);
+      ensureLiveTurn(r);
+    } else {
+      renderActiveListDebounced();
+    }
+  } else if (msg.type === 'run_update') {
+    const r = msg.run;
+    if (!r) return;
+    if (S.activeView === 'session' && S.currentMeta && (S.currentMeta.id === r.traceSessionId || S.currentMeta.name === r.sessionName || controlName(S.currentMeta) === r.sessionName)) {
+      updateLiveTurn(r);
+    }
+  } else if (msg.type === 'run_done') {
+    const r = msg.run;
+    if (!r) return;
+    const s = S.sessions.find((x) => x.id === r.traceSessionId || x.name === r.sessionName);
+    if (s) s.state = r.status === 'completed' ? 'idle' : (r.status || 'idle');
+    if (S.activeView === 'session') {
+      if (S.currentMeta && (S.currentMeta.id === r.traceSessionId || S.currentMeta.name === r.sessionName || controlName(S.currentMeta) === r.sessionName)) {
+        finalizeLiveTurn(S.currentMeta.id);
+      }
+    } else {
+      loadSessions(true).then(() => renderActiveListDebounced());
+    }
+  }
+}
+
+function ensureLiveTurn(r) {
+  const turnsEl = $('#turns');
+  if (!turnsEl) return;
+  let liveEl = $('#live-turn');
+  if (!liveEl) {
+    liveEl = document.createElement('div');
+    liveEl.id = 'live-turn';
+    liveEl.className = 'turn live-turn';
+    turnsEl.appendChild(liveEl);
+  }
+  updateLiveTurn(r);
+}
+
+function updateLiveTurn(r) {
+  const turnsEl = $('#turns');
+  if (!turnsEl) return;
+  let liveEl = $('#live-turn');
+  if (!liveEl) {
+    liveEl = document.createElement('div');
+    liveEl.id = 'live-turn';
+    liveEl.className = 'turn live-turn';
+    turnsEl.appendChild(liveEl);
+  }
+  const nearBottom = window.innerHeight + window.scrollY > document.body.scrollHeight - 180;
+  let html = '';
+  if (r.prompt) {
+    html += `<div class="who" style="text-align:right"><span class="live-dot">●</span> 实时流式推进中</div>
+      <div class="user">${esc(r.prompt)}</div>`;
+  }
+  if (r.thoughts && r.thoughts.trim()) {
+    html += `<details class="step think" open><summary><span class="live-dot">●</span><span class="sname">深度思考</span><span class="sarg">${esc(r.thoughts.slice(0, 100))}</span></summary><div class="sbody text" style="border:0;background:none">${md(r.thoughts)}</div></details>`;
+  }
+  if (r.tools && r.tools.length) {
+    html += r.tools.map((st) => {
+      const dur = st.durationMs ? (st.durationMs / 1000).toFixed(1) + 's' : '';
+      const icon = st.status === 'running' ? '⏳' : st.status === 'error' ? '✗' : '✓';
+      const clz = st.status === 'error' ? 'bad' : st.status === 'ok' ? 'ok' : 'live-spin';
+      return `<details class="step" ${st.status === 'running' ? 'open' : ''}>
+        <summary><span class="${clz}">${icon}</span><span class="sname">${esc(st.name || '工具')}</span><span class="sarg">${esc(st.summary || argOf(st.input) || '')}</span><span class="lbl">${dur}</span></summary>
+        <div class="sbody">${st.input ? `<div class="lbl">输入</div><pre>${esc(pretty(st.input).slice(0, 8000))}</pre>` : ''}${st.output ? `<div class="lbl">结果</div><pre>${esc(String(st.output).slice(0, 15000))}</pre>` : ''}</div></details>`;
+    }).join('');
+  }
+  if (r.text && r.text.trim()) {
+    html += `<div class="text">${md(r.text)}</div>`;
+  }
+  html += `<div class="who" style="text-align:right"><span class="live-dot">●</span> ${r.status === 'cancelling' ? '正在停止…' : '智能体自主推进中…'}</div>`;
+  liveEl.innerHTML = html;
+  if (nearBottom) window.scrollTo(0, document.body.scrollHeight);
+}
+
+// ---------- views & routing ----------
+let timer = 0, viewId = 0;
+function route() {
+  clearTimeout(timer); viewId++;
+  $('#swBtn').hidden = true;
+  document.body.classList.remove('has-composer');
+  const old = $('.composer'); if (old) old.remove();
+  const h = decodeURIComponent(location.hash.slice(1));
+  initSSE();
+  if (h.startsWith('/s/')) { S.activeView = 'session'; return viewSession(h.slice(3)); }
+  if (h.startsWith('/p/')) { S.activeView = 'project'; return viewProject(h.slice(3)); }
+  const tab = h === '/projects' ? 'projects' : h === '/collab' ? 'collab' : 'feed';
+  S.activeView = tab;
+  document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.n === tab));
+  return tab === 'projects' ? viewHome() : tab === 'collab' ? viewCollab() : viewFeed();
+}
+window.addEventListener('hashchange', route);
+$('#back').onclick = () => (history.length > 1 ? history.back() : (location.hash = '#/'));
+
+function filterBar() {
+  const fams = ['all', ...Object.keys(FAM).filter((f) => S.sessions.some((s) => famOf(s) === f))];
+  return `<input class="search" id="q" placeholder="搜标题，也搜对话内容" value="${esc(S.q)}">
+    <div class="chips">${fams.map((f) => `<button class="chip ${S.fam === f ? 'on' : ''}" data-f="${f}">${f === 'all' ? '全部' : FAM[f]}</button>`).join('')}</div>`;
+}
+let searchTimer = 0;
+async function contentSearch(project) {
+  const box = $('#hits'); if (!box) return;
+  const q = S.q;
+  if (q.length < 2) { box.innerHTML = ''; return; }
+  try {
+    const j = await api('/api/search?limit=30&q=' + encodeURIComponent(q) + (project ? '&cwd=' + encodeURIComponent(project) : ''));
+    if (q !== S.q || !$('#hits')) return;
+    const seen = new Set();
+    const hits = (j.hits || []).filter((h) => !seen.has(h.session) && seen.add(h.session)).slice(0, 12);
+    box.innerHTML = hits.length ? `<div class="sec">内容里找到（${j.total} 处，${(j.facets && j.facets.sessions) || hits.length} 个会话）</div>` + hits.map((h) => {
+      const s = S.sessions.find((x) => x.id === h.session) || { title: h.session, channel: h.session.split(':')[0] };
+      return `<a class="card" href="#/s/${encodeURIComponent(h.session)}"><div class="row"><span class="tag">${esc(FAM[famOf(s)] || famOf(s))}</span><span class="t grow">${esc(cleanTitle(s.title) || h.session)}</span></div>
+        <div class="sub" style="white-space:normal">${esc(String(h.snippet || '').replace(/[\u0001\u0002]/g, ''))}</div><div class="sub">第 ${h.turn} 轮 · ${esc(ago(h.at))}</div></a>`;
+    }).join('') : '';
+  } catch { box.innerHTML = ''; }
+}
+function bindFilter(rerender, project) {
+  const q = $('#q');
+  q.oninput = () => { S.q = q.value.trim().toLowerCase(); rerender(); clearTimeout(searchTimer); searchTimer = setTimeout(() => contentSearch(project), 400); };
+  if (S.q) contentSearch(project);
+  document.querySelectorAll('.chip[data-f]').forEach((b) => (b.onclick = () => { S.fam = b.dataset.f; document.querySelectorAll('.chip[data-f]').forEach((x) => x.classList.toggle('on', x === b)); rerender(); }));
+}
+function sessionCard(s, showProject) {
+  return `<a class="card" href="#/s/${encodeURIComponent(s.id)}">
+    <div class="t">${pinned(s) ? '📌 ' : ''}${esc(cleanTitle(s.title) || s.name || s.id)}</div>
+    <div class="row" style="margin-top:4px"><span class="tag">${esc(FAM[famOf(s)] || famOf(s))}</span>${stTag(s.state)}<span class="sub grow">${esc(ago(s.updatedAt))}</span></div>
+    <div class="sub">${s.turns} 轮 · ${s.toolCalls} 次工具${s.children ? ' · ' + s.children + ' 个子智能体' : ''}${showProject ? ' · ' + esc(projName(s.project)) : ''}${s.model ? ' · ' + esc(s.model) : ''}</div></a>`;
+}
+
+// ---------- 待处理（含审批卡片直接答复与局部 DOM 调和） ----------
+const KIND = { action: '要你处理', shipped: '干完了', progress: '在推进', observation: '有变化' };
+const KIND_ORDER = ['action', 'shipped', 'progress', 'observation'];
+
+function reconcileCards(container, items) {
+  if (!container) return;
+  const existingMap = new Map();
+  for (const child of Array.from(container.children)) {
+    const k = child.dataset && child.dataset.key;
+    if (k) existingMap.set(k, child);
+  }
+
+  const nextKeys = new Set(items.map((it) => it.key));
+
+  // 移除不再存在的卡片
+  for (const [key, el] of existingMap.entries()) {
+    if (!nextKeys.has(key)) {
+      el.remove();
+      existingMap.delete(key);
+    }
+  }
+
+  // 按顺序插入或局部更新
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    let el = existingMap.get(item.key);
+
+    if (el) {
+      if (el.dataset.sig !== item.sig) {
+        // 签名变动：局部更新内容与属性，保留最外层 DOM 节点以防击空
+        const temp = document.createElement('div');
+        temp.innerHTML = item.html.trim();
+        const newEl = temp.firstElementChild;
+        if (newEl) {
+          for (const attr of Array.from(newEl.attributes)) {
+            el.setAttribute(attr.name, attr.value);
+          }
+          el.innerHTML = newEl.innerHTML;
+          el.dataset.sig = item.sig;
+        }
+      }
+    } else {
+      const temp = document.createElement('div');
+      temp.innerHTML = item.html.trim();
+      el = temp.firstElementChild;
+      if (el) {
+        el.dataset.sig = item.sig;
+        existingMap.set(item.key, el);
+      }
+    }
+
+    if (!el) continue;
+
+    const currentAtPos = container.children[i];
+    if (currentAtPos !== el) {
+      container.insertBefore(el, currentAtPos || null);
+    }
+  }
+}
+
+function feedCards() {
+  const cards = [];
+  const since = Date.now() - 36 * 3600 * 1000;
+  let base = Number(store.get('feedBase') || 0);
+  if (!base) { base = Date.now() - 3 * 3600 * 1000; store.set('feedBase', String(base)); }
+  for (const s of S.sessions) {
+    if (!isMain(s)) continue;
+    const t = Date.parse(s.updatedAt);
+    if (!(t > since)) continue;
+    if (store.get('dis:' + s.id) === s.updatedAt) continue;
+    const seen = Math.max(base, Number(store.get('seen:' + s.id) || 0));
+    let kind, why;
+    if (s.state === 'failed' && Date.now() - t < 6 * 3600 * 1000) { kind = 'action'; why = '出错停了'; }
+    else if (s.state === 'failed') { if (t <= seen) continue; kind = 'observation'; why = '几小时前出错停了'; }
+    else if (s.state === 'stale' && Date.now() - t < 3 * 3600 * 1000) { kind = 'action'; why = '在跑的一轮很久没动静，可能卡住或进程没了'; }
+    else if (s.state === 'stale') { if (t <= seen) continue; kind = 'observation'; why = '有一轮没跑完就断了'; }
+    else if (s.state === 'working') { kind = 'progress'; why = '在干活'; }
+    else if (s.state === 'waiting') { kind = 'progress'; why = '让出了，在等后台任务'; }
+    else if (t > seen && s.state === 'idle') { kind = 'shipped'; why = '这一轮干完了，你还没看'; }
+    else if (t > seen) { kind = 'observation'; why = s.state === 'aborted' ? '被停下了' : '有新记录'; }
+    else continue;
+    if (s.auto || /^probe-/i.test(s.name || '') || /^probe-/i.test(cleanTitle(s.title))) { if (kind === 'action' || kind === 'shipped') { kind = 'observation'; why = '智能体自己开的：' + why; } }
+    cards.push({ kind, s, at: s.updatedAt, why });
+  }
+  const band = (c) => (c.kind === 'action' ? 0 : 1);
+  cards.sort((a, b) => band(a) - band(b) || String(b.at).localeCompare(String(a.at)));
+  return cards;
+}
+
+async function viewFeed() {
+  const my = viewId;
+  $('#title').innerHTML = `待处理 <span class="sse-badge ${S.sseConnected ? 'on' : ''}" id="sseBadge">${S.sseConnected ? '<span class="live-dot">●</span> 实时' : '● 轮询中'}</span>`;
+  $('#back').hidden = true; $('#newBtn').hidden = false; $('#newBtn').onclick = () => newTask('');
+  const main = $('#main');
+  if (!S.sessions.length) main.innerHTML = '<div class="empty">读取本机会话…</div>';
+  try { await Promise.all([loadSessions(true), loadCaps()]); } catch (e) { main.innerHTML = '<div class="empty">读不到：' + esc(e.message) + '</div>'; return; }
+  if (my !== viewId) return;
+  S.level = S.level || 'mine';
+  const LEVELS = [['mine', '要我看的'], ['key', '加上在推进的'], ['all', '全部']];
+  main.innerHTML = `<div class="chips">${LEVELS.map(([k, l]) => `<button class="chip ${S.level === k ? 'on' : ''}" data-l="${k}">${l}</button>`).join('')}</div><div id="list"></div>`;
+  
+  const render = () => {
+    const all = feedCards();
+    const apprs = (S.gw && S.gw.pendingApprovals) || [];
+    const n = (k) => all.filter((c) => c.kind === k).length;
+    let cards = all;
+    if (S.level === 'mine') cards = all.filter((c) => c.kind === 'action' || c.kind === 'shipped');
+    else if (S.level === 'key') cards = all.filter((c) => c.kind !== 'observation');
+    
+    const items = [];
+
+    // 待审批请求最置顶
+    if (apprs.length) {
+      items.push({
+        key: 'sec:apprs',
+        sig: `apprs:${apprs.length}`,
+        html: `<div class="sec" data-key="sec:apprs" style="color:var(--warn);font-weight:600">待审批（${apprs.length}）<span class="tag tag-fill" style="margin-left:6px">补齐·会话级重发</span></div>`
+      });
+      for (const a of apprs) {
+        const sig = `${a.id}:${a.toolName}:${a.reason}:${a.sessionName}:${argOf(a.toolInput)}`;
+        items.push({
+          key: `appr:${a.id}`,
+          sig,
+          html: `
+            <div class="card" data-key="appr:${esc(a.id)}" style="border-left:4px solid var(--warn)" data-open="1" data-id="${esc(a.traceSessionId || a.sessionName)}">
+              <div class="row">
+                <span class="kind k-action">要你处理</span>
+                <span class="tag">${esc(FAM[a.channel] || a.channel)}</span>
+                <span class="sub grow">${esc(a.sessionName)}</span>
+              </div>
+              <div class="t" style="margin-top:4px">请求执行：${esc(a.toolName || '工具操作')}</div>
+              ${a.toolInput ? `<div class="sub" style="font-family:ui-monospace,monospace;font-size:12px">${esc(argOf(a.toolInput).slice(0, 140))}</div>` : ''}
+              <div class="sub" style="color:var(--mute)">拦截原因：${esc(a.reason || '权限门禁')}</div>
+              <div class="cardrow" style="margin-top:8px">
+                <button class="btn ghost btn-touch" data-appr-act="reject" data-appr-id="${esc(a.id)}">驳回</button>
+                <button class="btn btn-touch" style="background:var(--ok)" data-appr-act="approve" data-appr-id="${esc(a.id)}">✓ 同意放行</button>
+              </div>
+            </div>`
+        });
+      }
+    }
+
+    const headSig = KIND_ORDER.map((k) => `${k}:${n(k)}`).join(',');
+    const headText = KIND_ORDER.filter(n).map((k) => `<span class="kind k-${k}">${KIND[k]} ${n(k)}</span>`).join(' · ') || '最近 36 小时没有动静';
+    items.push({
+      key: 'sec:feed',
+      sig: headSig,
+      html: `<div class="sec" data-key="sec:feed">${headText}</div>`
+    });
+
+    const shownCards = cards.slice(0, 80);
+    if (!shownCards.length) {
+      items.push({
+        key: 'empty:feed',
+        sig: 'empty',
+        html: '<div class="empty" data-key="empty:feed">没有要你看的</div>'
+      });
+    } else {
+      for (const c of shownCards) {
+        const s = c.s;
+        const sig = `${s.id}:${c.kind}:${s.updatedAt}:${s.state}:${s.turns}:${s.toolCalls}:${c.why}`;
+        items.push({
+          key: `sess:${s.id}`,
+          sig,
+          html: `
+            <div class="card" data-key="sess:${esc(s.id)}" data-open="1" data-id="${esc(s.id)}" data-at="${esc(s.updatedAt || '')}">
+              <div class="row"><span class="kind k-${c.kind}">${KIND[c.kind]}</span><span class="tag">${esc(FAM[famOf(s)] || famOf(s))}</span><span class="sub grow">${esc(ago(c.at))} · ${esc(projName(s.project))}</span></div>
+              <div class="t" style="margin-top:4px">${esc(cleanTitle(s.title) || s.name || s.id)}</div>
+              <div class="sub">${esc(c.why)} · ${s.turns} 轮 · ${s.toolCalls} 次工具</div>
+              <div class="cardrow"><button class="btn ghost btn-touch" data-act="dismiss">划掉</button></div>
+            </div>`
+        });
+      }
+    }
+
+    reconcileCards($('#list'), items);
+  };
+  window.__feedRender = render;
+
+  $('#list').onclick = async (e) => {
+    // Approve / Reject inside Feed card
+    const apBtn = e.target.closest('[data-appr-act]');
+    if (apBtn) {
+      e.stopPropagation();
+      const id = apBtn.dataset.apprId;
+      const act = apBtn.dataset.apprAct;
+      apBtn.disabled = true;
+      try {
+        await api('/api/gateway/approve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ id, decision: act }) });
+        toast(act === 'approve' ? '已同意放行并全权限重跑' : '已驳回');
+        S.gw = await api('/api/gateway/state').catch(() => S.gw);
+        render();
+      } catch (err) { toast('操作失败：' + err.message); apBtn.disabled = false; }
+      return;
+    }
+    const b = e.target.closest('[data-act="dismiss"]');
+    if (!b) { const c = e.target.closest('.card[data-open]'); if (c) location.hash = '#/s/' + encodeURIComponent(c.dataset.id); return; }
+    const card = b.closest('.card'); const id = card.dataset.id;
+    store.set('dis:' + id, card.dataset.at); card.remove();
+    const t = document.createElement('div'); t.className = 'toast';
+    t.innerHTML = '已划掉 <button class="btn ghost btn-touch" style="height:36px;margin-left:8px">撤销</button>';
+    document.body.appendChild(t);
+    t.querySelector('button').onclick = () => { store.set('dis:' + id, null); t.remove(); render(); };
+    setTimeout(() => t.remove(), 4000);
+  };
+  document.querySelectorAll('.chip[data-l]').forEach((b) => (b.onclick = () => { S.level = b.dataset.l; document.querySelectorAll('.chip[data-l]').forEach((x) => x.classList.toggle('on', x === b)); render(); }));
+  render();
+  const tick = async () => {
+    if (my !== viewId || S.activeView !== 'feed') return;
+    if (S.sseConnected) return; // 实时推流已接通，停掉盲轮询
+    try { await loadSessions(true); if (my === viewId) render(); } catch {}
+    timer = setTimeout(tick, 15000);
+  };
+  if (!S.sseConnected) timer = setTimeout(tick, 10000);
+}
+
+async function viewHome() {
+  const my = viewId;
+  $('#title').innerHTML = `项目 <span class="sse-badge ${S.sseConnected ? 'on' : ''}" id="sseBadge">${S.sseConnected ? '<span class="live-dot">●</span> 实时' : '● 轮询中'}</span>`;
+  $('#back').hidden = true; $('#newBtn').hidden = false; $('#newBtn').onclick = () => newTask('');
+  const main = $('#main');
+  if (!S.sessions.length) main.innerHTML = '<div class="empty">读取本机会话…</div>';
+  try { await Promise.all([loadSessions(), loadCaps()]); } catch (e) { main.innerHTML = '<div class="empty">读不到会话：' + esc(e.message) + '</div>'; return; }
+  if (my !== viewId) return;
+  main.innerHTML = filterBar() + '<div id="hits"></div><div id="list"></div>';
+  const render = () => {
+    const ss = S.sessions.filter((s) => isMain(s) && matchF(s) && matchQ(s));
+    const live = ss.filter((s) => s.state === 'working');
+    const groups = new Map();
+    for (const s of ss) { const g = groups.get(s.project) || []; g.push(s); groups.set(s.project, g); }
+    let html = '';
+    const pins = ss.filter(pinned);
+    if (pins.length) html += `<div class="sec">置顶（${pins.length}）</div>` + pins.map((s) => sessionCard(s, true)).join('');
+    if (live.length) html += `<div class="sec">正在干活（${live.length}）</div>` + live.slice(0, S.allLive ? 99 : 5).map((s) => sessionCard(s, true)).join('') +
+      (live.length > 5 && !S.allLive ? `<button class="more" id="allLive">还有 ${live.length - 5} 个在干活</button>` : '');
+    html += `<div class="sec">项目（${groups.size}）· 会话 ${ss.length}</div>`;
+    html += [...groups.entries()].slice(0, 120).map(([p, g]) => {
+      const fams = [...new Set(g.map(famOf))].map((f) => FAM[f] || f).join(' · ');
+      const w = g.filter((s) => s.state === 'working').length;
+      return `<a class="card" href="#/p/${encodeURIComponent(p)}"><div class="row"><span class="t grow">${esc(projName(p))}</span>${w ? `<span class="tag st-working"><span class="live-dot">●</span>${w} 在干活</span>` : ''}<span class="tag">${g.length}</span></div>
+        <div class="sub">${esc(ago(g[0].updatedAt))} · ${esc(fams)}</div><div class="sub">${esc(p || '')}</div></a>`;
+    }).join('');
+    $('#list').innerHTML = html || '<div class="empty">标题里没有匹配的会话</div>';
+    const al = $('#allLive'); if (al) al.onclick = () => { S.allLive = true; render(); };
+  };
+  window.__homeRender = render;
+  bindFilter(render); render();
+  const tick = async () => {
+    if (my !== viewId || S.activeView !== 'projects') return;
+    if (S.sseConnected) return;
+    try { await loadSessions(true); if (my === viewId && document.activeElement !== $('#q')) render(); } catch {}
+    timer = setTimeout(tick, 15000);
+  };
+  if (!S.sseConnected) timer = setTimeout(tick, 15000);
+}
+
+// ---------- 协作：两个会话之间（谁派给谁、在等谁、交回了没有） ----------
+// Data: GET /api/gateway/dispatches (one dispatch per row, receipts issued → delivered → seen → returned).
+const RECEIPTS = [['issuedAt', '发出'], ['deliveredAt', '送达'], ['seenAt', '读到'], ['returnedAt', '交回']];
+const clock = (t) => (t ? new Date(t).toLocaleTimeString('zh-CN', { hour12: false }) : '');
+function sessionIdOf(end) {
+  if (!end) return '';
+  if (end.traceSessionId) return end.traceSessionId;
+  const s = S.sessions.find((x) => x.channel === end.channel && (x.controlName === end.sessionName || x.name === end.sessionName));
+  return s ? s.id : '';
+}
+function endLink(end) {
+  const id = sessionIdOf(end);
+  const text = `${esc(FAM[end.channel] || end.channel)} · ${esc(end.sessionName || '')}`;
+  return id ? `<a href="#/s/${encodeURIComponent(id)}">${text}</a>` : text;
+}
+function dispatchCard(d) {
+  const rc = d.receipts || {};
+  const steps = RECEIPTS.map(([k, label]) => `<span class="tag ${rc[k] ? 'st-idle' : ''}" title="${esc(rc[k] || '还没到这一步')}">${label}${rc[k] ? ' ' + clock(rc[k]) : ''}</span>`).join(' → ');
+  const st = d.status === 'completed' ? '交回了' : d.status === 'failed' ? '失败' : d.status === 'yielded' ? '让出等待' : '进行中';
+  const reports = (d.progressReports || []).map((r) => `<div class="sub">↗ 上报 ${clock(r.at)}：${esc(String(r.text || r.summary || '').slice(0, 120))}</div>`).join('');
+  const back = d.delivery ? `<div class="sub">↩ 交回 ${clock(d.delivery.at)}（${esc(d.delivery.via || '')}）：${esc(String(d.delivery.summary || d.delivery.reply || '').slice(0, 160))}</div>` : '';
+  const WAKE = { woken: '已叫醒', waiting: '等交回后叫醒', none: '不叫醒', 'auto-resume': '交回后自动叫醒' };
+  const wk = d.wake && (d.wake.state || d.wake.mode);
+  const wake = wk ? `<div class="sub">⏰ 派活方：${esc(WAKE[wk] || wk)}${d.wake.wokenAt ? ' ' + clock(d.wake.wokenAt) : ''}</div>` : '';
+  const wrap = 'white-space:normal;overflow:visible';
+  return `<div class="card"><div class="row"><span class="t grow" style="${wrap};display:block;-webkit-line-clamp:unset">${endLink(d.from || {})} → ${endLink(d.to || {})}</span><span class="tag">${st}</span></div>
+    <div class="sub" style="${wrap}">${esc(String(d.task || '').slice(0, 160))}</div>
+    <div class="sub" style="margin-top:6px;${wrap};line-height:2">${steps}</div>${reports}${back}${wake}
+    <div class="sub">${esc(d.id)} · ${esc(ago(d.updatedAt))}</div></div>`;
+}
+async function viewCollab() {
+  const my = viewId;
+  $('#title').textContent = '协作';
+  $('#back').hidden = true; $('#newBtn').hidden = true;
+  const main = $('#main');
+  main.innerHTML = '<div class="empty">读取派活单…</div>';
+  // Dispatches first; the session list (for links to the caller's session) fills in when it has loaded.
+  if (!S.sessions.length) loadSessions().then(() => { if (my === viewId) { clearTimeout(timer); render(); } }).catch(() => {});
+  const render = async () => {
+    if (my !== viewId) return;
+    let r;
+    try { r = await api('/api/gateway/dispatches'); } catch (e) { main.innerHTML = '<div class="empty">读不到派活单：' + esc(e.message) + '</div>'; return; }
+    if (my !== viewId) return;
+    const ds = (r.dispatches || []).slice().sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    const s = r.summary || {};
+    const waiting = (r.waitingEdges || []).map((w) => `<div class="sub">⌛ ${esc(JSON.stringify(w).slice(0, 160))}</div>`).join('');
+    main.innerHTML = `<div class="sec">派活单 ${s.total || ds.length} · 进行中 ${s.running || 0} · 让出等待 ${s.yielded || 0} · 交回 ${s.completed || 0} · 失败 ${s.failed || 0}</div>${waiting}` +
+      (ds.length ? ds.map(dispatchCard).join('') : '<div class="empty">还没有派活。智能体可以用命令行网关 dispatch 派活，见 README“管线”。</div>');
+    timer = setTimeout(render, 10000);
+  };
+  render();
+}
+
+async function viewProject(p) {
+  const my = viewId;
+  $('#title').innerHTML = `${esc(projName(p))} <span class="sse-badge ${S.sseConnected ? 'on' : ''}" id="sseBadge">${S.sseConnected ? '<span class="live-dot">●</span> 实时' : '● 轮询中'}</span>`;
+  $('#back').hidden = false; $('#newBtn').hidden = false; $('#newBtn').onclick = () => newTask(p);
+  const main = $('#main');
+  try { await Promise.all([loadSessions(), loadCaps()]); } catch (e) { main.innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; return; }
+  if (my !== viewId) return;
+  const SORTS = [['time', '最近更新'], ['turns', '轮数最多'], ['tools', '工具最多']];
+  S.sort = S.sort || 'time';
+  main.innerHTML = `<div class="sub" style="margin-bottom:6px">${esc(p)}</div>` + filterBar() +
+    `<div class="chips">${SORTS.map(([k, l]) => `<button class="chip ${S.sort === k ? 'on' : ''}" data-sort="${k}">${l}</button>`).join('')}</div><div id="hits"></div><div id="list"></div>`;
+  let shown = 40;
+  const render = () => {
+    const ss = S.sessions.filter((s) => s.project === p && isMain(s) && matchF(s) && matchQ(s));
+    if (S.sort === 'turns') ss.sort((a, b) => b.turns - a.turns); else if (S.sort === 'tools') ss.sort((a, b) => b.toolCalls - a.toolCalls);
+    ss.sort((a, b) => pinned(b) - pinned(a));
+    $('#list').innerHTML = (ss.slice(0, shown).map((s) => sessionCard(s, false)).join('') || '<div class="empty">没有会话</div>') +
+      (ss.length > shown ? `<button class="more" id="moreS">再显示 ${Math.min(40, ss.length - shown)} 个（共 ${ss.length}）</button>` : '');
+    const m = $('#moreS'); if (m) m.onclick = () => { shown += 40; render(); };
+  };
+  window.__projRender = render;
+  document.querySelectorAll('.chip[data-sort]').forEach((b) => (b.onclick = () => { S.sort = b.dataset.sort; document.querySelectorAll('.chip[data-sort]').forEach((x) => x.classList.toggle('on', x === b)); render(); }));
+  bindFilter(render, p); render();
+  const tick = async () => {
+    if (my !== viewId || S.activeView !== 'project') return;
+    if (S.sseConnected) return;
+    try { await loadSessions(true); if (my === viewId && document.activeElement !== $('#q')) render(); } catch {}
+    timer = setTimeout(tick, 15000);
+  };
+  if (!S.sseConnected) timer = setTimeout(tick, 15000);
+}
+
+// ---------- one session: every turn, every step ----------
+function argOf(input) {
+  if (!input) return '';
+  let v;
+  try { const o = JSON.parse(input); v = o.command ?? o.CommandLine ?? o.file_path ?? o.filePath ?? o.AbsolutePath ?? o.path ?? o.pattern ?? o.url ?? o.query ?? Object.values(o)[0] ?? ''; } catch { v = input; }
+  if (typeof v === 'string' && /^\s*".*"\s*$/s.test(v)) { try { v = JSON.parse(v); } catch { v = v.trim().slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\'); } }
+  return typeof v === 'string' ? v : JSON.stringify(v);
+}
+function pretty(input) { try { return JSON.stringify(JSON.parse(input), null, 2); } catch { return String(input ?? ''); } }
+function inputObj(input) {
+  let o;
+  try { o = JSON.parse(input); } catch { return null; }
+  if (!o || typeof o !== 'object') return null;
+  for (const k of Object.keys(o)) if (typeof o[k] === 'string' && /^\s*["[{]/.test(o[k])) { try { o[k] = JSON.parse(o[k]); } catch {} }
+  return o;
+}
+function planHtml(o) {
+  const items = Array.isArray(o.todos) ? o.todos : Array.isArray(o.plan) ? o.plan : null;
+  if (!items || !items.length) return '';
+  const mark = { completed: '✓', in_progress: '▶', pending: '○' };
+  return '<ul class="todo">' + items.map((it) => {
+    const st = String(it.status || 'pending');
+    return `<li class="${st === 'completed' ? 'done' : st === 'in_progress' ? 'doing' : ''}">${mark[st] || '○'} ${esc(it.content || it.step || it.title || '')}</li>`;
+  }).join('') + '</ul>';
+}
+function diffHtml(o) {
+  const pairs = [];
+  const add = (a, b) => { if (a != null || b != null) pairs.push([a, b]); };
+  add(o.old_string ?? o.old_str ?? o.TargetContent, o.new_string ?? o.new_str ?? o.ReplacementContent);
+  for (const c of [].concat(o.edits || [], o.changes || [], o.ReplacementChunks || [])) add(c.old_string ?? c.old_str ?? c.TargetContent, c.new_string ?? c.new_str ?? c.ReplacementContent);
+  if (!pairs.length && (o.content != null || o.CodeContent != null)) add(null, o.content ?? o.CodeContent);
+  if (!pairs.length) return '';
+  const file = o.file_path || o.filePath || o.TargetFile || o.path || '';
+  return (file ? `<div class="lbl">${esc(file)}</div>` : '') + pairs.map(([a, b]) =>
+    (a != null && a !== '' ? `<div class="diff del"><b>- 删减</b>\n${esc(String(a).slice(0, 8000))}</div>` : '') + (b != null && b !== '' ? `<div class="diff add"><b>+ 新增</b>\n${esc(String(b).slice(0, 8000))}</div>` : '')).join('');
+}
+function toolStep(st) {
+  const o = inputObj(st.input);
+  const plan = o ? planHtml(o) : '';
+  const diff = o && !plan && st.family === 'patch' ? diffHtml(o) : '';
+  if (plan || diff) {
+    const ok = st.status === 'error' ? '<span class="bad">✗</span>' : '';
+    return `<details class="step" ${plan ? 'open' : ''}><summary>${plan ? '☑' : '✎'}<span class="sname">${plan ? '计划' : esc(String(st.name).slice(0, 30))}</span><span class="sarg">${esc(plan ? '' : argOf(st.input).slice(0, 120))}</span>${ok}</summary>
+      <div class="sbody">${plan || diff}${st.output != null && st.status === 'error' ? `<div class="lbl">结果</div><pre>${esc(String(st.output).slice(0, 4000))}</pre>` : ''}</div></details>`;
+  }
+  const ok = st.status === 'error' ? '<span class="bad">✗</span>' : st.status === 'ok' ? '<span class="ok">✓</span>' : '…';
+  const dur = st.durationMs ? (st.durationMs / 1000).toFixed(1) + 's' : '';
+  const icon = st.family === 'shell' ? '⌘' : st.family === 'patch' ? '✎' : '⚙';
+  return `<details class="step"><summary>${icon}<span class="sname">${esc(String(st.name).slice(0, 40))}</span><span class="sarg">${esc(argOf(st.input).slice(0, 200))}</span>${ok}<span class="lbl">${dur}</span></summary>
+    <div class="sbody"><div class="lbl">输入</div><pre>${esc(pretty(st.input).slice(0, 20000))}</pre>${st.output != null ? `<div class="lbl">结果</div><pre>${esc(String(st.output).slice(0, 40000))}</pre>` : ''}</div></details>`;
+}
+function thinkStep(st) {
+  return `<details class="step think"><summary><span class="sname">思考</span><span class="sarg">${esc(String(st.reasoning).slice(0, 120))}</span></summary><div class="sbody text" style="border:0;background:none">${md(st.reasoning)}</div></details>`;
+}
+function stepsHtml(steps) {
+  let html = '', acts = [];
+  const flush = () => {
+    if (!acts.length) return;
+    if (acts.length > 4) {
+      const tools = acts.filter((a) => a.kind === 'tool').length;
+      const thinks = acts.filter((a) => a.kind === 'think').length;
+      const errs = acts.filter((a) => a.kind === 'tool' && a.status === 'error').length;
+      const head = acts.slice(0, -2), tail = acts.slice(-2);
+      html += `<details class="step"><summary><span class="sname">${head.length} 步活动</span><span class="sarg">${tools ? tools + ' 次工具' : ''}${thinks ? ' · ' + thinks + ' 段思考' : ''}${errs ? ' · ' + errs + ' 次出错' : ''}</span></summary><div class="sbody" data-lazy="1"></div></details>`;
+      html += `<template>${head.map(actHtml).join('')}</template>`;
+      html += tail.map(actHtml).join('');
+    } else html += acts.map(actHtml).join('');
+    acts = [];
+  };
+  for (const st of steps) {
+    if (st.kind === 'tool') { acts.push(st); continue; }
+    if (st.kind === 'model') {
+      if (st.reasoning) acts.push({ kind: 'think', reasoning: st.reasoning });
+      if (st.text && String(st.text).trim()) { flush(); html += `<div class="text">${md(st.text)}</div><div class="who" style="text-align:right"><button class="pinb" data-copy>复制</button></div>`; }
+      continue;
+    }
+    if (st.kind === 'event') { acts.push(st); continue; }
+  }
+  flush();
+  return html;
+}
+const actHtml = (a) => (a.kind === 'think' ? thinkStep(a) : a.kind === 'event' ? `<div class="who">↩ ${esc(a.text || a.name || '事件')}</div>` : toolStep(a));
+document.addEventListener('toggle', (e) => {
+  const d = e.target;
+  if (!d.open || !d.querySelector) return;
+  const body = d.querySelector(':scope > .sbody[data-lazy]');
+  if (body && d.nextElementSibling && d.nextElementSibling.tagName === 'TEMPLATE') { body.append(d.nextElementSibling.content.cloneNode(true)); body.removeAttribute('data-lazy'); }
+}, true);
+const turnSig = (t) => [t.status, (t.steps || []).length, t.endedAt || '', String((t.steps || []).slice(-1)[0]?.text || '').length].join('|');
+function usageText(sess) {
+  const u = { input: 0, output: 0 };
+  for (const t of sess.turns || []) for (const s of t.steps || []) if (s.usage) { u.input += s.usage.input || 0; u.output += s.usage.output || 0; }
+  const k = (n) => (n >= 10000 ? (n / 10000).toFixed(1) + ' 万' : String(n));
+  const cost = sess.stats && sess.stats.costUsd ? ' · $' + Number(sess.stats.costUsd).toFixed(2) : '';
+  return u.input || u.output ? ` · 最近几轮 输入 ${k(u.input)} / 输出 ${k(u.output)} token${cost}` : cost;
+}
+async function filesSheet(sid) {
+  const base = '/api/sessions/' + encodeURIComponent(sid);
+  const el = sheet('<b>这个会话的产出与用到的文件</b><div class="sub">读取中…</div>');
+  let files = [];
+  try { files = (await api(base + '/files')).files || []; } catch (e) { el.querySelector('.box').innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; return; }
+  const name = (p) => p.split(/[\\/]/).pop();
+  el.querySelector('.box').innerHTML = `<b>这个会话的产出与用到的文件（${files.length}）</b>` + (files.map((p) =>
+    `<button class="card btn-touch" data-f="${esc(p)}"><div class="t">${esc(name(p))}</div><div class="sub">${esc(p)}</div></button>`).join('') || '<div class="empty">没有找到文件</div>');
+  el.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-f]'); if (!b) return;
+    const p = b.dataset.f, url = base + '/file?path=' + encodeURIComponent(p);
+    const view = sheet(`<div class="row"><b class="grow">${esc(name(p))}</b><button class="btn ghost btn-touch" data-close>关</button></div><div class="sub">${esc(p)}</div><div id="fv" style="margin-top:8px">读取中…</div>`);
+    view.addEventListener('click', (ev) => { if (ev.target.closest('[data-close]')) view.remove(); });
+    const fv = view.querySelector('#fv');
+    if (/\.(png|jpe?g|gif|webp|svg)$/i.test(p)) { fv.innerHTML = `<img src="${url}" style="max-width:100%;border-radius:8px">`; return; }
+    try {
+      const r = await fetch(url); const text = await r.text();
+      if (!r.ok) { fv.textContent = (JSON.parse(text).error || ('HTTP ' + r.status)); return; }
+      if (/\.md$/i.test(p)) fv.innerHTML = `<div class="text">${md(text)}</div>`;
+      else if (/\.html?$/i.test(p)) { const f = document.createElement('iframe'); f.setAttribute('sandbox', 'allow-scripts'); f.style.cssText = 'width:100%;height:70vh;border:1px solid var(--line);border-radius:8px;background:#fff'; f.srcdoc = text; fv.replaceChildren(f); }
+      else fv.innerHTML = `<pre style="white-space:pre-wrap;word-break:break-all;font-size:12.5px">${esc(text.slice(0, 200000))}</pre>`;
+    } catch (err) { fv.textContent = '打不开：' + err.message; }
+  });
+}
+function switcher(current) {
+  const seen = (s) => Number(store.get('seen:' + s.id) || 0);
+  const live = S.sessions.filter((s) => s.state === 'working' && s.id !== current && !s.subagent);
+  const recent = S.sessions.filter((s) => s.id !== current && seen(s) && !live.includes(s)).sort((a, b) => seen(b) - seen(a)).slice(0, 12);
+  const el = sheet(`<b>切换会话</b>${live.length ? `<div class="sec">在干活（${live.length}）</div>` + live.map((s) => sessionCard(s, true)).join('') : ''}
+    ${recent.length ? '<div class="sec">最近看过</div>' + recent.map((s) => sessionCard(s, true)).join('') : ''}${!live.length && !recent.length ? '<div class="empty">没有别的会话</div>' : ''}`);
+  el.addEventListener('click', (e) => { if (e.target.closest('a.card')) el.remove(); });
+}
+function turnHtml(t) {
+  const steps = t.steps || [];
+  const first = steps[0] && steps[0].kind === 'message' && steps[0].role === 'user' ? steps[0] : null;
+  const input = first ? first.text : t.input;
+  const rest = first ? steps.slice(1) : steps;
+  const long = String(input || '').length > 600;
+  return `<div class="turn" data-i="${t.index}" data-sig="${esc(turnSig(t))}">
+    ${input ? `<div class="who" style="text-align:right">第 ${t.index} 轮 · ${esc(ago(t.startedAt))}${/^上一轮在中途断开了，没有拿到回复/.test(input) ? ' · hub 自动续跑代发（上一轮断了，重发你的原话）' : ''} <button class="pinb" data-reuse>改了再发</button></div><div class="user ${long ? 'long' : ''}">${esc(input)}</div>${long ? '<button class="group" data-expand>展开全文</button>' : ''}` : ''}
+    ${stepsHtml(rest)}
+    ${t.status && t.status !== 'completed' ? `<div class="who">这一轮：${esc(STATE[t.status] || t.status)}</div>` : ''}</div>`;
+}
+
+// ---------- 审批横幅与提问组件渲染 ----------
+function renderApprovalBanner(meta) {
+  const bannerEl = $('#approval-banner');
+  if (!bannerEl) return;
+  const match = findSessionApproval(meta);
+  if (!match) {
+    bannerEl.innerHTML = '';
+    bannerEl.hidden = true;
+    return;
+  }
+  bannerEl.hidden = false;
+  bannerEl.innerHTML = `
+    <div class="approval-card">
+      <div class="row">
+        <span style="font-size:18px">⚠️</span>
+        <b class="grow" style="color:var(--warn)">权限审批请求</b>
+        <span class="tag tag-fill">补齐·会话级重发</span>
+      </div>
+      <div class="sub" style="margin:4px 0 2px">智能体请求执行受限操作：</div>
+      <div style="font-weight:600;font-size:14px">${esc(match.toolName || '工具操作')}</div>
+      ${match.toolInput ? `<pre class="approval-pre">${esc(pretty(match.toolInput).slice(0, 1000))}</pre>` : ''}
+      <div class="sub" style="margin-top:4px;color:var(--mute)"><b>拦截原因：</b>${esc(match.reason || '当前权限门禁拦截')}</div>
+      <div class="row" style="margin-top:10px;justify-content:flex-end;gap:8px">
+        <button class="btn ghost btn-touch" data-appr-act="reject" data-appr-id="${esc(match.id)}">驳回</button>
+        <button class="btn btn-touch" style="background:var(--ok)" data-appr-act="approve" data-appr-id="${esc(match.id)}">✓ 同意放行（全权限重跑）</button>
+      </div>
+    </div>`;
+}
+
+function renderQuestionBanner(meta, session) {
+  const qb = $('#question-banner');
+  if (!qb) return;
+  const q = findInteractiveQuestion(session ? session.turns : []);
+  if (!q) {
+    qb.innerHTML = '';
+    qb.hidden = true;
+    return;
+  }
+  const opts = Array.isArray(q.options) ? q.options : [];
+  qb.hidden = false;
+  qb.innerHTML = `
+    <div class="question-box">
+      <div class="q-title"><span>❓</span> 智能体向你提问</div>
+      <div style="margin-top:6px;font-weight:600;font-size:14.5px">${esc(q.question || '')}</div>
+      ${opts.length ? `<div class="q-opts">${opts.map((opt) => `<button class="btn ghost q-opt-chip" data-ans="${esc(opt)}">${esc(opt)}</button>`).join('')}</div>` : ''}
+    </div>`;
+}
+
+async function finalizeLiveTurn(sid) {
+  const oldLive = $('#live-turn');
+  if (oldLive) oldLive.remove();
+  try {
+    const j = await api('/api/sessions/' + encodeURIComponent(sid) + '?tail=2');
+    const turnsEl = $('#turns');
+    if (!turnsEl) return;
+    for (const t of j.session.turns) {
+      const exist = turnsEl.querySelector(`.turn[data-i="${t.index}"]`);
+      const h = turnHtml(t);
+      if (exist) exist.outerHTML = h; else turnsEl.insertAdjacentHTML('beforeend', h);
+    }
+    if (S.currentMeta && S.currentMeta.id === sid) {
+      status(j.session);
+      renderApprovalBanner(S.currentMeta);
+      renderQuestionBanner(S.currentMeta, j.session);
+    }
+  } catch {}
+}
+
+let activeSessionStatusFn = null;
+function status(sess) {
+  if (typeof activeSessionStatusFn === 'function') activeSessionStatusFn(sess);
+}
+
+async function viewSession(id) {
+  const my = viewId;
+  $('#back').hidden = false; $('#newBtn').hidden = true; $('#swBtn').hidden = false;
+  $('#swBtn').onclick = () => switcher(id);
+  store.set('seen:' + id, String(Date.now()));
+  const main = $('#main');
+  main.innerHTML = '<div class="statusline" id="sl">读取中…</div><div id="rel"></div><div id="approval-banner" hidden></div><div id="older"></div><div id="turns"></div><div id="question-banner" hidden></div>';
+  try { await Promise.all([loadSessions(), loadCaps()]); } catch {}
+  let meta = S.sessions.find((s) => s.id === id) || { id, channel: id.split(':')[0], title: id };
+  if (meta.channel === 'claude-code') meta.channel = 'claude';
+  S.currentMeta = meta;
+  $('#title').innerHTML = `${cleanTitle(meta.title) || id} <span class="sse-badge ${S.sseConnected ? 'on' : ''}" id="sseBadge">${S.sseConnected ? '<span class="live-dot">●</span> 实时' : '● 轮询中'}</span>`;
+  const kids = S.sessions.filter((s) => s.parent === id);
+  const parent = meta.parent && (S.sessions.find((s) => s.id === meta.parent) || { id: meta.parent, title: meta.parent });
+  $('#rel').innerHTML = (parent ? `<a class="group" style="display:block;text-decoration:none" href="#/s/${encodeURIComponent(parent.id)}">↑ 属于：${esc(cleanTitle(parent.title) || parent.id)}</a>` : '') +
+    (kids.length ? `<details class="step"><summary><span class="sname">子智能体 ${kids.length} 个</span><span class="sarg">${kids.filter((k) => k.state === 'working').length} 个在干活</span></summary><div class="sbody">${kids.map((k) => sessionCard(k, false)).join('')}</div></details>` : '');
+  
+  let olderBefore = null, lastIndex = 0, data = null;
+  const turnsEl = $('#turns');
+  async function fetchTail(n) {
+    return await api('/api/sessions/' + encodeURIComponent(id) + '?tail=' + n);
+  }
+
+  activeSessionStatusFn = function(sess) {
+    const st = sess.state || {};
+    const acts = resolveSessionActions(meta);
+    meta.state = st.status;
+
+    let modelBtnHtml = '';
+    if (acts.modelSwitchAction) {
+      const cls = ('pinb ' + acts.modelSwitchAction.cls).trim();
+      modelBtnHtml = `<button class="${cls}" id="modelBtn" title="${esc(acts.modelSwitchAction.title)}">${esc(acts.modelSwitchAction.label)}</button>`;
+    }
+    const coordPill = meta.entry ? `<span class="tag tag-built" title="会话坐标：产品 × 入口 × 所有权">${esc(FAM[meta.channel] || meta.channel)} · ${esc(meta.entry)} · ${esc(meta.ownership || st.status)}</span>` : '';
+    const conflictPill = meta.pointCapabilities?.resume?.conflictWarning ? `<span class="tag tag-fill" title="${esc(meta.pointCapabilities.resume.conflictWarning)}">⚠️ 外部活跃中</span>` : '';
+    const artifactBtnHtml = '<button class="pinb" id="filesBtn">产出</button>';
+
+    $('#sl').innerHTML = `${stTag(st.status)} ${coordPill} ${conflictPill}<span>${esc(st.detail || '')}</span> · ${esc(FAM[meta.channel] || meta.channel)}${meta.model ? ' · ' + esc(meta.model) : ''}${usageText(sess)}
+      <button class="pinb" id="pinBtn">${store.get('pin:' + id) ? '取消置顶' : '置顶'}</button>${modelBtnHtml}${artifactBtnHtml}`;
+    
+    if ($('#filesBtn')) $('#filesBtn').onclick = () => filesSheet(id);
+    if ($('#pinBtn')) $('#pinBtn').onclick = () => { store.set('pin:' + id, store.get('pin:' + id) ? null : '1'); activeSessionStatusFn(sess); };
+    
+    const mb = $('#modelBtn');
+    if (mb) mb.onclick = () => {
+      const ch = ((S.gw && S.gw.channels) || []).find((c) => c.id === meta.channel) || {};
+      const el = sheet(`<b>换模型（下一句起生效）</b><div class="sub">现在：${esc(meta.model || '默认')}</div>` + (ch.recommendedModels || []).map((m) =>
+        `<button class="card btn-touch" data-m="${esc(m)}">${esc(modelLabel(meta.channel, m))}${m === meta.model ? ' ✓' : ''}</button>`).join(''));
+      el.addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-m]'); if (!b) return;
+        try {
+          await api('/api/gateway/model', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta), traceSessionId: meta.id, model: b.dataset.m }) });
+          meta.model = b.dataset.m; el.remove(); activeSessionStatusFn(sess); toast('下一句起用 ' + b.dataset.m);
+        } catch (err) { toast('没换成：' + err.message); }
+      });
+    };
+    setComposer(st.status === 'working');
+    renderApprovalBanner(meta);
+  };
+
+  try { data = await fetchTail(3); } catch (e) { $('#sl').textContent = '读不到：' + e.message; return; }
+  if (my !== viewId) return;
+  if (data.session && data.session.point) {
+    if (data.session.point.product) meta.channel = data.session.point.product;
+    meta.entry = data.session.point.entry;
+    meta.ownership = data.session.point.ownership;
+    if (data.session.point.controlName) meta.controlName = data.session.point.controlName;
+  }
+  if (data.session && data.session.pointCapabilities) {
+    meta.pointCapabilities = data.session.pointCapabilities;
+  }
+  if (data.session && data.session.controlName) meta.controlName = data.session.controlName;
+
+  turnsEl.innerHTML = data.session.turns.map(turnHtml).join('');
+  lastIndex = data.session.turns.length ? data.session.turns[data.session.turns.length - 1].index : 0;
+  olderBefore = data.pagination && data.pagination.hasOlder ? data.pagination.olderBefore : null;
+  renderOlder();
+  buildComposer(meta);
+  status(data.session);
+  renderApprovalBanner(meta);
+  renderQuestionBanner(meta, data.session);
+  window.scrollTo(0, document.body.scrollHeight);
+
+  // Approval clicks within viewSession
+  $('#approval-banner').onclick = async (e) => {
+    const b = e.target.closest('[data-appr-act]');
+    if (!b) return;
+    const appId = b.dataset.apprId;
+    const act = b.dataset.apprAct;
+    b.disabled = true;
+    try {
+      await api('/api/gateway/approve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ id: appId, decision: act }) });
+      toast(act === 'approve' ? '已同意放行，智能体正在全权限重跑' : '已驳回请求');
+      S.gw = await api('/api/gateway/state').catch(() => S.gw);
+      renderApprovalBanner(meta);
+    } catch (err) { toast('审批操作失败：' + err.message); b.disabled = false; }
+  };
+
+  // Question option click
+  $('#question-banner').onclick = (e) => {
+    const b = e.target.closest('.q-opt-chip');
+    if (!b) return;
+    const ans = b.dataset.ans;
+    const ta = $('#msg');
+    if (ta) {
+      ta.value = ans;
+      ta.dispatchEvent(new Event('input'));
+      ta.focus();
+      toast('已填入「' + ans.slice(0, 20) + '」，点击发送即可答复');
+    }
+  };
+
+  function renderOlder() {
+    $('#older').innerHTML = olderBefore ? `<button class="more" id="loadOlder">加载更早的轮次（前面还有 ${olderBefore} 轮）</button>` : '';
+    const b = $('#loadOlder');
+    if (b) b.onclick = async () => {
+      b.disabled = true; b.textContent = '读取中…';
+      const h0 = document.body.scrollHeight;
+      const j = await api('/api/sessions/' + encodeURIComponent(id) + '?before=' + olderBefore + '&limit=5');
+      turnsEl.insertAdjacentHTML('afterbegin', j.session.turns.map(turnHtml).join(''));
+      olderBefore = j.pagination && j.pagination.hasOlder ? j.pagination.olderBefore : null;
+      renderOlder();
+      window.scrollTo(0, window.scrollY + document.body.scrollHeight - h0);
+    };
+  }
+  turnsEl.addEventListener('click', (e) => {
+    const c = e.target.closest('[data-copy]');
+    if (c) { navigator.clipboard?.writeText(c.parentElement.previousElementSibling.innerText).then(() => toast('已复制'), () => toast('复制失败')); return; }
+    const r = e.target.closest('[data-reuse]');
+    if (r) { const ta = $('#msg'); if (ta) { ta.value = r.closest('.turn').querySelector('.user').innerText; ta.dispatchEvent(new Event('input')); ta.focus(); } return; }
+    const b = e.target.closest('[data-expand]'); if (!b) return;
+    b.previousElementSibling.classList.remove('long'); b.remove();
+  });
+
+  // Fallback resilient polling
+  const tick = async () => {
+    if (my !== viewId || S.activeView !== 'session') return;
+    if (S.sseConnected) {
+      // 当 SSE 处于连接状态时，每一步由 run_start/run_update/run_done 实时推进，无需高频轮询详情
+      timer = setTimeout(tick, 30000);
+      return;
+    }
+    try {
+      const j = await fetchTail(2);
+      if (my !== viewId) return;
+      const nearBottom = window.innerHeight + window.scrollY > document.body.scrollHeight - 160;
+      const open = new Set([...turnsEl.querySelectorAll('details[open]')].map((d) => d.closest('.turn').dataset.i + ':' + [...d.closest('.turn').querySelectorAll('details')].indexOf(d)));
+      for (const t of j.session.turns) {
+        if (t.index < lastIndex) continue;
+        const old = turnsEl.querySelector(`.turn[data-i="${t.index}"]`);
+        if (old && old.dataset.sig === turnSig(t)) { lastIndex = Math.max(lastIndex, t.index); continue; }
+        const html = turnHtml(t);
+        if (old) old.outerHTML = html; else turnsEl.insertAdjacentHTML('beforeend', html);
+        lastIndex = Math.max(lastIndex, t.index);
+      }
+      turnsEl.querySelectorAll('.turn').forEach((tEl) => tEl.querySelectorAll('details').forEach((d, k) => { if (open.has(tEl.dataset.i + ':' + k)) d.open = true; }));
+      status(j.session);
+      renderApprovalBanner(meta);
+      renderQuestionBanner(meta, j.session);
+      store.set('seen:' + id, String(Date.now()));
+      if (nearBottom) window.scrollTo(0, document.body.scrollHeight);
+      timer = setTimeout(tick, j.session.state?.status === 'working' ? 3000 : 10000);
+    } catch { timer = setTimeout(tick, 10000); }
+  };
+  timer = setTimeout(tick, S.sseConnected ? 30000 : 3000);
+}
+
+// ---------- composer: 照四张表能力决断发话、停、插话、排队 ----------
+let composerState = null;
+function controlName(meta) {
+  if (meta.controlName) return meta.controlName;
+  if (meta.id.startsWith('acpx:') && meta.name) return meta.name;
+  if (meta.channel === 'antigravity' && meta.name && meta.name !== 'Antigravity') return meta.name;
+  return 'm-' + meta.id.split(':').pop().replace(/[^\w-]/g, '').slice(0, 12);
+}
+
+function buildComposer(meta) {
+  const acts = resolveSessionActions(meta);
+  const canSend = acts.canSendIdle || acts.workingSend;
+  const canStop = Boolean(acts.cancelAction);
+  const el = document.createElement('div');
+  el.className = 'composer';
+  if (!canSend) {
+    el.innerHTML = `<div class="hint">${esc(FAM[meta.channel] || meta.channel)} 还没接进后端发话，只能看。</div>`;
+    document.body.appendChild(el); return;
+  }
+  const key = 'draft:' + meta.id;
+  const imgBtnHtml = acts.attachAction ? `<button class="btn ghost btn-touch ${acts.attachAction.cls}" id="imgBtn" title="${esc(acts.attachAction.title)}">${esc(acts.attachAction.label)}</button><input type="file" id="imgFile" accept="image/*" multiple hidden>` : '';
+
+  const stopBtnLabel = acts.cancelAction ? acts.cancelAction.label : '停';
+  const stopBtnTitle = acts.cancelAction ? acts.cancelAction.title : '';
+
+  el.innerHTML = `<div class="thumbs" id="cimgs" style="max-width:820px;margin:0 auto 6px"></div>
+    <div class="in">
+      ${imgBtnHtml}
+      <textarea id="msg" rows="1" placeholder="给它发话，可粘贴截图">${esc(store.get(key) || '')}</textarea>
+      <button class="btn stop btn-touch ${acts.cancelAction ? acts.cancelAction.cls : ''}" id="stopBtn" title="${esc(stopBtnTitle)}" hidden>${esc(stopBtnLabel)}</button>
+      <button class="btn btn-touch" id="sendBtn">发送</button>
+    </div>
+    <div class="hint" id="chint"></div>`;
+  document.body.appendChild(el); document.body.classList.add('has-composer');
+
+  const ta = $('#msg');
+  const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(160, ta.scrollHeight) + 'px'; };
+  ta.oninput = () => { store.set(key, ta.value || null); grow(); }; grow();
+
+  const imgs = [];
+  const showImgs = () => { $('#cimgs').innerHTML = imgs.map((s, i) => `<img src="${s}" data-i="${i}">`).join(''); };
+  const addImg = (file) => { if (!file || !/^image\//.test(file.type) || imgs.length >= 8) return; const r = new FileReader(); r.onload = () => { imgs.push(r.result); showImgs(); }; r.readAsDataURL(file); };
+  if ($('#imgBtn')) $('#imgBtn').onclick = () => $('#imgFile').click();
+  if ($('#imgFile')) $('#imgFile').onchange = (e) => { [...e.target.files].forEach(addImg); e.target.value = ''; };
+  ta.addEventListener('paste', (e) => { for (const it of e.clipboardData?.items || []) if (it.kind === 'file') addImg(it.getAsFile()); });
+  $('#cimgs').onclick = (e) => { const im = e.target.closest('img'); if (im) { imgs.splice(Number(im.dataset.i), 1); showImgs(); } };
+
+  composerState = { meta, acts };
+  setComposer(meta.state === 'working');
+
+  $('#sendBtn').onclick = async () => {
+    const text = ta.value.trim(); if (!text && !imgs.length) return;
+    const b = $('#sendBtn'); b.disabled = true;
+    try {
+      const r = await api('/api/gateway/send', { method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta), traceSessionId: meta.id, prompt: text, images: imgs.length ? imgs : undefined, cwd: meta.project || undefined, source: 'web' }) });
+      ta.value = ''; store.set(key, null); grow(); imgs.length = 0; showImgs();
+      toast(r.action === 'steered' ? '已插进这一轮' : r.action === 'queued' ? '智能体在忙，已排到下一轮' : '已发出');
+      if (r.traceSessionId && r.traceSessionId !== meta.id && !meta.id.startsWith('acpx:')) $('#chint').textContent = '后端在 ' + r.traceSessionId + ' 上接着跑';
+    } catch (e) { toast('没发出去：' + e.message); }
+    b.disabled = false;
+  };
+
+  $('#stopBtn').onclick = async () => {
+    if (!confirm('确定让智能体停下？')) return;
+    try {
+      await api('/api/gateway/cancel', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta) }) });
+      toast('已请求打断');
+    } catch (e) { toast('没停下：' + e.message); }
+  };
+}
+
+function setComposer(working) {
+  if (!composerState || !$('#sendBtn')) return;
+  const { meta, acts } = composerState;
+  const stopBtn = $('#stopBtn');
+  const sendBtn = $('#sendBtn');
+  const chint = $('#chint');
+
+  if (stopBtn) {
+    stopBtn.hidden = !(working && acts.cancelAction);
+    if (acts.cancelAction) {
+      stopBtn.textContent = acts.cancelAction.label;
+      stopBtn.title = acts.cancelAction.title;
+    }
+  }
+
+  if (working) {
+    if (acts.workingSend) {
+      sendBtn.disabled = false;
+      sendBtn.textContent = acts.workingSend.label;
+      sendBtn.title = acts.workingSend.actionTitle;
+      chint.textContent = acts.workingSend.hint;
+    } else {
+      sendBtn.disabled = true;
+      sendBtn.textContent = '干活中';
+      chint.textContent = '该产品干活中不支持中途插话或排队';
+    }
+  } else {
+    sendBtn.disabled = !acts.canSendIdle;
+    sendBtn.textContent = '发送';
+    sendBtn.title = '向智能体发一轮';
+    chint.textContent = acts.canSendIdle ? '' : '该产品未开放后端发话';
+  }
+}
+
+// ---------- new task: 照四张表与推荐模型渲染 ----------
+function sheet(html) {
+  const el = document.createElement('div'); el.className = 'sheet'; el.innerHTML = `<div class="box">${html}</div>`;
+  el.onclick = (e) => { if (e.target === el) el.remove(); };
+  document.body.appendChild(el); return el;
+}
+
+async function newTask(project) {
+  await loadCaps().catch(() => {});
+  const fams = Object.keys(S.caps ? S.caps.channels : {}).filter((f) => getBackendCap(f, 'open') && FAM[f]);
+  const last = store.get('newFam') || 'antigravity';
+  const el = sheet(`<b>新任务</b>
+    <label>交给谁</label><select id="nf">${fams.map((f) => `<option value="${f}" ${f === last ? 'selected' : ''}>${FAM[f]}</option>`).join('')}</select>
+    <label>模型</label><select id="nm"></select>
+    <label>工作目录</label><input id="nc" value="${esc(project || '')}" placeholder="不填就新建一个独立目录">
+    <label>权限门禁</label><select id="np"><option value="all">全放行（默认）</option><option value="reads">只读（写文件与跑命令需审批）</option></select>
+    <label>要它做什么</label><textarea id="nt"></textarea>
+    <div class="row" style="margin-top:14px;gap:10px"><button class="btn ghost btn-touch grow" id="nx">取消</button><button class="btn btn-touch grow" id="ngo">开始</button></div>`);
+  const fill = () => {
+    const f = $('#nf', el).value;
+    const ch = (S.gw.channels || []).find((c) => c.id === f) || {};
+    const ms = ch.recommendedModels || [];
+    $('#nm', el).innerHTML = ms.map((m) => `<option value="${esc(m)}" ${m === ch.defaultModel ? 'selected' : ''}>${esc(modelLabel(f, m))}</option>`).join('') || '<option value="">默认</option>';
+  };
+  $('#nf', el).onchange = fill; fill();
+  $('#nx', el).onclick = () => el.remove();
+  $('#ngo', el).onclick = async () => {
+    const f = $('#nf', el).value, prompt = $('#nt', el).value.trim();
+    if (!prompt) return toast('写一下要它做什么');
+    store.set('newFam', f);
+    const name = 'm-' + new Date().toISOString().replace(/\D/g, '').slice(4, 14);
+    $('#ngo', el).disabled = true;
+    try {
+      const r = await api('/api/gateway/send', { method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ channel: f, sessionName: name, prompt, model: $('#nm', el).value || undefined, cwd: $('#nc', el).value.trim() || '__new__', permissions: $('#np', el).value, source: 'web' }) });
+      el.remove();
+      S.loadedAt = 0;
+      const wait = sheet(`<b>正在拉起 ${esc(FAM[f] || f)}…</b><div class="sub" id="wmsg" style="white-space:normal">会话名 ${esc(name)}，建好后自动进入</div>`);
+      const t0 = Date.now();
+      const poll = async () => {
+        if (!document.body.contains(wait)) return;
+        let tsid = r.traceSessionId || '';
+        try { if (!tsid) tsid = (await api(`/api/gateway/run?channel=${encodeURIComponent(f)}&session=${encodeURIComponent(name)}`)).traceSessionId || ''; } catch {}
+        if (tsid && !/^new:/.test(tsid)) {
+          try { await api('/api/sessions/' + encodeURIComponent(tsid) + '?tail=1'); wait.remove(); location.hash = '#/s/' + encodeURIComponent(tsid); return; } catch {}
+        }
+        const sec = Math.round((Date.now() - t0) / 1000);
+        if (sec > 60) { $('#wmsg', wait).textContent = `等了 ${sec} 秒还没建好。可以稍后在“待处理”里找 ${name}。`; return; }
+        $('#wmsg', wait).textContent = `会话名 ${name}，已启动 ${sec} 秒，建好后自动跳转`;
+        setTimeout(poll, 1200);
+      };
+      setTimeout(poll, 800);
+    } catch (e) { toast('没开始：' + e.message); $('#ngo', el).disabled = false; }
+  };
+}
+
+// ---------- feedback (paste screenshots) ----------
+$('#fbBtn').onclick = () => {
+  const imgs = [];
+  const el = sheet(`<b>反馈</b><div class="sub">直接写，或粘贴截图（也可以选图片）</div>
+    <textarea id="ft" placeholder="哪里不好用？"></textarea><input type="file" id="ff" accept="image/*" multiple style="margin-top:8px"><div class="thumbs" id="fth"></div>
+    <div class="row" style="margin-top:14px;gap:10px"><button class="btn ghost btn-touch grow" id="fx">取消</button><button class="btn btn-touch grow" id="fgo">提交</button></div>`);
+  const add = (file) => { if (!file || !/^image\//.test(file.type) || imgs.length >= 8) return; const r = new FileReader(); r.onload = () => { imgs.push(r.result); $('#fth', el).innerHTML = imgs.map((s) => `<img src="${s}">`).join(''); }; r.readAsDataURL(file); };
+  $('#ft', el).addEventListener('paste', (e) => { for (const it of e.clipboardData?.items || []) if (it.kind === 'file') add(it.getAsFile()); });
+  $('#ff', el).onchange = (e) => [...e.target.files].forEach(add);
+  $('#fx', el).onclick = () => el.remove();
+  $('#fgo', el).onclick = async () => {
+    const text = $('#ft', el).value.trim();
+    if (!text && !imgs.length) return toast('写点什么或贴张图');
+    try { await api('/api/m/feedback', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ text, images: imgs, page: location.href, context: { hash: location.hash } }) }); el.remove(); toast('收到，谢谢'); }
+    catch (e) { toast('没交上：' + e.message); }
+  };
+};
+
+// ---------- 周期性提醒与状态同步 ----------
+const notified = new Set();
+let notifyPrimed = false;
+setInterval(async () => {
+  if (S.activeView === 'session') return; // 详情页停掉列表拉取
+  const cards = feedCards().filter((c) => c.kind === 'action' || c.kind === 'shipped');
+  const apprs = (S.gw && S.gw.pendingApprovals) || [];
+  const totalAction = cards.length + apprs.length;
+  document.title = totalAction ? `(${totalAction}) 督工台` : '督工台';
+  if (S.sseConnected) {
+    // SSE 已连通，状态和提醒由事件驱动维护，不发 HTTP 盲轮询
+    return;
+  }
+  try { await loadSessions(true); } catch { return; }
+  const fresh = cards.filter((c) => !notified.has(c.s.id + '@' + c.s.updatedAt));
+  for (const c of cards) notified.add(c.s.id + '@' + c.s.updatedAt);
+  if (!notifyPrimed) { notifyPrimed = true; return; }
+  const open = decodeURIComponent(location.hash.slice(1)).replace(/^\/s\//, '');
+  const news = fresh.filter((c) => c.s.id !== open);
+  if (!news.length && !apprs.length) return;
+  try { navigator.vibrate && navigator.vibrate([120, 80, 120]); } catch {}
+  if (apprs.length) toast(`有 ${apprs.length} 个操作等待你审批！`);
+  else if (news.length === 1) toast(`${KIND[news[0].kind]}：${cleanTitle(news[0].s.title).slice(0, 30)}`);
+}, 20000);
+
+route();
+</script>
+</body>
+</html>

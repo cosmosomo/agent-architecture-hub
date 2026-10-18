@@ -126,7 +126,11 @@ function effectSpan(e: Effect, parentId: string, i: number, start: Date): TraceS
 }
 
 function stepSpan(s: Step, fallback: number): TraceSpan {
-  const base = { id: s.id, raw: [JSON.stringify(s, null, 2)], children: [] as TraceSpan[] };
+  const compactStep =
+    s.kind === 'tool' && ((s.output?.length || 0) > 1200 || (s.input?.length || 0) > 1200)
+      ? { ...s, input: cut(s.input || '', 1200), output: cut(s.output || '', 1200) }
+      : s;
+  const base = { id: s.id, raw: [JSON.stringify(compactStep, null, 2)], children: [] as TraceSpan[] };
   switch (s.kind) {
     case 'message': {
       const who = s.role === 'agent' ? (s.from || '?') + ' → ' + (s.to || '?') : ROLE_LABEL[s.role];
@@ -311,6 +315,12 @@ export function initialExpanded(s: Session): string[] {
  * 2 opens them to their steps (the execution chain). Without segments both show the steps.
  */
 export function expandedForDepth(s: Session, layer: AnnotationSet | null | undefined, depth: number): string[] {
+  if (!layer && s.turns.length > 6) {
+    const recentCount = depth >= 2 ? 12 : 2;
+    const recentIds = s.turns.slice(-recentCount).map(turnSpanId);
+    const failedIds = s.turns.filter((t) => t.status === 'failed').slice(-4).map(turnSpanId);
+    return Array.from(new Set([SESSION_SPAN_ID, ...failedIds, ...recentIds]));
+  }
   const ids = [SESSION_SPAN_ID, ...s.turns.map(turnSpanId)];
   if (depth >= 2 && layer) for (const g of layer.segments) ids.push(segmentSpanId(g));
   return ids;

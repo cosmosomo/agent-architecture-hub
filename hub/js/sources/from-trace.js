@@ -166,6 +166,20 @@
       x: -100, y: 0, isHub: false, enhanced: true };
     individuals.push(human);
     indMap.set('human', human);
+    var rootIds = roots.map(function (s) { return ind.get(s.id); });
+    var metaDefs = [
+      { id: 'meta_approver', name: '元智能体 · 自动批准督导', role: '自动审批高信度文件读写、终端命令与子智能体派发，免去人工逐条点击确认', trigger: '工具请求权限或门禁待拍板时', watches: rootIds.slice() },
+      { id: 'meta_resumer', name: '元智能体 · 断网与Bug续跑', role: '实时监测断网、API 超时、进程崩溃与异常中断，自动携带断点上下文发起续跑', trigger: '心跳超时、网络断开或异常退出时', watches: rootIds.slice() },
+      { id: 'meta_maint', name: '元智能体 · 渠道与模型容灾', role: '监控 6 大渠道并发、配额与限流，拥塞或报错时自动热切换备用模型', trigger: '渠道满载、429 限流或需要扩容时', watches: [] },
+      { id: 'meta_auditor', name: '元智能体 · 防死循环督导', role: '检测连续重复工具调用或无效重试，自动注入纠偏提示词防止空转消耗 Token', trigger: '连续重复报错或轨迹停滞时', watches: rootIds.slice() }
+    ];
+    metaDefs.forEach(function (md, mi) {
+      var mObj = { id: md.id, agentId: null, kind: 'meta', name: md.name, model: 'haiku', phase: null, groupId: null,
+        role: md.role, trigger: md.trigger, watches: md.watches, docs: [], channels: [], natives: [], host: null, tools: [],
+        x: -100 + mi * 40, y: 200, isHub: false, enhanced: true };
+      individuals.push(mObj);
+      indMap.set(md.id, mObj);
+    });
 
     /* ---------- groups: each hub with its waves of sub-agents ---------- */
     var groups = [], groupMap = new Map();
@@ -381,6 +395,13 @@
     });
     relations.filter(function (r) { return r.type === 'task' && r.sub !== 'report'; }).forEach(function (r) { addRel('info', 'read', r.from, r.to, '读上游产出'); });
     individuals.forEach(function (x) { x.channels.forEach(function (cid) { addRel('channel', 'use', x.id, cid); }); });
+    individuals.filter(function (x) { return x.kind === 'meta'; }).forEach(function (mx) {
+      (mx.watches || []).forEach(function (wid) { addRel('watch', 'watch', mx.id, wid, mx.name + '守护'); });
+    });
+    channels.filter(function (c) { return c.kind !== 'native'; }).forEach(function (c) {
+      if (!c.maintainer) c.maintainer = 'meta_maint';
+      addRel('channel', 'maintain', 'meta_maint', c.id, '维护');
+    });
 
     var def = { version: 'v1', versions: [{ id: 'v1', at: 0, note: '从本机会话解析', by: '解析' }], individuals: individuals, groups: groups,
       relations: relations, channels: channels, docs: docs, process: { stages: [], gates: [], flows: [] } };

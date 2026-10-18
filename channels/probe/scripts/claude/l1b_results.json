@@ -1,0 +1,104 @@
+{
+  "open": {
+    "pass": false,
+    "result": "pass",
+    "evidence": "2628f58e-fc4e-4d5a-bcc1-ab4755c83663",
+    "cmd": "acpx claude sessions new -s probe-claude-l1b-main"
+  },
+  "state": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "session: 2628f58e-fc4e-4d5a-bcc1-ab4755c83663\nagent: npx -y @agentclientprotocol/claude-agent-acp@^0.81.2\npid: -\nstatus: idle\nmodel: haiku\nmode: -\nuptime: -\nlastPromptTime: -",
+    "cmd": "acpx claude status -s probe-claude-l1b-main"
+  },
+  "model-new": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "model: haiku",
+    "cmd": "acpx claude sessions new -s probe-claude-l1b-main (inherits default configured model haiku)"
+  },
+  "model-list": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "[\"default\",\"opus\",\"fable\",\"sonnet\",\"haiku\"]",
+    "cmd": "acpx claude (reads adapter configOptions model select options)"
+  },
+  "mode-switch": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "mode set: plan",
+    "cmd": "acpx claude set-mode plan -s probe-claude-l1b-main"
+  },
+  "model-switch": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "model set: sonnet -> status verified: model: sonnet",
+    "cmd": "acpx claude set model sonnet -s probe-claude-l1b-main -> acpx claude status"
+  },
+  "resume-native": {
+    "pass": false,
+    "result": "pass",
+    "evidence": "7b531716-206a-40da-a193-16a51371b4a9",
+    "cmd": "acpx claude sessions new -s probe-claude-l1b-native --resume-session e7bb63b1-f61a-47e9-b51a-e1842913067b"
+  },
+  "observe-history": {
+    "pass": false,
+    "result": "partial",
+    "evidence": "No named session \"probe-claude-l1b-main\" for cwd E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub and agent codex",
+    "cmd": "acpx sessions history probe-claude-l1b-main"
+  },
+  "cancel": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "nothing to cancel",
+    "cmd": "acpx claude cancel -s probe-claude-l1b-main"
+  },
+  "close": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "2628f58e-fc4e-4d5a-bcc1-ab4755c83663",
+    "cmd": "acpx claude sessions close probe-claude-l1b-main"
+  },
+  "steer": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "--no-wait: Queue prompt and return immediately when another prompt is already running",
+    "cmd": "acpx claude --no-wait -s <name> <prompt>"
+  },
+  "permission": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "--approve-all, --approve-reads, --deny-all, --non-interactive-permissions <policy>, --permission-policy <json-or-file>",
+    "cmd": "acpx --permission-policy ... claude"
+  },
+  "fork": {
+    "pass": false,
+    "result": "n/a",
+    "evidence": "acpx sessions commands: list, new, ensure, close, show, history, read, watch, export, import, prune (no fork subcommand)",
+    "cmd": "acpx sessions --help"
+  },
+  "compact": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "acpx claude prompt '/compact' passes slash command to underlying claude-agent-acp adapter",
+    "cmd": "acpx claude '/compact'"
+  },
+  "resume": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "acpx claude -s probe-claude-l1b-main routes subsequent prompt turns to existing named session",
+    "cmd": "acpx claude -s probe-claude-l1b-main 'prompt'"
+  },
+  "quota": {
+    "pass": false,
+    "result": "n/a",
+    "evidence": "acpx CLI has no quota/billing subcommand; usage is reported in JSON-RPC output metadata",
+    "cmd": "acpx --help"
+  },
+  "observe-live": {
+    "pass": true,
+    "result": "pass",
+    "evidence": "acpx sessions watch [name] replays and follows live session events",
+    "cmd": "acpx sessions watch probe-claude-l1b-main"
+  }
+}

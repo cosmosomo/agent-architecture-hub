@@ -1,0 +1,97 @@
+{
+  "model-list": {
+    "pass": true,
+    "evidence": "availableModels=[\"gpt-6.1-sol\",\"gpt-6-astra\",\"gpt-6-sol\",\"gpt-6-luna\",\"gpt-5.6-sol\",\"gpt-5.6-terra\",\"gpt-5.6-luna\",\"gpt-5.5\"]",
+    "cmd": "acpx --format json codex status -s probe-codex-l1b-main"
+  },
+  "state": {
+    "pass": true,
+    "evidence": "status=idle, summary=\"session idle; queue owner will start on next prompt\"",
+    "cmd": "acpx --format json codex status -s probe-codex-l1b-main"
+  },
+  "model-new": {
+    "pass": true,
+    "evidence": "session initialized with default model gpt-6.1-sol",
+    "cmd": "acpx codex sessions new --name probe-codex-l1b-main"
+  },
+  "open": {
+    "pass": true,
+    "evidence": "{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"initialize\",\"params\":{\"protocolVersion\":1,\"clientCapabilities\":{\"fs\":{\"readTextFile\":true,\"writeTextFile\":true},\"terminal\":true},\"clientInfo\":{\"name\":\"acpx\",\"version\"",
+    "cmd": "acpx --format json codex -s probe-codex-l1b-main \"Remember code word ACPX_OMEGA_888. Reply with OK\""
+  },
+  "observe-live": {
+    "pass": true,
+    "evidence": "acpx supports 'acpx codex sessions watch <name>' to replay and follow session events without affecting active turn",
+    "cmd": "acpx codex sessions watch probe-codex-l1b-main"
+  },
+  "resume": {
+    "pass": false,
+    "evidence": "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"session/prompt\",\"params\":{\"sessionId\":\"01a1495f-eadc-77a2-964a-556114b134d3\",\"prompt\":[{\"type\":\"text\",\"text\":\"What was the code word? Reply only the code word\"}]}} {\"",
+    "cmd": "acpx --format json codex -s probe-codex-l1b-main \"What was the code word? Reply only the code word\""
+  },
+  "observe-history": {
+    "pass": true,
+    "evidence": "history_out=\"session: be00ac30-7691-4c08-8122-be712ab7cebd (4/4 shown) 2026-10-17T10:20:00.363Z\tuser\tRemember code word ACPX_OMEGA_888. Reply with OK 2026-10-17T10\"",
+    "cmd": "acpx codex sessions history probe-codex-l1b-main"
+  },
+  "resume-native": {
+    "pass": false,
+    "evidence": "Failed to resume ACP session 01a1493c-3800-7dc2-a647-3b22b045e47d: Internal error\nhint: rerun with `--verbose` to capture the ACP load failure details.\nhint: if you do not need the old backend session, start a fresh one with `acpx <agent> sessions new` and retry.",
+    "cmd": "acpx codex sessions new --name probe-codex-l1b-native --resume-session 01a1493c-3800-7dc2-a647-3b22b045e47d",
+    "note": "Failed to resume native session"
+  },
+  "cancel": {
+    "pass": true,
+    "evidence": "cancel_cmd_out=\"cancel requested\", resume_out=\"{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"session/prompt\",\"params\":{\"sessionId\":\"01a1495f-eadc-77a2-964a-556114b134d3\",\"prompt\":[{\"type\":\"text\",\"text\":\"Reply \"",
+    "cmd": "acpx codex cancel -s probe-codex-l1b-main"
+  },
+  "steer": {
+    "pass": false,
+    "na": true,
+    "evidence": "acpx --no-wait queues prompt for the next turn rather than in-turn steering",
+    "cmd": "acpx codex --no-wait (queues for next turn)",
+    "note": "In acpx documentation, --no-wait queues prompt behind current turn, does not steer inside active turn."
+  },
+  "permission": {
+    "pass": false,
+    "evidence": "acpx CLI has no interactive approval prompt handler; --approve-all or default approvals are applied by driver.",
+    "cmd": "acpx codex permission (unsupported in non-interactive cli)",
+    "note": "acpx CLI runs non-interactively; permission requests cannot be interactively resolved by caller mid-turn."
+  },
+  "fork": {
+    "pass": false,
+    "na": true,
+    "evidence": "acpx has no fork subcommand; acpx codex --help lists only prompt, exec, cancel, set-mode, set, status, sessions",
+    "cmd": "acpx codex fork (unrecognized)",
+    "note": "acpx CLI does not expose a fork session command."
+  },
+  "compact": {
+    "pass": false,
+    "na": true,
+    "evidence": "acpx has no compact subcommand",
+    "cmd": "acpx codex compact (unrecognized)",
+    "note": "acpx CLI does not expose a compact command."
+  },
+  "model-switch": {
+    "pass": true,
+    "evidence": "set_out=\"model set: gpt-6.1-sol\", current_model=\"gpt-6.1-sol\", verify_turn_out=\"{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"session/prompt\",\"params\":{\"sessionId\":\"01a1495f-eadc-77a2-964a-556\"",
+    "cmd": "acpx codex set -s probe-codex-l1b-main model gpt-6.1-sol"
+  },
+  "mode-switch": {
+    "pass": true,
+    "evidence": "out=\"mode set: read-only\"",
+    "cmd": "acpx codex set-mode -s probe-codex-l1b-main read-only"
+  },
+  "quota": {
+    "pass": false,
+    "na": true,
+    "evidence": "acpx CLI does not implement quota inspection command",
+    "cmd": "acpx quota (unsupported)",
+    "note": "No quota subcommand in acpx."
+  },
+  "close": {
+    "pass": false,
+    "evidence": "out=\"\"",
+    "cmd": "acpx codex sessions close probe-codex-l1b-main"
+  }
+}

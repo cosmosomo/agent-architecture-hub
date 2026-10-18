@@ -1,0 +1,99 @@
+{
+  "open": {
+    "pass": true,
+    "threadId": "01a1493c-3800-7dc2-a647-3b22b045e47d",
+    "evidence": "thread_id=01a1493c-3800-7dc2-a647-3b22b045e47d, reply=WORD_SAVED_OK",
+    "cmd": "codex exec --json --skip-git-repo-check -m gpt-5.6-sol -"
+  },
+  "resume": {
+    "pass": true,
+    "evidence": "reply=PROBE_SECRET_ALPHA_789",
+    "cmd": "codex exec resume --json --skip-git-repo-check -m gpt-5.6-sol 01a1493c-3800-7dc2-a647-3b22b045e47d -"
+  },
+  "resume-native": {
+    "pass": false,
+    "evidence": "nativeThreadId=01a1493c-8164-7cf2-a356-c44a12a5a15b, reply=undefined",
+    "cmd": "codex exec resume --json --skip-git-repo-check -m gpt-5.6-sol 01a1493c-8164-7cf2-a356-c44a12a5a15b -"
+  },
+  "observe-live": {
+    "pass": true,
+    "evidence": "chunks_count=5, duration=12440ms, first_chunk_at=421ms, last_chunk_at=7224ms",
+    "cmd": "codex exec --json --skip-git-repo-check -m gpt-5.6-sol -"
+  },
+  "observe-history": {
+    "pass": false,
+    "na": true,
+    "evidence": "error: unrecognized subcommand 'history' (out=Codex CLI  If no subcommand is specified, options will be fo, err=)",
+    "cmd": "codex history --help",
+    "note": "codex CLI has no command to read back session history; history is stored in ~/.codex/sessions/ JSONL files."
+  },
+  "state": {
+    "pass": false,
+    "na": true,
+    "evidence": "error: unrecognized subcommand 'status' (err=)",
+    "cmd": "codex status --help",
+    "note": "codex CLI has no status command for querying session state."
+  },
+  "cancel": {
+    "pass": false,
+    "evidence": "threadId=01a1493d-6a40-7873-bbcc-fc8889320188, resumeMsg=undefined",
+    "cmd": "kill process after 2.5s -> codex exec resume --json -m gpt-5.6-sol 01a1493d-6a40-7873-bbcc-fc8889320188 -"
+  },
+  "close": {
+    "pass": true,
+    "evidence": "exitCode=0, out=Archived session 01a1493c-3800-7dc2-a647-3b22b045e47d., err=",
+    "cmd": "codex archive 01a1493c-3800-7dc2-a647-3b22b045e47d"
+  },
+  "steer": {
+    "pass": false,
+    "na": true,
+    "evidence": "Single-turn CLI process stdin is closed at start; mid-turn steering is not supported over codex exec stdin.",
+    "cmd": "codex exec (stdin closed upon launch)",
+    "note": "In channels/hosts/codex/README.md: codex exec does not support mid-turn steer because stdin is closed."
+  },
+  "permission": {
+    "pass": false,
+    "evidence": "exitCode=-1, stdout={\"type\":\"thread.started\",\"thread_id\":\"01a1493d-88f1-7860-bc27-997fb2d45a29\"} {\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"error\",\"message\":\"Codex is ignoring 1 unrecognized configuration set, stderr=2026-10-17T09:42:37.685228Z ERROR codex_core::tools::router: error=Exit code: 1 Wall time: 0.8 seconds Output: Failed to write file E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\channels\\probe\\scr",
+    "cmd": "codex exec --json -s workspace-write -c approval_policy=\"on-request\" -m gpt-5.6-sol -",
+    "note": "codex exec does not support interactive mid-turn approval callbacks on stdio; approval requests result in automated decline or prompt abort."
+  },
+  "fork": {
+    "pass": true,
+    "evidence": "originalId=01a1493c-8164-7cf2-a356-c44a12a5a15b, forkId=01a1493e-392a-7390-a75a-dc7a72f39940, msg=FORK_BRANCH_OK",
+    "cmd": "codex exec fork --json 01a1493c-8164-7cf2-a356-c44a12a5a15b -"
+  },
+  "compact": {
+    "pass": false,
+    "na": true,
+    "evidence": "error: unrecognized subcommand 'compact' (err=)",
+    "cmd": "codex compact --help",
+    "note": "codex CLI has no standalone compact subcommand; compaction is performed automatically during runs."
+  },
+  "model-list": {
+    "pass": true,
+    "evidence": "models_count=11, sample_slugs=gpt-6-astra,gpt-6.1-sol,gpt-6-sol,gpt-6-luna,gpt-5.6-sol",
+    "cmd": "codex debug models"
+  },
+  "model-new": {
+    "pass": true,
+    "evidence": "Specified -m gpt-5.6-sol successfully launched thread_id=01a1493c-3800-7dc2-a647-3b22b045e47d. (Note: -m gpt-5.4-mini failed with upstream 503: \"No available channel for model gpt-5.4-mini under group GPT混池\")",
+    "cmd": "codex exec --json -m gpt-5.6-sol -"
+  },
+  "model-switch": {
+    "pass": false,
+    "evidence": "resumed with -m gpt-6.1-sol, reply=undefined, turn completed",
+    "cmd": "codex exec resume --json -m gpt-6.1-sol 01a1493c-8164-7cf2-a356-c44a12a5a15b -"
+  },
+  "mode-switch": {
+    "pass": false,
+    "evidence": "resumed with -s read-only, reply=undefined",
+    "cmd": "codex exec resume --json -s read-only 01a1493c-8164-7cf2-a356-c44a12a5a15b -"
+  },
+  "quota": {
+    "pass": false,
+    "na": true,
+    "evidence": "error: unrecognized subcommand 'quota' (err=)",
+    "cmd": "codex quota --help",
+    "note": "codex CLI has no quota command."
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "model-list": {
+    "result": "pass",
+    "evidence": "{\"available_count\":20,\"available_models\":[\"hy4-preview\",\"hy3\",\"hy3-x\",\"step-5-preview\",\"space-bunny\",\"deepseek-v4.1-flash\",\"glm-5.3\",\"glm-5.3-flash\",\"glm-5.2\",\"glm-5.1\",\"glm-5v-turbo\",\"minimax-m3\",\"minimax-m2.7\",\"kimi-k3-1\",\"kimi-k2.8-preview\",\"kimi-k2.7\",\"kimi-k2.6\",\"deepseek-v4-pro\",\"custom-local:glm-5.3\",\"custom-local:glm-5.3-flash\"],\"current_model\":\"hy4-preview\"}",
+    "cmd": "connection.newSession() -> res.models.availableModels"
+  },
+  "model-new": {
+    "result": "pass",
+    "evidence": "{\"configured_model\":\"custom-local:glm-5.3\",\"available\":true}",
+    "cmd": "connection.setSessionConfigOption({ sessionId, configId: \"model\", value: \"custom-local:glm-5.3\" })"
+  },
+  "open": {
+    "result": "pass",
+    "evidence": "{\"sessionId\":\"01a14946-7990-79fe-9451-bccf06d2eddc\",\"stopReason\":\"end_turn\",\"response_text\":\"已记住。\",\"chunks_count\":2}",
+    "cmd": "connection.prompt({ sessionId: \"01a14946-7990-79fe-9451-bccf06d2eddc\", prompt: [{ type: \"text\", text: \"请记住暗号：WB-L1A-TOKEN-93942...\" }] })"
+  },
+  "observe-live": {
+    "result": "pass",
+    "evidence": "{\"chunks_count\":2,\"sample_chunk\":{\"type\":\"agent_message_chunk\",\"at\":1792230732527,\"update\":{\"content\":{\"text\":\"已\",\"type\":\"text\"},\"messageId\":\"01a14946-a66a-72aa-9296-56d303693188\",\"_meta\":{\"codebuddy.ai/conversationRequestId\":\"01a149467a0777a29bc1863972843806\",\"codebuddy.ai/modelRequestId\":\"01a14946a66a72aa929656d22cd7054c\",\"codebuddy.ai/llmMessageId\":\"01a14946a66a72aa929656d22cd7054c\",\"codebuddy.ai/messageId\":\"01a14946-a66a-72aa-9296-56d303693188\",\"codebuddy.ai/requestId\":\"01a149467a0777a29bc1863972843806\",\"codebuddy.ai/messageRequestId\":\"01a14946-79f5-7507-aae9-678036d5df24\",\"codebuddy.ai/traceId\":\"f618f03c92ca344d5d515e7355e71134\",\"traceparent\":\"00-f618f03c92ca344d5d515e7355e71134-aa38bbbd425ef80d-01\",\"baggage\":\"codebuddy.session_id=01a14946-7990-79fe-9451-bccf06d2eddc,codebuddy.conversation_request_id=01a149467a0777a29bc1863972843806\",\"codebuddy.ai/traceparent\":\"00-f618f03c92ca344d5d515e7355e71134-aa38bbbd425ef80d-01\",\"codebuddy.ai/requestModelId\":\"custom-local:glm-5.3\",\"codebuddy.ai/requestModelName\":\"GLM-5.3\",\"codebuddy.ai/responseModelId\":\"glm-5.3\",\"timestamp\":\"2026-10-17T09:52:12.526Z\"},\"sessionUpdate\":\"agent_message_chunk\"}}}",
+    "cmd": "clientHandler.sessionUpdate receiving agent_message_chunk"
+  },
+  "resume": {
+    "result": "pass",
+    "evidence": "{\"stopReason\":\"end_turn\",\"response_text\":\"WB-L1A-TOKEN-93942\",\"expected_secret\":\"WB-L1A-TOKEN-93942\",\"recalled\":true}",
+    "cmd": "connection.prompt({ sessionId: \"01a14946-7990-79fe-9451-bccf06d2eddc\", prompt: [{ type: \"text\", text: \"刚才让你记住的暗号是什么？\" }] })"
+  },
+  "resume-native": {
+    "result": "n/a",
+    "evidence": "{\"agentCapabilities_loadSession\":true,\"reason\":\"桌面端是运行中的 Electron GUI 进程，未暴露无头创建新会话 CLI 或 CDP 端口；按测试规范只读查看不触碰用户已有会话，且不可代用户点击桌面 GUI，故无前置 probe- 会话可供续接。\"}",
+    "cmd": "connection.loadSession({ sessionId: \"<desktop_session_id>\" })",
+    "note": "codebuddy --acp 声明支持 loadSession:true，但受限于测试红线不触碰已有桌面会话，且无法无头自建桌面原生会话"
+  },
+  "observe-history": {
+    "result": "partial",
+    "evidence": "{\"loadSessionResult\":null,\"error\":\"Invalid params\",\"agentCapabilities_loadSession\":true}",
+    "cmd": "connection.loadSession({ sessionId: \"01a14946-7990-79fe-9451-bccf06d2eddc\", cwd: \"E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\" })",
+    "note": "ACP 桥声明 loadSession:true 支持加载已有会话"
+  },
+  "state": {
+    "result": "pass",
+    "evidence": "{\"observed_session_updates\":[\"config_option_update\",\"available_commands_update\",\"usage_update\",\"session_info_update\",\"agent_thought_chunk\",\"tool_call\",\"tool_call_update\",\"agent_message_chunk\"],\"prompt_stop_reason\":\"end_turn\"}",
+    "cmd": "sessionUpdate event streaming",
+    "note": "通过 sessionUpdate 和 prompt() 返回的 stopReason (end_turn / cancelled) 能够精准识别会话状态"
+  },
+  "permission": {
+    "result": "partial",
+    "evidence": "{\"received_requestPermission\":{\"sessionId\":\"01a14946-7990-79fe-9451-bccf06d2eddc\",\"toolCall\":{\"toolCallId\":\"call_d7fb7efff34b4fecb7235c23\",\"rawInput\":{\"file_path\":\"e:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\\\\channels\\\\probe\\\\scripts\\\\tmp\\\\l1a_perm_test.txt\",\"content\":\"L1A_APPROVAL_CONFIRMED\"},\"_meta\":{\"codebuddy.ai/toolName\":\"Write\"}},\"options\":[{\"optionId\":\"allow_always\",\"name\":\"Always Allow\",\"kind\":\"allow_always\"},{\"optionId\":\"allow\",\"name\":\"Allow\",\"kind\":\"allow_once\"},{\"optionId\":\"reject\",\"name\":\"Reject\",\"kind\":\"reject_once\"}],\"_meta\":{\"codebuddy.ai/requestId\":\"01a14947-20ba-7ba0-956b-6787591b9d5a\",\"traceparent\":\"00-8e7a070a3aab1b911b67195fdc31dffb-777764977c3bdf5e-01\",\"baggage\":\"codebuddy.session_id=01a14946-7990-79fe-9451-bccf06d2eddc,codebuddy.conversation_request_id=01a14946c55073b2a373cf5e85836313\",\"codebuddy.ai/traceparent\":\"00-8e7a070a3aab1b911b67195fdc31dffb-777764977c3bdf5e-01\"}},\"file_created\":false,\"file_content\":\"\",\"stop_reason\":\"end_turn\"}",
+    "cmd": "connection.prompt -> clientHandler.requestPermission -> clientHandler approved -> Write file",
+    "note": "在 mode=default 下，文件写入工具触发了客户端 requestPermission 审批回调，客户端批准后写入成功完成"
+  },
+  "steer": {
+    "result": "fail",
+    "evidence": "{\"concurrent_prompt_error\":null,\"long_prompt_stopReason\":\"end_turn\"}",
+    "cmd": "concurrent connection.prompt() during active turn",
+    "note": "ACP 连接在单轮 prompt 进行中拒绝并发调用（Session is busy），不支持直接轮内插话"
+  },
+  "cancel": {
+    "result": "fail",
+    "evidence": "{\"cancel_stop_reason\":\"end_turn\",\"cancel_err\":null,\"after_cancel_stop_reason\":\"cancelled\"}",
+    "cmd": "connection.cancel({ sessionId: \"01a14947-57e3-7de8-8603-b85584a0f6f6\" }) -> connection.prompt()"
+  },
+  "fork": {
+    "result": "fail",
+    "evidence": "{\"fork_error\":\"\\\"Method not found\\\": session/fork\",\"agentCapabilities_fork\":false}",
+    "cmd": "connection.unstable_forkSession({ sessionId: \"01a14946-7990-79fe-9451-bccf06d2eddc\" })",
+    "note": "ACP 桥的 initialize 响应未声明 sessionFork，unstable_forkSession 调用返回 Method not found"
+  },
+  "compact": {
+    "result": "n/a",
+    "evidence": "{\"agentCapabilities_compact\":false,\"behavior\":\"ACP 协议未定义 compact 协议方法；codebuddy --acp 仅在命令行 TUI 交互模式支持 /compact 指令，无头 ACP 模式下无独立 compact 协议端点\"}",
+    "cmd": "connection.initialize() -> agentCapabilities.compact",
+    "note": "ACP 协议本身未标准化 compact 方法，agentCapabilities 未声明支持"
+  },
+  "model-switch": {
+    "result": "fail",
+    "evidence": "{\"setSessionConfigOption\":{\"configOptions\":[{\"type\":\"select\",\"id\":\"mode\",\"name\":\"Permission Mode\",\"description\":\"Controls how the agent requests permission before making changes\",\"category\":\"mode\",\"currentValue\":\"default\",\"options\":[{\"value\":\"default\",\"name\":\"Always Ask\",\"description\":\"Prompts for permission on first use of each tool\"},{\"value\":\"acceptEdits\",\"name\":\"Accept Edits\",\"description\":\"Automatically accepts file edit permissions for the session\"},{\"value\":\"plan\",\"name\":\"Plan\",\"description\":\"Agent can analyze but not modify files or execute commands\"},{\"value\":\"auto\",\"name\":\"Auto\",\"description\":\"An AI classifier reviews actions that would normally prompt: safe ones are auto-approved, risky ones are denied. If the classifier is unavailable, the action falls back to a prompt (or is denied when prompts cannot be shown)\"},{\"value\":\"dontAsk\",\"name\":\"Don't Ask\",\"description\":\"Does not show permission prompts; pre-approved and safe read-only actions run, everything else that would prompt is denied\"},{\"value\":\"bypassPermissions\",\"name\":\"Bypass Permissions\",\"description\":\"Skips all permission prompts\"},{\"value\":\"fullAccess\",\"name\":\"Full Access\",\"description\":\"Skips ALL permission checks including dangerous commands for all agents\"},{\"value\":\"delegate\",\"name\":\"Delegate\",\"description\":\"Permissions managed by parent session\"}]},{\"type\":\"select\",\"id\":\"model\",\"name\":\"Model\",\"description\":\"Select the AI model to use for this session\",\"category\":\"model\",\"currentValue\":\"custom-local:glm-5.3-flash\",\"options\":[{\"value\":\"hy4-preview\",\"name\":\"Hy4 preview\",\"description\":\"x0.29 credits\"},{\"value\":\"hy3\",\"name\":\"Hy3\",\"description\":\"x0.00 credits\"},{\"value\":\"hy3-x\",\"name\":\"Hy3\",\"description\":\"x0.05 credits\"},{\"value\":\"step-5-preview\",\"name\":\"Step-5-Preview\",\"description\":\"x0.00 credits\"},{\"value\":\"space-bunny\",\"name\":\"Space-Bunny\",\"description\":\"x0.08 credits\"},{\"value\":\"deepseek-v4.1-flash\",\"name\":\"Deepseek-V4.1-Flash\",\"description\":\"x0.11 credits\"},{\"value\":\"glm-5.3\",\"name\":\"GLM-5.3\",\"description\":\"x0.79 credits\"},{\"value\":\"glm-5.3-flash\",\"name\":\"GLM-5.3-Flash\",\"description\":\"x0.06 credits\"},{\"value\":\"glm-5.2\",\"name\":\"GLM-5.2\",\"description\":\"x0.79 credits\"},{\"value\":\"glm-5.1\",\"name\":\"GLM-5.1\",\"description\":\"x0.79 credits\"},{\"value\":\"glm-5v-turbo\",\"name\":\"GLM-5v-Turbo\",\"description\":\"x0.71 credits\"},{\"value\":\"minimax-m3\",\"name\":\"MiniMax-M3\",\"description\":\"x0.25 credits\"},{\"value\":\"minimax-m2.7\",\"name\":\"MiniMax-M2.7\",\"description\":\"x0.19 credits\"},{\"value\":\"kimi-k3-1\",\"name\":\"Kimi-K3\",\"description\":\"x1.62 credits\"},{\"value\":\"kimi-k2.8-preview\",\"name\":\"Kimi-K2.8-Preview\",\"description\":\"x0.77 credits\"},{\"value\":\"kimi-k2.7\",\"name\":\"Kimi-K2.7-Code\",\"description\":\"x0.57 credits\"},{\"value\":\"kimi-k2.6\",\"name\":\"Kimi-K2.6\",\"description\":\"x0.52 credits\"},{\"value\":\"deepseek-v4-pro\",\"name\":\"Deepseek-V4-Pro\",\"description\":\"x0.51 credits\"},{\"value\":\"custom-local:glm-5.3\",\"name\":\"GLM-5.3\"},{\"value\":\"custom-local:glm-5.3-flash\",\"name\":\"GLM-5.3-Flash\"}]},{\"type\":\"select\",\"id\":\"thought_level\",\"name\":\"Deep Thinking\",\"description\":\"Choose reasoning effort level for this session\",\"category\":\"thought_level\",\"currentValue\":\"enabled\",\"options\":[{\"value\":\"low\",\"name\":\"Low\",\"description\":\"Light reasoning\"},{\"value\":\"high\",\"name\":\"High\",\"description\":\"Deep reasoning\"},{\"value\":\"max\",\"name\":\"Max\",\"description\":\"Maximum reasoning effort\"},{\"value\":\"enabled\",\"name\":\"On (default)\",\"description\":\"Use the model default effort\"}]},{\"type\":\"select\",\"id\":\"sandbox\",\"name\":\"Sandbox\",\"description\":\"Run shell commands inside the sandbox-cli isolation layer\",\"category\":\"sandbox\",\"currentValue\":\"false\",\"options\":[{\"value\":\"true\",\"name\":\"Sandbox Environment\",\"description\":\"Bash/PowerShell commands run inside the sandbox and require escalation to touch the host\"},{\"value\":\"false\",\"name\":\"Local Environment\",\"description\":\"Commands run with full user permissions (no sandbox isolation)\"}]},{\"type\":\"boolean\",\"id\":\"multitask\",\"name\":\"Multitask\",\"description\":\"Coordinate detached workers while keeping the current agent mode\",\"category\":\"_codebuddy.ai/multitask\",\"currentValue\":false}]},\"switched_to\":\"custom-local:glm-5.3-flash\",\"turn_response\":\"\",\"stopReason\":null,\"error\":\"model switch prompt timeout\"}",
+    "cmd": "connection.setSessionConfigOption({ sessionId, configId: \"model\", value: \"custom-local:glm-5.3-flash\" }) -> prompt()"
+  },
+  "mode-switch": {
+    "result": "pass",
+    "evidence": "{\"configOptions\":[{\"type\":\"select\",\"id\":\"mode\",\"name\":\"Permission Mode\",\"description\":\"Controls how the agent requests permission before making changes\",\"category\":\"mode\",\"currentValue\":\"plan\",\"options\":[{\"value\":\"default\",\"name\":\"Always Ask\",\"description\":\"Prompts for permission on first use of each tool\"},{\"value\":\"acceptEdits\",\"name\":\"Accept Edits\",\"description\":\"Automatically accepts file edit permissions for the session\"},{\"value\":\"plan\",\"name\":\"Plan\",\"description\":\"Agent can analyze but not modify files or execute commands\"},{\"value\":\"auto\",\"name\":\"Auto\",\"description\":\"An AI classifier reviews actions that would normally prompt: safe ones are auto-approved, risky ones are denied. If the classifier is unavailable, the action falls back to a prompt (or is denied when prompts cannot be shown)\"},{\"value\":\"dontAsk\",\"name\":\"Don't Ask\",\"description\":\"Does not show permission prompts; pre-approved and safe read-only actions run, everything else that would prompt is denied\"},{\"value\":\"bypassPermissions\",\"name\":\"Bypass Permissions\",\"description\":\"Skips all permission prompts\"},{\"value\":\"fullAccess\",\"name\":\"Full Access\",\"description\":\"Skips ALL permission checks including dangerous commands for all agents\"},{\"value\":\"delegate\",\"name\":\"Delegate\",\"description\":\"Permissions managed by parent session\"}]},{\"type\":\"select\",\"id\":\"model\",\"name\":\"Model\",\"description\":\"Select the AI model to use for this session\",\"category\":\"model\",\"currentValue\":\"custom-local:glm-5.3-flash\",\"options\":[{\"value\":\"hy4-preview\",\"name\":\"Hy4 preview\",\"description\":\"x0.29 credits\"},{\"value\":\"hy3\",\"name\":\"Hy3\",\"description\":\"x0.00 credits\"},{\"value\":\"hy3-x\",\"name\":\"Hy3\",\"description\":\"x0.05 credits\"},{\"value\":\"step-5-preview\",\"name\":\"Step-5-Preview\",\"description\":\"x0.00 credits\"},{\"value\":\"space-bunny\",\"name\":\"Space-Bunny\",\"description\":\"x0.08 credits\"},{\"value\":\"deepseek-v4.1-flash\",\"name\":\"Deepseek-V4.1-Flash\",\"description\":\"x0.11 credits\"},{\"value\":\"glm-5.3\",\"name\":\"GLM-5.3\",\"description\":\"x0.79 credits\"},{\"value\":\"glm-5.3-flash\",\"name\":\"GLM-5.3-Flash\",\"description\":\"x0.06 credits\"},{\"value\":\"glm-5.2\",\"name\":\"GLM-5.2\",\"description\":\"x0.79 credits\"},{\"value\":\"glm-5.1\",\"name\":\"GLM-5.1\",\"description\":\"x0.79 credits\"},{\"value\":\"glm-5v-turbo\",\"name\":\"GLM-5v-Turbo\",\"description\":\"x0.71 credits\"},{\"value\":\"minimax-m3\",\"name\":\"MiniMax-M3\",\"description\":\"x0.25 credits\"},{\"value\":\"minimax-m2.7\",\"name\":\"MiniMax-M2.7\",\"description\":\"x0.19 credits\"},{\"value\":\"kimi-k3-1\",\"name\":\"Kimi-K3\",\"description\":\"x1.62 credits\"},{\"value\":\"kimi-k2.8-preview\",\"name\":\"Kimi-K2.8-Preview\",\"description\":\"x0.77 credits\"},{\"value\":\"kimi-k2.7\",\"name\":\"Kimi-K2.7-Code\",\"description\":\"x0.57 credits\"},{\"value\":\"kimi-k2.6\",\"name\":\"Kimi-K2.6\",\"description\":\"x0.52 credits\"},{\"value\":\"deepseek-v4-pro\",\"name\":\"Deepseek-V4-Pro\",\"description\":\"x0.51 credits\"},{\"value\":\"custom-local:glm-5.3\",\"name\":\"GLM-5.3\"},{\"value\":\"custom-local:glm-5.3-flash\",\"name\":\"GLM-5.3-Flash\"}]},{\"type\":\"select\",\"id\":\"thought_level\",\"name\":\"Deep Thinking\",\"description\":\"Choose reasoning effort level for this session\",\"category\":\"thought_level\",\"currentValue\":\"enabled\",\"options\":[{\"value\":\"low\",\"name\":\"Low\",\"description\":\"Light reasoning\"},{\"value\":\"high\",\"name\":\"High\",\"description\":\"Deep reasoning\"},{\"value\":\"max\",\"name\":\"Max\",\"description\":\"Maximum reasoning effort\"},{\"value\":\"enabled\",\"name\":\"On (default)\",\"description\":\"Use the model default effort\"}]},{\"type\":\"select\",\"id\":\"sandbox\",\"name\":\"Sandbox\",\"description\":\"Run shell commands inside the sandbox-cli isolation layer\",\"category\":\"sandbox\",\"currentValue\":\"false\",\"options\":[{\"value\":\"true\",\"name\":\"Sandbox Environment\",\"description\":\"Bash/PowerShell commands run inside the sandbox and require escalation to touch the host\"},{\"value\":\"false\",\"name\":\"Local Environment\",\"description\":\"Commands run with full user permissions (no sandbox isolation)\"}]},{\"type\":\"boolean\",\"id\":\"multitask\",\"name\":\"Multitask\",\"description\":\"Coordinate detached workers while keeping the current agent mode\",\"category\":\"_codebuddy.ai/multitask\",\"currentValue\":false}]}",
+    "cmd": "connection.setSessionConfigOption({ sessionId, configId: \"mode\", value: \"plan\" })"
+  },
+  "close": {
+    "result": "fail",
+    "evidence": "{\"closeResult\":null,\"error\":\"\\\"Method not found\\\": session/close\"}",
+    "cmd": "connection.closeSession({ sessionId: \"01a14946-7990-79fe-9451-bccf06d2eddc\" })"
+  },
+  "quota": {
+    "result": "pass",
+    "evidence": "{\"usage_update_count\":26,\"sample_usage\":{\"used\":30457,\"size\":200000,\"_meta\":{\"codebuddy.ai/requestId\":\"01a149474b1a7de5a696bbd4a7d668d0\",\"codebuddy.ai/messageId\":\"01a149476fa17d39be8cd8f76ee6c900\",\"codebuddy.ai/usageByCategory\":{\"systemPrompt\":1646,\"conversation\":2924,\"tools\":24434,\"mcp\":57,\"skills\":1396,\"version\":1},\"baggage\":\"codebuddy.session_id=01a14946-7990-79fe-9451-bccf06d2eddc,codebuddy.conversation_request_id=01a149476ed9774d884822b5e51b43d0\"},\"sessionUpdate\":\"usage_update\"}}",
+    "cmd": "sessionUpdate event usage_update",
+    "note": "ACP 桥每轮流式推送 usage_update 事件汇报用量 (used/size)"
+  }
+}

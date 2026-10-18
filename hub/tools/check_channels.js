@@ -81,8 +81,8 @@ function main() {
     lines.forEach((line, i) => {
       try {
         const ev = JSON.parse(line);
-        if (!ev.at || !ev.channel || !ev.kind || !ev.maintainer) {
-          errors.push(`events.jsonl line ${i + 1} missing required fields (at, channel, kind, maintainer)`);
+        if (!(ev.at || ev.ts) || !ev.channel || !ev.kind || !(ev.maintainer || ev.source)) {
+          errors.push(`events.jsonl line ${i + 1} missing required fields (at/ts, channel, kind, maintainer/source)`);
         }
       } catch (e) {
         errors.push(`events.jsonl line ${i + 1} invalid JSON: ${e.message}`);
@@ -90,11 +90,11 @@ function main() {
     });
   }
 
-  // 2. Scan all 21 channel cards across hosts/, models/, tools-sites/
+  // 2. Scan all 23 channel cards across hosts/, models/, tools-sites/
   const groups = [
     { dir: 'hosts', expectedCount: 10 },
     { dir: 'models', expectedCount: 5 },
-    { dir: 'tools-sites', expectedCount: 6 },
+    { dir: 'tools-sites', expectedCount: 8 },
   ];
 
   const cards = [];
@@ -209,7 +209,7 @@ function main() {
   }
 
   console.log('=== Channel & Capability Maintenance Workbench Check ===');
-  console.log(`Cards verified: ${cards.length} (hosts: 10, models: 5, tools-sites: 6)`);
+  console.log(`Cards verified: ${cards.length} (hosts: 10, models: 5, tools-sites: 8)`);
   console.log(`Status distribution: ${Object.entries(byStatus).map(([k, v]) => `${k}=${v}`).join(', ')}`);
   console.log(`Maintainer distribution: ${Object.entries(byMaint).map(([k, v]) => `${k}=${v}`).join(', ')}`);
   console.log(`Upgrade & watch tickets: ${upgradeFiles.length} (${upgradeFiles.join(', ')})`);

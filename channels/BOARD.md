@@ -1,7 +1,7 @@
 # 本地能力与渠道维护专门工作台 · 全局总控状态板（BOARD）
 
 > **工作台定位**：纯本地文件原生的“能力渠道档案 + 实时风控/配额状态 + 版本升级感知与调研”专门工作台（不做冗余 Web 外壳，直接由人类、总调度 `A1` 与三位专门维护者 `S5 / S6 / S3` 读写维护，并与 `trace` / `hub` 自动联动）。
-> **最后巡检时间**：`2026-10-14T12:55:00+08:00`（巡检脚本：`node hub/tools/check_channels.js`）
+> **最后巡检时间**：`2026-10-14T22:28:00+08:00`（巡检脚本：`node hub/tools/check_channels.js`｜统一网关：`node hub/tools/agent_gateway.js`）
 
 ---
 
@@ -20,18 +20,19 @@
 ## 一、域 A：智能体宿主渠道池（Agent Hosts · 责任维护者：`S5`）
 
 > **维护铁律（原则 12）**：**跨平台互助排障**——某宿主挂死或异常时，严禁让该宿主自己排障，必须由另一健康宿主（如 ZCode 异常用 Claude Code / Codex 排查）读取日志与状态卡诊断。操作桌面进程（ZCode / WorkBuddy / AntiGravity / 豆包）必走**桌面安全六步 SOP**。
+> **统一执行网关底座**：已接入 `openclaw/acpx@0.19.5` + `hub/tools/agent_gateway.js`，对 `codex`、`claude-code`、`zcode`、`workbuddy`、`opencode` 实现统一 ACP 无头调用与命名会话续接。
 
 | 渠道 ID | 宿主名称 | 状态 | 升级感知 (`verified` → `detected`) | 锁持有者 | 维护者 | 核心能力档位 (`capabilities`) | 当前关键状态备注 & 独立档案卡 |
 | :--- | :--- | :---: | :--- | :---: | :---: | :--- | :--- |
-| `codex` | **OpenAI Codex CLI** | 🟢 | ✅ `0.159.2` (**4册基准已建**) | `shared` | **S5** | 读:`✅` 控:`✅` 插:`✅` 团:`✅` | 已完成 `0.159.2` 170 RPC/23 CLI 全量实测与勘误；主力 `gpt-6.1-sol` · [codex/](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/codex/README.md) / [卡](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/codex.md) |
-| `claude-code` | **Claude Code CLI** | 🟢 | 🔍 `2.1.85` → **`2.1.296`** | `shared` | **S5** | 读:`✅` 控:`✅` 插:`✅` 团:`✅` | 新增 `--bg` / `agents --json` / `stop` / `attach`；A1 首选 · [claude-code.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/claude-code.md) |
-| `zcode` | **ZCode (CLI + 桌面)** | 🟢 | ✅ `0.16.9` (桌面 `3.14.3+`) | `shared` | **S5** | 读:`✅` 控:`🟡(CDP)` 插:`🟡(CDP)` 团:`✅` | `status=running` 不可信（8 个僵尸会话），必按 `mtime` 判活 · [zcode.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/zcode.md) |
-| `workbuddy` | **WorkBuddy / CodeBuddy** | 🟢 | ✅ `2.160.0` | `shared` | **S5** | 读:`✅(SQLite)` 控:`✅` 插:`🟡` 团:`✅` | 与桌面共用 Credits；中文 Prompt 必走文件；防泄露 `models.json` · [workbuddy.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/workbuddy.md) |
-| `antigravity` | **AntiGravity 桌面** | 🟡 | ✅ `CDP:9234` (`brain` 日志) | `shared` | **S5** | 读:`✅` 控:`🟡(CDP)` 插:`🟡(CDP)` 团:`✅` | `send` 易假成功（发后必读 `transcript.jsonl` 验真）；不让下判断 · [antigravity.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/antigravity.md) |
+| `codex` | **OpenAI Codex CLI** | 🟢 | ✅ `0.159.2` (**4册基准已建**) | `shared` | **S5** | 读:`✅` 控:`✅(ACP)` 插:`✅(ACP)` 团:`✅` | `acpx codex` 实测通过（必注 `127.0.0.1:7892`）；主力 `gpt-6.1-sol` · [codex/](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/codex/README.md) / [卡](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/codex.md) |
+| `claude-code` | **Claude Code CLI** | 🟢 | 🔍 `2.1.85` → **`2.1.296`** | `shared` | **S5** | 读:`✅` 控:`✅(ACP)` 插:`✅(ACP)` 团:`✅` | `acpx claude` 实测通过（必注 `ACPX_CLAUDE_INCLUDE_USER_SETTINGS=1`） · [claude-code.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/claude-code.md) |
+| `zcode` | **ZCode (CLI + 桌面)** | 🟢 | ✅ `0.16.9` (`zcode-acp@0.69.3`) | `shared` | **S5** | 读:`✅` 控:`✅(ACP)` 插:`✅(ACP)` 团:`✅` | **已打通 `acpx zcode` 无头执行与恢复**（免桌面 CDP 9240）；`mtime` 判活 · [zcode.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/zcode.md) |
+| `workbuddy` | **WorkBuddy / CodeBuddy** | 🟢 | ✅ `2.160.0` (`codebuddy --acp`) | `shared` | **S5** | 读:`✅(SQLite)` 控:`✅(ACP)` 插:`✅(ACP)` 团:`✅` | **已打通 `acpx workbuddy` 原生 ACP**（`custom-local:glm-5.3` + `ACC_PRODUCT_CONFIG_V3`） · [workbuddy.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/workbuddy.md) |
+| `antigravity` | **Google Antigravity (AGY)** | 🟢 | ✅ `hub-2.23.0` (`LS-ConnectRPC+agentapi`) | `shared` | **S5** | 读:`✅(SQLite/JSONL)` 控:`✅(RPC)` 插:`✅(RPC)` 团:`✅` | **已打通免 CDP 原生 `language_server.exe agentapi` 新建/恢复与 Connect-RPC 实时查额** · [antigravity.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/antigravity.md) |
 | `doubao-desktop` | **豆包 Desktop** | 🟡 | 🔍 `CDP:9225` (监测外部 sessions) | `user-active` | **S5** | 读:`🔒(LevelDB)` 控:`🟡(CDP)` 插:`❌` 团:`✅(内置搜索)` | 用户在用严禁重启；已设本地目录指纹探针监测何时开放外部 sessions · [doubao-desktop.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/doubao-desktop.md) |
 | `gemini-cli` | **Gemini CLI** | 🟡 | ✅ `0.62.0` | `shared` | **S5** | 读:`✅` 控:`✅` 插:`🟡(ACP)` 团:`❌` | 未登录时运行 `--list-sessions` 会阻塞弹浏览器；已修复 `chats/` 扫描 · [gemini-cli.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/gemini-cli.md) |
-| `opencode` | **OpenCode CLI** | 🟢 | ✅ `1.18.33` | `shared` | **S5** | 读:`✅` 控:`✅` 插:`✅(serve)` 团:`✅(Task)` | 三层目录束 `storage/{session,message,part}`，支持 `--fork` · [opencode.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/opencode.md) |
-| `factory-droid` | **Factory Droid** | 🟢 | ✅ `0.228.0` | `shared` | **S5** | 读:`✅` 控:`✅` 插:`🟡` 团:`✅(Mission)` | 原生 Worker+Validator 双模型 Mission；已消解 `todo_state` 残差 · [factory-droid.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/factory-droid.md) |
+| `opencode` | **OpenCode CLI** | 🟢 | ✅ `1.18.33` (`opencode acp`) | `shared` | **S5** | 读:`✅` 控:`✅(ACP)` 插:`✅(ACP)` 团:`✅(Task)` | `acpx opencode` 多轮会话恢复实测通过；三层目录束 `storage/` · [opencode.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/opencode.md) |
+| `factory-droid` | **Factory Droid** | 🟢 | ✅ `0.228.0` (`--output-format acp`) | `shared` | **S5** | 读:`✅` 控:`✅` 插:`🟡(ACP需Key)` 团:`✅(Mission)` | 原生支持 ACP 协议（需 `FACTORY_API_KEY`）；Worker+Validator 双模型 Mission · [factory-droid.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/factory-droid.md) |
 | `ap-vibe` | **AP-Vibe 托管工作台** | 🟢 | ✅ `:8876` (`agent-hub`) | `shared` | **S5/AP** | 读:`✅(HTTP)` 控:`✅(HTTP)` 插:`✅(Blackboard)` 团:`✅` | **铁律 P22**：严禁直读运行中 8876 的 SQLite，一律走 HTTP · [ap-vibe.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/hosts/ap-vibe.md) |
 
 ---
@@ -52,11 +53,17 @@
 
 ## 三、域 C：外部工具、搜索与站点采集渠道池（Tools & Sites · 责任维护者：`S3` + Codex `01a0f203`）
 
-> **维护铁律**：媒体与社区渠道（C5）**全系统仅允许 `S3` 单实例串行调用**（速率 $\le 3$ 次/分钟），且必须以全机唯一运行时状态板 [`C:\Users\COLORFIRE\.zcode\skills\opencli-poweruser\local\channel-state\BOARD.md`](file:///C:/Users/COLORFIRE/.zcode/skills/opencli-poweruser/local/channel-state/BOARD.md) 为准（严禁孤岛状态板）；首条报错（如 `Navigation rejected`、`0B`、`429`）**立即停手保现场**，严禁盲目重试或重启浏览器抹掉现场；历史疑难故障（如小红书 `T1`）不因单次复测通过而自动关闭。
+> **OpenCLI 专职维护员驻扎工作区与三处维护边界**：
+> - **权威主仓（Skill 与维护代码）**：[`E:\program\GIT\media\opencli-poweruser`](file:///E:/program/GIT/media/opencli-poweruser)（专属维护会话驻扎于此，持续承担 OpenCLI 的检测、根因分析、修复、实测验收和经验回流；提交及全量同步前先向用户说明；测试证据保存在该工作区的 `local/` 下）。
+> - **实际运行的适配器与插件（含 `pacing` 节奏闸）**：`C:\Users\COLORFIRE\.opencli\`
+> - **全机共享唯一运行时状态板**：[`C:\Users\COLORFIRE\.zcode\skills\opencli-poweruser\local\channel-state\BOARD.md`](file:///C:/Users/COLORFIRE/.zcode/skills/opencli-poweruser/local/channel-state/BOARD.md)（严禁孤岛状态板）。
+> - **调用红线**：媒体与社区渠道（C5）**全系统仅允许单实例串行调用**（速率 $\le 3$ 次/分钟）；首条报错（如 `Navigation rejected`、`0B`、`429`）**立即停手保现场**，严禁盲目重试或重启浏览器抹掉现场；历史疑难故障（如小红书 `T1`）不因单次复测通过而自动关闭。
 
 | 渠道 ID | 渠道/站点名称 | 状态 | 升级/适配器基线 | 锁持有者 | 维护者 | 安全间隔 & 并发上限 | 当前攻防状态与关键绕行规矩 & 独立档案卡 |
 | :--- | :--- | :---: | :--- | :---: | :---: | :--- | :--- |
 | `anysearch` | **AnySearch 联网搜索** | 🟢 | `anysearch@skill` (一主两备 Key) | `shared` | **S3** | 连续 2 次报错切备 Key | **不支持 `site:` 语法**（会被当普通词分词）；替代 Codex 空返回与 BOSS 封禁 · [anysearch.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/tools-sites/anysearch.md) |
+| `serpapi` | **SerpApi 多引擎结构化搜索** | 🟢 | `serpapi-rest-v1` (10把Key · 2500次/月) | `shared` | **S3** | 250次/h/Key，默认开1h缓存 | **原生支持 `site:` / `filetype:` 与 `google_scholar`**；`/account.json` 零损耗查账，实测剩余 `2499/2500` · [serpapi.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/tools-sites/serpapi.md) |
+| `tavily` | **Tavily AI 联网搜索与正文提取** | 🟢 | `tavily-rest-v1` (9把Key · 9000 Credits/月) | `shared` | **S3** | `basic=1` / `advanced=2` Credit | 支持 `/search`（含 `include_domains` + AI 综述）与 `/extract`（5 URL/1 Credit）；`/usage` 零损耗查账，实测剩余 `8554/9000` · [tavily.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/tools-sites/tavily.md) |
 | `academic-rate-gate` | **学术与代码公开接口 (7 源)** | 🟢 | `rate_gate.py` 全局文件锁 | `shared` | **S3** | arXiv `3s` / S2 `5s` / OA `1s` / GH `60s` | 遇 HTTP 429 必跑 `rate_gate.py cooldown <源> 600` 全机同步冷却 · [academic-rate-gate.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/tools-sites/academic-rate-gate.md) |
 | `opencli-xiaohongshu` | **小红书 (`xiaohongshu`)** | 🟡 | `opencli@1.8.8+ext1.0.24` | `none` | **S3** | `search` $\ge 30\text{s}$，单实例串行 | **双通道分记**：已登录 `v6pz9gjx` `search` 🟢（`10-14` 通过），`note` 🟡 1.1s 报 `Navigation rejected`（`T1`）；匿名通道 🔒 · [opencli-xiaohongshu.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/tools-sites/opencli-xiaohongshu.md) |
 | `opencli-zhihu` | **知乎 (`zhihu`)** | 🟡 | `opencli@1.8.8+ext1.0.24` | `none` | **S3** | $\ge 20\text{s}$，单实例串行 | `topstory / hot / question` 🟢；`search` 🟡 `10-14` 复测 1.0s 报 `Navigation rejected` (`T1`) · [opencli-zhihu.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/tools-sites/opencli-zhihu.md) |

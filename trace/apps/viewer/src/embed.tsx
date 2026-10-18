@@ -54,9 +54,46 @@ function box(host: HTMLElement): HTMLElement {
   return div;
 }
 
+function isSystemContextSpan(s: { type: string; attributes?: readonly { key: string; value: { stringValue?: string } }[] }): boolean {
+  if (s.type !== 'event') return false;
+  const role = s.attributes?.find((a) => a.key === 'role')?.value?.stringValue;
+  return role === 'developer' || role === 'context';
+}
+
+function pruneSpans(
+  list: ReturnType<typeof toSpans>,
+  hideSys: boolean,
+  catFilter: 'all' | 'llm' | 'tool' | 'error',
+): { spans: ReturnType<typeof toSpans>; sysCount: number } {
+  let sysCount = 0;
+  const walk = (items: ReturnType<typeof toSpans>): ReturnType<typeof toSpans> => {
+    const out: ReturnType<typeof toSpans> = [];
+    for (const item of items) {
+      if (isSystemContextSpan(item)) {
+        sysCount++;
+        if (hideSys) continue;
+      }
+      const nextChildren = item.children?.length ? walk(item.children) : [];
+      if (catFilter !== 'all' && item.type !== 'agent_invocation' && item.type !== 'chain_operation') {
+        const matchSelf =
+          (catFilter === 'llm' && item.type === 'llm_call') ||
+          (catFilter === 'tool' && (item.type === 'tool_execution' || item.type === 'retrieval' || item.type === 'create_agent')) ||
+          (catFilter === 'error' && item.status === 'error');
+        if (!matchSelf && nextChildren.length === 0) continue;
+      }
+      out.push({ ...item, children: nextChildren });
+    }
+    return out;
+  };
+  return { spans: walk(list), sysCount };
+}
+
 function Embedded({ props, detailsBox }: { props: EmbedProps; detailsBox: HTMLElement | null }) {
   const { session, layer = null, depth = 1, selected = null, onSelect } = props;
-  const spans = useMemo(() => toSpans(session, layer), [session, layer]);
+  const rawSpans = useMemo(() => toSpans(session, layer), [session, layer]);
+  const [hideSys, setHideSys] = useState(true);
+  const [catFilter, setCatFilter] = useState<'all' | 'llm' | 'tool' | 'error'>('all');
+  const { spans, sysCount } = useMemo(() => pruneSpans(rawSpans, hideSys, catFilter), [rawSpans, hideSys, catFilter]);
   const all = useMemo(() => flattenSpans(spans), [spans]);
   const parents = useMemo(() => parentsOf(spans), [spans]);
   const [expanded, setExpanded] = useState<string[]>(() => expandedForDepth(session, layer, depth));
@@ -74,32 +111,60 @@ function Embedded({ props, detailsBox }: { props: EmbedProps; detailsBox: HTMLEl
 
   const q = query.trim();
   const shown = useMemo(() => (q ? filterSpansRecursively(spans, q) : spans), [spans, q]);
-  const current = all.find((x) => x.id === selected) || spans[0];
+  const allRaw = useMemo(() => flattenSpans(rawSpans), [rawSpans]);
+  const current = allRaw.find((x) => x.id === selected) || all.find((x) => x.id === selected) || spans[0];
   const details = current ? (
-    <DetailsView key={session.id} className="h-full rounded-none border-0" data={current} allSpans={spans} />
+    <DetailsView key={session.id} className="h-full rounded-none border-0" data={current} allSpans={rawSpans} />
   ) : (
     <div className="text-agentprism-secondary-foreground p-4 text-sm">选中树里的一项，这里显示输入输出、思考和属性。</div>
   );
 
   return (
     <>
-      <div className="flex shrink-0 items-center gap-2 px-4 py-2">
+      <div className="border-agentprism-border/70 bg-agentprism-secondary/35 flex shrink-0 flex-wrap items-center gap-2 border-b px-3.5 py-2">
         <input
-          className="border-agentprism-border bg-agentprism-muted placeholder:text-agentprism-secondary-foreground min-w-0 flex-1 rounded border px-2 py-1 text-xs outline-none focus:border-agentprism-brand"
-          placeholder="在这次运行里搜索"
+          className="border-agentprism-border bg-agentprism-background/80 placeholder:text-agentprism-secondary-foreground min-w-[140px] flex-1 rounded-lg border px-2.5 py-1 text-xs outline-none transition-colors focus:border-agentprism-brand"
+          placeholder="搜索步骤、命令、文件或思考…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <div className="hi-segment">
+          {([
+            ['all', '全部'],
+            ['llm', '⚡ 模型'],
+            ['tool', '🔧 工具'],
+            ['error', '✕ 报错'],
+          ] as const).map(([k, lbl]) => (
+            <button
+              key={k}
+              type="button"
+              className={'hi-navbtn !h-6 !px-2 !text-[11px]' + (catFilter === k ? ' on' : '')}
+              onClick={() => setCatFilter(k)}
+            >
+              {lbl}
+            </button>
+          ))}
+        </div>
+        {sysCount > 0 && (
+          <button
+            type="button"
+            className={'hi-navbtn !h-6 !px-2 !text-[11px] border ' + (hideSys ? 'border-agentprism-border text-agentprism-secondary-foreground' : 'on')}
+            onClick={() => setHideSys(!hideSys)}
+            title="折叠或展开 <app-context> / AGENTS.md 等系统级注入上下文"
+          >
+            {hideSys ? `📎 已折叠 ${sysCount} 条系统注入` : `📎 隐藏系统注入 (${sysCount})`}
+          </button>
+        )}
         <ExpandAllButton onExpandAll={() => setExpanded(all.map((x) => x.id))} title="全部展开" />
         <CollapseAllButton onCollapseAll={() => setExpanded([])} title="全部收起" />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto pb-6">
+      <div className="min-h-0 flex-1 overflow-y-auto pb-6 pt-1">
         {q && shown.length === 0 ? (
           <div className="text-agentprism-secondary-foreground px-4 py-3 text-xs">没有匹配「{q}」的结果</div>
         ) : (
           <TreeView
             spans={shown}
-            expandedSpansIds={q ? all.map((x) => x.id) : expanded}
+            expandedSpansIds={q || catFilter !== 'all' ? all.map((x) => x.id) : expanded}
             onExpandSpansIdsChange={(ids) => setExpanded([...ids])}
             onSpanSelect={(x) => onSelect?.(x.id)}
             selectedSpan={current}

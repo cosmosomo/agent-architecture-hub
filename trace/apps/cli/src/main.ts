@@ -12,7 +12,9 @@
  *   --cache FILE  index cache file (default ~/.agent-hub/trace/index-v<contract>.json)
  */
 import { spawn } from 'node:child_process';
-import { statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { randomBytes } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ADAPTERS } from '@hub-trace/adapters';
@@ -120,8 +122,12 @@ async function main() {
     case 'serve': {
       // The page is up at once; sessions fill in while the first scan runs (the page polls the index).
       const search = new SearchIndex(searchFile(store));
-      const server = createService({ store, search, repoRoot: REPO_ROOT, viewerDir: join(TRACE_DIR, 'apps', 'viewer', 'dist') });
-      const host = flag(a, 'host') || '127.0.0.1', asked = flag(a, 'port');
+      // --lan <address> (or HUB_LAN_HOST) also serves the page to other devices at that address, e.g. a phone
+      // on EasyTier; every request from another machine then needs the access token kept in ~/.agent-hub/.
+      const lanHost = (flag(a, 'lan') || process.env.HUB_LAN_HOST || '').trim() || undefined;
+      const accessToken = lanHost ? lanAccessToken() : undefined;
+      const server = createService({ store, search, repoRoot: REPO_ROOT, viewerDir: join(TRACE_DIR, 'apps', 'viewer', 'dist'), lanHost, accessToken });
+      const host = flag(a, 'host') || (lanHost ? '0.0.0.0' : '127.0.0.1'), asked = flag(a, 'port');
       const first = Number(asked || DEFAULT_PORT), last = asked ? first : first + 20;
       let url = '';
       for (let port = first; ; port++) {
@@ -152,3 +158,16 @@ main().catch((err) => {
   if ((err as NodeJS.ErrnoException)?.code === 'EADDRINUSE') console.error('端口被占用：可能是旧的静态服务还开着。关掉它，或换一个：npm start -- --port 8900');
   process.exit(1);
 });
+
+/** Token for requests from other devices: HUB_ACCESS_TOKEN, else one kept in ~/.agent-hub/lan-token (created once). */
+function lanAccessToken(): string {
+  const fromEnv = (process.env.HUB_ACCESS_TOKEN || '').trim();
+  if (fromEnv) return fromEnv;
+  const dir = join(homedir(), '.agent-hub');
+  const file = join(dir, 'lan-token');
+  try { const t = readFileSync(file, 'utf8').trim(); if (t) return t; } catch {}
+  mkdirSync(dir, { recursive: true });
+  const t = randomBytes(24).toString('base64url');
+  writeFileSync(file, t + '\n', { mode: 0o600 });
+  return t;
+}

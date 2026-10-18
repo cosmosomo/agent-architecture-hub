@@ -117,6 +117,11 @@
     renderPanel(s);
     if (HUB.obsTimeline) safe('timeline.update', function () { HUB.obsTimeline.update(m, s); });
     renderStatus(s);
+    var cLink = document.getElementById('consoleModeLink');
+    if (cLink) {
+      var sid = (s.focus && s.focus.type === 'session' && s.focus.id) || (s.selection && s.selection.type === 'session' && s.selection.id) || '';
+      cLink.href = sid ? 'console/#session=' + encodeURIComponent(sid) : 'console/';
+    }
     document.title = (m.presetName || m.name) + ' · Agent Architecture Hub';
   }
 
@@ -287,16 +292,35 @@
       return;
     }
     if (d.length && s.present !== 'panel') els.topctl.appendChild(h('span', { class: 'ob-sep' }));
-    els.topctl.appendChild(h('span', { class: 'ob-lbl' }, '对照'));
-    var cmp = h('div', { class: 'ob-seg', title: '只看编排里的定义、两者对照、只看实际发生的事实' });
-    [['def', '定义'], ['both', '对照'], ['fact', '事实']].forEach(function (x) {
-      cmp.appendChild(h('button', { type: 'button', class: s.compare === x[0] ? 'on' : '', onClick: function () { HUB.store.set({ compare: x[0] }); } }, x[1]));
+    var m = model(), a = m ? HUB.model.an(s, m) : null;
+    var unusedNonCh = a && a.unusedRelations ? a.unusedRelations.filter(function (rid) {
+      var r = m.idx.rel.get(rid);
+      return r && r.type !== 'channel';
+    }).length : 0;
+    var diffCount = a ? ((a.factOnly ? a.factOnly.length : 0) + unusedNonCh + (a.neverDispatched ? a.neverDispatched.length : 0)) : 0;
+    els.topctl.appendChild(h('span', { class: 'ob-lbl' }, '视角'));
+    var cmp = h('div', { class: 'ob-seg', title: '切换编排蓝图定义、设计 vs 实跑对账、仅看实跑事实（同时联动拓扑图与对账表）' });
+    [
+      ['def', '📐 蓝图定义', '只看 Markdown 编排文档声明的静态架构蓝图与契约规格', 0],
+      ['both', '⚖ 实况对照', '把编排设计与真实运行叠在一起对账：高亮未派活个体、死线与越界交接', diffCount],
+      ['fact', '⚡ 仅看实跑', '隐藏未触发的连线与未派活个体，只看实际发生过的执行路径与数据', 0]
+    ].forEach(function (x) {
+      var btn = h('button', {
+        type: 'button',
+        class: s.compare === x[0] ? 'on' : '',
+        title: x[2],
+        onClick: function () { HUB.store.set({ compare: x[0] }); }
+      }, x[1], x[3] > 0 ? h('b', { class: 'ob-seg-badge', title: '发现 ' + x[3] + ' 处设计与实跑偏差' }, String(x[3])) : null);
+      cmp.appendChild(btn);
     });
     els.topctl.appendChild(cmp);
     els.topctl.appendChild(h('span', { class: 'ob-sep' }));
-    var pr = h('div', { class: 'ob-seg', title: '图，或者同一组数据的面板（G）' });
-    [['graph', '图'], ['panel', '面板']].forEach(function (x) {
-      pr.appendChild(h('button', { type: 'button', class: s.present === x[0] ? 'on' : '', onClick: function () { HUB.store.set({ present: x[0] }); } }, x[1]));
+    var pr = h('div', { class: 'ob-seg', title: '在空间拓扑图与结构化规格/对账表之间切换（快捷键 G）' });
+    [
+      ['graph', '拓扑图', '空间连线与粒子流转视图（快捷键 G）'],
+      ['panel', '对账表', '随左侧视角切换的规格说明书与设计 vs 实跑对账总表（快捷键 G）']
+    ].forEach(function (x) {
+      pr.appendChild(h('button', { type: 'button', class: s.present === x[0] ? 'on' : '', title: x[2], onClick: function () { HUB.store.set({ present: x[0] }); } }, x[1]));
     });
     els.topctl.appendChild(pr);
   }
@@ -636,12 +660,10 @@
     if (pending) later(pending); else applyJump();
   }
 
-  // a click on a case in the sidebar.  A built-in sample team has no real facts, only simulated ones: it opens as the plain
-  // definition, the way the sample page showed it; the comparison is one click away.
+  // a click on a case in the sidebar: open in 'both' (live comparison) mode consistently across presets and directory cases
   function openCase(id) {
     HUB.store.switchCase(id);
-    var m = model();
-    HUB.store.set({ compare: m && m.source && m.source.kind === 'sim' ? 'def' : 'both' }, { history: false });
+    HUB.store.set({ compare: 'both' }, { history: false });
   }
 
   HUB.obs = { start: start, fit: fit, render: function () { renderAll(st(), st()); }, openCase: openCase };

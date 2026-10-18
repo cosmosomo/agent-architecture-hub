@@ -22,7 +22,7 @@ capabilities:
 ## 一、渠道身份与接入入口
 - **角色定位**：开源多 Provider CLI 与本地 HTTP/ACP 服务端（支持挂载本地 `opencode serve` 供远程 attach）。
 - **CLI / 服务端入口（`1.18.33`）**：
-  - 非交互启动与续接：`opencode run "<msg>" -s <session_id> --format json`
+  - 非交互启动与恢复：`opencode run "<msg>" -s <session_id> --format json`
   - 分叉会话：`opencode run -s <session_id> --fork "<msg>"`
   - 离线会话列表與导出：`opencode session list` / `opencode export <sessionId>`
   - 常驻 HTTP 服务端：`opencode serve --port <port>` + `opencode run --attach http://127.0.0.1:<port>`
@@ -35,7 +35,7 @@ capabilities:
 | 能力维度 | 子能力项 | 支持度 | 精确命令 / 协议 / 字段依据 | 核验版本 & 证据 |
 |---|---|---|---|---|
 | **外部读 Sessions** | 三层目录束直读与 CLI 列表 | ✅ 原生完备 | `opencodeBundleMembers` 聚合 `session + message + part`（实测 3 会话、20 轮、160 工具调用 0 失败） | `1.18.33` `〔实测:3会话〕` |
-| **生命周期控制** | 启动 / 续接 / 分叉 / 服务端 | ✅ 原生完备 | `opencode run` / `-s <id>` / `--fork` / `opencode serve` | `1.18.33` `〔实测〕` |
+| **生命周期控制** | 启动 / 恢复 / 分叉 / 服务端 | ✅ 原生完备 | `opencode run` / `-s <id>` / `--fork` / `opencode serve` | `1.18.33` `〔实测〕` |
 | **运行中插话** | HTTP Server 附着控制 | ✅ 原生支持 | `opencode serve` + `--attach` HTTP API | `1.18.33` `〔CLI帮助〕` |
 | **团队与子智能体** | `Task` 工具派生子任务 | ✅ 原生支持 | 内置 `Task` 工具（`family: 'agent'`） | `1.18.33` `〔实测〕` |
 

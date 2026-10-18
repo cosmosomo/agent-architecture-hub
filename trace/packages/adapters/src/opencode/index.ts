@@ -1,7 +1,9 @@
+import { parseOpencodeDb } from './db.ts';
 import { OPENCODE_ADAPTER_VERSION, OPENCODE_CAPABILITIES, OPENCODE_KIND, createOpencodeParser, parseOpencodeBundle } from './parse.ts';
 import type { Bundle, FinishOptions, SourceAdapter, SourceFile } from '../types.ts';
 
 const SESSION_FILE_RE = /[\\/]storage[\\/]session[\\/][^\\/]+[\\/]ses_[A-Za-z0-9]+\.json$/i;
+const DB_RE = /[\\/]opencode[\\/]opencode\.db$/i;
 const MSG_DIR_RE = (sid: string) => new RegExp('[\\\\/]message[\\\\/]' + esc(sid) + '[\\\\/](msg_[A-Za-z0-9]+)\\.json$', 'i');
 const PART_RE = /[\\/]part[\\/](msg_[A-Za-z0-9]+)[\\/]/i;
 const SID_RE = /(ses_[A-Za-z0-9]+)\.json$/i;
@@ -44,4 +46,16 @@ export const opencodeAdapter: SourceAdapter = {
   parseBundle: (file: SourceFile, bundle: Bundle, opts: FinishOptions) => parseOpencodeBundle(file, bundle, opts),
 };
 
+export const opencodeDbAdapter: SourceAdapter = {
+  kind: OPENCODE_KIND,
+  version: OPENCODE_ADAPTER_VERSION,
+  label: 'OpenCode',
+  capabilities: OPENCODE_CAPABILITIES,
+  homeRoots: ['.local/share/opencode'],
+  matchFile: (path) => DB_RE.test(path),
+  createParser: createOpencodeParser,
+  parseSqlite: parseOpencodeDb,
+};
+
 export { OPENCODE_CAPABILITIES, createOpencodeParser, parseOpencodeBundle, toolFamily, OPENCODE_KIND, OPENCODE_ADAPTER_VERSION } from './parse.ts';
+export { parseOpencodeDb } from './db.ts';

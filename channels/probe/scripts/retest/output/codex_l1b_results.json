@@ -1,0 +1,639 @@
+{
+  "model-new": {
+    "pass": true,
+    "sessionName": "probe-codex-mswitch-1792235009384",
+    "sessionUuid": "70162049-2db1-46e0-a0e8-5a35ada0889f",
+    "threadId": "01a14988-2699-7242-9df3-c9e50f0abd9a",
+    "turnId": "01a14988-2d32-7171-9831-67b6be337b61",
+    "actualModel": "gpt-6.1-sol",
+    "p1Stdout": "M1_OK",
+    "rolloutFile": "C:\\Users\\COLORFIRE\\.codex\\sessions\\2026\\10\\17\\rollout-2026-10-17T19-03-41-01a14988-2699-7242-9df3-c9e50f0abd9a.jsonl",
+    "rawTurnContext": {
+      "timestamp": "2026-10-17T11:03:43.904Z",
+      "ordinal": 7,
+      "type": "turn_context",
+      "payload": {
+        "turn_id": "01a14988-2d32-7171-9831-67b6be337b61",
+        "root_turn_id": "01a14988-2d32-7171-9831-67b6be337b61",
+        "disabled_plugin_ids": [],
+        "cwd": "E:\\program\\GIT\\Agent\\multi",
+        "workspace_roots": [
+          "E:\\program\\GIT\\Agent\\multi"
+        ],
+        "current_date": "2026-10-17",
+        "timezone": "Asia/Singapore",
+        "approval_policy": "on-request",
+        "approvals_reviewer": "auto_review",
+        "sandbox_policy": {
+          "type": "workspace-write",
+          "network_access": false,
+          "exclude_tmpdir_env_var": false,
+          "exclude_slash_tmp": false
+        },
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi"
+                },
+                "access": "write"
+              },
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "slash_tmp"
+                  }
+                },
+                "access": "write"
+              },
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "tmpdir"
+                  }
+                },
+                "access": "write"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.git"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.agents"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.aws"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              }
+            ]
+          },
+          "network": "restricted"
+        },
+        "file_system_sandbox_policy": {
+          "kind": "restricted",
+          "entries": [
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "root"
+                }
+              },
+              "access": "read"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi"
+              },
+              "access": "write"
+            },
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "slash_tmp"
+                }
+              },
+              "access": "write"
+            },
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "tmpdir"
+                }
+              },
+              "access": "write"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.git"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.agents"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.aws"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            }
+          ]
+        },
+        "model": "gpt-6.1-sol",
+        "comp_hash": "3000",
+        "collaboration_mode": {
+          "mode": "default",
+          "settings": {
+            "model": "gpt-6.1-sol",
+            "reasoning_effort": "high",
+            "developer_instructions": null
+          }
+        },
+        "multi_agent_version": "v2",
+        "realtime_active": false,
+        "effort": "high",
+        "summary": "auto"
+      }
+    }
+  },
+  "model-switch": {
+    "pass": true,
+    "sessionName": "probe-codex-mswitch-1792235009384",
+    "sessionUuid": "70162049-2db1-46e0-a0e8-5a35ada0889f",
+    "threadId": "01a14988-2699-7242-9df3-c9e50f0abd9a",
+    "setCmdOutput": "model set: gpt-5.6-sol",
+    "turn1": {
+      "turnId": "01a14988-2d32-7171-9831-67b6be337b61",
+      "model": "gpt-6.1-sol",
+      "stdout": "M1_OK"
+    },
+    "turn2": {
+      "turnId": "01a14988-58ab-7373-b5d3-c8931a98d550",
+      "model": "gpt-5.6-sol",
+      "stdout": "M2_OK"
+    },
+    "rolloutFile": "C:\\Users\\COLORFIRE\\.codex\\sessions\\2026\\10\\17\\rollout-2026-10-17T19-03-41-01a14988-2699-7242-9df3-c9e50f0abd9a.jsonl",
+    "rawTurn1Context": {
+      "timestamp": "2026-10-17T11:03:43.904Z",
+      "ordinal": 7,
+      "type": "turn_context",
+      "payload": {
+        "turn_id": "01a14988-2d32-7171-9831-67b6be337b61",
+        "root_turn_id": "01a14988-2d32-7171-9831-67b6be337b61",
+        "disabled_plugin_ids": [],
+        "cwd": "E:\\program\\GIT\\Agent\\multi",
+        "workspace_roots": [
+          "E:\\program\\GIT\\Agent\\multi"
+        ],
+        "current_date": "2026-10-17",
+        "timezone": "Asia/Singapore",
+        "approval_policy": "on-request",
+        "approvals_reviewer": "auto_review",
+        "sandbox_policy": {
+          "type": "workspace-write",
+          "network_access": false,
+          "exclude_tmpdir_env_var": false,
+          "exclude_slash_tmp": false
+        },
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi"
+                },
+                "access": "write"
+              },
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "slash_tmp"
+                  }
+                },
+                "access": "write"
+              },
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "tmpdir"
+                  }
+                },
+                "access": "write"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.git"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.agents"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.aws"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              }
+            ]
+          },
+          "network": "restricted"
+        },
+        "file_system_sandbox_policy": {
+          "kind": "restricted",
+          "entries": [
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "root"
+                }
+              },
+              "access": "read"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi"
+              },
+              "access": "write"
+            },
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "slash_tmp"
+                }
+              },
+              "access": "write"
+            },
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "tmpdir"
+                }
+              },
+              "access": "write"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.git"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.agents"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.aws"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            }
+          ]
+        },
+        "model": "gpt-6.1-sol",
+        "comp_hash": "3000",
+        "collaboration_mode": {
+          "mode": "default",
+          "settings": {
+            "model": "gpt-6.1-sol",
+            "reasoning_effort": "high",
+            "developer_instructions": null
+          }
+        },
+        "multi_agent_version": "v2",
+        "realtime_active": false,
+        "effort": "high",
+        "summary": "auto"
+      }
+    },
+    "rawTurn2Context": {
+      "timestamp": "2026-10-17T11:03:54.872Z",
+      "ordinal": 24,
+      "type": "turn_context",
+      "payload": {
+        "turn_id": "01a14988-58ab-7373-b5d3-c8931a98d550",
+        "root_turn_id": "01a14988-58ab-7373-b5d3-c8931a98d550",
+        "disabled_plugin_ids": [],
+        "cwd": "E:\\program\\GIT\\Agent\\multi",
+        "workspace_roots": [
+          "E:\\program\\GIT\\Agent\\multi"
+        ],
+        "current_date": "2026-10-17",
+        "timezone": "Asia/Singapore",
+        "approval_policy": "on-request",
+        "approvals_reviewer": "auto_review",
+        "sandbox_policy": {
+          "type": "workspace-write",
+          "network_access": false,
+          "exclude_tmpdir_env_var": false,
+          "exclude_slash_tmp": false
+        },
+        "permission_profile": {
+          "type": "managed",
+          "file_system": {
+            "type": "restricted",
+            "entries": [
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "root"
+                  }
+                },
+                "access": "read"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi"
+                },
+                "access": "write"
+              },
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "slash_tmp"
+                  }
+                },
+                "access": "write"
+              },
+              {
+                "path": {
+                  "type": "special",
+                  "value": {
+                    "kind": "tmpdir"
+                  }
+                },
+                "access": "write"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.git"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.agents"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.aws"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              },
+              {
+                "path": {
+                  "type": "path",
+                  "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+                },
+                "access": "read",
+                "missing_path_behavior": "skip"
+              }
+            ]
+          },
+          "network": "restricted"
+        },
+        "file_system_sandbox_policy": {
+          "kind": "restricted",
+          "entries": [
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "root"
+                }
+              },
+              "access": "read"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi"
+              },
+              "access": "write"
+            },
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "slash_tmp"
+                }
+              },
+              "access": "write"
+            },
+            {
+              "path": {
+                "type": "special",
+                "value": {
+                  "kind": "tmpdir"
+                }
+              },
+              "access": "write"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.git"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.agents"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.aws"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            },
+            {
+              "path": {
+                "type": "path",
+                "path": "E:\\program\\GIT\\Agent\\multi\\.codex"
+              },
+              "access": "read",
+              "missing_path_behavior": "skip"
+            }
+          ]
+        },
+        "model": "gpt-5.6-sol",
+        "comp_hash": "3000",
+        "collaboration_mode": {
+          "mode": "default",
+          "settings": {
+            "model": "gpt-5.6-sol",
+            "reasoning_effort": "high",
+            "developer_instructions": null
+          }
+        },
+        "multi_agent_version": "v2",
+        "realtime_active": false,
+        "effort": "high",
+        "summary": "auto"
+      }
+    }
+  },
+  "cancel": {
+    "pass": true,
+    "cancelCmdOutput": "cancel requested",
+    "interruptedProcessExitCode": 0,
+    "interruptedStdout": "[client] initialize (running)\n\n[client] _auth/status_update (running)\n\n[client] session/new (running)",
+    "interruptedStderr": "[acpx] session probe-codex-l1b-cancel-1792234781780 (81e119c4-ca04-4c0a-9eaa-d694b446de8d) · E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub · agent starting",
+    "recoveryStdout": "CANCEL_RECOVERED_OK\n\n[done] end_turn",
+    "recoveryExitCode": 0
+  }
+}

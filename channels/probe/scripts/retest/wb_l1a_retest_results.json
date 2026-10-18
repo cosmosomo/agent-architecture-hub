@@ -1,0 +1,74 @@
+{
+  "pass": true,
+  "sessionId": "01a14975-9dcc-7828-8b10-3c03856d77dc",
+  "stopReason": "end_turn",
+  "actualAssistantTurn": {
+    "id": "01a14975-a992-7a4f-9420-c07ae8f74c7d",
+    "parentId": "01a14975-a992-7a4f-9420-c07b648d4fc5",
+    "timestamp": 1792233812780,
+    "type": "message",
+    "role": "assistant",
+    "providerData": {
+      "conversationRequestId": "01a149759e5676cd9149590dfa66425b",
+      "messageId": "01a14975a9917fe085c444825d6a95e8",
+      "stepSeq": 1,
+      "model": "glm-5.3",
+      "requestModelId": "custom-local:glm-5.3",
+      "requestModelName": "GLM-5.3",
+      "traceId": "dff3be307ba2357fda835b1dd130f8e0",
+      "rawUsage": {
+        "prompt_tokens": 27506,
+        "completion_tokens": 79,
+        "total_tokens": 27585,
+        "prompt_tokens_details": {
+          "cached_tokens": 27456
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 72
+        }
+      },
+      "agent": "cli",
+      "usage": {
+        "requests": 1,
+        "inputTokens": 27506,
+        "outputTokens": 79,
+        "totalTokens": 27585,
+        "inputTokensDetails": [
+          {
+            "cached_tokens": 27456
+          }
+        ],
+        "outputTokensDetails": [
+          {
+            "reasoning_tokens": 72
+          }
+        ]
+      }
+    },
+    "status": "completed",
+    "content": [
+      {
+        "providerData": {
+          "annotations": []
+        },
+        "type": "output_text",
+        "text": "日月盈昃"
+      }
+    ],
+    "sessionId": "01a14975-9dcc-7828-8b10-3c03856d77dc",
+    "message": {
+      "usage": {
+        "input_tokens": 27506,
+        "output_tokens": 79,
+        "total_tokens": 27585,
+        "cache_read_input_tokens": 27456
+      }
+    },
+    "cwd": "e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+    "_meta": {
+      "traceparent": "00-dff3be307ba2357fda835b1dd130f8e0-46bce5b1814bd1ac-01",
+      "baggage": "codebuddy.session_id=01a14975-9dcc-7828-8b10-3c03856d77dc,codebuddy.conversation_request_id=01a149759e5676cd9149590dfa66425b"
+    }
+  },
+  "cmd": "codebuddy --acp -> setSessionConfigOption(model=custom-local:glm-5.3) -> prompt(\"请只回复四个字：日月盈昃\")"
+}

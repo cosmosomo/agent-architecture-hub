@@ -1,0 +1,4 @@
+{"t":1792234157595,"dir":"->","note":"newSession(_meta.modelId).result","currentModelId":"custom:glm-5.3","sessionId":"cb1e78e9-7233-41b5-b492-60aec9098d9d"}
+{"t":1792234157610,"dir":"->","note":"setSessionMode.result","result":{}}
+{"t":1792234159972,"dir":"->","note":"mode.after","currentModeId":"default"}
+{"t":1792234159978,"dir":"->","note":"listSessions({}).result","peek":"{\"sessions\":[{\"cwd\":\"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\",\"sessionId\":\"c5808c50-d59a-4e42-b384-ed795c9cee52\",\"title\":\"获取暗号\",\"updatedAt\":\"2026-10-17T10:43:38.643793+00:00\"},{\"cwd\":\"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\",\"sessionId\":\"58118b2c-1745-4ea7-b016-61fd308a8839\",\"title\":\"确认暗号 PROBEACP7719\",\"updatedAt\":\"2026-10-17T10:43:34.747006+00:00\"},{\"cwd\":\"E:\\\\progra"}

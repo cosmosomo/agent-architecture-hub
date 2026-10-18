@@ -22,14 +22,14 @@ capabilities:
 ## 一、渠道身份与接入入口
 - **渠道定位**：全模型主力推理渠道（不限 Codex，ZCode / Claude Code / OpenCode 均可挂载）。
 - **协议端点**：`https://api.yinziapi.top/v1`（支持 OpenAI `/v1/responses` 与 `/v1/chat/completions`）；管理后台 `https://yinziapi.top`。
-- **配置绑定位置**：`~/.cc-switch/cc-switch.db`（Codex 当前激活源 `0684a63e-...`）；凭证引用见 `E:\program\sota\协作环境\_private\凭证.md`（**严禁在此回显 Key 明文**）。
+- **配置绑定位置**：`~/.cc-switch/cc-switch.db`（Codex 源 `0684a63e-...`）、`~/.claude/settings.json`（Claude 源 `yinziccmax`）、`~/.zcode/v2/provider_config.json`（ZCode `new-provider`）；全量 10 把 Key 明文与管理后台 `access_token` 统一收口于 [`channels/_private/渠道维护官_角色定义与全量凭证手册.md`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/_private/渠道维护官_角色定义与全量凭证手册.md) 与 [`channels/_private/sites.local.json`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/_private/sites.local.json)（已 Git 忽略）。
 
 ## 二、独立能力矩阵（逐项核验记录）
 | 能力项 | 支持度 | 已验证模型与特性 | 核验依据 |
 |---|---|---|---|
 | **OpenAI Responses 协议** | ✅ 原生支持 | `gpt-6.1-sol`（主力）、`gpt-6-luna`（轻活）支持 `reasoning_effort`、工具调用、流式输出 | `S6 requests.jsonl` `〔实测:200 OK〕` |
-| **国产旗舰模型池** | ✅ 广泛支持 | `glm-5.3`、`deepseek-v4.1-flash` 等 | `INDEX.md` `〔用户核定〕` |
-| **额度查询与熔断** | ⚠️ 需区分 | 管理后台 Session Token 与推理 API Key 权限分立，推理 Key 直接调余额接口会返 401/403 | `S6/当前.md` `〔实测〕` |
+| **国产旗舰与 Claude 池** | ✅ 广泛支持 | `claude-opus-5-5`、`claude-sonnet-5-5`、`glm-5.3`、`deepseek-v4.1-flash`、`grok-4.6` | `acpx claude` / `INDEX.md` `〔实测〕` |
+| **实时余额与配额查询** | ✅ 原生支持 | 携带管理后台 `Authorization: Bearer <access_token>` + `New-Api-User: 21` 调 `GET /api/user/self`（`quota / 500000` 即剩余人民币元）与 `/api/token/`，已集成至 `node hub/tools/agent_gateway.js quota` | `agent_gateway.js quota` `〔实测:剩余5.88元/10把Key〕` |
 
 ## 三、当前状态、安全参数与防呆红线
 - **当前状态**：🟢 可用

@@ -1,0 +1,93 @@
+{
+  "open": {
+    "pass": false,
+    "evidence": "sessionId=undefined, response=undefined",
+    "data": null,
+    "cmd": "node E:\\zcode\\resources\\glm\\zcode.cjs -p \"记住暗号：ZCODE-L0-777，回复已收到\" --mode yolo --json"
+  },
+  "resume": {
+    "pass": false,
+    "evidence": "skipped due to open failure"
+  },
+  "resume-native": {
+    "pass": false,
+    "note": "ZCode CLI does not separate desktop sessions from CLI sessions; desktop runs via Electron with CDP/internal socket, while CLI uses local sqlite session IDs. Testing native CLI resume succeeded.",
+    "evidence": "dbExists=true at C:\\Users\\COLORFIRE\\.zcode\\cli\\db\\db.sqlite",
+    "cmd": "node E:\\zcode\\resources\\glm\\zcode.cjs --resume <id>"
+  },
+  "observe-live": {
+    "pass": false,
+    "note": "L0 CLI with --json outputs the entire JSON payload only once at process exit (no live chunks over stdout). TUI has visual streaming but cannot be piped programmatically.",
+    "evidence": "chunks_count=0",
+    "cmd": "node E:\\zcode\\resources\\glm\\zcode.cjs -p ... --json"
+  },
+  "observe-history": {
+    "pass": false,
+    "note": "L0 CLI has no subcommand to read back session history (no `zcode history` or `zcode session read`). History must be accessed via sqlite db or app-server protocol.",
+    "evidence": "Checked zcode --help: no history command.",
+    "cmd": "node E:\\zcode\\resources\\glm\\zcode.cjs history (unsupported)"
+  },
+  "state": {
+    "pass": false,
+    "note": "L0 CLI is a short-lived one-shot process. There is no daemon status query command. State is only discernible via OS process lifecycle (running/exited).",
+    "evidence": "CLI terminates immediately after turn ends.",
+    "cmd": "zcode status (unsupported)"
+  },
+  "cancel": {
+    "pass": true,
+    "partial": true,
+    "note": "L0 CLI can be interrupted via SIGINT/SIGTERM, terminating the process. However, cooperative in-flight turn cancellation without killing the process requires app-server.",
+    "evidence": "killed after 2000ms, exitCode=null",
+    "cmd": "spawn -> cp.kill('SIGINT')"
+  },
+  "close": {
+    "pass": false,
+    "note": "L0 CLI has no session close subcommand.",
+    "evidence": "zcode --help has no close option.",
+    "cmd": "zcode close (unsupported)"
+  },
+  "steer": {
+    "pass": false,
+    "note": "L0 CLI accepts stdin only at invocation; mid-turn steering is not supported via CLI.",
+    "evidence": "No steering mechanism in zcode -p.",
+    "cmd": "n/a"
+  },
+  "permission": {
+    "pass": true,
+    "partial": true,
+    "note": "L0 CLI supports --mode (build, edit, plan, yolo, guarded). However, interactive permission prompting mid-turn requires TUI or app-server protocol; in -p mode it defaults to mode behavior.",
+    "evidence": "Verified --mode option in zcode --help.",
+    "cmd": "node E:\\zcode\\resources\\glm\\zcode.cjs --mode plan -p ..."
+  },
+  "fork": {
+    "pass": false,
+    "note": "L0 CLI supports /fork slash command in interactive TUI, but lacks a non-interactive CLI flag like --fork <checkpoint>.",
+    "evidence": "zcode --help shows /fork under Slash Commands, but no CLI option.",
+    "cmd": "zcode --fork (unsupported)"
+  },
+  "compact": {
+    "pass": false,
+    "note": "L0 CLI has /compact slash command in interactive TUI, but no CLI argument --compact.",
+    "evidence": "zcode --help shows /compact under Slash Commands only.",
+    "cmd": "zcode --compact (unsupported)"
+  },
+  "model-list": {
+    "pass": false,
+    "note": "L0 CLI has no subcommand to list models (no `zcode models`). Models are only discoverable via TUI /model or app-server session/create response.",
+    "evidence": "zcode --help has no models command.",
+    "cmd": "zcode models (unsupported)"
+  },
+  "model-new": {
+    "pass": true,
+    "note": "Model can be specified via ZCODE_MODEL environment variable before launching the session.",
+    "evidence": "sessionId=sess_6d513f38-30e7-4031-82d2-52aef9b6c561, response=OK",
+    "cmd": "ZCODE_MODEL=\"builtin:bigmodel-coding-plan\\GLM-5.3-Flash\" node E:\\zcode\\resources\\glm\\zcode.cjs -p ... --json"
+  },
+  "quota": {
+    "pass": true,
+    "partial": true,
+    "note": "L0 CLI has /quota slash command in TUI. In CLI mode, quota must be read from SQLite db ~/.zcode/cli/db/db.sqlite (model_usage table).",
+    "evidence": "model_usage table in db.sqlite tracks tokens & rate limits.",
+    "cmd": "query db.sqlite model_usage"
+  }
+}

@@ -23,7 +23,7 @@ capabilities:
 - **角色定位**：命令行 Gemini 节点与 ACP（Agent Communication Protocol）桥接器。
 - **CLI 入口（`0.62.0`）**：
   - 非交互执行：`gemini -p "<prompt>" -o stream-json --approval-mode yolo`
-  - 续接会话：`gemini -r latest -p "<prompt>"`（或 `-r <index>`）
+  - 恢复会话：`gemini -r latest -p "<prompt>"`（或 `-r <index>`）
   - 协议服务：`gemini --acp`
 - **本地会话落盘位置**：
   - 完整对话记录：`~/.gemini/tmp/<projectHash>/chats/session-*.json`（含 `user` + `gemini` 消息、`thoughts`、`toolCalls`、`tokens`、`model`）
@@ -34,7 +34,7 @@ capabilities:
 | 能力维度 | 子能力项 | 支持度 | 精确命令 / 协议 / 字段依据 | 核验版本 & 证据 |
 |---|---|---|---|---|
 | **外部读 Sessions** | `chats/session-*.json` + `.project_root` | ✅ 原生完备 | 直读 `~/.gemini/tmp/<hash>/chats/session-*.json` 并关联 `.project_root` 还原 `cwd` | `0.62.0` `〔实测:12会话〕` |
-| **生命周期控制** | 启动 / 续接 / 删除会话 | ✅ 原生支持 | `gemini -p` / `gemini -r <latest\|idx>` / `gemini --delete-session <idx>` | `0.62.0` `〔CLI帮助〕` |
+| **生命周期控制** | 启动 / 恢复 / 删除会话 | ✅ 原生支持 | `gemini -p` / `gemini -r <latest\|idx>` / `gemini --delete-session <idx>` | `0.62.0` `〔CLI帮助〕` |
 | **运行中插话** | ACP 与 `stream-json` | 🟡 协议支持 | `gemini --acp` / `-o stream-json` | `0.62.0` `〔CLI帮助〕` |
 | **团队与子智能体** | 原生子代理派生 | ❌ 不支持 | 本地会话中 `subagents = 0` | `0.62.0` `〔实测〕` |
 

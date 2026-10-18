@@ -1,0 +1,89 @@
+{
+  "model-list": {
+    "pass": true,
+    "evidence": "model_count=8, models=gpt-6.1-sol,gpt-6-astra,gpt-6-sol,gpt-6-luna,gpt-5.6-sol",
+    "cmd": "app-server RPC model/list"
+  },
+  "quota": {
+    "pass": false,
+    "na": true,
+    "evidence": "{\"code\":-32600,\"message\":\"codex account authentication required to read rate limits\"}",
+    "cmd": "app-server RPC account/rateLimits/read",
+    "note": "codex account authentication required to read rate limits; fails under third-party bearer token config."
+  },
+  "open": {
+    "pass": false,
+    "evidence": "threadId=01a14945-db31-7e11-afca-6ed2ecefad42, turnId=01a14945-dc18-7c43-a179-b48d760eb65e, status=completed, reply=",
+    "cmd": "app-server RPC thread/start + turn/start"
+  },
+  "model-new": {
+    "pass": true,
+    "evidence": "thread.model=gpt-5.6-sol, requested=gpt-5.6-sol",
+    "cmd": "app-server RPC thread/start { model: \"gpt-5.6-sol\" }"
+  },
+  "observe-live": {
+    "pass": true,
+    "evidence": "received 30 notifications, methods: warning,mcpServer/startupStatus/updated,thread/status/changed,turn/started,hook/started,hook/completed,item/started,item/completed,item/agentMessage/delta,turn/moderationMetadata,thread/tokenUsage/updated,turn/completed",
+    "cmd": "app-server ServerNotification stream"
+  },
+  "resume": {
+    "pass": false,
+    "evidence": "recalled=false, reply=",
+    "cmd": "app-server RPC turn/start on loaded thread"
+  },
+  "observe-history": {
+    "pass": true,
+    "evidence": "thread/read title=\"undefined\", thread/turns/list count=2",
+    "cmd": "app-server RPC thread/read + thread/turns/list"
+  },
+  "state": {
+    "pass": true,
+    "evidence": "thread/status/changed transitions: active -> idle -> active -> idle",
+    "cmd": "app-server ServerNotification thread/status/changed"
+  },
+  "cancel": {
+    "pass": false,
+    "evidence": "interrupted_turn_status=interrupted, next_turn_reply=",
+    "cmd": "app-server RPC turn/interrupt { threadId, turnId }"
+  },
+  "steer": {
+    "pass": false,
+    "evidence": "steerResult={\"turnId\":\"01a14947-45bb-75d3-b58f-4bc5d08c6c57\"}, reply=",
+    "cmd": "app-server RPC turn/steer { threadId, expectedTurnId, input }"
+  },
+  "permission": {
+    "pass": true,
+    "evidence": "{\"method\":\"item/fileChange/requestApproval\",\"id\":0,\"params\":{\"threadId\":\"01a14947-9f14-7863-bc2f-e9e66de8e9b2\",\"turnId\":\"01a14947-9ffb-7c83-bdd1-d11f1c30c113\",\"itemId\":\"exec-6fa7d9ad-da80-4fc6-8c43-70dd3e877f4b\",\"startedAtMs\":1792230801793,\"reason\":\"command failed; retry without sandbox?\",\"grantRoot\":null}}",
+    "cmd": "app-server RPC approvalPolicy=\"on-request\" ServerRequest callback",
+    "note": "Server sent reverse request, client responded decision: accept"
+  },
+  "fork": {
+    "pass": true,
+    "evidence": "originalThreadId=01a14945-db31-7e11-afca-6ed2ecefad42, forkedThreadId=01a14947-c1c3-7683-8cf5-f6f593da1efb",
+    "cmd": "app-server RPC thread/fork { threadId }"
+  },
+  "compact": {
+    "pass": true,
+    "evidence": "{}",
+    "cmd": "app-server RPC thread/compact/start { threadId }"
+  },
+  "model-switch": {
+    "pass": false,
+    "evidence": "{\"code\":-32603,\"message\":\"failed to submit turn input: ActiveTurnNotSteerable { turn_kind: Compact }\"}"
+  },
+  "mode-switch": {
+    "pass": true,
+    "evidence": "{}",
+    "cmd": "app-server RPC thread/settings/update { threadId, sandboxPolicy: \"readOnly\" }"
+  },
+  "resume-native": {
+    "pass": true,
+    "evidence": "thread/resume successfully reloaded thread 01a14945-db31-7e11-afca-6ed2ecefad42",
+    "cmd": "app-server RPC thread/resume { threadId }"
+  },
+  "close": {
+    "pass": true,
+    "evidence": "unsubscribe={\"status\":\"unsubscribed\"}, archive={}",
+    "cmd": "app-server RPC thread/unsubscribe + thread/archive"
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "model-list": {
+    "result": "pass",
+    "evidence": "{\"id\":\"model\",\"name\":\"Model\",\"category\":\"model\",\"type\":\"select\",\"currentValue\":\"opencode/big-pickle\",\"options\":[{\"value\":\"zai/glm-4.5\",\"name\":\"Z.AI/GLM-4.5\"},{\"value\":\"zai/glm-4.5-air\",\"name\":\"Z.AI/GLM-4.5-Air\"},{\"value\":\"zai/glm-4.5-flash\",\"name\":\"Z.AI/GLM-4.5-Flash\"},{\"value\":\"zai/glm-4.5v\",\"name\":\"Z.AI/GLM-4.5V\"},{\"value\":\"zai/glm-4.6\",\"name\":\"Z",
+    "cmd": "connection.newSession() configOptions.model",
+    "condition": "查看 newSession 返回的 configOptions 中的可用模型列表",
+    "note": "成功获取 58 个可用模型"
+  },
+  "model-new": {
+    "result": "fail",
+    "evidence": "{\"error\":\"connection.setConfigOption is not a function\"}",
+    "cmd": "connection.setConfigOption({ configId: 'model', value: 'zhipuai-coding-plan/glm-5.3-flash' })",
+    "condition": "新建会话并设置 model 为 zhipuai-coding-plan/glm-5.3-flash",
+    "note": "设置模型失败: connection.setConfigOption is not a function"
+  },
+  "open": {
+    "result": "pass",
+    "evidence": "{\"stopReason\":\"end_turn\",\"usage\":{\"inputTokens\":12588,\"outputTokens\":8,\"totalTokens\":12760,\"thoughtTokens\":94,\"cachedReadTokens\":70},\"_meta\":{}}",
+    "cmd": "connection.prompt({ sessionId: 'ses_eb622a6d3ffeEhK0VjnEW4bd2L', prompt: '请牢记暗号...' })",
+    "condition": "新建会话并成功完成第一轮对话",
+    "note": "第一轮成功完成 (end_turn)"
+  },
+  "resume": {
+    "result": "fail",
+    "evidence": "\"time\":1792240620939,\"notice\":{\"sessionId\":\"ses_eb622a6d3ffeEhK0VjnEW4bd2L\",\"update\":{\"content\":{\"text\":\"_538295\",\"type\":\"text\"},\"messageId\":\"msg_149dd7950001hENChRrZ9ZlfRC\",\"sessionUpdate\":\"agent_message_chunk\"}}},{\"time\":1792240621612,\"notice\":{\"sessionId\":\"ses_eb622a6d3ffeEhK0VjnEW4bd2L\",\"update\":{\"used\":12681,\"size\":200000,\"cost\":{\"amount\":0,\"currency\":\"USD\"},\"sessionUpdate\":\"usage_update\"}}}]",
+    "cmd": "connection.prompt({ sessionId: 'ses_eb622a6d3ffeEhK0VjnEW4bd2L', prompt: '之前告诉你的暗号是什么？' })",
+    "condition": "同一会话第二轮提问复述暗号",
+    "note": "回复中未见暗号"
+  },
+  "observe-live": {
+    "result": "pass",
+    "evidence": "{\"sessionId\":\"ses_eb622a6d3ffeEhK0VjnEW4bd2L\",\"update\":{\"availableCommands\":[{\"name\":\"ap-vibe-native-context\",\"description\":\"Restore and maintain shared AP-Vibe project context from a non-Codex coding client, inspect other applications' public sessions, and use configured Studio collaboration when e",
+    "cmd": "clientHandler.sessionUpdate",
+    "condition": "在一轮生成过程中流式接收 sessionUpdate",
+    "note": "共收到 6 条 sessionUpdate 流式事件"
+  },
+  "observe-history": {
+    "result": "fail",
+    "evidence": "{\"error\":\"Invalid params\"}",
+    "cmd": "connection.loadSession({ sessionId: 'ses_eb622a6d3ffeEhK0VjnEW4bd2L' })",
+    "condition": "调用 loadSession 读取会话历史状态",
+    "note": "读取失败: Invalid params"
+  },
+  "resume-native": {
+    "result": "fail",
+    "evidence": "{\"error\":\"Invalid params\"}",
+    "cmd": "connection.loadSession({ sessionId: 'ses_eb62262c8ffezpUmm06Sxx2v3U' })",
+    "condition": "loadSession 失败",
+    "note": "错误: Invalid params"
+  },
+  "state": {
+    "result": "fail",
+    "evidence": "{\"time\":1792240605536,\"notice\":{\"sessionId\":\"ses_eb622a6d3ffeEhK0VjnEW4bd2L\",\"update\":{\"availableCommands\":[{\"name\":\"ap-vibe-native-context\",\"description\":\"Restore and maintain shared AP-Vibe project context from a non-Codex coding client, inspect other applications' public sessions, and use configu",
+    "cmd": "ACP sessionUpdate notices",
+    "condition": "检查 ACP 流式通知中是否区分工作状态",
+    "note": "ACP 未广播独立 status 字段"
+  },
+  "cancel": {
+    "result": "pass",
+    "evidence": "{\"cancelOutcome\":{\"stopReason\":\"cancelled\",\"usage\":{\"inputTokens\":0,\"outputTokens\":0,\"totalTokens\":0},\"_meta\":{}},\"postCancel\":{\"stopReason\":\"end_turn\",\"usage\":{\"inputTokens\":12548,\"outputTokens\":406,\"totalTokens\":13451,\"thoughtTokens\":336,\"cachedReadTokens\":161},\"_meta\":{}}}",
+    "cmd": "connection.cancel({ sessionId: 'ses_eb622a6d3ffeEhK0VjnEW4bd2L' })",
+    "condition": "在一轮生成中途 cancel，并在之后继续对话",
+    "note": "打断成功且会话依然可续"
+  },
+  "steer": {
+    "result": "pass",
+    "evidence": "{\"stopReason\":\"end_turn\",\"usage\":{\"inputTokens\":112,\"outputTokens\":8,\"totalTokens\":13366,\"thoughtTokens\":126,\"cachedReadTokens\":13120},\"_meta\":{}}",
+    "cmd": "connection.prompt concurrently during turn",
+    "condition": "在当前轮执行中并发下发 prompt",
+    "note": "插话成功"
+  },
+  "permission": {
+    "result": "fail",
+    "evidence": "{\"stopReason\":\"end_turn\",\"usage\":{\"inputTokens\":46,\"outputTokens\":12,\"totalTokens\":12746,\"thoughtTokens\":31,\"cachedReadTokens\":12657},\"_meta\":{}}",
+    "cmd": "clientHandler.requestPermission during prompt",
+    "condition": "要求智能体执行 bash 工具并观察 requestPermission 回调",
+    "note": "智能体未触发 requestPermission（桥层未派发或自动放行）"
+  },
+  "fork": {
+    "result": "fail",
+    "evidence": "{\"error\":\"Invalid params\"}",
+    "cmd": "connection.unstable_forkSession({ sessionId: 'ses_eb6208363ffew2qcDE4xwwHpjP' })",
+    "condition": "调用 ACP unstable_forkSession 分叉",
+    "note": "分叉失败: Invalid params"
+  },
+  "compact": {
+    "result": "fail",
+    "evidence": "{\"error\":\"\\\"Method not found\\\": session/compact\"}",
+    "cmd": "connection.request(\"session/compact\")",
+    "condition": "调用 ACP 协议 session/compact",
+    "note": "ACP 桥报错: \"Method not found\": session/compact"
+  },
+  "model-switch": {
+    "result": "pass",
+    "evidence": "{\"configOptions\":[{\"id\":\"model\",\"name\":\"Model\",\"category\":\"model\",\"type\":\"select\",\"currentValue\":\"zai-coding-plan/glm-5.3-flash\",\"options\":[{\"value\":\"zai/glm-4.5\",\"name\":\"Z.AI/GLM-4.5\"},{\"value\":\"zai/glm-4.5-air\",\"name\":\"Z.AI/GLM-4.5-Air\"},{\"value\":\"zai/glm-4.5-flash\",\"name\":\"Z.AI/GLM-4.5-Flash\"},{\"value\":\"zai/glm-4.5v\",\"name\":\"Z.AI/GLM-4.5V\"},{\"value\":\"zai/glm-4.6\",\"name\":\"Z.AI/GLM-4.6\"},{\"value\":\"zai/glm-4.6v\",\"name\":\"Z.AI/GLM-4.6V\"},{\"value\":\"zai/glm-4.6v-flash\",\"name\":\"Z.AI/GLM-4.6V-Flash\"},{\"value\":\"zai/glm-4.7\",\"name\":\"Z.AI/GLM-4.7\"},{\"value\":\"zai/glm-4.7-flash\",\"name\":\"Z.AI/GLM-4.7-Flash\"},{\"value\":\"zai/glm-4.7-flashx\",\"name\":\"Z.AI/GLM-4.7-FlashX\"},{\"value\":\"zai/glm-5\",\"name\":\"Z.AI/GLM-5\"},{\"value\":\"zai/glm-5-turbo\",\"name\":\"Z.AI/GLM-5-Turbo\"},{\"value\":\"zai/glm-5.1\",\"name\":\"Z.AI/GLM-5.1\"},{\"value\":\"zai/glm-5.2\",\"name\":\"Z.AI/GLM-5.2\"},{\"value\":\"zai/glm-5.3\",\"name\":\"Z.AI/GLM-5.3\"},{\"value\":\"zai/glm-5.3-flash\",\"name\":\"Z.AI/GLM-5.3-Flash\"},{\"value\":\"zai/glm-5.3-flashx\",\"name\":\"Z.AI/GLM-5.3-FlashX\"},{\"value\":\"zai/glm-5v-turbo\",\"name\":\"Z.AI/GLM-5V-Turbo\"},{\"value\":\"deepseek/deepseek-v4-pro\",\"name\":\"DeepSeek/DeepSeek V4 Pro\"},{\"value\":\"deepseek/deepseek-flash\",\"name\":\"DeepSeek/DeepSeek V4.1 Flash\"},{\"value\":\"zhipuai-coding-plan/glm-4.6v\",\"name\":\"Zhipu AI Coding Plan/GLM-4.6V\"},{\"value\":\"zhipuai-coding-plan/glm-5.3\",\"name\":\"Zhipu AI Coding Plan/GLM-5.3\"},{\"value\":\"zhipuai-coding-plan/glm-5.3-highspeed\",\"name\":\"Zhipu AI Coding Plan/GLM-5.3 Highspeed\"},{\"value\":\"zhipuai-coding-plan/glm-5.3-flash\",\"name\":\"Zhipu AI Coding Plan/GLM-5.3-Flash\"},{\"value\":\"zai-coding-plan/glm-4.7\",\"name\":\"Z.AI Coding Plan/GLM-4.7\"},{\"value\":\"zai-coding-plan/glm-5-turbo\",\"name\":\"Z.AI Coding Plan/GLM-5-Turbo\"},{\"value\":\"zai-coding-plan/glm-5.2\",\"name\":\"Z.AI Coding Plan/GLM-5.2\"},{\"value\":\"zai-coding-plan/glm-5.2-highspeed\",\"name\":\"Z.AI Coding Plan/GLM-5.2 Highspeed\"},{\"value\":\"zai-coding-plan/glm-5.3\",\"name\":\"Z.AI Coding Plan/GLM-5.3\"},{\"value\":\"zai-coding-plan/glm-5.3-highspeed\",\"name\":\"Z.AI Coding Plan/GLM-5.3 Highspeed\"},{\"value\":\"zai-coding-plan/glm-5.3-flash\",\"name\":\"Z.AI Coding Plan/GLM-5.3-Flash\"},{\"value\":\"zhipuai/glm-4.5\",\"name\":\"Zhipu AI/GLM-4.5\"},{\"value\":\"zhipuai/glm-4.5-air\",\"name\":\"Zhipu AI/GLM-4.5-Air\"},{\"value\":\"zhipuai/glm-4.5-flash\",\"name\":\"Zhipu AI/GLM-4.5-Flash\"},{\"value\":\"zhipuai/glm-4.5v\",\"name\":\"Zhipu AI/GLM-4.5V\"},{\"value\":\"zhipuai/glm-4.6\",\"name\":\"Zhipu AI/GLM-4.6\"},{\"value\":\"zhipuai/glm-4.6v\",\"name\":\"Zhipu AI/GLM-4.6V\"},{\"value\":\"zhipuai/glm-4.6v-flash\",\"name\":\"Zhipu AI/GLM-4.6V-Flash\"},{\"value\":\"zhipuai/glm-4.7\",\"name\":\"Zhipu AI/GLM-4.7\"},{\"value\":\"zhipuai/glm-4.7-flash\",\"name\":\"Zhipu AI/GLM-4.7-Flash\"},{\"value\":\"zhipuai/glm-4.7-flashx\",\"name\":\"Zhipu AI/GLM-4.7-FlashX\"},{\"value\":\"zhipuai/glm-5\",\"name\":\"Zhipu AI/GLM-5\"},{\"value\":\"zhipuai/glm-5.1\",\"name\":\"Zhipu AI/GLM-5.1\"},{\"value\":\"zhipuai/glm-5.2\",\"name\":\"Zhipu AI/GLM-5.2\"},{\"value\":\"zhipuai/glm-5.3\",\"name\":\"Zhipu AI/GLM-5.3\"},{\"value\":\"zhipuai/glm-5.3-flash\",\"name\":\"Zhipu AI/GLM-5.3-Flash\"},{\"value\":\"zhipuai/glm-5.3-flashx\",\"name\":\"Zhipu AI/GLM-5.3-FlashX\"},{\"value\":\"zhipuai/glm-5v-turbo\",\"name\":\"Zhipu AI/GLM-5V-Turbo\"},{\"value\":\"opencode/beam-free\",\"name\":\"OpenCode/Beam Free\"},{\"value\":\"opencode/big-pickle\",\"name\":\"OpenCode/Big Pickle\"},{\"value\":\"opencode/deepseek-v4.1-flash-free\",\"name\":\"OpenCode/DeepSeek V4.1 Flash Free\"},{\"value\":\"opencode/glm-5.3-flash-free\",\"name\":\"OpenCode/GLM-5.3-Flash Free\"},{\"value\":\"opencode/longcat-2.5-preview-free\",\"name\":\"OpenCode/LongCat 2.5 Preview Free\"},{\"value\":\"opencode/mimo-v2.6-flash-free\",\"name\":\"OpenCode/MiMo-V2.6-Flash Free\"},{\"value\":\"opencode/nemotron-3-ultra-free\",\"name\":\"OpenCode/Nemotron 3 Ultra Free\"},{\"value\":\"opencode/nemotron-3.5-lightning-free\",\"name\":\"OpenCode/Nemotron 3.5 Lightning Free\"},{\"value\":\"opencode/nemotron-3.5-super-vl-free\",\"name\":\"OpenCode/Nemotron 3.5 Super VL Free\"},{\"value\":\"opencode/space-bunny-free\",\"name\":\"OpenCode/Space Bunny Free\"}]},{\"id\":\"effort\",\"name\":\"Effort\",\"description\":\"Available effort levels for this model\",\"category\":\"thought_level\",\"type\":\"select\",\"currentValue\":\"low\",\"options\":[{\"value\":\"low\",\"name\":\"Low\"},{\"value\":\"high\",\"name\":\"High\"},{\"value\":\"max\",\"name\":\"Max\"},{\"value\":\"default\",\"name\":\"Default\"}]},{\"id\":\"mode\",\"name\":\"Session Mode\",\"category\":\"mode\",\"type\":\"select\",\"currentValue\":\"build\",\"options\":[{\"value\":\"build\",\"name\":\"build\",\"description\":\"The default agent. Executes tools based on configured permissions.\"},{\"value\":\"plan\",\"name\":\"plan\",\"description\":\"Plan mode. Disallows all edit tools.\"}]}]}",
+    "cmd": "connection.setSessionConfigOption({ sessionId: 'ses_eb6208363ffew2qcDE4xwwHpjP', configId: 'model', value: 'zai-coding-plan/glm-5.3-flash' })",
+    "condition": "通过 setSessionConfigOption 切换模型",
+    "note": "成功切换模型配置"
+  },
+  "mode-switch": {
+    "result": "fail",
+    "evidence": "{\"error\":\"Invalid params\"}",
+    "cmd": "connection.setSessionMode({ sessionId: 'ses_eb6208363ffew2qcDE4xwwHpjP', mode: 'plan' })",
+    "condition": "通过 setSessionMode 切换模式为 plan",
+    "note": "切换失败: Invalid params"
+  },
+  "quota": {
+    "result": "n/a",
+    "evidence": "{\"error\":\"\\\"Method not found\\\": session/quota\"}",
+    "cmd": "connection.request(\"session/quota\")",
+    "condition": "调用 session/quota",
+    "note": "ACP 桥未提供 quota 端点: \"Method not found\": session/quota"
+  },
+  "close": {
+    "result": "pass",
+    "evidence": "{}",
+    "cmd": "connection.closeSession({ sessionId: 'ses_eb6208363ffew2qcDE4xwwHpjP' })",
+    "condition": "调用 closeSession 关闭会话",
+    "note": "会话成功关闭"
+  }
+}
