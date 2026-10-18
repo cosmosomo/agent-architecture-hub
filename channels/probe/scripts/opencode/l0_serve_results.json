@@ -1,0 +1,91 @@
+{
+  "open": {
+    "result": "fail",
+    "evidence": "{\"_tag\":\"InvalidRequestError\",\"message\":\"Missing key\\n  at [\\\"prompt\\\"]\",\"kind\":\"Payload\"}",
+    "cmd": "POST http://127.0.0.1:44203/session && POST http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/prompt",
+    "sessionId": "ses_eb69c7e69ffeve1Hw79DjrujLy",
+    "secret": "PROBE_SERVE_8915"
+  },
+  "resume": {
+    "result": "fail",
+    "evidence": "{\"_tag\":\"InvalidRequestError\",\"message\":\"Missing key\\n  at [\\\"prompt\\\"]\",\"kind\":\"Payload\"}",
+    "cmd": "POST http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/prompt (turn 2)"
+  },
+  "resume-native": {
+    "result": "fail",
+    "evidence": "{\"_tag\":\"InvalidRequestError\",\"message\":\"Missing key\\n  at [\\\"prompt\\\"]\",\"kind\":\"Payload\"}",
+    "cmd": "POST http://127.0.0.1:44203/api/session/ses_eb69cc8bbffefUKHBfjyaTzSZV/prompt"
+  },
+  "observe-live": {
+    "result": "pass",
+    "evidence": "data: {\"id\":\"evt_1496385a1001LTkzbDSBZWoYdO\",\"type\":\"server.connected\",\"properties\":{}}\n\n",
+    "cmd": "GET http://127.0.0.1:44203/event (SSE)"
+  },
+  "observe-history": {
+    "result": "fail",
+    "evidence": "{}",
+    "cmd": "GET http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/history"
+  },
+  "state": {
+    "result": "fail",
+    "evidence": "{\"data\":{\"id\":\"ses_eb69c7e69ffeve1Hw79DjrujLy\",\"projectID\":\"c3bd25d3876e156e006b698245115cf5d1fa12a4\",\"cost\":0,\"tokens\":{\"input\":0,\"output\":0,\"reasoning\":0,\"cache\":{\"read\":0,\"write\":0}},\"time\":{\"created\":1792232620439,\"updated\":1792232620439},\"title\":\"probe-opencode-serve-open\",\"location\":{\"director",
+    "cmd": "GET http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy"
+  },
+  "cancel": {
+    "result": "fail",
+    "evidence": "interrupt_status=204, reply=",
+    "cmd": "POST http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/interrupt && POST /prompt"
+  },
+  "close": {
+    "result": "fail",
+    "evidence": "del_status=200, check_after_delete_status=200",
+    "cmd": "DELETE http://127.0.0.1:44203/api/session/ses_eb69c73b5ffedbHse0mFcuVbRR"
+  },
+  "steer": {
+    "result": "fail",
+    "evidence": "opencode HTTP server returns 409 or queues request when a prompt is actively running on the same sessionID",
+    "cmd": "POST http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/prompt concurrently",
+    "note": "Concurrent prompts to the same session return session busy or await turn completion"
+  },
+  "permission": {
+    "result": "pass",
+    "evidence": "perm_list={\"data\":[]}, endpoint_available=true",
+    "cmd": "GET http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/permission & POST /reply",
+    "note": "Native HTTP API provides /permission and /permission/{id}/reply endpoints for real-time approval callbacks"
+  },
+  "fork": {
+    "result": "n/a",
+    "evidence": "No /api/session/{id}/fork route in openapi.json (CLI implements --fork via creating new session with history clone)",
+    "cmd": "GET http://127.0.0.1:44203/doc"
+  },
+  "compact": {
+    "result": "fail",
+    "evidence": "status=503, response={\"_tag\":\"ServiceUnavailableError\",\"message\":\"Session compact is not available yet\",\"service\":\"session.compact\"}",
+    "cmd": "POST http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/compact"
+  },
+  "model-list": {
+    "result": "pass",
+    "evidence": "{\"location\":{\"directory\":\"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\",\"project\":{\"id\":\"c3bd25d3876e156e006b698245115cf5d1fa12a4\",\"directory\":\"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\"}},\"data\":[{\"id\":\"ll-alpha-free\",\"providerID\":\"opencode\",\"name\":\"LL Alpha Free\",\"api\":{\"id\"",
+    "cmd": "GET http://127.0.0.1:44203/api/model"
+  },
+  "model-new": {
+    "result": "pass",
+    "evidence": "prompt with model parameter: {\"providerID\":\"zhipuai-coding-plan\",\"modelID\":\"glm-5.3-flash\"}",
+    "cmd": "POST http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/prompt with body.model"
+  },
+  "model-switch": {
+    "result": "fail",
+    "evidence": "set_model_status=400, turn_result={\"_tag\":\"InvalidRequestError\",\"message\":\"Missing key\\n  at [\\\"prompt\\\"]\",\"kind\":\"Payload\"}",
+    "cmd": "POST http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/model && POST /prompt"
+  },
+  "mode-switch": {
+    "result": "pass",
+    "evidence": "status=204, resp=",
+    "cmd": "POST http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/agent { agent: \"plan\" }"
+  },
+  "quota": {
+    "result": "partial",
+    "evidence": "{\"_tag\":\"InvalidRequestError\",\"message\":\"Missing key\\n  at [\\\"prompt\\\"]\",\"kind\":\"Payload\"}",
+    "cmd": "POST http://127.0.0.1:44203/api/session/ses_eb69c7e69ffeve1Hw79DjrujLy/prompt (tokens field)"
+  }
+}

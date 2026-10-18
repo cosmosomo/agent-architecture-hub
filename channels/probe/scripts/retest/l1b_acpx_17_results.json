@@ -1,0 +1,121 @@
+{
+  "model-list": {
+    "result": "pass",
+    "evidence": "{\"action\":\"status_snapshot\",\"status\":\"idle\",\"summary\":\"session idle; queue owner will start on next prompt\",\"acpxRecordId\":\"d0e69ba2-0b46-4f6f-b168-7d218f45e65d\",\"acpxSessionId\":\"ses_eb61d6754ffeAU7sJPL04s99go\",\"model\":\"opencode/big-pickle\",\"availableModels\":[\"zai/glm-4.5\",\"zai/glm-4.5-air\",\"zai/glm-4.5-flash\",\"zai/glm-4.5v\",\"zai/glm-4.6\",\"zai/glm-",
+    "cmd": "acpx --format json opencode status -s probe-opencode-l1b-main",
+    "condition": "通过 acpx status 查看会话可用模型配置",
+    "note": "成功获取 availableModels 列表"
+  },
+  "model-new": {
+    "result": "fail",
+    "evidence": "⚠ No acpx session found (searched up to E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub).\nCreate one: acpx opencode sessions new --name probe-opencode-l1b-main",
+    "cmd": "acpx opencode set -s probe-opencode-l1b-main model zhipuai-coding-plan/glm-5.3-flash",
+    "condition": "新建会话并执行 acpx set model",
+    "note": "设置模型失败: ⚠ No acpx session found (searched up to E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub).\nCreate one: acpx opencode sessions new --name probe-opencode-l1b-main"
+  },
+  "state": {
+    "result": "pass",
+    "evidence": "{\"action\":\"status_snapshot\",\"status\":\"idle\",\"summary\":\"session idle; queue owner will start on next prompt\",\"acpxRecordId\":\"d0e69ba2-0b46-4f6f-b168-7d218f45e65d\",\"acpxSessionId\":\"ses_eb61d6754ffeAU7sJPL04s99go\",\"model\":\"opencode/big-pickle\",\"availableModels\":[\"zai/glm-4.5\",\"zai/glm-4.5-air\",\"zai/glm-4.5-flash\",\"zai/glm-4.5v\",\"zai/glm-4.6\",\"zai/glm-",
+    "cmd": "acpx --format json opencode status -s probe-opencode-l1b-main",
+    "condition": "执行 acpx status 查看状态字段",
+    "note": "获取到状态 status=idle"
+  },
+  "open": {
+    "result": "pass",
+    "evidence": "{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"initialize\",\"params\":{\"protocolVersion\":1,\"clientCapabilities\":{\"fs\":{\"readTextFile\":true,\"writeTextFile\":true},\"terminal\":true},\"clientInfo\":{\"name\":\"acpx\",\"version\":\"0.19.5\"}}}\n{\"jsonrpc\":\"2.0\",\"id\":0,\"result\":{\"protocolVersion\":1,\"agentCapabilities\":{\"loadSession\":true,\"mcpCapabilities\":{\"http\":true,\"sse\":true},\"promptCapabilities\":{\"embeddedContext\":true,\"imag",
+    "cmd": "acpx --format json opencode -s probe-opencode-l1b-main \"请牢记暗号：L1B_SEC_729704，只回复收到\"",
+    "condition": "新建会话并成功完成第一轮对话",
+    "note": "首轮对话成功完成并收到流式 JSON 回复"
+  },
+  "resume": {
+    "result": "pass",
+    "evidence": "\"_729704\"}}}}\n{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"ses_eb61d6754ffeAU7sJPL04s99go\",\"update\":{\"sessionUpdate\":\"usage_update\",\"used\":12673,\"size\":200000,\"cost\":{\"amount\":0,\"currency\":\"USD\"}}}}\n{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"stopReason\":\"end_turn\",\"usage\":{\"inputTokens\":12512,\"outputTokens\":14,\"totalTokens\":12786,\"thoughtTokens\":99,\"cachedReadTokens\":161},\"_meta\":{}}}",
+    "cmd": "acpx --format json opencode -s probe-opencode-l1b-main \"之前告诉你的暗号是什么？请只完整复述暗号\"",
+    "condition": "同一会话第二轮提问复述暗号",
+    "note": "第二轮流式回复中成功复述暗号片段与用法统计"
+  },
+  "observe-live": {
+    "result": "pass",
+    "evidence": "{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"initialize\",\"params\":{\"protocolVersion\":1,\"clientCapabilities\":{\"fs\":{\"readTextFile\":true,\"writeTextFile\":true},\"terminal\":true},\"clientInfo\":{\"name\":\"acpx\",\"version\":\"0.19.5\"}}}\n{\"jsonrpc\":\"2.0\",\"id\":0,\"result\":{\"protocolVersion\":1,\"agentCapabilities\":{\"loadSession",
+    "cmd": "acpx --format json opencode -s probe-opencode-l1b-main \"...\"",
+    "condition": "通过 --format json 实时接收流式事件",
+    "note": "成功输出多帧流式 JSON 事件"
+  },
+  "observe-history": {
+    "result": "pass",
+    "evidence": "session: d0e69ba2-0b46-4f6f-b168-7d218f45e65d (4/4 shown)\n2026-10-17T12:43:08.307Z\tuser\t请牢记暗号：L1B_SEC_729704，只回复收到\n2026-10-17T12:43:08.307Z\tassistant\tThe user wants me to remember a passphrase: L1B_SEC_729704, and only reply \"收到\" (received). 收到\n2026-10-17T12:43:08.307Z\tuser\t之前告诉你的暗号是什么？请只完整复述暗号\n2026",
+    "cmd": "acpx opencode sessions history probe-opencode-l1b-main",
+    "condition": "通过 acpx sessions history 查看会话历史",
+    "note": "支持查看会话历史记录"
+  },
+  "resume-native": {
+    "result": "fail",
+    "evidence": "Command failed: acpx --format json opencode -s ses_eb61cc4cfffeUozOcmLwqKMcTJ \"之前告诉你的暗号是什么？请只完整复述暗号\"",
+    "cmd": "acpx --format json opencode -s ses_eb61cc4cfffeUozOcmLwqKMcTJ \"...\"",
+    "condition": "原生 CLI 创建会话，经 acpx -s 指定该原生 sessionID 续接",
+    "note": "未能复述暗号或会话不兼容"
+  },
+  "cancel": {
+    "result": "pass",
+    "evidence": "nothing to cancel",
+    "cmd": "acpx opencode cancel -s probe-opencode-l1b-main",
+    "condition": "调用 acpx cancel 命令",
+    "note": "支持打断命令"
+  },
+  "steer": {
+    "result": "pass",
+    "evidence": "[queued] 40293a95-af62-42bd-8125-9e6481c65716",
+    "cmd": "acpx opencode -s probe-opencode-l1b-main --no-wait \"插话测试\"",
+    "condition": "使用 --no-wait 参数并发发送插话",
+    "note": "成功下发插话请求"
+  },
+  "permission": {
+    "result": "fail",
+    "evidence": "acpx non-interactive execution auto-approves all tool permissions by default (no mid-turn interactive prompt in CLI mode)",
+    "cmd": "acpx opencode -s probe-opencode-l1b-main",
+    "condition": "检查命令行非交互调用下是否有中途审批交互",
+    "note": "CLI 模式下 acpx 默认自动放行权限回调，不支持在终端中途中断交互"
+  },
+  "fork": {
+    "result": "fail",
+    "evidence": "error: unknown option '-s'\n\nUsage: acpx opencode sessions [options] [command]\n\nList, ensure, create, or close sessions for this agent\n\nOptions:\n  --local                          List local acpx session records instead of\n                                   agent protocol sessions\n  --cursor <cursor>",
+    "cmd": "acpx opencode sessions fork -s probe-opencode-l1b-main",
+    "condition": "调用 acpx sessions fork 命令",
+    "note": "acpx sessions 无 fork 子命令: error: unknown option '-s'\n\nUsage: acpx opencode sessions [options] [command]\n\nList, ensure, create, or close sessions for this agent\n\nOptions:\n  --local                          List local acpx session records instead of\n                                   agent protocol sessions\n  --cursor <cursor>                Opaque ACP session/list cursor\n  --filter-cwd <dir>               Filter agent sessions by working directory\n  -h, --help                       display help for command\n\nCommands:\n  list [options]                   List sessions\n  new [options]                    Create a fresh session for current cwd\n  ensure [options]                 Ensure a session exists for current cwd or\n                                   ancestor\n  close [name]                     Close session for current cwd\n  show [name]                      Show session metadata for current cwd\n  history [options] [name]         Show recent session history entries\n  read [options] [name]            Read full session history\n  watch [options]                  Replay and follow session events without\n                                   affecting the active turn\n  export [options] [name]          Export a portable session archive\n  import [options] <archive-path>  Import a portable session archive\n  prune [options]                  Delete closed sessions and free disk space"
+  },
+  "compact": {
+    "result": "fail",
+    "evidence": "⚠ No acpx session found (searched up to E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub).\nCreate one: acpx opencode sessions new",
+    "cmd": "acpx opencode compact -s probe-opencode-l1b-main",
+    "condition": "调用 acpx compact 命令",
+    "note": "acpx 无 compact 子命令: ⚠ No acpx session found (searched up to E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub).\nCreate one: acpx opencode sessions new"
+  },
+  "model-switch": {
+    "result": "pass",
+    "evidence": "model set: zai-coding-plan/glm-5.3-flash",
+    "cmd": "acpx opencode set -s probe-opencode-l1b-main model zai-coding-plan/glm-5.3-flash",
+    "condition": "通过 acpx set 切换模型",
+    "note": "成功切换模型为 zai-coding-plan/glm-5.3-flash"
+  },
+  "mode-switch": {
+    "result": "pass",
+    "evidence": "mode set: plan",
+    "cmd": "acpx opencode set-mode -s probe-opencode-l1b-main plan",
+    "condition": "调用 acpx set-mode plan",
+    "note": "成功切换模式为 plan"
+  },
+  "quota": {
+    "result": "n/a",
+    "evidence": "⚠ No acpx session found (searched up to E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub).\nCreate one: acpx opencode sessions new",
+    "cmd": "acpx opencode quota -s probe-opencode-l1b-main",
+    "condition": "调用 acpx quota 命令",
+    "note": "acpx 未提供 quota 子命令: ⚠ No acpx session found (searched up to E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub).\nCreate one: acpx opencode sessions new"
+  },
+  "close": {
+    "result": "pass",
+    "evidence": "d0e69ba2-0b46-4f6f-b168-7d218f45e65d",
+    "cmd": "acpx opencode sessions close probe-opencode-l1b-main",
+    "condition": "调用 acpx sessions close 关闭会话",
+    "note": "成功关闭会话"
+  }
+}

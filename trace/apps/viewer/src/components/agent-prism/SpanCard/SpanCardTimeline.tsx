@@ -45,16 +45,16 @@ export const SpanCardTimeline = ({
   return (
     <span
       className={cn(
-        "bg-agentprism-secondary relative flex h-4 min-w-20 flex-1 rounded-md",
+        "bg-agentprism-secondary/80 border-agentprism-border/60 relative flex h-2 w-24 sm:w-28 shrink-0 overflow-hidden rounded-full border",
         className,
       )}
     >
-      <span className="pointer-events-none absolute inset-x-1 top-1/2 h-1.5 -translate-y-1/2">
+      <span className="pointer-events-none absolute inset-x-0.5 top-1/2 h-1 -translate-y-1/2">
         <span
-          className={`absolute h-full rounded-sm ${timelineBgColors[spanCard.type]}`}
+          className={`absolute h-full rounded-full ${timelineBgColors[spanCard.type]}`}
           style={{
             left: `${startPercent}%`,
-            width: `${widthPercent}%`,
+            width: `${Math.max(widthPercent, 4)}%`,
           }}
         />
       </span>

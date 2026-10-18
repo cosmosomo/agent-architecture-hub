@@ -1,0 +1,50 @@
+{
+ "hermes": {
+  "open": {
+   "ok": true,
+   "status": "completed",
+   "ms": 41352,
+   "stopReason": "end_turn",
+   "reply": "收到",
+   "error": "",
+   "warnings": [],
+   "deniedTools": []
+  },
+  "resume": {
+   "ok": true,
+   "status": "completed",
+   "ms": 10673,
+   "stopReason": "end_turn",
+   "reply": "P0-HERMES-380921",
+   "error": "",
+   "warnings": [
+    "Internal error（No LLM provider configured. Run `hermes model` to select a provider, or run `hermes setup` for first-time"
+   ],
+   "deniedTools": []
+  },
+  "recalled": true
+ },
+ "claude": {
+  "open": {
+   "ok": true,
+   "status": "completed",
+   "ms": 28845,
+   "stopReason": "end_turn",
+   "reply": "收到",
+   "error": "",
+   "warnings": [],
+   "deniedTools": []
+  },
+  "resume": {
+   "ok": true,
+   "status": "completed",
+   "ms": 9362,
+   "stopReason": "end_turn",
+   "reply": "P0-CLAUDE-389180",
+   "error": "",
+   "warnings": [],
+   "deniedTools": []
+  },
+  "recalled": true
+ }
+}

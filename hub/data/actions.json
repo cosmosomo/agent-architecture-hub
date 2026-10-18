@@ -1,0 +1,209 @@
+{
+  "about": "动作表：后端 8899 提供的全部操作，一个接口一行。真源是 trace/apps/cli/src/server.ts 的路由；probe/scripts/build_tables.js 每次核对两边，有对不上的就报出来。cli 是命令行网关（hub/tools/agent_gateway.js）里调这个动作的子命令，没有就是网关还调不到。单元由哪个动作实现，写在 integration-map.json 的 action 字段里，引用这里的 id。 请求字段不在这里手写，由生成脚本从路由代码里抽。",
+  "actions": [
+    {
+      "id": "send",
+      "method": "POST",
+      "path": "/api/gateway/send",
+      "alias": [
+        "/api/gateway/prompt"
+      ],
+      "does": "向一个会话发一轮；会话名是新的就新建；可带图、指定模型、目录、权限，traceSessionId 指向原生会话时接管它",
+      "cli": "run"
+    },
+    {
+      "id": "cancel",
+      "method": "POST",
+      "path": "/api/gateway/cancel",
+      "does": "停下正在跑的这一轮，会话保留",
+      "cli": "cancel"
+    },
+    {
+      "id": "set-model",
+      "method": "POST",
+      "path": "/api/gateway/model",
+      "does": "给产品或某个会话换模型（acpx 产品同时调 set-model）"
+    },
+    {
+      "id": "set-cwd",
+      "method": "POST",
+      "path": "/api/gateway/cwd",
+      "does": "设定会话的工作目录"
+    },
+    {
+      "id": "session-new",
+      "method": "POST",
+      "path": "/api/gateway/session/new",
+      "does": "只建会话，不跑"
+    },
+    {
+      "id": "resume",
+      "method": "POST",
+      "path": "/api/gateway/resume",
+      "does": "恢复一个被打断的会话，接着跑"
+    },
+    {
+      "id": "approve",
+      "method": "POST",
+      "path": "/api/gateway/approve",
+      "does": "答复待审批项。现在是补齐：一轮因没权限失败后才生成待审批项，同意就全放行重跑一轮（搬到一个会话这一级）"
+    },
+    {
+      "id": "handoff",
+      "method": "POST",
+      "path": "/api/gateway/handoff",
+      "does": "把一个会话的摘要交给另一个产品的新会话",
+      "cli": "handoff"
+    },
+    {
+      "id": "meta-agent-set",
+      "method": "POST",
+      "path": "/api/gateway/meta-agents",
+      "does": "改元智能体（巡检员）的设置"
+    },
+    {
+      "id": "meta-agent-patrol",
+      "method": "POST",
+      "path": "/api/gateway/meta-agents/patrol",
+      "does": "让元智能体巡检一次",
+      "cli": "patrol"
+    },
+    {
+      "id": "feedback-add",
+      "method": "POST",
+      "path": "/api/m/feedback",
+      "does": "手机页提交一条反馈（可带截图，存仓库外）"
+    },
+    {
+      "id": "control",
+      "method": "POST",
+      "path": "/api/control",
+      "does": "旧观察台：往某个案例写人工调控（关系、规则、收件箱），只写文件"
+    },
+    {
+      "id": "sessions",
+      "method": "GET",
+      "path": "/api/sessions",
+      "does": "电脑上全部会话（slim=1 给列表字段：标题、项目、状态、父子）"
+    },
+    {
+      "id": "session",
+      "method": "GET",
+      "path": "/api/sessions/<编号>",
+      "does": "一个会话的每一轮每一步（tail、compact 控制取多少）"
+    },
+    {
+      "id": "session-tree",
+      "method": "GET",
+      "path": "/api/sessions/<编号>/tree",
+      "does": "一个会话和它派出的全部子智能体"
+    },
+    {
+      "id": "session-files",
+      "method": "GET",
+      "path": "/api/sessions/<编号>/files",
+      "does": "这个会话读写过的文件"
+    },
+    {
+      "id": "session-file",
+      "method": "GET",
+      "path": "/api/sessions/<编号>/file",
+      "does": "读其中一个文件（只放行会话自己提到的，5MB 以内）"
+    },
+    {
+      "id": "search",
+      "method": "GET",
+      "path": "/api/search",
+      "does": "全部会话全文搜索"
+    },
+    {
+      "id": "search-stats",
+      "method": "GET",
+      "path": "/api/stats",
+      "does": "搜索索引的统计"
+    },
+    {
+      "id": "run-result",
+      "method": "GET",
+      "path": "/api/gateway/run",
+      "does": "经后端跑的某一轮的结果；waitMs 可等它跑完",
+      "cli": "read / wait"
+    },
+    {
+      "id": "gateway-state",
+      "method": "GET",
+      "path": "/api/gateway/state",
+      "does": "后端此刻的状态：各产品、在跑的轮、队列、待审批"
+    },
+    {
+      "id": "stream",
+      "method": "GET",
+      "path": "/api/gateway/stream",
+      "does": "实时推送（SSE）：状态快照、每一轮的进展"
+    },
+    {
+      "id": "capabilities",
+      "method": "GET",
+      "path": "/api/capabilities",
+      "does": "四张表的汇总：单元、产品、动作，以及每个产品每个单元经哪个动作做到、做到什么程度",
+      "cli": "tables"
+    },
+    {
+      "id": "meta-agents",
+      "method": "GET",
+      "path": "/api/gateway/meta-agents",
+      "does": "元智能体和它们的动作日志"
+    },
+    {
+      "id": "feedback-list",
+      "method": "GET",
+      "path": "/api/m/feedback",
+      "does": "手机页收到的反馈"
+    },
+    {
+      "id": "m-sessions",
+      "method": "GET",
+      "path": "/api/m/sessions",
+      "does": "某个产品经后端跑过的会话（手机页旧接口）"
+    },
+    {
+      "id": "m-agy",
+      "method": "GET",
+      "path": "/api/m/agy",
+      "does": "Antigravity 的对话列表（手机页旧接口）"
+    },
+    {
+      "id": "overview",
+      "method": "GET",
+      "path": "/api/overview",
+      "does": "各产品会话目录和总数"
+    },
+    {
+      "id": "dispatch",
+      "method": "POST",
+      "path": "/api/gateway/dispatch",
+      "does": "两个会话之间派活（spawn-subagent / peer-message / handoff），落盘 ~/.agent-hub/dispatches/<id>.json，带四态回执（issued/delivered/seen/returned）与返程自动唤醒",
+      "cli": "dispatch"
+    },
+    {
+      "id": "collab-event",
+      "method": "POST",
+      "path": "/api/gateway/collab-event",
+      "does": "被派会话或调用方上报进度（report，不打断当前轮）、让出（yield）、交回结果（deliver）或主动收回（reclaim）",
+      "cli": "deliver / report / yield / reclaim"
+    },
+    {
+      "id": "dispatches",
+      "method": "GET",
+      "path": "/api/gateway/dispatches",
+      "does": "查全部派活单、四态回执与等待边（waitingEdges）；带 id 与 waitMs 可阻塞等某张派活单交回",
+      "cli": "dispatches / dispatch-wait"
+    },
+    {
+      "id": "health",
+      "method": "GET",
+      "path": "/api/health",
+      "does": "服务在不在、扫描进度"
+    }
+  ]
+}

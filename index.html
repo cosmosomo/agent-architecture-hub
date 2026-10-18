@@ -33,6 +33,12 @@
   <div class="tb-actions">
     <div class="tb-right">
       <div class="tb-util">
+        <div class="tb-mode-switch" role="navigation" aria-label="双模式切换">
+          <span class="tb-mode-item active" title="当前处于模式一：复杂协作拓扑与架构对账观察台">🌌 架构拓扑 Hub</span>
+          <a class="tb-mode-item" id="consoleModeLink" href="console/" title="切换至模式二：独立解耦、零画布负担的多智能体极速控制台">⚡ 极速控制台</a>
+        </div>
+        <a class="btn btn-concept" id="conceptLink" href="concept/" title="进入上游中文版概念画板：60 智能体拖拽沙盘、10 大架构模式与 Claude 钩子实验室">🎨 概念画板</a>
+        <a class="btn btn-units" id="unitsLink" href="concept/#units" title="基本协作单元（概念演示预留区）：展示模型基本能力与原子级协作单元">🧩 基本协作单元</a>
         <button class="btn btn-p" id="ctrlToggle" type="button" title="反向调控与编排写回台：连接关系编辑、指令注入、Markdown Diff 预览与落盘">⚡ 编排与调控</button>
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换明暗主题"></button>
       </div>
@@ -99,6 +105,7 @@
 <script src="hub/js/obs/side.js"></script>
 <script src="hub/js/obs/timeline.js"></script>
 <script src="hub/js/obs/guide.js"></script>
+<script src="hub/js/obs/chat.js"></script>
 <script src="hub/js/obs/sessions.js"></script>
 <script src="hub/js/obs/trace.js"></script>
 <script src="hub/js/obs/collab.js"></script>

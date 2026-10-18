@@ -28,7 +28,7 @@
 | 能力层抽象 | Codex 内部概念与持久化落点 | 热会话 vs 冷会话 / 轮内部结构 |
 | :--- | :--- | :--- |
 | **会话 (`Session` / `Thread`)** | - 唯一标识：`threadId`（UUID v7，如 `01a0f203-c4db-7d10-91a4-5aa2286239dc`）<br>- 轨迹文件：`~/.codex/sessions/YYYY/MM/DD/rollout-<timestamp>-<threadId>.jsonl`<br>- 状态索引：`~/.codex/state_5.sqlite`、`~/.codex/thread_history_1.sqlite` | - **热会话（热待命 `idle`）**：`codex app-server` 进程在内存中已加载该线程（可通过 `thread/loaded/list` 查到），或桌面端/TUI 仍持有单写者锁（活跃后保持约 7 分钟），发 `turn/start` 毫秒级响应。<br>- **冷会话（冷待命 `notLoaded`）**：进程已退出，只剩磁盘上的 `rollout-*.jsonl` 与 SQLite 记录；需先 `thread/resume` 或 `codex exec resume` 重新加载。 |
-| **轮 (`Turn`)** | - 唯一标识：`turnId`（UUID）<br>- 生命周期：`turn/started` $\to$ 若干步（`item/started` / `item/completed`） $\to$ `turn/completed`<br>- 轮结束状态：`completed`（自然结束）、`interrupted`（被打断）、`failed`（出错可续） | 一轮内包含 **17 种定型步 (`ThreadItem`)**：<br>`userMessage`、`hookPrompt`、`reasoning`、`plan`、`commandExecution`、`fileChange`、`mcpToolCall`、`dynamicToolCall`、`collabAgentToolCall`、`subAgentActivity`、`webSearch`、`imageView`、`imageGeneration`、`sleep`、`enteredReviewMode`、`exitedReviewMode`、`agentMessage`、`contextCompaction`。 |
+| **轮 (`Turn`)** | - 唯一标识：`turnId`（UUID）<br>- 生命周期：`turn/started` $\to$ 若干步（`item/started` / `item/completed`） $\to$ `turn/completed`<br>- 轮结束状态：`completed`（自然结束）、`interrupted`（被打断）、`failed`（出错可恢复） | 一轮内包含 **17 种定型步 (`ThreadItem`)**：<br>`userMessage`、`hookPrompt`、`reasoning`、`plan`、`commandExecution`、`fileChange`、`mcpToolCall`、`dynamicToolCall`、`collabAgentToolCall`、`subAgentActivity`、`webSearch`、`imageView`、`imageGeneration`、`sleep`、`enteredReviewMode`、`exitedReviewMode`、`agentMessage`、`contextCompaction`。 |
 
 ### 2.2 三种会话状态与待命双属性
 
@@ -102,7 +102,7 @@ Codex 提供三条驱动通道：**通道 A（`codex app-server` 热常驻，主
 
 ### 2.5 最小组合积木：「做一轮 / 问答 (`ask`)」
 
-能力层之上最核心的组合积木是 **`做一轮 / 问答 = 送进去（开/续/插话） + 等这一轮结束（观察状态） + 取出这一轮输出（观察内容）`**：
+能力层之上最核心的组合积木是 **`做一轮 / 问答 = 送进去（新建/恢复/插话） + 等这一轮结束（观察状态） + 取出这一轮输出（观察内容）`**：
 - **在 `codex app-server` 热常驻通道中**：发送 `turn/start` $\to$ 阻塞等待 `turn/completed` 通知（若超时则自动发 `turn/interrupt` 只停当前轮） $\to$ 从本轮收到的 `item/completed` 条目提取输出，并将 `thread/tokenUsage/updated` 的会话累计 `tokenUsage.total` 与上一轮累计相减，换算为本轮净增 Token（`input - cached`、`cached`、`output`）。
 - **在 `codex exec` 单轮冷通道中**：记录运行前 `rollout-*.jsonl` 的文件字节大小 `cursor = stat.size` $\to$ 启动 `codex exec [resume] --json` 等待子进程结束 $\to$ 从字节偏移 `cursor` 起增量读取 `rollout-*.jsonl` 新增记录作为本轮输出。
 

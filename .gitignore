@@ -23,5 +23,13 @@ trace-data/
 Thumbs.db
 desktop.ini
 
-# local backups of working notes (not part of the repository)
+# local backups of working notes and private channel credentials (not part of the repository)
 .local/
+channels/_private/
+deploy-server.bat
+
+
+# probe scratch: isolated product homes with real keys, temp scripts, local backups
+channels/probe/scripts/tmp/
+*.bak
+probe_perm_test_*.txt

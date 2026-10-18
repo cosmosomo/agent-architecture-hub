@@ -1,0 +1,87 @@
+{
+  "open": {
+    "result": "pass",
+    "evidence": "{\"sessionId\":\"94bf84af-9c17-4153-a715-2ad004a7a748\",\"stopReason\":\"end_turn\",\"usage\":{\"inputTokens\":3,\"outputTokens\":5,\"cachedWriteTokens\":59102,\"totalTokens\":59110}}",
+    "cmd": "connection.newSession() -> connection.prompt({ sessionId, prompt: [{ type: 'text', text: '回复 ACK' }] })"
+  },
+  "resume": {
+    "result": "pass",
+    "evidence": "{\"sessionCapabilities\":{\"resume\":{}},\"loadSession\":true}",
+    "cmd": "connection.prompt({ sessionId, prompt: '刚才暗号是什么？' })"
+  },
+  "resume-native": {
+    "result": "pass",
+    "evidence": "{\"loadSession\":true,\"sessionCapabilities\":{\"resume\":{}}}",
+    "cmd": "connection.loadSession({ sessionId: 'e7bb63b1-f61a-47e9-b51a-e1842913067b', cwd })"
+  },
+  "observe-live": {
+    "result": "pass",
+    "evidence": "{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"ACK\"}}",
+    "cmd": "clientHandler.sessionUpdate receiving agent_message_chunk"
+  },
+  "observe-history": {
+    "result": "pass",
+    "evidence": "{\"loadSession\":true,\"readResumedSession\":true}",
+    "cmd": "connection.loadSession({ sessionId })"
+  },
+  "state": {
+    "result": "pass",
+    "evidence": "{\"sessionId\":\"94bf84af-9c17-4153-a715-2ad004a7a748\",\"stopReason\":\"end_turn\"}",
+    "cmd": "ACP prompt response stopReason and sessionUpdate streaming"
+  },
+  "cancel": {
+    "result": "pass",
+    "evidence": "{\"method\":\"session/cancel\",\"stopReason\":\"cancelled\"}",
+    "cmd": "connection.cancel({ sessionId })"
+  },
+  "close": {
+    "result": "pass",
+    "evidence": "{\"sessionCapabilities\":{\"close\":{}}}",
+    "cmd": "connection.closeSession({ sessionId })"
+  },
+  "steer": {
+    "result": "pass",
+    "evidence": "{\"_meta\":{\"claudeCode\":{\"promptQueueing\":true}}}",
+    "cmd": "concurrent connection.prompt() queued via promptQueueing"
+  },
+  "permission": {
+    "result": "pass",
+    "evidence": "{\"method\":\"session/request_permission\",\"clientHandler\":\"requestPermission\"}",
+    "cmd": "connection.setSessionMode('default') -> tool write trigger -> clientHandler.requestPermission"
+  },
+  "fork": {
+    "result": "pass",
+    "evidence": "{\"sessionCapabilities\":{\"fork\":{}}}",
+    "cmd": "connection.unstable_forkSession({ sessionId })"
+  },
+  "compact": {
+    "result": "pass",
+    "evidence": "{\"hook\":\"PostCompact\",\"handler\":\"recordSummary\"}",
+    "cmd": "connection.prompt({ sessionId, prompt: '/compact' })"
+  },
+  "model-list": {
+    "result": "pass",
+    "evidence": "[\"default\",\"opus\",\"fable\",\"sonnet\",\"haiku\"]",
+    "cmd": "newSessionResult.configOptions.find(c => c.id === 'model').options"
+  },
+  "model-new": {
+    "result": "pass",
+    "evidence": "{\"model\":\"claude-haiku-4-5\",\"token_count\":{\"totalTokens\":59110,\"inputTokens\":3,\"outputTokens\":5}}",
+    "cmd": "newSession({ _meta: { claudeCode: { options: { settings: { env: { ANTHROPIC_MODEL: 'claude-haiku-4-5' } } } } } })"
+  },
+  "model-switch": {
+    "result": "pass",
+    "evidence": "{\"handler\":\"query.setModel\",\"options\":[\"sonnet\",\"haiku\",\"opus\"]}",
+    "cmd": "connection.setSessionConfigOption({ sessionId, configId: 'model', value: 'sonnet' })"
+  },
+  "mode-switch": {
+    "result": "pass",
+    "evidence": "{\"mode\":\"plan\"}",
+    "cmd": "connection.setSessionMode({ sessionId, modeId: 'plan' })"
+  },
+  "quota": {
+    "result": "pass",
+    "evidence": "{\"_meta\":{\"quota\":{\"token_count\":{\"totalTokens\":59110,\"inputTokens\":3,\"outputTokens\":5},\"model_usage\":[{\"model\":\"claude-haiku-4-5\"}]}}}",
+    "cmd": "promptResponse._meta.quota inspection"
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "zcode": {
+    "product": "zcode",
+    "sessionId": "e48ab23b-c330-4464-b8a5-06ee10372ab5",
+    "permissionIntercepted": false,
+    "permissionDetails": null,
+    "fileCreated": true,
+    "fileContent": "ZCODE_PERMISSION_CONFIRMED",
+    "turnText": "我来创建这个文件。文件已创建成功：`E:\\program\\GITAgent\\multi\\Agent-Architecture-Hub\\probe_perm_test_zcode.txt`，内容为 `ZCODE_PERMISSION_CONFIRMED`。写入权限正常。",
+    "stopReason": "end_turn"
+  },
+  "workbuddy": {
+    "product": "workbuddy",
+    "timeout": true
+  },
+  "opencode": {
+    "product": "opencode",
+    "sessionId": "ses_eb110cd2dffe2464tgbO5i5MF9",
+    "permissionIntercepted": true,
+    "permissionDetails": {
+      "sessionId": "ses_eb110cd2dffe2464tgbO5i5MF9",
+      "toolCall": {
+        "toolCallId": "call_3bcb4899fcbf4d319f15b086",
+        "title": "E:\\program\\GITAgent\\multi\\Agent-Architecture-Hub\\probe_perm_test_opencode.txt",
+        "kind": "edit",
+        "status": "pending",
+        "locations": [
+          {
+            "path": "E:\\program\\GITAgent\\multi\\Agent-Architecture-Hub\\probe_perm_test_opencode.txt"
+          }
+        ],
+        "rawInput": {
+          "filepath": "E:\\program\\GITAgent\\multi\\Agent-Architecture-Hub\\probe_perm_test_opencode.txt",
+          "diff": "Index: E:\\program\\GITAgent\\multi\\Agent-Architecture-Hub\\probe_perm_test_opencode.txt\n===================================================================\n--- E:\\program\\GITAgent\\multi\\Agent-Architecture-Hub\\probe_perm_test_opencode.txt\n+++ E:\\program\\GITAgent\\multi\\Agent-Architecture-Hub\\probe_perm_test_opencode.txt\n@@ -0,0 +1,1 @@\n+OPENCODE_PERMISSION_CONFIRMED\n\\ No newline at end of file\n"
+        },
+        "content": [
+          {
+            "type": "diff",
+            "path": "E:\\program\\GITAgent\\multi\\Agent-Architecture-Hub\\probe_perm_test_opencode.txt",
+            "oldText": "",
+            "newText": "OPENCODE_PERMISSION_CONFIRMED"
+          }
+        ]
+      },
+      "options": [
+        {
+          "optionId": "once",
+          "kind": "allow_once",
+          "name": "Allow once"
+        },
+        {
+          "optionId": "always",
+          "kind": "allow_always",
+          "name": "Always allow"
+        },
+        {
+          "optionId": "reject",
+          "kind": "reject_once",
+          "name": "Reject"
+        }
+      ]
+    },
+    "fileCreated": true,
+    "fileContent": "OPENCODE_PERMISSION_CONFIRMED",
+    "turnText": "已创建 `probe_perm_test_opencode.txt`，内容为 `OPENCODE_PERMISSION_CONFIRMED`。",
+    "stopReason": "end_turn"
+  },
+  "hermes": {
+    "product": "hermes",
+    "sessionId": "8f98c273-5710-4364-b00f-e7131f554fc5",
+    "permissionIntercepted": true,
+    "permissionDetails": {
+      "options": [
+        {
+          "kind": "allow_once",
+          "name": "Allow edit",
+          "optionId": "allow_once"
+        },
+        {
+          "kind": "reject_once",
+          "name": "Deny",
+          "optionId": "deny"
+        }
+      ],
+      "sessionId": "8f98c273-5710-4364-b00f-e7131f554fc5",
+      "toolCall": {
+        "content": [
+          {
+            "newText": "HERMES_PERMISSION_CONFIRMED",
+            "path": "probe_perm_test_hermes.txt",
+            "type": "diff"
+          }
+        ],
+        "kind": "edit",
+        "rawInput": {
+          "tool": "write_file",
+          "arguments": {
+            "content": "HERMES_PERMISSION_CONFIRMED",
+            "path": "probe_perm_test_hermes.txt"
+          }
+        },
+        "status": "pending",
+        "title": "Approve edit: probe_perm_test_hermes.txt",
+        "toolCallId": "edit-approval-1"
+      }
+    },
+    "fileCreated": true,
+    "fileContent": "HERMES_PERMISSION_CONFIRMED",
+    "turnText": "已创建 `probe_perm_test_hermes.txt`，内容为 `HERMES_PERMISSION_CONFIRMED`，写入已验证（27 字节）。",
+    "stopReason": "end_turn"
+  }
+}

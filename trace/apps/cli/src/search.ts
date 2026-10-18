@@ -115,9 +115,21 @@ export class SearchIndex {
       .filter((f) => { const k = known.get(f.id); return !k || k.size !== f.size || k.mtime !== f.mtimeMs || k.adapter !== f.adapter; })
       .sort((a, b) => ((b.summary.updatedAt || '') < (a.summary.updatedAt || '') ? -1 : 1));
     this.progress = { done: files.length - todo.length, total: files.length, running: todo.length > 0 };
+    // Parsing and inserting are mostly synchronous, so `await parse` alone never lets the event loop run:
+    // a rebuild of ~800 sessions held HTTP requests for ~2 minutes after startup (seen 2026-10-18).
+    // Yield to pending I/O every ~30ms of work, also inside one session: a single big session
+    // takes seconds to insert (measured 3s for 12k steps), so yielding between sessions is not enough.
+    let lastYield = Date.now();
+    const tick = async () => {
+      if (Date.now() - lastYield > 30) {
+        await new Promise((r) => setImmediate(r));
+        lastYield = Date.now();
+      }
+    };
     for (const f of todo) {
+      await tick();
       try {
-        report.steps += this.put(f, await parse(f));
+        report.steps += await this.put(f, await parse(f), tick);
         report.indexed++;
       } catch {
         report.failed++;
@@ -138,7 +150,7 @@ export class SearchIndex {
     this.db.prepare('DELETE FROM files WHERE session = ?').run(id);
   }
 
-  private put(f: SourceFile, s: Session): number {
+  private async put(f: SourceFile, s: Session, tick: () => Promise<void>): Promise<number> {
     const step = this.db.prepare('INSERT INTO steps (session, turn, step, kind, facet, name, status, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     const fts = this.db.prepare('INSERT INTO steps_fts (rowid, body) VALUES (?, ?)');
     let n = 0;
@@ -150,6 +162,7 @@ export class SearchIndex {
           const r = step.run(f.id, t.index, st.id, st.kind, facetOf(st), st.kind === 'tool' ? st.name : st.kind === 'model' ? st.model || null : null, statusOf(st), st.at || t.startedAt || null);
           fts.run(r.lastInsertRowid, bodyOf(st));
           n++;
+          await tick();
         }
       }
       this.db.prepare('INSERT INTO files (session, size, mtime, adapter, cwd, role) VALUES (?, ?, ?, ?, ?, ?)').run(f.id, f.size, f.mtimeMs, f.adapter, s.cwd || '', s.agent.role);

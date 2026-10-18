@@ -1,0 +1,11 @@
+{
+  "sessionId": "013af44f-1769-43ea-a6ad-41946f0a7f35",
+  "secretCode": "PROBE_NATIVE_SECRET_9824",
+  "nativeOut": "The script executed successfully and printed `HELLO_CHECK`.",
+  "sessionFileExists": true,
+  "loadSessionSessionId": "013af44f-1769-43ea-a6ad-41946f0a7f35",
+  "promptStopReason": "end_turn",
+  "fullAnswerText": "The script executed successfully and printed `HELLO_CHECK`.PROBE_NATIVE_SECRET_9824",
+  "secretFound": true,
+  "pass": true
+}

@@ -33,9 +33,9 @@ capabilities:
 - **允许模型**：主力 `gpt-6.1-sol`，轻活 `gpt-6-luna`（**严禁使用旧 `gpt-5.6`**）。
 - **CLI / 服务端入口（`0.159.2` 实测确认）**：
   - 非交互启动（做一轮）：`codex exec -C <cwd> --sandbox workspace-write --json "<prompt>"`
-  - 非交互续接：`codex exec resume <session_id> "<prompt>" --json`（或 `--last`）
+  - 非交互恢复：`codex exec resume <session_id> "<prompt>" --json`（或 `--last`）
   - 非交互分叉：`codex exec fork <session_id> "<prompt>" --json`
-  - 队列注入（下一轮）：`codex queue <session_id> "<message>"`（无需 `--thread` 标志，首个位置参数即为 `SESSION_ID`；写入 `~/.codex/state_5.sqlite`）
+  - 队列注入（下一轮）：`codex queue --thread <会话编号或名字> --message "<message>"`（2026-10-18 按本机 0.159.2 `--help` 更正：两个都是必填的命名参数，不是位置参数）
   - 环境自检：`codex doctor`
   - 常驻控制服务：`codex app-server --listen stdio://`（或 `ws://127.0.0.1:<port>`，支持 `daemon`/`proxy`/`generate-ts`/`generate-json-schema`）
 - **本地会话与状态落盘位置**：
@@ -50,7 +50,7 @@ capabilities:
 | **观察 (`Observe`)** | ✅ 原生最全 | 旁路直读 `rollout-*.jsonl`（含 `session_meta`、`turn_context`、`event_msg`、`response_item`、`token_count`）；RPC 读 `thread/list`、`thread/read` 与 83 种 `ServerNotification` | `0.159.2` `〔实测:thread/list返回〕` |
 | **打断 (`Interrupt`)** | ✅ 原生完备 | RPC `turn/interrupt { threadId, turnId }` → 触发 `turn/completed (status="interrupted")` 退回热待命 | `0.159.2` `〔Schema实测〕` |
 | **关 (`Close`)** | ✅ 原生完备 | RPC `thread/unsubscribe`（卸载内存保磁盘）；CLI `codex archive <id>` / `codex delete <id>` | `0.159.2` `〔CLI帮助实测〕` |
-| **插话 (`Steer`)** | ✅ 双轨支持 | **轮内实时**：RPC `turn/steer { threadId, expectedTurnId, input }`（前提必须有活跃 Turn）；**下一轮排队**：CLI `codex queue <id> "<msg>"` | `0.159.2` `〔Schema+CLI实测〕` |
+| **插话 (`Steer`)** | ✅ 双轨支持 | **轮内实时**：RPC `turn/steer { threadId, expectedTurnId, input }`（前提必须有活跃 Turn）；**下一轮排队**：CLI `codex queue --thread <id> --message "<msg>"` | `0.159.2` `〔Schema+CLI实测〕` |
 | **回应 (`Respond`)** | ✅ 10类反向请求 | 响应 `ServerRequest`（`item/commandExecution/requestApproval`、`item/fileChange/requestApproval`、`item/tool/requestUserInput`、`mcpServer/elicitation/request` 等） | `0.159.2` `〔Schema实测〕` |
 | **分叉 (`Fork`)** | ✅ 双轨支持 | CLI `codex fork <id>` / `codex exec fork <id>`；RPC `thread/fork` | `0.159.2` `〔CLI+Schema实测〕` |
 | **整理 (`Compact`)** | ✅ 自动+手动 | 自动 `context_compacted`（本机已发生 218 次）+ 手动 RPC `thread/compact/start` / `thread/rollback` | `0.159.2` `〔Schema+日志实测〕` |

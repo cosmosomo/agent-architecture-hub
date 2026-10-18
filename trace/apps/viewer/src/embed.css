@@ -1,6 +1,5 @@
-/* Styles of the embedded trace view. They live inside its shadow roots, so neither the host page's CSS
-   nor Tailwind's reset crosses the boundary. Theme variables apply through the box's data-theme. */
 @import './hub-theme.css';
+@import './idiom.css';
 
 @tailwind base;
 @tailwind components;
@@ -20,3 +19,4 @@
   scrollbar-width: thin;
   scrollbar-color: oklch(var(--agentprism-border-strong)) transparent;
 }
+

@@ -22,7 +22,7 @@ capabilities:
 ## 一、渠道身份与接入入口
 - **角色定位**：内置 **Worker + Validator 双模型独立验收 Mission** 机制的工程执行器（支持在单次 Mission 中分别指定 `--worker-model` 与 `--validator-model`）。
 - **CLI / 守护入口（`droid` `0.228.0`）**：
-  - 非交互启动与续接：`droid exec "<prompt>" -s <session_id> --output-format stream-json`
+  - 非交互启动与恢复：`droid exec "<prompt>" -s <session_id> --output-format stream-json`
   - 分叉会话：`droid exec -s <session_id> --fork "<prompt>"`
   - 双模型 Mission 模式：`droid exec --mission --worker-model <m1> --validator-model <m2> "<prompt>"`
   - 后台守护：`droid daemon`
@@ -34,7 +34,7 @@ capabilities:
 | 能力维度 | 子能力项 | 支持度 | 精确命令 / 协议 / 字段依据 | 核验版本 & 证据 |
 |---|---|---|---|---|
 | **外部读 Sessions** | JSONL + `.settings.json` 直读 | ✅ 原生完备 | 直读 `~/.factory/sessions/**/*.jsonl`（含 `session_start`、`message`、`todo_state`、`compaction_state`） | `0.228.0` `〔实测:7会话〕` |
-| **生命周期控制** | 启动 / 续接 / 分叉 / 权限档 | ✅ 原生完备 | `droid exec` / `-s <id>` / `--fork` / `--auto low\|medium\|high` | `0.228.0` `〔CLI帮助/实测〕` |
+| **生命周期控制** | 启动 / 恢复 / 分叉 / 权限档 | ✅ 原生完备 | `droid exec` / `-s <id>` / `--fork` / `--auto low\|medium\|high` | `0.228.0` `〔CLI帮助/实测〕` |
 | **原生计划与压缩** | `todo_state` 与 `compaction_state` | ✅ 原生支持 | 落盘独立 `todo_state`（含 `priority`、`status`）与 `compaction_state`（含 `summaryText`） | `0.228.0` `〔实测〕` |
 | **双模型 Mission** | Worker 产出 + Validator 验收 | ✅ 独家特性 | `--mission --worker-model --validator-model` + `ProposeMission` / `StartMissionRun` | `0.228.0` `〔实测〕` |
 

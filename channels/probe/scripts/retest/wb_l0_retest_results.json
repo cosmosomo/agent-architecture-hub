@@ -1,0 +1,361 @@
+{
+  "fork": {
+    "pass": true,
+    "parentSessionId": "probe-wb-l0-fork-parent-1792233738517",
+    "secretCode": "WB-SECRET-58219",
+    "forkedSessionId": "01a14974-d5ad-795f-b7da-125bbe9c36f2",
+    "forkedReply": "WB-SECRET-58219",
+    "rawOutput": {
+      "type": "result",
+      "subtype": "success",
+      "is_error": false,
+      "result": "WB-SECRET-58219",
+      "uuid": "01a14974-e7ee-77a2-9db3-7902da26d234",
+      "session_id": "01a14974-d5ad-795f-b7da-125bbe9c36f2",
+      "duration_ms": 3374,
+      "duration_api_ms": 3373,
+      "num_turns": 9,
+      "total_cost_usd": 0,
+      "usage": {
+        "input_tokens": 83338,
+        "output_tokens": 573,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 56704,
+        "cache_creation": null,
+        "server_tool_use": null,
+        "service_tier": null
+      },
+      "permission_denials": [],
+      "__timestamp": "2026-10-17T10:42:40.750Z"
+    },
+    "forkedAssistantTurn": {
+      "id": "01a14974-db36-7429-a5b8-29004de5d456",
+      "parentId": "01a14974-db36-7429-a5b8-29014e0ad757",
+      "timestamp": 1792233760589,
+      "type": "message",
+      "role": "assistant",
+      "providerData": {
+        "conversationRequestId": "01a14974d6277279a2eaf16e9a2711dd",
+        "messageId": "01a14974db367429a5b828ff509719f3",
+        "stepSeq": 1,
+        "model": "glm-5.3",
+        "requestModelId": "custom-local:glm-5.3",
+        "requestModelName": "GLM-5.3",
+        "traceId": "0ba127beba67944e81f46552404cd0f7",
+        "rawUsage": {
+          "prompt_tokens": 27967,
+          "completion_tokens": 76,
+          "total_tokens": 28043,
+          "prompt_tokens_details": {
+            "cached_tokens": 27840
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 67
+          }
+        },
+        "agent": "cli",
+        "usage": {
+          "requests": 1,
+          "inputTokens": 27967,
+          "outputTokens": 76,
+          "totalTokens": 28043,
+          "inputTokensDetails": [
+            {
+              "cached_tokens": 27840
+            }
+          ],
+          "outputTokensDetails": [
+            {
+              "reasoning_tokens": 67
+            }
+          ]
+        }
+      },
+      "status": "completed",
+      "content": [
+        {
+          "providerData": {
+            "annotations": []
+          },
+          "type": "output_text",
+          "text": "WB-SECRET-58219"
+        }
+      ],
+      "sessionId": "01a14974-d5ad-795f-b7da-125bbe9c36f2",
+      "message": {
+        "usage": {
+          "input_tokens": 27967,
+          "output_tokens": 76,
+          "total_tokens": 28043,
+          "cache_read_input_tokens": 27840
+        }
+      },
+      "cwd": "e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "_meta": {
+        "traceparent": "00-0ba127beba67944e81f46552404cd0f7-5041d77284b46f18-01",
+        "baggage": "codebuddy.session_id=01a14974-d5ad-795f-b7da-125bbe9c36f2,codebuddy.conversation_request_id=01a14974d6277279a2eaf16e9a2711dd"
+      }
+    },
+    "cmd": "codebuddy -r probe-wb-l0-fork-parent-1792233738517 --fork-session -p \"我们之前约定的暗号是什么？直接回答暗号，不要任何多余字。\" --model custom-local:glm-5.3 --output-format json"
+  },
+  "model-new": {
+    "pass": true,
+    "sessionId": "probe-wb-l0-model-1792233760844",
+    "cliOutput": {
+      "type": "result",
+      "subtype": "success",
+      "is_error": false,
+      "result": "天地玄黄",
+      "uuid": "01a14975-0c4c-7931-a0c7-1ae170ee3ef4",
+      "session_id": "probe-wb-l0-model-1792233760844",
+      "duration_ms": 5154,
+      "duration_api_ms": 5153,
+      "num_turns": 3,
+      "total_cost_usd": 0,
+      "usage": {
+        "input_tokens": 27505,
+        "output_tokens": 90,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 27456,
+        "cache_creation": null,
+        "server_tool_use": null,
+        "service_tier": null
+      },
+      "permission_denials": [],
+      "__timestamp": "2026-10-17T10:42:50.060Z"
+    },
+    "actualAssistantTurn": {
+      "id": "01a14974-f8b0-7737-b356-0abcfcea4cc6",
+      "parentId": "01a14974-f8b0-7737-b356-0abd20359a69",
+      "timestamp": 1792233769906,
+      "type": "message",
+      "role": "assistant",
+      "providerData": {
+        "conversationRequestId": "01a14974f13c725e88203e8e26c10ac6",
+        "messageId": "01a14974f8ad7c029aa744163eb2931b",
+        "stepSeq": 1,
+        "model": "glm-5.3",
+        "requestModelId": "custom-local:glm-5.3",
+        "requestModelName": "GLM-5.3",
+        "traceId": "b1b70d7148c0c3e654663480a2c963e3",
+        "rawUsage": {
+          "prompt_tokens": 27505,
+          "completion_tokens": 90,
+          "total_tokens": 27595,
+          "prompt_tokens_details": {
+            "cached_tokens": 27456
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 85
+          }
+        },
+        "agent": "cli",
+        "usage": {
+          "requests": 1,
+          "inputTokens": 27505,
+          "outputTokens": 90,
+          "totalTokens": 27595,
+          "inputTokensDetails": [
+            {
+              "cached_tokens": 27456
+            }
+          ],
+          "outputTokensDetails": [
+            {
+              "reasoning_tokens": 85
+            }
+          ]
+        }
+      },
+      "status": "completed",
+      "content": [
+        {
+          "providerData": {
+            "annotations": []
+          },
+          "type": "output_text",
+          "text": "天地玄黄"
+        }
+      ],
+      "sessionId": "probe-wb-l0-model-1792233760844",
+      "message": {
+        "usage": {
+          "input_tokens": 27505,
+          "output_tokens": 90,
+          "total_tokens": 27595,
+          "cache_read_input_tokens": 27456
+        }
+      },
+      "cwd": "e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "_meta": {
+        "traceparent": "00-b1b70d7148c0c3e654663480a2c963e3-0374f1120a5220ed-01",
+        "baggage": "codebuddy.session_id=probe-wb-l0-model-1792233760844,codebuddy.conversation_request_id=01a14974f13c725e88203e8e26c10ac6"
+      }
+    },
+    "cmd": "codebuddy -p \"请只回复四个字：天地玄黄\" --session-id probe-wb-l0-model-1792233760844 --model custom-local:glm-5.3 --output-format json"
+  },
+  "model-switch": {
+    "pass": true,
+    "sessionId": "probe-wb-l0-model-1792233760844",
+    "cliOutput": {
+      "type": "result",
+      "subtype": "success",
+      "is_error": false,
+      "result": "宇宙洪荒",
+      "uuid": "01a14975-2b15-7062-8430-a28462b0dd38",
+      "session_id": "probe-wb-l0-model-1792233760844",
+      "duration_ms": 4696,
+      "duration_api_ms": 4695,
+      "num_turns": 6,
+      "total_cost_usd": 0,
+      "usage": {
+        "input_tokens": 55037,
+        "output_tokens": 119,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 28864,
+        "cache_creation": null,
+        "server_tool_use": null,
+        "service_tier": null
+      },
+      "permission_denials": [],
+      "__timestamp": "2026-10-17T10:42:57.941Z"
+    },
+    "turn1Assistant": {
+      "id": "01a14974-f8b0-7737-b356-0abcfcea4cc6",
+      "parentId": "01a14974-f8b0-7737-b356-0abd20359a69",
+      "timestamp": 1792233769906,
+      "type": "message",
+      "role": "assistant",
+      "providerData": {
+        "conversationRequestId": "01a14974f13c725e88203e8e26c10ac6",
+        "messageId": "01a14974f8ad7c029aa744163eb2931b",
+        "stepSeq": 1,
+        "model": "glm-5.3",
+        "requestModelId": "custom-local:glm-5.3",
+        "requestModelName": "GLM-5.3",
+        "traceId": "b1b70d7148c0c3e654663480a2c963e3",
+        "rawUsage": {
+          "prompt_tokens": 27505,
+          "completion_tokens": 90,
+          "total_tokens": 27595,
+          "prompt_tokens_details": {
+            "cached_tokens": 27456
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 85
+          }
+        },
+        "agent": "cli",
+        "usage": {
+          "requests": 1,
+          "inputTokens": 27505,
+          "outputTokens": 90,
+          "totalTokens": 27595,
+          "inputTokensDetails": [
+            {
+              "cached_tokens": 27456
+            }
+          ],
+          "outputTokensDetails": [
+            {
+              "reasoning_tokens": 85
+            }
+          ]
+        }
+      },
+      "status": "completed",
+      "content": [
+        {
+          "providerData": {
+            "annotations": []
+          },
+          "type": "output_text",
+          "text": "天地玄黄"
+        }
+      ],
+      "sessionId": "probe-wb-l0-model-1792233760844",
+      "message": {
+        "usage": {
+          "input_tokens": 27505,
+          "output_tokens": 90,
+          "total_tokens": 27595,
+          "cache_read_input_tokens": 27456
+        }
+      },
+      "cwd": "e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "_meta": {
+        "traceparent": "00-b1b70d7148c0c3e654663480a2c963e3-0374f1120a5220ed-01",
+        "baggage": "codebuddy.session_id=probe-wb-l0-model-1792233760844,codebuddy.conversation_request_id=01a14974f13c725e88203e8e26c10ac6"
+      }
+    },
+    "turn2Assistant": {
+      "id": "01a14975-1942-7958-b09f-a9495ee7d4cb",
+      "parentId": "01a14975-1942-7958-b09f-a94abb277f09",
+      "timestamp": 1792233777738,
+      "type": "message",
+      "role": "assistant",
+      "providerData": {
+        "conversationRequestId": "01a1497514d87d7783358738b75abccb",
+        "messageId": "01a14975194173c5946edea804e8b2f2",
+        "stepSeq": 2,
+        "model": "glm-5.3-flash",
+        "requestModelId": "custom-local:glm-5.3-flash",
+        "requestModelName": "GLM-5.3-Flash",
+        "traceId": "8e87e015182581cfd466c6b834c54b56",
+        "rawUsage": {
+          "prompt_tokens": 27532,
+          "completion_tokens": 29,
+          "total_tokens": 27561,
+          "prompt_tokens_details": {
+            "cached_tokens": 1408
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 24
+          }
+        },
+        "agent": "cli",
+        "usage": {
+          "requests": 1,
+          "inputTokens": 27532,
+          "outputTokens": 29,
+          "totalTokens": 27561,
+          "inputTokensDetails": [
+            {
+              "cached_tokens": 1408
+            }
+          ],
+          "outputTokensDetails": [
+            {
+              "reasoning_tokens": 24
+            }
+          ]
+        }
+      },
+      "status": "completed",
+      "content": [
+        {
+          "providerData": {
+            "annotations": []
+          },
+          "type": "output_text",
+          "text": "宇宙洪荒"
+        }
+      ],
+      "sessionId": "probe-wb-l0-model-1792233760844",
+      "message": {
+        "usage": {
+          "input_tokens": 27532,
+          "output_tokens": 29,
+          "total_tokens": 27561,
+          "cache_read_input_tokens": 1408
+        }
+      },
+      "cwd": "e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "_meta": {
+        "traceparent": "00-8e87e015182581cfd466c6b834c54b56-f51e4d6f715f9494-01",
+        "baggage": "codebuddy.session_id=probe-wb-l0-model-1792233760844,codebuddy.conversation_request_id=01a1497514d87d7783358738b75abccb"
+      }
+    },
+    "cmd": "codebuddy -r probe-wb-l0-model-1792233760844 -p \"请只回复四个字：宇宙洪荒\" --model custom-local:glm-5.3-flash --output-format json"
+  }
+}

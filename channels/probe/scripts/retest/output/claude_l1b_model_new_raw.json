@@ -1,0 +1,137 @@
+{
+  "haiku": {
+    "modelAlias": "haiku",
+    "exitCode": 0,
+    "eventsCount": 21,
+    "usageModels": [
+      "claude-haiku-5-5",
+      "claude-haiku-5-5",
+      "claude-haiku-5-5"
+    ],
+    "quotaModels": [
+      "claude-haiku-5-5"
+    ],
+    "sampleUsageEvent": {
+      "jsonrpc": "2.0",
+      "method": "session/update",
+      "params": {
+        "sessionId": "6af91806-ae2d-44bd-938d-7d2524a80bed",
+        "update": {
+          "sessionUpdate": "usage_update",
+          "used": 1053,
+          "size": 1000000,
+          "_meta": {
+            "_claude/model": "claude-haiku-5-5"
+          }
+        }
+      }
+    },
+    "promptResult": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {
+        "stopReason": "end_turn",
+        "usage": {
+          "inputTokens": 2071,
+          "outputTokens": 83,
+          "cachedReadTokens": 0,
+          "cachedWriteTokens": 0,
+          "totalTokens": 2154
+        },
+        "_meta": {
+          "quota": {
+            "token_count": {
+              "totalTokens": 2154,
+              "inputTokens": 2071,
+              "cachedInputTokens": 0,
+              "cachedWriteTokens": 0,
+              "outputTokens": 83,
+              "reasoningOutputTokens": 0
+            },
+            "model_usage": [
+              {
+                "model": "claude-haiku-5-5",
+                "token_count": {
+                  "totalTokens": 2154,
+                  "inputTokens": 2071,
+                  "cachedInputTokens": 0,
+                  "cachedWriteTokens": 0,
+                  "outputTokens": 83,
+                  "reasoningOutputTokens": 0
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "sonnet": {
+    "modelAlias": "sonnet",
+    "exitCode": 0,
+    "eventsCount": 16,
+    "usageModels": [
+      "claude-sonnet-5-5",
+      "claude-sonnet-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "quotaModels": [
+      "claude-sonnet-5-5"
+    ],
+    "sampleUsageEvent": {
+      "jsonrpc": "2.0",
+      "method": "session/update",
+      "params": {
+        "sessionId": "7a33d990-7720-400f-93a6-85b1d4ec9371",
+        "update": {
+          "sessionUpdate": "usage_update",
+          "used": 77790,
+          "size": 1000000,
+          "_meta": {
+            "_claude/model": "claude-sonnet-5-5"
+          }
+        }
+      }
+    },
+    "promptResult": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {
+        "stopReason": "end_turn",
+        "usage": {
+          "inputTokens": 4,
+          "outputTokens": 3,
+          "cachedReadTokens": 0,
+          "cachedWriteTokens": 77785,
+          "totalTokens": 77792
+        },
+        "_meta": {
+          "quota": {
+            "token_count": {
+              "totalTokens": 77792,
+              "inputTokens": 4,
+              "cachedInputTokens": 0,
+              "cachedWriteTokens": 77785,
+              "outputTokens": 3,
+              "reasoningOutputTokens": 0
+            },
+            "model_usage": [
+              {
+                "model": "claude-sonnet-5-5",
+                "token_count": {
+                  "totalTokens": 77792,
+                  "inputTokens": 4,
+                  "cachedInputTokens": 0,
+                  "cachedWriteTokens": 77785,
+                  "outputTokens": 3,
+                  "reasoningOutputTokens": 0
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "pass": true
+}

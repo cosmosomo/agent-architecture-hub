@@ -145,6 +145,162 @@
       sec('匹配结果（' + hits.length + ' 条，显示前 28 条）', rows ? '<div class="ob-list">' + rows + '</div>' : '<div class="ob-note">没有匹配的记录或调用步骤。</div>');
   }
 
+  var META_POLICY_OPTS = {
+    meta_approver: [
+      ['all', 'all · 全自动放行读写与命令'],
+      ['reads', 'reads · 仅放行只读，改文件需确认'],
+      ['ask', 'ask · 全部门禁交由人工拍板']
+    ],
+    meta_resumer: [
+      ['auto_retry_3', 'auto_retry_3 · 断网/Bug 自动断点续跑(最多3次)'],
+      ['auto_retry_1', 'auto_retry_1 · 断网/Bug 自动续跑 1 次'],
+      ['manual_only', 'manual_only · 仅手动点击触发断点续跑']
+    ],
+    meta_maint: [
+      ['auto_failover', 'auto_failover · 限流/异常自动切换备用模型'],
+      ['notify_only', 'notify_only · 仅标记渠道告警，不自动切模型']
+    ],
+    meta_auditor: [
+      ['loop_guard', 'loop_guard · 连续 3 次重复报错自动注入纠偏提示'],
+      ['strict_2', 'strict_2 · 连续 2 次重复报错立即熔断纠偏']
+    ]
+  };
+
+  function renderMetaFleetSection(onlyId) {
+    if (HUB.obsChat && HUB.obsChat.ensureConnected) HUB.obsChat.ensureConnected();
+    var chatSt = HUB.obsChat && HUB.obsChat.getState ? HUB.obsChat.getState() : {};
+    var allMeta = (chatSt && chatSt.metaAgents) || (HUB.obsChat && HUB.obsChat.DEFAULT_META_AGENTS) || [];
+    var list = onlyId ? allMeta.filter(function (ma) { return ma.id === onlyId; }) : allMeta;
+    if (!list.length) return '';
+
+    var lead = list[0] || allMeta[0] || {};
+    var chList = (chatSt && chatSt.channels && chatSt.channels.length)
+      ? chatSt.channels
+      : ((HUB.obsChat && HUB.obsChat.CHANNELS) || []);
+    var curBrainChId = lead.brainChannel || 'zcode';
+    var curBrainCh = chList.find(function (c) { return c.id === curBrainChId; }) || chList[0] || { id: 'zcode', label: 'ZCode', models: ['builtin:bigmodel-coding-plan\\GLM-5.3-Flash'] };
+    var brainModels = (curBrainCh.recommendedModels && curBrainCh.recommendedModels.length)
+      ? curBrainCh.recommendedModels
+      : (curBrainCh.models && curBrainCh.models.length ? curBrainCh.models : [curBrainCh.defaultModel || 'default']);
+    var curBrainModel = brainModels.indexOf(lead.brainModel) >= 0 ? lead.brainModel : (brainModels[0] || curBrainCh.defaultModel || '');
+    var curEngineMode = lead.engineMode || 'agent_brain';
+    var curPatrolSec = lead.patrolIntervalSec || 30;
+    var isThinking = allMeta.some(function (ma) { return ma.runtimeStatus === 'thinking'; });
+
+    var chOptsHtml = chList.map(function (c) {
+      return '<option value="' + esc(c.id) + '"' + (c.id === curBrainCh.id ? ' selected' : '') + '>' +
+        esc(c.label + ' (' + (c.vendor || c.product || c.id) + ')') + '</option>';
+    }).join('');
+
+    var modelOptsHtml = brainModels.map(function (mId) {
+      return '<option value="' + esc(mId) + '"' + (mId === curBrainModel ? ' selected' : '') + '>' + esc(mId) + '</option>';
+    }).join('');
+
+    var patrolOptsHtml = [15, 30, 60].map(function (secVal) {
+      return '<option value="' + secVal + '"' + (Number(curPatrolSec) === secVal ? ' selected' : '') + '>' +
+        '每 ' + secVal + ' 秒后台零Token巡检一次</option>';
+    }).join('');
+
+    var brainBoxHtml =
+      '<div class="ob-meta-brain-box">' +
+        '<div class="ob-meta-brain-hdr">' +
+          '<div class="ob-meta-brain-title">' +
+            '<span class="ob-meta-brain-orb">' + (isThinking ? '⚡' : '🧠') + '</span>' +
+            '<div>' +
+              '<b>元智能体总管大脑 (Meta-Agent Supervisor Brain)</b>' +
+              '<div class="ob-meta-brain-sub">架构：后台常驻 0-Token 看门狗巡检 + 异常事件唤醒真实 Agent 大脑诊断</div>' +
+            '</div>' +
+          '</div>' +
+          '<span class="ob-pill ' + (isThinking ? 'warn' : 'good') + '">' +
+            (isThinking ? '● 正在思考诊断…' : '● 常驻值守中') +
+          '</span>' +
+        '</div>' +
+        '<div class="ob-ctrl-form" style="margin-top:8px">' +
+          '<div class="ob-ctrl-row">' +
+            '<span>运行模式</span>' +
+            '<select data-meta-engine-mode>' +
+              '<option value="agent_brain"' + (curEngineMode === 'agent_brain' ? ' selected' : '') + '>🧠 事件唤醒 Agent+模型大脑 + 本地零Token巡检兜底</option>' +
+              '<option value="local_rules"' + (curEngineMode === 'local_rules' ? ' selected' : '') + '>⚡ 纯本地零Token确定性规则引擎 (不调大模型)</option>' +
+            '</select>' +
+          '</div>' +
+          (curEngineMode !== 'local_rules'
+            ? '<div class="ob-ctrl-row">' +
+                '<span>大脑 Agent</span>' +
+                '<select data-meta-brain-ch>' + chOptsHtml + '</select>' +
+              '</div>' +
+              '<div class="ob-ctrl-row">' +
+                '<span>大脑模型</span>' +
+                '<select data-meta-brain-model>' + modelOptsHtml + '</select>' +
+              '</div>'
+            : '') +
+          '<div class="ob-ctrl-row">' +
+            '<span>巡检频率</span>' +
+            '<select data-meta-patrol-sec>' + patrolOptsHtml + '</select>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ob-acts" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">' +
+          '<button class="btn btn-p" type="button" data-act="meta-patrol-now" title="立即唤醒元智能体大脑 (' + esc(curBrainCh.label + ' · ' + curBrainModel) + ') 对当前控制室会话与 7 大渠道健康态做一次实况巡检诊断">🧠 立即唤醒大脑巡检诊断</button>' +
+          '<button class="btn" type="button" data-act="meta-open-brain" title="进入元智能体大脑专属协调会话 (meta-brain-supervisor)，查看元智能体的真实思考链与 JSON 决策产出">👁️ 查看大脑实况会话 (' + esc(lead.brainSessionName || 'meta-brain-supervisor') + ')</button>' +
+        '</div>' +
+      '</div>';
+
+    var cardsHtml = list.map(function (ma) {
+      var pols = META_POLICY_OPTS[ma.id] || [[ma.policy || 'auto', ma.policy || '默认策略']];
+      var optsHtml = pols.map(function (p) {
+        return '<option value="' + esc(p[0]) + '"' + (ma.policy === p[0] ? ' selected' : '') + '>' + esc(p[1]) + '</option>';
+      }).join('');
+      var resumeBtn = ma.id === 'meta_resumer'
+        ? '<button class="btn btn-sim" type="button" data-act="meta-resume-now" style="height:22px;font-size:10px;padding:0 8px" title="分析当前活动会话最后的中断/报错点，立即自动发包续跑">🔄 立即断点续跑</button>'
+        : '';
+      var jumpBtn = !onlyId
+        ? '<button class="btn" type="button" data-act="sel" data-type="individual" data-id="' + esc(ma.id) + '" style="height:22px;font-size:10px;padding:0 7px">画布定位 ↗</button>'
+        : '';
+      return '<div class="ob-meta-card' + (ma.enabled ? ' is-on' : ' is-off') + '" style="--ma-c:' + esc(ma.color || '#22C4E6') + '">' +
+        '<div class="ob-meta-top">' +
+          '<div class="ob-meta-title">' +
+            '<span class="ob-meta-ic">' + esc(ma.icon || '🛡️') + '</span>' +
+            '<b>' + esc(ma.shortName || ma.name) + '</b>' +
+            (ma.triggerCount > 0 ? '<span class="ob-pill info">已护航 ' + ma.triggerCount + ' 次</span>' : '') +
+          '</div>' +
+          '<div class="ob-meta-acts">' +
+            resumeBtn +
+            jumpBtn +
+            '<button type="button" class="ob-meta-sw' + (ma.enabled ? ' on' : '') + '" data-act="meta-toggle" data-meta-id="' + esc(ma.id) + '" title="点击开启或关闭该元智能体（画布与控制室同步生效）">' +
+              (ma.enabled ? '● 已开启' : '○ 已停用') +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ob-meta-desc">' + esc(ma.description || ma.role || '') + '</div>' +
+        '<div class="ob-meta-pol">' +
+          '<span>策略档位:</span>' +
+          '<select data-meta-policy="' + esc(ma.id) + '">' + optsHtml + '</select>' +
+        '</div>' +
+        (ma.lastActionSummary ? '<div class="ob-meta-foot">最近状态：' + esc(ma.lastActionSummary) + '</div>' : '') +
+      '</div>';
+    }).join('');
+
+    var logs = (chatSt && chatSt.metaAgentLogs) || [];
+    if (onlyId) logs = logs.filter(function (lg) { return (lg.agentId || lg.metaId) === onlyId; });
+    var logsHtml = logs.slice(0, 8).map(function (lg) {
+      var nameTxt = lg.agentName || lg.metaName || lg.agentId || lg.metaId || '元智能体';
+      var detailTxt = lg.detail || lg.summary || lg.action || '';
+      var brainTag = lg.brainUsed
+        ? pill('🧠 ' + lg.brainUsed, 'good')
+        : pill(nameTxt.replace(/^元智能体\s*·\s*/, ''), 'info');
+      var jumpAttr = lg.brainTraceSessionId
+        ? 'data-act="session" data-id="' + esc(lg.brainTraceSessionId) + '" title="点击打开元智能体大脑此次诊断的会话轨迹"'
+        : 'style="cursor:default"';
+      return '<div class="ob-row" ' + jumpAttr + '>' +
+        brainTag +
+        '<span class="ob-nm ob-wrap-text">' + esc(detailTxt) + '</span>' +
+      '</div>';
+    }).join('');
+
+    return brainBoxHtml +
+      '<div class="ob-meta-grid" style="margin-top:8px">' + cardsHtml + '</div>' +
+      (logsHtml ? '<div class="ds-l" style="margin-top:8px">最近巡检与护航干预日志</div><div class="ob-list" style="margin-top:4px">' + logsHtml + '</div>' : '');
+  }
+
   function drawerCtrl(m, s, a) {
     var spokeSet = new Set((m.facts.turns || []).map(function (t) { return t.speaker; }));
     var inds = m.def.individuals.filter(function (x) { return x.kind !== 'human'; }).slice().sort(function (x, y) {
@@ -174,10 +330,13 @@
         '<span class="ob-nm ob-wrap-text">' + esc(ac.text || ac.kind) + '</span>' +
         pill(stLbl, stCls) + '</div>';
     }).join('');
-    return hero({ name: '反向调控与编排写回台', role: '能看也能动 · 设计态 Markdown 编排写回 + 运行态信箱指令注入',
+    var chatSt = HUB.obsChat && HUB.obsChat.getState ? HUB.obsChat.getState() : {};
+    var enabledMetaCount = ((chatSt && chatSt.metaAgents) || []).filter(function (ma) { return ma.enabled; }).length || 4;
+    return hero({ name: '反向调控与元智能体编排台', role: '4 大元智能体实时护航 · 设计态 Markdown 写回 + 运行态信箱指令注入',
       icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>', color: 'var(--gold)',
-      chips: chip('版本 ' + (m.def.version || 'v1')) + chip('已调控 ' + (m.facts.actions || []).length + ' 次') }) +
+      chips: chip('元智能体 ' + enabledMetaCount + '/4 启用') + chip('版本 ' + (m.def.version || 'v1')) + chip('已调控 ' + (m.facts.actions || []).length + ' 次') }) +
       (pendingPreview ? renderDiffBox(pendingPreview) : '') +
+      sec('0. 🛡️ 元智能体护航编队（自动批准 · 断网续跑 · 渠道容灾 · 防死循环）', renderMetaFleetSection(null)) +
       sec('1. 设计态：增补/调整画布编排连接（写回 relations.md）', formRel) +
       sec('2. 运行态：向个体信箱注入新指令（写回 agents/<id>/inbox.md）', formRuntime) +
       sec('3. 本次会话已执行的人工调控记录', actsLog ? '<div class="ob-list">' + actsLog + '</div>' : '<div class="ob-note">尚未执行人工调控。在上方预览 Diff 后点击“确认写入并注入轨迹”，画布与协作轨迹图将立即点亮金色 ★ 人工调控节点。</div>');
@@ -200,6 +359,7 @@
     var mc = x.model ? 'm-' + (x.model === 'opus' ? 'op' : x.model === 'sonnet' ? 'so' : x.model === 'haiku' ? 'ha' : 'fa') : '';
     var h = hero({ name: x.name, role: role, icon: iconFor(x), phase: x.phase, color: x.kind === 'human' ? '#FBBF24' : x.kind === 'meta' ? '#22C4E6' : '',
       chips: chip(L.indStatus[st.status] || '待命', '') + (x.model ? chip(x.model.toUpperCase(), mc) : '') + (x.isHub ? chip('中枢智能体', 'm-so') : '') + (x.enhanced ? chip('增强', 'm-ha') : '') });
+    var metaCtrlSec = x.kind === 'meta' ? sec('🛡️ 元智能体护航开关与策略配置', renderMetaFleetSection(id)) : '';
     var info = kv([['职责', esc(x.role || '-')], ['什么时候动', esc(x.trigger || '-')], x.tools && x.tools.length ? ['工具', esc(x.tools.join('、'))] : null,
       x.watches && x.watches.length ? ['盯着', x.watches.map(function (w) { return link('individual', w); }).join('、')] : null]);
     var dv = a.delivery[id];
@@ -253,7 +413,7 @@
     var lastRun = s.compare !== 'def' ? HUB.model.latestRunOf(id, s, m) : null;
     var openChain = lastRun ? '<div class="ds"><button class="btn btn-p" type="button" data-act="run" data-id="' + lastRun.id + '">在画布展开最近一次运行的决策链 ⑤⑥</button>'
       + '<div class="ob-note" style="margin-top:5px">直接内嵌在中央画布显示调用树，双击个体也能打开，Esc 返回。</div></div>' : '';
-    return h + (natBlock ? '<div class="ds">' + natBlock + '</div>' : '') + openChain + '<div class="ds">' + info + '</div>' + sessBlock + rawFields(m, x.attributes, x.tags) +
+    return h + metaCtrlSec + (natBlock ? '<div class="ds">' + natBlock + '</div>' : '') + openChain + '<div class="ds">' + info + '</div>' + sessBlock + rawFields(m, x.attributes, x.tags) +
       (s.compare !== 'def' && x.kind !== 'human' ? sec('运行', stats([['运行', st.runs || 0], ['任务', st.tasks || 0], ['token', U.fmtTokens(st.tokens)]])) : '') +
       (s.compare !== 'def' ? sec('四段送达状态（该知道 → 已送到 → 已读 → 已写）', deliv) : '') +
       sec('线', relRows ? '<div class="ob-list">' + relRows + '</div>' : '') +
@@ -527,14 +687,37 @@
     var x = t.session;
     if (!x) return '<div class="ob-note">' + esc(t.error || '读取会话…') + '</div>';
     var cleanName = (HUB.obsSessions && HUB.obsSessions.titleOf && HUB.obsSessions.titleOf(t.id)) || x.title;
-    return hero({ name: cleanName, role: x.agent.product + ' · ' + (x.agent.role === 'subagent' ? '子智能体 ' + (x.agent.path || x.agent.name) : '主会话'),
-      icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent1)', chips: chip(STATE_ZH[x.state.status] || x.state.status) + chip(x.stats.turns + ' 轮') }) +
-      '<div class="ds">' + kv([['工作目录', esc(x.cwd || '-')], ['模型', esc(x.agent.model || '-')], ['开始', esc((x.startedAt || '').replace('T', ' ').slice(0, 16))],
-        ['最近', esc((x.updatedAt || '').replace('T', ' ').slice(0, 16))], ['调用', x.stats.modelCalls + ' 次模型 · ' + x.stats.toolCalls + ' 次工具' + (x.stats.toolErrors ? ' · 出错 ' + x.stats.toolErrors : '')]]) + '</div>' +
-      (t.layer ? '<div class="ob-note">粗粒度记录：案例文档为这个会话写了 ' + t.layer.total + ' 条决策，画上去 ' + t.layer.segments.length + ' 条；粒度选“决策”看决策链，选“调用”展开到会话的每一步。' +
-        (t.layer.problems.length ? '</div><div class="ds"><div class="ds-l">没对上的记录</div>' + t.layer.problems.map(function (p) { return '<div class="ob-row" style="cursor:default">' + pill('对不上', 'warn') + '<span class="ob-nm ob-wrap-text">' + esc(p) + '</span></div>'; }).join('') : '') + '</div>' : '') +
-      '<div class="ob-note">这是本机的真实会话，已在中央画布内嵌展开调用树（⑤⑥）。选中树中的任意步骤，下方即时显示完整输入输出与属性。</div>' +
-      (x.links.some(function (l) { return l.rel === 'child'; }) ? '<div class="ds"><button class="btn btn-p" type="button" data-act="tree" data-id="' + esc(t.id) + '">把它和它派出的子智能体画成协作图</button></div>' : '');
+    var ch = HUB.obsChat && HUB.obsChat.channelForSession ? HUB.obsChat.channelForSession(x) : { id: 'codex', defaultSession: 'codex-main' };
+    var chatSt = HUB.obsChat && HUB.obsChat.getState ? HUB.obsChat.getState() : {};
+    var sessNameStr = (chatSt && chatSt.selectedSessionName) || (x.agent && x.agent.name) || ch.defaultSession || (ch.id + '-main');
+    var activeModel = (HUB.obsChat && HUB.obsChat.activeModelFor ? HUB.obsChat.activeModelFor(x, t.id) : '') || (x.agent && x.agent.model) || '-';
+    var modelList = (HUB.obsChat && HUB.obsChat.availableModelsFor ? HUB.obsChat.availableModelsFor(x, t.id) : [activeModel]);
+    var canSwitchM = HUB.obsChat && HUB.obsChat.canSwitchModelFor ? HUB.obsChat.canSwitchModelFor(x, t.id) : false;
+    var activeCwd = (HUB.obsChat && HUB.obsChat.activeCwdFor ? HUB.obsChat.activeCwdFor(x, t.id) : '') || x.cwd || '-';
+    var cwdList = (HUB.obsChat && HUB.obsChat.availableCwdsFor ? HUB.obsChat.availableCwdsFor(x, t.id) : [activeCwd]);
+
+    var modelCellHtml = canSwitchM && modelList.length > 1
+      ? '<select class="ob-inline-select" data-panel-sess-model data-ch="' + esc(ch.id) + '" data-sess="' + esc(sessNameStr) + '" data-trace-id="' + esc(t.id) + '">' +
+          modelList.map(function (mId) {
+            return '<option value="' + esc(mId) + '"' + (mId === activeModel ? ' selected' : '') + '>' + esc(mId) + '</option>';
+          }).join('') +
+        '</select>'
+      : esc(activeModel);
+
+    var cwdCellHtml = '<select class="ob-inline-select" data-panel-sess-cwd data-ch="' + esc(ch.id) + '" data-sess="' + esc(sessNameStr) + '" data-trace-id="' + esc(t.id) + '">' +
+      cwdList.map(function (dir) {
+        var isSel = String(dir).toLowerCase() === String(activeCwd).toLowerCase();
+        return '<option value="' + esc(dir) + '"' + (isSel ? ' selected' : '') + '>' + esc(dir === '__new__' ? '🆕 新目录（默认）' : dir) + '</option>';
+      }).join('') +
+      '<option value="__custom__">✎ 输入自定义工作目录路径…</option>' +
+    '</select>';
+
+    return hero({ name: cleanName, role: x.agent.product + ' · ' + (x.agent.role === 'subagent' ? '子智能体 ' + (x.agent.path || x.agent.name) : '实况会话与调用检视'),
+      icon: HUB.obsCards.ICON.model.replace(/16/g, '26'), color: 'var(--accent1)', chips: chip(STATE_ZH[x.state.status] || x.state.status) + chip(x.stats.turns + ' 轮') + chip(x.stats.toolCalls + ' 工具') }) +
+      '<div class="ds" style="padding-top:6px;padding-bottom:6px">' + kv([['工作目录', cwdCellHtml], ['模型', modelCellHtml],
+        ['更新', esc((x.updatedAt || '').replace('T', ' ').slice(0, 16)) + ' · ' + x.stats.modelCalls + ' 模型 / ' + x.stats.toolCalls + ' 工具' + (x.stats.toolErrors ? ' (✕' + x.stats.toolErrors + ')' : '')]]) + '</div>' +
+      (t.layer && t.layer.problems.length ? '<div class="ds"><div class="ds-l">没对上的记录</div>' + t.layer.problems.map(function (p) { return '<div class="ob-row" style="cursor:default">' + pill('对不上', 'warn') + '<span class="ob-nm ob-wrap-text">' + esc(p) + '</span></div>'; }).join('') + '</div>' : '') +
+      (x.links.some(function (l) { return l.rel === 'child'; }) ? '<div class="ds" style="padding-top:4px;padding-bottom:6px"><button class="btn btn-p" type="button" data-act="tree" data-id="' + esc(t.id) + '">☍ 把它和子智能体画成协作图</button></div>' : '');
   }
 
   function decision(m, s, a, id) {
@@ -583,12 +766,17 @@
   /* ================= render + events ================= */
   function render(el, m, s) {
     if (!el || !m) return;
-    if (host !== el) { host = el; el.addEventListener('click', onClick); el.addEventListener('keydown', onKeydown); el.addEventListener('input', onInput); }
+    if (host !== el) { host = el; el.addEventListener('click', onClick); el.addEventListener('keydown', onKeydown); el.addEventListener('input', onInput); el.addEventListener('change', onChange); }
     var a = HUB.model.an(s, m);
     var sel = s.selection && s.selection.type !== 'span' ? s.selection : null;
     var dr = !sel && !s.drawer && HUB.obsTrace ? HUB.obsTrace.current(s, m) : null;
     var pvSig = pendingPreview ? (pendingPreview.kind + ':' + pendingPreview.diff.length) : '';
-    var key = m.id + '|' + m.rev + '|' + (sel ? sel.type + ':' + sel.id : '-') + '|' + (s.drawer || '') + '|' + pvSig + '|' + stepSearchQuery + '|' + s.time + '|' + s.compare + '|' + s.subject + '|' + (s.focus ? s.focus.id : '') + '|' + (dr && dr.kind === 'session' ? !!dr.session + (dr.error || '') : '') + '|' + (evalsOn(s) ? '' : 'noeval');
+    var chatSt = HUB.obsChat && HUB.obsChat.getState ? HUB.obsChat.getState() : null;
+    var metaSig = chatSt && chatSt.metaAgents ? chatSt.metaAgents.map(function (ma) {
+      return [ma.id, ma.enabled ? 1 : 0, ma.policy, ma.triggerCount || 0, ma.brainChannel || '', ma.brainModel || '', ma.engineMode || '', ma.runtimeStatus || ''].join(':');
+    }).join(',') : '';
+    var sessSig = dr && dr.kind === 'session' && dr.session ? ((dr.session.cwd || '') + ':' + (dr.session.agent && dr.session.agent.model || '')) : '';
+    var key = m.id + '|' + m.rev + '|' + (sel ? sel.type + ':' + sel.id : '-') + '|' + (s.drawer || '') + '|' + pvSig + '|' + metaSig + '|' + sessSig + '|' + stepSearchQuery + '|' + s.time + '|' + s.compare + '|' + s.subject + '|' + (s.focus ? s.focus.id : '') + '|' + (dr && dr.kind === 'session' ? !!dr.session + (dr.error || '') : '') + '|' + (evalsOn(s) ? '' : 'noeval');
     if (key === last) return;
     var keepScroll = last && last.split('|').slice(0, 4).join('|') === key.split('|').slice(0, 4).join('|') ? el.scrollTop : 0;
     var activeSearch = document.activeElement && document.activeElement.hasAttribute && document.activeElement.hasAttribute('data-step-search');
@@ -604,6 +792,82 @@
     if (activeSearch) {
       var inp = el.querySelector('[data-step-search]');
       if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e2) {} }
+    }
+  }
+
+  function onChange(e) {
+    if (!e.target) return;
+    if (e.target.matches('[data-meta-policy]')) {
+      var metaId = e.target.getAttribute('data-meta-policy');
+      var pol = e.target.value;
+      if (metaId && pol && HUB.obsChat && HUB.obsChat.toggleMetaAgent) {
+        var patch = { policy: pol };
+        if (metaId === 'meta_resumer') {
+          patch.maxRetries = pol === 'auto_retry_3' ? 3 : pol === 'auto_retry_1' ? 1 : 0;
+        }
+        HUB.obsChat.toggleMetaAgent(metaId, patch);
+        last = null;
+        render(host, HUB.model.current, HUB.store.get());
+      }
+      return;
+    }
+    if (e.target.matches('[data-meta-engine-mode]')) {
+      if (HUB.obsChat && HUB.obsChat.updateMetaBrain) {
+        HUB.obsChat.updateMetaBrain({ engineMode: e.target.value });
+        last = null;
+        render(host, HUB.model.current, HUB.store.get());
+      }
+      return;
+    }
+    if (e.target.matches('[data-meta-brain-ch]')) {
+      if (HUB.obsChat && HUB.obsChat.updateMetaBrain) {
+        HUB.obsChat.updateMetaBrain({ brainChannel: e.target.value, brainModel: '' });
+        last = null;
+        render(host, HUB.model.current, HUB.store.get());
+      }
+      return;
+    }
+    if (e.target.matches('[data-meta-brain-model]')) {
+      if (HUB.obsChat && HUB.obsChat.updateMetaBrain) {
+        HUB.obsChat.updateMetaBrain({ brainModel: e.target.value });
+        last = null;
+        render(host, HUB.model.current, HUB.store.get());
+      }
+      return;
+    }
+    if (e.target.matches('[data-meta-patrol-sec]')) {
+      if (HUB.obsChat && HUB.obsChat.updateMetaBrain) {
+        HUB.obsChat.updateMetaBrain({ patrolIntervalSec: Number(e.target.value) || 30 });
+        last = null;
+        render(host, HUB.model.current, HUB.store.get());
+      }
+      return;
+    }
+    if (e.target.matches('[data-panel-sess-model]')) {
+      if (HUB.obsChat && HUB.obsChat.switchModel) {
+        HUB.obsChat.switchModel(
+          e.target.getAttribute('data-ch'),
+          e.target.getAttribute('data-sess'),
+          e.target.getAttribute('data-trace-id'),
+          e.target.value
+        );
+        last = null;
+        render(host, HUB.model.current, HUB.store.get());
+      }
+      return;
+    }
+    if (e.target.matches('[data-panel-sess-cwd]')) {
+      if (HUB.obsChat && HUB.obsChat.switchCwd) {
+        HUB.obsChat.switchCwd(
+          e.target.getAttribute('data-ch'),
+          e.target.getAttribute('data-sess'),
+          e.target.getAttribute('data-trace-id'),
+          e.target.value
+        );
+        last = null;
+        render(host, HUB.model.current, HUB.store.get());
+      }
+      return;
     }
   }
 
@@ -627,6 +891,32 @@
     var act = t.getAttribute('data-act');
     var s = HUB.store.get(), m = HUB.model.current;
     if (act === 'sel') HUB.store.set({ selection: { type: t.getAttribute('data-type'), id: t.getAttribute('data-id') } }, { history: false });
+    else if (act === 'meta-toggle') {
+      var metaId = t.getAttribute('data-meta-id');
+      if (metaId && HUB.obsChat && HUB.obsChat.toggleMetaAgent) {
+        HUB.obsChat.toggleMetaAgent(metaId);
+        last = null; render(host, m, s);
+      }
+    }
+    else if (act === 'meta-patrol-now') {
+      if (HUB.obsChat && HUB.obsChat.triggerMetaPatrolNow) {
+        HUB.obsChat.triggerMetaPatrolNow();
+        last = null; render(host, m, s);
+      }
+    }
+    else if (act === 'meta-open-brain') {
+      if (HUB.obsChat && HUB.obsChat.openMetaBrainSession) {
+        HUB.obsChat.openMetaBrainSession();
+      }
+    }
+    else if (act === 'meta-resume-now') {
+      if (HUB.obsChat && HUB.obsChat.resumeSession) {
+        var st0 = HUB.obsChat.getState ? HUB.obsChat.getState() : {};
+        var cur0 = HUB.obsTrace && HUB.obsTrace.current ? HUB.obsTrace.current(s, m) : null;
+        var tid0 = (cur0 && cur0.id) || (s.focus && s.focus.type === 'session' ? s.focus.id : '');
+        HUB.obsChat.resumeSession(st0.selectedChannel || 'codex', st0.selectedSessionName, tid0);
+      }
+    }
     else if (act === 'clear') HUB.store.set({ selection: null, drawer: s.drawer || 'ctrl' }, { history: false });
     else if (act === 'close-sr') { pendingPreview = null; HUB.store.set({ selection: null, drawer: null }, { history: false }); }
     else if (act === 'drawer-tab') { pendingPreview = null; HUB.store.set({ selection: null, drawer: t.getAttribute('data-drawer') }, { history: false }); }
@@ -707,5 +997,12 @@
     else if (tg.type) HUB.store.set({ selection: tg }, { history: false });
   }
 
-  HUB.obsPanel = { render: render, followHealth: followHealth };
+  function openPreview(kind, payload) {
+    if (!HUB.model.previewControl) return;
+    pendingPreview = HUB.model.previewControl(kind, payload);
+    last = null;
+    HUB.store.set({ selection: null, drawer: 'ctrl' }, { history: false });
+  }
+
+  HUB.obsPanel = { render: render, followHealth: followHealth, openPreview: openPreview };
 })();

@@ -57,7 +57,7 @@ async function loadIndexFresh(): Promise<SessionIndex> {
 }
 
 export async function loadSession(id: string): Promise<Session> {
-  const doc = await getJson<SessionDoc>('/api/sessions/' + encodeURIComponent(id));
+  const doc = await getJson<SessionDoc>('/api/sessions/' + encodeURIComponent(id) + '?compact=1');
   return doc.session;
 }
 

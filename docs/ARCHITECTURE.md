@@ -1,5 +1,8 @@
 # Architecture
 
+> [!IMPORTANT]
+> **Agent Handoff & Audit Entry Point**: Please read **[../HANDOFF.md](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/HANDOFF.md)** first for the complete Console-to-Agent-Ecosystem Handoff Guide (including user requirements verbatim, task definition, current system flaws, intra-platform non-equivalence matrix, low-entropy capability matrix, and tiered P0/P1/P2 file index).
+
 Agent Architecture Hub is a debugger for written orchestration. It has one spine and everything else hangs off it:
 
 ```mermaid

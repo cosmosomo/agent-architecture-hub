@@ -81,12 +81,12 @@ codex app-server generate-json-schema --experimental --out <DIR>
 
 ## 三、核心能力操作与 JSON-RPC 方法映射全表
 
-### 3.1 会话生命周期 (`thread/*`) —— 对应「开、续、观察、分叉、整理、关」
+### 3.1 会话生命周期 (`thread/*`) —— 对应「新建会话、恢复会话、观察、分叉、压缩上下文、关闭会话」
 
 | 能力层动作 | JSON-RPC 方法名 | 稳定性 | 核心请求参数 (`params`) | 响应结构 (`result`) 与关键注意事项 |
 | :--- | :--- | :--- | :--- | :--- |
-| **开（新建会话）** | `thread/start` | Stable | `{ cwd?, model?, modelProvider?, sandbox?: "read-only" \| "workspace-write" \| "danger-full-access", approvalPolicy?: "untrusted" \| "on-request" \| "never", approvalsReviewer?: "user" \| "guardian_subagent", ephemeral?: boolean, developerInstructions?: string, baseInstructions?: string, config?: Record<string, any>, historyMode?: "paginated" \| "legacy", dynamicTools?: DynamicToolSpec[] }` | 返回 `{ thread: Thread, model, modelProvider, cwd, approvalPolicy, sandbox, reasoningEffort, multiAgentMode }`。<br>💡 `ephemeral: true` 创建无磁盘文件的纯内存会话；`developerInstructions` 可无侵入注入角色提示词。 |
-| **续（冷会话恢复加载）** | `thread/resume` | Stable | `{ threadId: string, excludeTurns?: boolean, cwd?, model?, modelProvider?, sandbox?, approvalPolicy?, approvalsReviewer?, developerInstructions?, config?, initialTurnsPage?: { limit?, sortDirection?, itemsView? } }` | 返回 `{ thread, ..., initialTurnsPage, turnsBackwardsCursor }`。<br>⚠️ **冷恢复铁律**：若 `threadId` 已在 `thread/loaded/list` 中，直接调 `turn/start` 即可；若不在内存中，调 `thread/resume` 时**必须重新传入 `model`、`modelProvider`、`sandbox`、`approvalPolicy` 与 `config`（含中心 MCP）**，否则 App-Server 会按全局 `config.toml` 重置该会话配置！ |
+| **新建会话** | `thread/start` | Stable | `{ cwd?, model?, modelProvider?, sandbox?: "read-only" \| "workspace-write" \| "danger-full-access", approvalPolicy?: "untrusted" \| "on-request" \| "never", approvalsReviewer?: "user" \| "guardian_subagent", ephemeral?: boolean, developerInstructions?: string, baseInstructions?: string, config?: Record<string, any>, historyMode?: "paginated" \| "legacy", dynamicTools?: DynamicToolSpec[] }` | 返回 `{ thread: Thread, model, modelProvider, cwd, approvalPolicy, sandbox, reasoningEffort, multiAgentMode }`。<br>💡 `ephemeral: true` 创建无磁盘文件的纯内存会话；`developerInstructions` 可无侵入注入角色提示词。 |
+| **恢复会话（冷会话恢复加载）** | `thread/resume` | Stable | `{ threadId: string, excludeTurns?: boolean, cwd?, model?, modelProvider?, sandbox?, approvalPolicy?, approvalsReviewer?, developerInstructions?, config?, initialTurnsPage?: { limit?, sortDirection?, itemsView? } }` | 返回 `{ thread, ..., initialTurnsPage, turnsBackwardsCursor }`。<br>⚠️ **冷恢复铁律**：若 `threadId` 已在 `thread/loaded/list` 中，直接调 `turn/start` 即可；若不在内存中，调 `thread/resume` 时**必须重新传入 `model`、`modelProvider`、`sandbox`、`approvalPolicy` 与 `config`（含中心 MCP）**，否则 App-Server 会按全局 `config.toml` 重置该会话配置！ |
 | **分叉（从历史轮次切分支）** | `thread/fork` | Stable | `{ threadId: string, lastTurnId?: string \| null, beforeTurnId?: string \| null, ephemeral?: boolean, excludeTurns?: boolean, deferGoalContinuation?: boolean, ...绑定参数 }` | 返回新分支的 `{ thread: Thread, ... }`，原会话不受影响。支持用 `lastTurnId` 或 `beforeTurnId` 从任意历史轮次定点分叉。 |
 | **回滚（截断某轮之后历史）** | `thread/revert` | Stable | `{ threadId: string, beforeTurnId: string }` | 截断 `beforeTurnId` 及之后的持久化历史，触发 `thread/reverted` 通知。 |
 | **观察（列会话列表）** | `thread/list` | Stable | `{ cursor?, limit?, sortKey?: "created_at" \| "updated_at" \| "recency_at", sortDirection?: "asc" \| "desc", archived?: boolean, cwd?, searchTerm?, parentThreadId?, ancestorThreadId? }` | 返回 `{ data: Thread[], nextCursor, backwardsCursor }`。支持按 `parentThreadId` / `ancestorThreadId` 查子智能体会话树！ |
@@ -94,11 +94,11 @@ codex app-server generate-json-schema --experimental --out <DIR>
 | **观察（读单会话元数据）** | `thread/read` | Stable | `{ threadId: string, includeTurns?: boolean }` | 返回 `{ thread: Thread }`。<br>⚠️ `0.159.2` 新会话默认 `historyMode: "paginated"`，此时 `includeTurns` 已弃用，必须用下方 `thread/turns/list` 分页翻轮次！ |
 | **观察（分页翻轮次）** | `thread/turns/list` | Stable | `{ threadId: string, cursor?: string \| null, limit?: number \| null, sortDirection?: "asc" \| "desc", itemsView?: "summary" \| "full" }` | 返回 `{ data: Turn[], nextCursor, backwardsCursor }`（注：`0.159.2` schema 中 `data` 直接是 `Array<Turn>`，兼容旧版时可同时检查 `result.data` 为 list 或 `result.data.items`）。 |
 | **观察（分页翻轮内条目）** | `thread/items/list` | Stable | `{ threadId: string, turnId?: string \| null, cursor?, limit?, sortDirection? }` | 返回 `{ data: Array<{ turnId: string, item: ThreadItem }>, nextCursor, backwardsCursor }`。 |
-| **整理（手动触发上下文压缩）** | `thread/compact/start` | Stable | `{ threadId: string }` | 立即启动上下文压缩，完成后收到 `thread/compacted` 通知。 |
+| **压缩上下文（手动触发）** | `thread/compact/start` | Stable | `{ threadId: string }` | 立即启动上下文压缩，完成后收到 `thread/compacted` 通知。 |
 | **注入上下文条目** | `thread/inject_items` | Stable | `{ threadId: string, items: Array<JsonValue> }` | 向指定会话直接注入上下文条目而不触发模型推理。 |
 | **热改会话设置** | `thread/settings/update` | `[EXP]` | `{ threadId: string, cwd?, approvalPolicy?, approvalsReviewer?, sandboxPolicy?, model?, effort?, collaborationMode? }` | 动态修改已存在会话的模型、沙箱或审批策略。 |
 | **设置会话记忆模式** | `thread/memoryMode/set` | `[EXP]` | `{ threadId: string, mode: "enabled" \| "disabled" }` | 对临时派发的子会话可设为 `"disabled"`，防止污染全局跨会话记忆库。 |
-| **关（退订 / 归档 / 删除）** | `thread/unsubscribe`<br>`thread/archive`<br>`thread/unarchive`<br>`thread/delete` | Stable | `{ threadId: string }` | `unsubscribe` 卸载内存状态；`archive` 归档会话；`delete` 永久删除会话文件与索引。 |
+| **关闭会话（退订 / 归档 / 删除）** | `thread/unsubscribe`<br>`thread/archive`<br>`thread/unarchive`<br>`thread/delete` | Stable | `{ threadId: string }` | `unsubscribe` 卸载内存状态；`archive` 归档会话；`delete` 永久删除会话文件与索引。 |
 
 ---
 

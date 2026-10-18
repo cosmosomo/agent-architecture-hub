@@ -1,0 +1,791 @@
+{
+  "targets": {
+    "ok": true,
+    "count": 10,
+    "targets": [
+      {
+        "id": "codex",
+        "driver": "acpx",
+        "adapter": "@agentclientprotocol/codex-acp",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "verifiedVersion": "0.159.2",
+        "defaultModel": "gpt-5.4-mini",
+        "injectedEnvKeys": [
+          "HTTP_PROXY",
+          "HTTPS_PROXY"
+        ],
+        "notes": "OpenAI Official Team OAuth via local proxy 127.0.0.1:7892."
+      },
+      {
+        "id": "claude",
+        "driver": "acpx",
+        "adapter": "@agentclientprotocol/claude-agent-acp",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "verifiedVersion": "2.1.85",
+        "defaultModel": "sonnet",
+        "injectedEnvKeys": [
+          "ACPX_CLAUDE_INCLUDE_USER_SETTINGS",
+          "HTTP_PROXY",
+          "HTTPS_PROXY"
+        ],
+        "notes": "ACPX_CLAUDE_INCLUDE_USER_SETTINGS=1 required so claude-agent-acp loads ~/.claude/settings.json."
+      },
+      {
+        "id": "zcode",
+        "driver": "acpx",
+        "adapter": "zcode-acp-server@0.69.3",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "verifiedVersion": "0.16.9",
+        "defaultModel": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+        "injectedEnvKeys": [],
+        "notes": "Headless ACP via zcode-acp-server (decrypts ~/.zcode/v2/credentials.json enc:v1 in-memory; no CDP needed)."
+      },
+      {
+        "id": "workbuddy",
+        "driver": "acpx",
+        "adapter": "codebuddy --acp (v2.160.0)",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "verifiedVersion": "2.160.0",
+        "defaultModel": "custom-local:glm-5.3",
+        "injectedEnvKeys": [
+          "CODEBUDDY_CONFIG_DIR",
+          "WORKBUDDY_CONFIG_DIR",
+          "ACC_PRODUCT_CONFIG_V3"
+        ],
+        "notes": "Native ACP via `codebuddy --acp`; uses custom-local:glm-5.3 prefix to route via ~/.workbuddy/models.json."
+      },
+      {
+        "id": "opencode",
+        "driver": "acpx",
+        "adapter": "opencode acp (v1.18.33)",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "verifiedVersion": "1.18.33",
+        "defaultModel": "opencode/big-pickle",
+        "injectedEnvKeys": [],
+        "notes": "Native `opencode acp` stdio transport."
+      },
+      {
+        "id": "hermes",
+        "driver": "acpx",
+        "adapter": "hermes acp (v0.21.1)",
+        "boardStatus": "unknown",
+        "holder": "shared",
+        "verifiedVersion": "-",
+        "defaultModel": "custom:glm-5.3",
+        "injectedEnvKeys": [
+          "PYTHONIOENCODING",
+          "PYTHONUTF8"
+        ],
+        "notes": "Nous Research Hermes Agent (`hermes acp`); supports 5 verified custom models and SQLite session sync."
+      },
+      {
+        "id": "droid",
+        "driver": "acpx",
+        "adapter": "droid exec --output-format acp (v0.228.0)",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "verifiedVersion": "0.228.0",
+        "defaultModel": "claude-sonnet-4-5-20250929",
+        "injectedEnvKeys": [],
+        "notes": "Native `droid exec --output-format acp`; requires FACTORY_API_KEY or active `droid` login."
+      },
+      {
+        "id": "gemini",
+        "driver": "acpx",
+        "adapter": "gemini --acp (v0.62.0)",
+        "boardStatus": "🟡 cooldown_degraded",
+        "holder": "shared",
+        "verifiedVersion": "0.62.0",
+        "defaultModel": "-",
+        "injectedEnvKeys": [],
+        "notes": "Native `gemini --acp`; requires GEMINI_API_KEY or GOOGLE_API_KEY for non-interactive runs."
+      },
+      {
+        "id": "antigravity",
+        "driver": "agy-agentapi",
+        "adapter": "language_server.exe agentapi + Connect-RPC",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "verifiedVersion": "hub-2.23.0 (LS-ConnectRPC+agentapi)",
+        "defaultModel": "flash",
+        "injectedEnvKeys": [
+          "ANTIGRAVITY_LS_ADDRESS",
+          "ANTIGRAVITY_CSRF_TOKEN"
+        ],
+        "notes": "Native gRPC/Connect-RPC via `language_server.exe agentapi` (auto-discovers LS port & CSRF token; ground-truth verified via brain/<cid>/.system_generated/logs/transcript.jsonl)."
+      },
+      {
+        "id": "doubao-desktop",
+        "driver": "opencli-cdp",
+        "adapter": "CDP:9225",
+        "boardStatus": "🟡 cooldown_degraded",
+        "holder": "user-active",
+        "verifiedVersion": "CDP:9225",
+        "defaultModel": "-",
+        "injectedEnvKeys": [],
+        "notes": "Desktop UI via `opencli doubao` (CDP:9225). Protected by holder=user-active lock."
+      }
+    ]
+  },
+  "status": {
+    "codex": {
+      "exitCode": 0,
+      "data": {
+        "ok": true,
+        "agent": "codex",
+        "driver": "acpx",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "defaultModel": "gpt-5.4-mini",
+        "injectedEnvKeys": [
+          "HTTP_PROXY",
+          "HTTPS_PROXY"
+        ],
+        "acpxStatus": {
+          "action": "status_snapshot",
+          "status": "no-session",
+          "summary": "no active session"
+        }
+      },
+      "durationMs": 588
+    },
+    "claude": {
+      "exitCode": 0,
+      "data": {
+        "ok": true,
+        "agent": "claude",
+        "driver": "acpx",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "defaultModel": "sonnet",
+        "injectedEnvKeys": [
+          "ACPX_CLAUDE_INCLUDE_USER_SETTINGS",
+          "HTTP_PROXY",
+          "HTTPS_PROXY"
+        ],
+        "acpxStatus": {
+          "action": "status_snapshot",
+          "status": "no-session",
+          "summary": "no active session"
+        }
+      },
+      "durationMs": 494
+    },
+    "zcode": {
+      "exitCode": 0,
+      "data": {
+        "ok": true,
+        "agent": "zcode",
+        "driver": "acpx",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "defaultModel": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+        "injectedEnvKeys": [],
+        "acpxStatus": {
+          "action": "status_snapshot",
+          "status": "no-session",
+          "summary": "no active session"
+        }
+      },
+      "durationMs": 518
+    },
+    "workbuddy": {
+      "exitCode": 0,
+      "data": {
+        "ok": true,
+        "agent": "workbuddy",
+        "driver": "acpx",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "defaultModel": "custom-local:glm-5.3",
+        "injectedEnvKeys": [
+          "CODEBUDDY_CONFIG_DIR",
+          "WORKBUDDY_CONFIG_DIR",
+          "ACC_PRODUCT_CONFIG_V3"
+        ],
+        "acpxStatus": {
+          "action": "status_snapshot",
+          "status": "no-session",
+          "summary": "no active session"
+        }
+      },
+      "durationMs": 434
+    },
+    "opencode": {
+      "exitCode": 0,
+      "data": {
+        "ok": true,
+        "agent": "opencode",
+        "driver": "acpx",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "defaultModel": "opencode/big-pickle",
+        "injectedEnvKeys": [],
+        "acpxStatus": {
+          "action": "status_snapshot",
+          "status": "no-session",
+          "summary": "no active session"
+        }
+      },
+      "durationMs": 536
+    },
+    "hermes": {
+      "exitCode": 0,
+      "data": {
+        "ok": true,
+        "agent": "hermes",
+        "driver": "acpx",
+        "defaultModel": "custom:glm-5.3",
+        "injectedEnvKeys": [
+          "PYTHONIOENCODING",
+          "PYTHONUTF8"
+        ],
+        "acpxStatus": {
+          "action": "status_snapshot",
+          "status": "no-session",
+          "summary": "no active session"
+        }
+      },
+      "durationMs": 454
+    },
+    "antigravity": {
+      "exitCode": 0,
+      "data": {
+        "ok": true,
+        "agent": "antigravity",
+        "driver": "agy-agentapi",
+        "boardStatus": "🟢 ok",
+        "holder": "shared",
+        "defaultModel": "flash",
+        "antigravityStatus": {
+          "ok": true,
+          "lsAddress": "localhost:65529",
+          "email": "cosmostxy2@gmail.com",
+          "userTier": "Google AI Ultra",
+          "userTierId": "g1-ultra-tier",
+          "planName": "Pro",
+          "availablePromptCredits": 500,
+          "availableFlowCredits": 100,
+          "buckets": {
+            "gemini-weekly": {
+              "remainingPct": 92.02,
+              "resetTime": "2026-10-24T00:00:03Z",
+              "window": "weekly"
+            },
+            "gemini-5h": {
+              "remainingPct": 93.71,
+              "resetTime": "2026-10-17T15:00:03Z",
+              "window": "5h"
+            },
+            "3p-weekly": {
+              "remainingPct": 98.53,
+              "resetTime": "2026-10-21T03:01:16Z",
+              "window": "weekly"
+            },
+            "3p-5h": {
+              "remainingPct": 100,
+              "resetTime": "2026-10-17T17:42:17Z",
+              "window": "5h"
+            }
+          }
+        }
+      },
+      "durationMs": 199
+    }
+  },
+  "cancel": {
+    "codex": {
+      "exitCode": 0,
+      "output": {
+        "action": "cancel_result",
+        "acpxRecordId": "unknown",
+        "cancelled": false
+      },
+      "stderr": "",
+      "durationMs": 559
+    },
+    "claude": {
+      "exitCode": 0,
+      "output": {
+        "action": "cancel_result",
+        "acpxRecordId": "unknown",
+        "cancelled": false
+      },
+      "stderr": "",
+      "durationMs": 508
+    },
+    "zcode": {
+      "exitCode": 0,
+      "output": {
+        "action": "cancel_result",
+        "acpxRecordId": "unknown",
+        "cancelled": false
+      },
+      "stderr": "",
+      "durationMs": 549
+    },
+    "workbuddy": {
+      "exitCode": 0,
+      "output": {
+        "action": "cancel_result",
+        "acpxRecordId": "unknown",
+        "cancelled": false
+      },
+      "stderr": "",
+      "durationMs": 555
+    },
+    "opencode": {
+      "exitCode": 0,
+      "output": {
+        "action": "cancel_result",
+        "acpxRecordId": "unknown",
+        "cancelled": false
+      },
+      "stderr": "",
+      "durationMs": 490
+    },
+    "hermes": {
+      "exitCode": 0,
+      "output": {
+        "action": "cancel_result",
+        "acpxRecordId": "unknown",
+        "cancelled": false
+      },
+      "stderr": "",
+      "durationMs": 593
+    },
+    "antigravity": {
+      "exitCode": 1,
+      "output": {
+        "raw": "",
+        "stderr": "{\"ok\":false,\"error\":\"Standalone cancel requires an acpx agent (got: antigravity)\"}\n"
+      },
+      "stderr": "{\"ok\":false,\"error\":\"Standalone cancel requires an acpx agent (got: antigravity)\"}\n",
+      "durationMs": 77
+    }
+  },
+  "quota": {
+    "ok": true,
+    "checkedAt": "2026-10-17T13:18:57.323Z",
+    "liveBalances": {
+      "yinziApi": {
+        "station": "yinzi-api (yinziapi.top)",
+        "username": "cosmos",
+        "userId": 21,
+        "remainingYuan": 18.76,
+        "usedYuan": 413.24,
+        "totalYuan": 432,
+        "requestCount": 35415,
+        "configuredTokensCount": 10,
+        "alertLevel": "🟢 OK"
+      },
+      "codexOfficialTeam": {
+        "sourceFile": "rollout-2026-10-16T15-11-07-01a1438c-dc40-7380-ba8c-2896cafeb31c.jsonl",
+        "planType": "team",
+        "primary5hUsedPct": 66,
+        "primary5hRemainingPct": 34,
+        "primary5hResetsAt": "2026-10-16T11:22:59.000Z",
+        "weekly7dUsedPct": 41,
+        "weekly7dRemainingPct": 59,
+        "weekly7dResetsAt": "2026-10-22T06:24:00.000Z"
+      },
+      "antigravityUltra": {
+        "ok": true,
+        "lsAddress": "localhost:65529",
+        "email": "cosmostxy2@gmail.com",
+        "userTier": "Google AI Ultra",
+        "userTierId": "g1-ultra-tier",
+        "planName": "Pro",
+        "availablePromptCredits": 500,
+        "availableFlowCredits": 100,
+        "buckets": {
+          "gemini-weekly": {
+            "remainingPct": 92.46,
+            "resetTime": "2026-10-24T00:00:03Z",
+            "window": "weekly"
+          },
+          "gemini-5h": {
+            "remainingPct": 90.95,
+            "resetTime": "2026-10-17T15:00:03Z",
+            "window": "5h"
+          },
+          "3p-weekly": {
+            "remainingPct": 98.53,
+            "resetTime": "2026-10-21T03:01:16Z",
+            "window": "weekly"
+          },
+          "3p-5h": {
+            "remainingPct": 100,
+            "resetTime": "2026-10-17T18:18:50Z",
+            "window": "5h"
+          }
+        }
+      },
+      "searchPools": {
+        "serpapi": {
+          "keysCount": 10,
+          "monthlyPoolTotal": 2500,
+          "primaryName": "cosmostxy",
+          "primaryRemaining": 249
+        },
+        "tavily": {
+          "keysCount": 9,
+          "monthlyPoolTotal": 9000,
+          "primaryName": "ct",
+          "primaryRemaining": 551
+        },
+        "deepseek": {
+          "available": true,
+          "currency": "CNY",
+          "totalBalance": "24.94"
+        }
+      }
+    },
+    "modelChannels": [
+      {
+        "channelId": "2chat",
+        "name": "2Chat 模型中转渠道 (2chat.cc)",
+        "status": "🟡 cooldown_degraded",
+        "holder": "shared",
+        "lastVerifiedAt": "2026-10-14T12:15:00+08:00"
+      },
+      {
+        "channelId": "anthropic-official",
+        "name": "Anthropic 官方登录态 (Claude Opus)",
+        "status": "🟡 cooldown_degraded",
+        "holder": "core-only",
+        "lastVerifiedAt": "2026-10-14T12:15:00+08:00"
+      },
+      {
+        "channelId": "volcengine-ark",
+        "name": "火山方舟 Coding Plan (ark.cn-beijing.volces.com)",
+        "status": "🟢 ok",
+        "holder": "shared",
+        "lastVerifiedAt": "2026-10-14T12:15:00+08:00"
+      },
+      {
+        "channelId": "yinzi-api",
+        "name": "银子智能模型中转渠道 (api.yinziapi.top)",
+        "status": "🟢 ok",
+        "holder": "shared",
+        "lastVerifiedAt": "2026-10-14T12:15:00+08:00"
+      },
+      {
+        "channelId": "zhipu-glm",
+        "name": "智谱 GLM Coding Plan & Start Plan",
+        "status": "🟢 ok",
+        "holder": "shared",
+        "lastVerifiedAt": "2026-10-14T12:15:00+08:00"
+      }
+    ],
+    "hostQuotaMechanisms": [
+      {
+        "id": "antigravity",
+        "tier": "tier-1-rpc",
+        "method": "language_server.exe Connect-RPC: RetrieveUserQuotaSummary + GetUserStatus"
+      },
+      {
+        "id": "codex",
+        "tier": "tier-1-rpc",
+        "method": "codex app-server: account/rateLimits/read + thread/tokenUsage/updated"
+      },
+      {
+        "id": "claude",
+        "tier": "tier-1-cmd",
+        "method": "acpx claude /usage + .claude/projects/**/*.jsonl cost-state"
+      },
+      {
+        "id": "zcode",
+        "tier": "tier-2-ledger",
+        "method": "~/.zcode/v2/db.sqlite (model_usage) + ACP _meta.zcode.usage"
+      },
+      {
+        "id": "workbuddy",
+        "tier": "tier-2-dual",
+        "method": "~/.workbuddy/workbuddy.db (Credits) + custom-local:glm-5.3 (Zhipu Coding Plan)"
+      },
+      {
+        "id": "opencode",
+        "tier": "tier-3-window",
+        "method": "ACP session/update usage_update + step-finish tokens"
+      }
+    ],
+    "activeWorkspaceAcpxSessions": [
+      {
+        "name": "poc-gw-zcode",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-14T13:53:02.605Z"
+      },
+      {
+        "name": "workbuddy-2331",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-14T15:43:55.201Z"
+      },
+      {
+        "name": "probe-hermes-l1b1",
+        "agentCommand": "\"E:\\\\program\\\\GIT\\\\Agent\\\\hermes and vcp like\\\\hermes-agent\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import os; os.environ['HERMES_ACP_SKIP_CONFIGURED_MCP']='1'; import acp_adapter.server as s, acp_adapter.session as sm; from acp.schema import ModelInfo, SessionModelState; _M = [('custom:glm-5.3','GLM-5.3'),('custom:zai-glm-5.2:glm-5.2','GLM-5.2'),('custom:codex-packycode:gpt-5.5','GPT-5.5 (PackyCode)'),('custom:codex-aizzz:gpt-5.6-sol','GPT-5.6-Sol'),('custom:aizzz-grok:grok-4.5','Grok-4.5')]; s.build_model_state = lambda m,p,b: SessionModelState(available_models=[ModelInfo(model_id=i,name=n) for i,n in _M], current_model_id=(m if ':' in str(m) else f'custom:{m}' if m else 'custom:glm-5.3')); _uc = sm.SessionManager.update_cwd; sm.SessionManager.update_cwd = lambda self, sid, cwd: _uc(self, sid, cwd) or self._install_state(sid, ag := self._make_agent(session_id=sid, cwd=(c := sm._translate_acp_cwd(cwd))), c, getattr(ag, 'model', '') or '', []); import acp_adapter.entry as e; e.main()\"",
+        "lastUsedAt": "2026-10-17T10:59:56.751Z"
+      },
+      {
+        "name": "poc-opencode",
+        "agentCommand": "npx -y opencode-ai acp",
+        "lastUsedAt": "2026-10-14T14:28:08.324Z"
+      },
+      {
+        "name": "poc-wb",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-14T09:22:16.880Z"
+      },
+      {
+        "name": "poc-zcode",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-14T09:40:29.522Z"
+      },
+      {
+        "name": "hermes-main",
+        "agentCommand": "\"E:\\\\program\\\\GIT\\\\Agent\\\\hermes and vcp like\\\\hermes-agent\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import os; os.environ['HERMES_ACP_SKIP_CONFIGURED_MCP']='1'; import acp_adapter.server as s; s.build_model_state = lambda m,p,b: None; import acp_adapter.entry as e; e.main()\"",
+        "lastUsedAt": "2026-10-14T18:46:53.020Z"
+      },
+      {
+        "name": "poc-gw-wb",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-14T09:42:04.842Z"
+      },
+      {
+        "name": "workbuddy-1156",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-15T03:57:04.112Z"
+      },
+      {
+        "name": "probe-zcode-l1b-mswitch-1792233972180",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-17T10:47:01.980Z"
+      },
+      {
+        "name": "probe-lead-hermes-gemini",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-17T09:55:25.388Z"
+      },
+      {
+        "name": "skill-test",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-14T14:51:12.267Z"
+      },
+      {
+        "name": "probe-codex-l1b-cancel-1792234781780",
+        "agentCommand": "npx -y @agentclientprotocol/codex-acp@^1.1.5",
+        "lastUsedAt": "2026-10-17T11:00:03.976Z"
+      },
+      {
+        "name": "probe-L3",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-17T13:18:50.299Z"
+      },
+      {
+        "name": "probe-wb-l1b-model-1792233925297",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-17T10:45:54.798Z"
+      },
+      {
+        "name": "probe-hermes-l1b2",
+        "agentCommand": "\"E:\\\\program\\\\GIT\\\\Agent\\\\hermes and vcp like\\\\hermes-agent\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import os; os.environ['HERMES_ACP_SKIP_CONFIGURED_MCP']='1'; import acp_adapter.server as s, acp_adapter.session as sm; from acp.schema import ModelInfo, SessionModelState; _M = [('custom:glm-5.3','GLM-5.3'),('custom:zai-glm-5.2:glm-5.2','GLM-5.2'),('custom:codex-packycode:gpt-5.5','GPT-5.5 (PackyCode)'),('custom:codex-aizzz:gpt-5.6-sol','GPT-5.6-Sol'),('custom:aizzz-grok:grok-4.5','Grok-4.5')]; s.build_model_state = lambda m,p,b: SessionModelState(available_models=[ModelInfo(model_id=i,name=n) for i,n in _M], current_model_id=(m if ':' in str(m) else f'custom:{m}' if m else 'custom:glm-5.3')); _uc = sm.SessionManager.update_cwd; sm.SessionManager.update_cwd = lambda self, sid, cwd: _uc(self, sid, cwd) or self._install_state(sid, ag := self._make_agent(session_id=sid, cwd=(c := sm._translate_acp_cwd(cwd))), c, getattr(ag, 'model', '') or '', []); import acp_adapter.entry as e; e.main()\"",
+        "lastUsedAt": "2026-10-17T10:52:08.243Z"
+      },
+      {
+        "name": "probe-zcode-1",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-17T09:21:21.137Z"
+      },
+      {
+        "name": "ppt-addin-r1b",
+        "agentCommand": "npx -y @agentclientprotocol/codex-acp@^1.1.5",
+        "lastUsedAt": "2026-10-16T07:17:19.258Z"
+      },
+      {
+        "name": "probe-lead-hermes-gemini-v2",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-17T11:15:22.623Z"
+      },
+      {
+        "name": "workbuddy-0207",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-14T18:49:33.553Z"
+      },
+      {
+        "name": "probe-codex-l1b-main",
+        "agentCommand": "npx -y @agentclientprotocol/codex-acp@^1.1.5",
+        "lastUsedAt": "2026-10-17T10:20:30.605Z"
+      },
+      {
+        "name": "poc-claude",
+        "agentCommand": "npx -y @agentclientprotocol/claude-agent-acp@^0.81.2",
+        "lastUsedAt": "2026-10-14T09:36:48.373Z"
+      },
+      {
+        "name": "probe-l1b-full",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-17T09:34:14.841Z"
+      },
+      {
+        "name": "probe-workbuddy-l1b-mnew-1792231049533",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-17T09:58:04.267Z"
+      },
+      {
+        "name": "probe-workbuddy-l1b-cancel-1792231127743",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-17T09:59:09.470Z"
+      },
+      {
+        "name": "hermes-main",
+        "agentCommand": "\"E:\\\\program\\\\GIT\\\\Agent\\\\hermes and vcp like\\\\hermes-agent\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import os; os.environ['HERMES_ACP_SKIP_CONFIGURED_MCP']='1'; import acp_adapter.server as s, acp_adapter.session as sm; s.build_model_state = lambda m,p,b: None; _uc = sm.SessionManager.update_cwd; sm.SessionManager.update_cwd = lambda self, sid, cwd: _uc(self, sid, cwd) or self._install_state(sid, ag := self._make_agent(session_id=sid, cwd=(c := sm._translate_acp_cwd(cwd))), c, getattr(ag, 'model', '') or '', []); import acp_adapter.entry as e; e.main()\"",
+        "lastUsedAt": "2026-10-14T18:48:39.497Z"
+      },
+      {
+        "name": "cli-shared-verify",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-15T07:20:02.535Z"
+      },
+      {
+        "name": "workbuddy-2218",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-14T14:18:44.941Z"
+      },
+      {
+        "name": "probe-hermes-x1",
+        "agentCommand": "\"E:\\\\program\\\\GIT\\\\Agent\\\\hermes and vcp like\\\\hermes-agent\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import os; os.environ['HERMES_ACP_SKIP_CONFIGURED_MCP']='1'; import acp_adapter.server as s, acp_adapter.session as sm; from acp.schema import ModelInfo, SessionModelState; _M = [('custom:glm-5.3','GLM-5.3'),('custom:zai-glm-5.2:glm-5.2','GLM-5.2'),('custom:codex-packycode:gpt-5.5','GPT-5.5 (PackyCode)'),('custom:codex-aizzz:gpt-5.6-sol','GPT-5.6-Sol'),('custom:aizzz-grok:grok-4.5','Grok-4.5')]; s.build_model_state = lambda m,p,b: SessionModelState(available_models=[ModelInfo(model_id=i,name=n) for i,n in _M], current_model_id=(m if ':' in str(m) else f'custom:{m}' if m else 'custom:glm-5.3')); _uc = sm.SessionManager.update_cwd; sm.SessionManager.update_cwd = lambda self, sid, cwd: _uc(self, sid, cwd) or self._install_state(sid, ag := self._make_agent(session_id=sid, cwd=(c := sm._translate_acp_cwd(cwd))), c, getattr(ag, 'model', '') or '', []); import acp_adapter.entry as e; e.main()\"",
+        "lastUsedAt": "2026-10-17T10:04:24.656Z"
+      },
+      {
+        "name": "ppt-addin-r1",
+        "agentCommand": "npx -y @agentclientprotocol/codex-acp@^1.1.5",
+        "lastUsedAt": "2026-10-16T07:09:40.893Z"
+      },
+      {
+        "name": "probe-zcode-l1b-mswitch-1792234191216",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-17T10:50:36.903Z"
+      },
+      {
+        "name": "probe-multiline-check",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-17T09:55:19.883Z"
+      },
+      {
+        "name": "probe-lead-antigravity",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-17T10:49:13.553Z"
+      },
+      {
+        "name": "probe-workbuddy-l1b-steer-1792231113894",
+        "agentCommand": "codebuddy --acp",
+        "lastUsedAt": "2026-10-17T09:58:58.630Z"
+      },
+      {
+        "name": "meta-brain-fufu",
+        "agentCommand": "zcode-acp-server",
+        "lastUsedAt": "2026-10-15T05:31:46.832Z"
+      },
+      {
+        "name": "poc-codex",
+        "agentCommand": "npx -y @agentclientprotocol/codex-acp@^1.1.5",
+        "lastUsedAt": "2026-10-14T14:16:10.030Z"
+      },
+      {
+        "name": "probe-codex-l1b-mtest-1792234744021",
+        "agentCommand": "npx -y @agentclientprotocol/codex-acp@^1.1.5",
+        "lastUsedAt": "2026-10-17T10:59:35.642Z"
+      }
+    ]
+  },
+  "run": {
+    "antigravity": {
+      "exitCode": 0,
+      "data": {
+        "ok": true,
+        "agent": "antigravity",
+        "driver": "agy-agentapi",
+        "session": "probe-L2b-antigravity-runtest",
+        "conversationId": "d2cc1caa-a4e6-41df-a520-8396c3837adb",
+        "lsAddress": "localhost:65529",
+        "projectId": "a22912fa-7d84-44c6-93e7-9de2f9330b93",
+        "model": "flash",
+        "stopReason": "end_turn",
+        "reply": "PROBE_L2B_VERIFY",
+        "usage": {
+          "inputTokens": 2117,
+          "cacheReadTokens": 18441,
+          "outputTokens": 234
+        },
+        "durationMs": 10421,
+        "error": null
+      },
+      "durationMs": 10530
+    },
+    "codex": {
+      "exitCode": 1,
+      "data": {
+        "ok": false,
+        "gatewayMode": "standalone-fallback",
+        "agent": "codex",
+        "driver": "acpx",
+        "session": "probe-L2b-codex-runtest",
+        "acpxSessionId": "01a14a04-37e6-7390-a2c3-80af777edc42",
+        "acpxRecordId": "6a2919a6-3e0c-480c-8521-7e5d09df3754",
+        "model": "gpt-5.4-mini",
+        "permissions": "--approve-reads",
+        "stopReason": null,
+        "reply": "",
+        "usage": null,
+        "durationMs": 6218,
+        "error": {
+          "code": -32603,
+          "message": "Cannot apply --model \"gpt-5.4-mini\": the ACP agent did not advertise that model. Available models: gpt-6.1-sol, gpt-6-astra, gpt-6-sol, gpt-6-luna, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5.",
+          "data": {
+            "acpxCode": "RUNTIME",
+            "detailCode": "QUEUE_RUNTIME_PROMPT_FAILED",
+            "origin": "runtime",
+            "sessionId": "6a2919a6-3e0c-480c-8521-7e5d09df3754"
+          }
+        }
+      },
+      "durationMs": 17848
+    },
+    "claude": {
+      "exitCode": 0,
+      "data": {
+        "ok": true,
+        "gatewayMode": "standalone-fallback",
+        "agent": "claude",
+        "driver": "acpx",
+        "session": "probe-L2b-claude-runtest",
+        "acpxSessionId": "8638f0f6-4585-4734-b901-3126d2828fed",
+        "acpxRecordId": "06cf3434-333d-46ff-8504-2f5e8f85842a",
+        "model": "haiku",
+        "permissions": "--approve-reads",
+        "stopReason": "end_turn",
+        "reply": "The script executed successfully and printed `HELLO_CHECK`.",
+        "usage": {
+          "used": 2154,
+          "size": 1000000
+        },
+        "durationMs": 23201,
+        "error": null
+      },
+      "durationMs": 36163
+    },
+    "zcode": {
+      "exitCode": null,
+      "data": {
+        "raw": "",
+        "stderr": ""
+      },
+      "durationMs": 45170
+    }
+  }
+}

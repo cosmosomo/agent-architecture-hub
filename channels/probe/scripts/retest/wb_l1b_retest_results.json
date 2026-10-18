@@ -1,0 +1,220 @@
+{
+  "model-new": {
+    "pass": true,
+    "sessionName": "probe-wb-l1b-model-1792233925297",
+    "acpSessionId": "01a14977-7aa0-7ea3-bf15-9c1f0d775abd",
+    "acpxOutput": "{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"initialize\",\"params\":{\"protocolVersion\":1,\"clientCapabilities\":{\"fs\":{\"readTextFile\":true,\"writeTextFile\":true},\"terminal\":true},\"clientInfo\":{\"name\":\"acpx\",\"version\":\"0.19.5\"}}}\n{\"jsonrpc\":\"2.0\",\"id\":0,\"result\":{\"protocolVersion\":1,\"agentCapabilities\":{\"promptCapab",
+    "actualAssistantTurn": {
+      "id": "01a14977-b1d9-7acd-9a9f-dd3c78ac9098",
+      "parentId": "01a14977-b1d9-7acd-9a9f-dd3d92a425ac",
+      "timestamp": 1792233946203,
+      "type": "message",
+      "role": "assistant",
+      "providerData": {
+        "conversationRequestId": "01a14977b0a27a8f83e8e0296c2c6332",
+        "messageId": "01a14977b1d97acd9a9fdd3be8918846",
+        "stepSeq": 1,
+        "model": "glm-5.3",
+        "requestModelId": "custom-local:glm-5.3",
+        "requestModelName": "GLM-5.3",
+        "traceId": "7f872fcd79b2998297aa2dbffb164e2a",
+        "rawUsage": {
+          "prompt_tokens": 27506,
+          "completion_tokens": 36,
+          "total_tokens": 27542,
+          "prompt_tokens_details": {
+            "cached_tokens": 27456
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 30
+          }
+        },
+        "agent": "cli",
+        "usage": {
+          "requests": 1,
+          "inputTokens": 27506,
+          "outputTokens": 36,
+          "totalTokens": 27542,
+          "inputTokensDetails": [
+            {
+              "cached_tokens": 27456
+            }
+          ],
+          "outputTokensDetails": [
+            {
+              "reasoning_tokens": 30
+            }
+          ]
+        }
+      },
+      "status": "completed",
+      "content": [
+        {
+          "providerData": {
+            "annotations": []
+          },
+          "type": "output_text",
+          "text": "辰宿列张"
+        }
+      ],
+      "sessionId": "01a14977-7aa0-7ea3-bf15-9c1f0d775abd",
+      "message": {
+        "usage": {
+          "input_tokens": 27506,
+          "output_tokens": 36,
+          "total_tokens": 27542,
+          "cache_read_input_tokens": 27456
+        }
+      },
+      "cwd": "e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "_meta": {
+        "traceparent": "00-7f872fcd79b2998297aa2dbffb164e2a-ef7c496f767650a5-01",
+        "baggage": "codebuddy.session_id=01a14977-7aa0-7ea3-bf15-9c1f0d775abd,codebuddy.conversation_request_id=01a14977b0a27a8f83e8e0296c2c6332"
+      }
+    },
+    "cmd": "acpx --format json --model custom-local:glm-5.3 workbuddy -s probe-wb-l1b-model-1792233925297 \"请只回复四个字：辰宿列张\""
+  },
+  "model-switch": {
+    "pass": true,
+    "sessionName": "probe-wb-l1b-model-1792233925297",
+    "acpSessionId": "01a14977-7aa0-7ea3-bf15-9c1f0d775abd",
+    "setCommandResult": "{\"action\":\"model_set\",\"modelId\":\"custom-local:glm-5.3-flash\",\"resumed\":false,\"acpxRecordId\":\"91fd52e7-75e6-4002-9ead-fd5c962e2d75\",\"acpxSessionId\":\"01a14977-7aa0-7ea3-bf15-9c1f0d775abd\"}",
+    "turn1Assistant": {
+      "id": "01a14977-b1d9-7acd-9a9f-dd3c78ac9098",
+      "parentId": "01a14977-b1d9-7acd-9a9f-dd3d92a425ac",
+      "timestamp": 1792233946203,
+      "type": "message",
+      "role": "assistant",
+      "providerData": {
+        "conversationRequestId": "01a14977b0a27a8f83e8e0296c2c6332",
+        "messageId": "01a14977b1d97acd9a9fdd3be8918846",
+        "stepSeq": 1,
+        "model": "glm-5.3",
+        "requestModelId": "custom-local:glm-5.3",
+        "requestModelName": "GLM-5.3",
+        "traceId": "7f872fcd79b2998297aa2dbffb164e2a",
+        "rawUsage": {
+          "prompt_tokens": 27506,
+          "completion_tokens": 36,
+          "total_tokens": 27542,
+          "prompt_tokens_details": {
+            "cached_tokens": 27456
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 30
+          }
+        },
+        "agent": "cli",
+        "usage": {
+          "requests": 1,
+          "inputTokens": 27506,
+          "outputTokens": 36,
+          "totalTokens": 27542,
+          "inputTokensDetails": [
+            {
+              "cached_tokens": 27456
+            }
+          ],
+          "outputTokensDetails": [
+            {
+              "reasoning_tokens": 30
+            }
+          ]
+        }
+      },
+      "status": "completed",
+      "content": [
+        {
+          "providerData": {
+            "annotations": []
+          },
+          "type": "output_text",
+          "text": "辰宿列张"
+        }
+      ],
+      "sessionId": "01a14977-7aa0-7ea3-bf15-9c1f0d775abd",
+      "message": {
+        "usage": {
+          "input_tokens": 27506,
+          "output_tokens": 36,
+          "total_tokens": 27542,
+          "cache_read_input_tokens": 27456
+        }
+      },
+      "cwd": "e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "_meta": {
+        "traceparent": "00-7f872fcd79b2998297aa2dbffb164e2a-ef7c496f767650a5-01",
+        "baggage": "codebuddy.session_id=01a14977-7aa0-7ea3-bf15-9c1f0d775abd,codebuddy.conversation_request_id=01a14977b0a27a8f83e8e0296c2c6332"
+      }
+    },
+    "turn2Assistant": {
+      "id": "01a14977-c5e7-7f36-8dab-11e669f52ea6",
+      "parentId": "01a14977-c4fb-76b3-9309-4967f3b606e1",
+      "timestamp": 1792233953547,
+      "type": "message",
+      "role": "assistant",
+      "providerData": {
+        "conversationRequestId": "01a14977c4fb76b393094966b95b1e80",
+        "messageId": "01a14977c5e77f368dab11e587b16984",
+        "stepSeq": 2,
+        "model": "glm-5.3-flash",
+        "requestModelId": "custom-local:glm-5.3-flash",
+        "requestModelName": "GLM-5.3-Flash",
+        "traceId": "3d16b5c7c9bc06d03075b589d9f7da40",
+        "rawUsage": {
+          "prompt_tokens": 27535,
+          "completion_tokens": 6,
+          "total_tokens": 27541,
+          "prompt_tokens_details": {
+            "cached_tokens": 1408
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "agent": "cli",
+        "usage": {
+          "requests": 1,
+          "inputTokens": 27535,
+          "outputTokens": 6,
+          "totalTokens": 27541,
+          "inputTokensDetails": [
+            {
+              "cached_tokens": 1408
+            }
+          ],
+          "outputTokensDetails": [
+            {
+              "reasoning_tokens": 0
+            }
+          ]
+        }
+      },
+      "status": "completed",
+      "content": [
+        {
+          "providerData": {
+            "annotations": []
+          },
+          "type": "output_text",
+          "text": "寒来暑往"
+        }
+      ],
+      "sessionId": "01a14977-7aa0-7ea3-bf15-9c1f0d775abd",
+      "message": {
+        "usage": {
+          "input_tokens": 27535,
+          "output_tokens": 6,
+          "total_tokens": 27541,
+          "cache_read_input_tokens": 1408
+        }
+      },
+      "cwd": "e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "_meta": {
+        "traceparent": "00-3d16b5c7c9bc06d03075b589d9f7da40-424e194c9cce502e-01",
+        "baggage": "codebuddy.session_id=01a14977-7aa0-7ea3-bf15-9c1f0d775abd,codebuddy.conversation_request_id=01a14977c4fb76b393094966b95b1e80"
+      }
+    },
+    "cmd": "acpx --format json workbuddy set model custom-local:glm-5.3-flash -s probe-wb-l1b-model-1792233925297 -> acpx --format json workbuddy -s probe-wb-l1b-model-1792233925297 \"请只回复四个字：寒来暑往\""
+  }
+}

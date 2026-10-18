@@ -42,11 +42,29 @@ function addUsage(a: Usage | undefined, b: Usage | undefined): Usage | undefined
 
 type MsgRow = { id: string; session_id: string; data: string };
 
-/** Every session in the store: three table reads total, grouping in memory. */
+/** Every session in the store (or only `opts.onlySourceIds` when incrementally updating). */
 export function parseZcodeDb(file: SourceFile, db: SqliteSource, opts: FinishOptions): Session[] {
-  const sessions = db.all('SELECT id, parent_id, directory, title, task_type, summary_additions, summary_deletions, time_created, time_updated FROM session') as J[];
-  const messages = db.all('SELECT id, session_id, data FROM message ORDER BY session_id, sequence') as MsgRow[];
-  const parts = db.all('SELECT message_id, data FROM part ORDER BY message_id, sequence') as { message_id: string; data: string }[];
+  const only = opts.onlySourceIds;
+  if (only && only.size === 0) return [];
+  const allSessions = db.all('SELECT id, parent_id, directory, title, task_type, summary_additions, summary_deletions, time_created, time_updated FROM session') as J[];
+  const sessions = only ? allSessions.filter((s) => s && typeof s.id === 'string' && only.has(s.id)) : allSessions;
+  if (!sessions.length) return [];
+
+  let messages: MsgRow[];
+  let parts: { message_id: string; data: string }[];
+  if (only && only.size <= 40) {
+    const ids = Array.from(only);
+    const ph = ids.map(() => '?').join(',');
+    messages = db.all(`SELECT id, session_id, data FROM message WHERE session_id IN (${ph}) ORDER BY session_id, sequence`, ...ids) as MsgRow[];
+    parts = db.all(
+      `SELECT message_id, data FROM part WHERE message_id IN (SELECT id FROM message WHERE session_id IN (${ph})) ORDER BY message_id, sequence`,
+      ...ids,
+    ) as { message_id: string; data: string }[];
+  } else {
+    messages = db.all('SELECT id, session_id, data FROM message ORDER BY session_id, sequence') as MsgRow[];
+    parts = db.all('SELECT message_id, data FROM part ORDER BY message_id, sequence') as { message_id: string; data: string }[];
+  }
+
   const taskLinks = new Map<string, string[]>();
   try {
     const links = db.all('SELECT session_id, task_id FROM session_task_link') as { session_id?: string; task_id?: string }[];

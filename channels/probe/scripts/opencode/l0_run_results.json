@@ -1,0 +1,92 @@
+{
+  "open": {
+    "result": "pass",
+    "evidence": "{\"type\":\"step_start\",\"timestamp\":1792232308876,\"sessionID\":\"ses_eb6a16ec4ffey3Dbb44FZlEzpO\",\"part\":{\"id\":\"prt_1495ec07d0010xePwc7Q8mcnt9\",\"messageID\":\"msg_1495e92f0001GMPYAh45iSMaFH\",\"sessionID\":\"ses_eb6a16ec4ffey3Dbb44FZlEzpO\",\"snapshot\":\"997c0ed4116aa324abede8c24785e4ea415cadbe\",\"type\":\"step-start",
+    "cmd": "opencode run \"请记住暗号：PROBE_SECRET_7203，并回复已记住\" -m zhipuai-coding-plan/glm-5.3-flash --title probe-opencode-l0-open --format json",
+    "sessionId": "ses_eb6a16ec4ffey3Dbb44FZlEzpO",
+    "secret": "PROBE_SECRET_7203"
+  },
+  "resume": {
+    "result": "pass",
+    "evidence": "{\"type\":\"step_start\",\"timestamp\":1792232322177,\"sessionID\":\"ses_eb6a16ec4ffey3Dbb44FZlEzpO\",\"part\":{\"id\":\"prt_1495ef4760017a0yqkeWLCv1k5\",\"messageID\":\"msg_1495ed080001T7Rr2yLNUBlVC2\",\"sessionID\":\"ses_eb6a16ec4ffey3Dbb44FZlEzpO\",\"snapshot\":\"997c0ed4116aa324abede8c24785e4ea415cadbe\",\"type\":\"step-start",
+    "cmd": "opencode run \"之前告诉你的暗号是什么？只回复暗号\" -s ses_eb6a16ec4ffey3Dbb44FZlEzpO -m zhipuai-coding-plan/glm-5.3-flash --format json"
+  },
+  "resume-native": {
+    "result": "pass",
+    "evidence": "{\"type\":\"step_start\",\"timestamp\":1792232347963,\"sessionID\":\"ses_eb6a0ff6affev9uQIRydFaeOAH\",\"part\":{\"id\":\"prt_1495f5931001lzwgdjg7dbDLgb\",\"messageID\":\"msg_1495f349b001P0JT8zONdUtxz8\",\"sessionID\":\"ses_eb6a0ff6affev9uQIRydFaeOAH\",\"snapshot\":\"8a706425f77c9a451124b9dfc139746820f8de6c\",\"type\":\"step-start",
+    "cmd": "opencode run \"请复述刚才的暗号\" -s ses_eb6a0ff6affev9uQIRydFaeOAH -m zhipuai-coding-plan/glm-5.3-flash --format json"
+  },
+  "observe-live": {
+    "result": "pass",
+    "evidence": "chunks_received=3, first_chunk=\"{\\\"type\\\":\\\"step_start\\\",\\\"timestamp\\\":1792232308876,\\\"sessionID\\\":\\\"ses_eb6a16ec4ffey3Dbb44FZlEzpO\\\",\\\"part\\\":{\"",
+    "cmd": "opencode run \"请记住暗号：PROBE_SECRET_7203，并回复已记住\" -m zhipuai-coding-plan/glm-5.3-flash --title probe-opencode-l0-open --format json"
+  },
+  "observe-history": {
+    "result": "fail",
+    "evidence": "{\n  \"info\": {\n    \"id\": \"ses_eb6a16ec4ffey3Dbb44FZlEzpO\",\n    \"slug\": \"witty-comet\",\n    \"projectID\": \"c3bd25d3876e156e006b698245115cf5d1fa12a4\",\n    \"directory\": \"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\",\n    \"path\": \"\",\n    \"title\": \"probe-opencode-l0-open\",\n    \"agent\": \"build\",\n  ",
+    "cmd": "opencode export ses_eb6a16ec4ffey3Dbb44FZlEzpO"
+  },
+  "state": {
+    "result": "partial",
+    "evidence": "Session ID                      Title                                   Updated\r\n───────────────────────────────────────────────────────────────────────────────\r\nses_eb6a0ff6affev9uQIRydFaeOAH  probe-opencode-native-l0                18:19\r\nses_eb6a16ec4ffey3Dbb44FZlEzpO  probe-opencode-l0-open     ",
+    "cmd": "opencode session list",
+    "note": "CLI run does not have daemon-level live state API; session list shows existing sessions, status of completed runs is derived from process exit code."
+  },
+  "cancel": {
+    "result": "pass",
+    "evidence": "interrupted_duration=22648ms, post_cancel_reply=CANCEL_TEST_4566",
+    "cmd": "opencode run \"从1数到200\" -s ses_eb6a08cd0ffer8OWEV95BP7JpO (killed) && opencode run \"之前的暗号是什么？\" -s ses_eb6a08cd0ffer8OWEV95BP7JpO"
+  },
+  "close": {
+    "result": "pass",
+    "evidence": "del_stdout=, in_list_after_delete=false",
+    "cmd": "opencode session delete ses_eb6a16ec4ffey3Dbb44FZlEzpO"
+  },
+  "steer": {
+    "result": "n/a",
+    "evidence": "opencode run CLI is one-shot batch execution per command; mid-turn steering requires opencode serve HTTP connection or attach mode",
+    "cmd": "opencode run --help",
+    "note": "In CLI one-shot execution, stdin is closed to prevent hang, cannot inject user message into active turn."
+  },
+  "permission": {
+    "result": "fail",
+    "evidence": "{\"type\":\"step_start\",\"timestamp\":1792232423166,\"sessionID\":\"ses_eb69fac14ffe6XsAupXKtdAvca\",\"part\":{\"id\":\"prt_149607eec0014ai70Vc3qU91Az\",\"messageID\":\"msg_1496055a6001Zow0UitjlNsr5h\",\"sessionID\":\"ses_eb69fac14ffe6XsAupXKtdAvca\",\"snapshot\":\"85580ca9cdfb6a0a922110467f18ae6b4160062f\",\"type\":\"step-start",
+    "cmd": "opencode run \"在 channels/probe/scripts/tmp/test.txt 写入 hello\" --format json",
+    "note": "CLI in non-interactive batch mode does not support interactive prompt callback; only supports static --auto flag."
+  },
+  "fork": {
+    "result": "pass",
+    "evidence": "original_sid=ses_eb6a0ff6affev9uQIRydFaeOAH, forked_sid=ses_eb69f7152ffe74hGQNZG60LC0e",
+    "cmd": "opencode run \"我们分叉了，回复FORK_OK\" -s ses_eb6a0ff6affev9uQIRydFaeOAH --fork -m zhipuai-coding-plan/glm-5.3-flash --format json"
+  },
+  "compact": {
+    "result": "n/a",
+    "evidence": "opencode CLI has no compact command or --compact flag in opencode run / session options",
+    "cmd": "opencode --help"
+  },
+  "model-list": {
+    "result": "pass",
+    "evidence": "opencode/beam-free\r\nopencode/big-pickle\r\nopencode/deepseek-v4.1-flash-free\r\nopencode/glm-5.3-flash-free\r\nopencode/longcat-2.5-preview-free\r\nopencode/mimo-v2.6-flash-free\r\nopencode/nemotron-3-ultra-free\r\nopencode/nemotron-3.5-lightning-free\r\nopencode/nemotron-3.5-super-vl-free\r\nopencode/space-bunny-free\r",
+    "cmd": "opencode models"
+  },
+  "model-new": {
+    "result": "pass",
+    "evidence": "{\"id\":\"prt_149610b8e001Fr33Ut1qp7njPa\",\"reason\":\"stop\",\"snapshot\":\"3b0fe4698f268319e291720143bdd99cc1ff7e05\",\"messageID\":\"msg_14960d986001zTfcLMk8WLDVkf\",\"sessionID\":\"ses_eb69f2802ffehmVkVvzFHBVP6z\",\"type\":\"step-finish\",\"tokens\":{\"total\":14114,\"input\":14026,\"output\":29,\"reasoning\":59,\"cache\":{\"write\":0,\"read\":0}},\"cost\":0}",
+    "cmd": "opencode run \"回复模型名\" -m zai-coding-plan/glm-5.3-flash --format json"
+  },
+  "model-switch": {
+    "result": "fail",
+    "evidence": "swFinish={\"total\":14169,\"input\":14106,\"output\":16,\"reasoning\":47,\"cache\":{\"write\":0,\"read\":0}}, disk=",
+    "cmd": "opencode run \"第一轮回复1\" -m zhipuai-coding-plan/glm-5.3-flash && opencode run \"第二轮回复2\" -s ses_eb69eed85ffeZZuaDYrQTNu4hg -m zai-coding-plan/glm-5.3-flash"
+  },
+  "mode-switch": {
+    "result": "n/a",
+    "evidence": "opencode run CLI has no --mode flag or mode-switch command (supports --agent and --auto only)",
+    "cmd": "opencode run --help"
+  },
+  "quota": {
+    "result": "pass",
+    "evidence": "┌────────────────────────────────────────────────────────┐\n│                       OVERVIEW                         │\n├────────────────────────────────────────────────────────┤\n│Sessions                                             22 │\n│Messages                                            885 │\n│Days",
+    "cmd": "opencode stats"
+  }
+}

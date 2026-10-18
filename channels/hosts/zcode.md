@@ -8,12 +8,12 @@ upgrade_status: ✅ synced
 verified_version: "0.16.9"
 detected_version: "0.16.9"
 holder: shared
-last_verified_at: "2026-10-14T12:15:00+08:00"
+last_verified_at: "2026-10-14T17:35:00+08:00"
 capabilities:
   observe_only: true
   external_session_read: true
-  control_lifecycle: { start: true, resume: true, fork: false, stop: false }
-  steer_in_turn: { in_turn: false, next_turn: true, inbox_file: true }
+  control_lifecycle: { start: true, resume: true, fork: false, stop: true }
+  steer_in_turn: { in_turn: true, next_turn: true, inbox_file: true }
   coordinate_team: { spawn_subagent: true, peer_message: true, task_board: true }
 ---
 
@@ -21,13 +21,17 @@ capabilities:
 
 ## 一、渠道身份与接入入口
 - **角色定位**：日常文献/代码调研主力（跑智谱 GLM，速度快、成本低、智力稳）；同时担任 AP-Vibe 管理员常设会话（`sess_c328c093`）。
-- **版本组成**：CLI 内核 `0.16.9` + Electron 桌面壳 `3.14.3+`。
+- **版本组成**：CLI 内核 `0.16.9` + Electron 桌面壳 `3.14.3+` + ACP 桥接器 `zcode-acp-server@0.69.3`。
 - **读取与控制入口**：
-  - **外部无侵入直读（首选，不依赖 CDP）**：
+  - **无头 ACP 统一调用（首选，完全脱离桌面与 CDP `9240`）**：
+    - `node hub/tools/agent_gateway.js run --agent zcode --session <name> --prompt "<text>"`
+    - 或直接调 `acpx --format json --approve-reads --model "builtin:bigmodel-coding-plan\GLM-5.3-Flash" zcode -s <name> "<prompt>"`
+    - 底层机制：`zcode-acp-server` 自动拉起 `E:\zcode\resources\glm\zcode.cjs app-server --stdio`，在内存中使用主机指纹派生密钥解密 `~/.zcode/v2/credentials.json` 的 `enc:v1` 凭证并应答 `interaction/requestProviderRuntimeHeaders`。
+  - **外部无侵入直读（不依赖 CDP）**：
     - `opencli zcode list` / `opencli zcode tasks`
     - `opencli zcode subagents <sess_id> --alive`
     - `opencli zcode read-transcript <sess_id> --last N`
-  - **桌面 UI 控制（依赖 CDP 端口 `9240`）**：
+  - **桌面 UI 控制（次选，依赖 CDP 端口 `9240`）**：
     - `opencli zcode status` / `opencli zcode send` / `opencli zcode new` / `opencli zcode open`
 - **本地会话落盘位置（4 处互补数据源）**：
   1. CLI 主数据库：`~/.zcode/cli/db/db.sqlite`（含 `session` 708 条、`message` 43,663 条、`part` 122,424 条、`model_usage` 39,070 条、`session_task_link`）
@@ -40,7 +44,7 @@ capabilities:
 |---|---|---|---|---|
 | **外部读 Sessions** | SQLite + JSON + Rollout 直读 | ✅ 原生完备 | 只读挂载 `db.sqlite`（`session/message/part/model_usage/session_task_link`）+ `.zcode/v2/sessions/*.json` | `0.16.9` `〔实测:539会话〕` |
 | **活跃状态判定** | 识别真实运行 vs 僵尸会话 | ⚠️ 需修正 | **`tasks-index.sqlite` 的 `status='running'` 不可信（实测 8 个僵尸会话）**；必须按日志文件 `mtime` 与 `time_updated` 判活 | `0.16.9` `〔实测:8僵尸〕` |
-| **生命周期与发消息** | 桌面 CDP 注入与 CLI 会话 | 🟡 依赖 CDP | 桌面端经 CDP `9240` 调 `opencli zcode send/new`；CLI headless 無法独立解密桌面 `enc:v1` 凭证 | `0.16.9` `〔实测〕` |
+| **无头 ACP 生命周期** | 启动 / 命名会话恢复 / 取消 / 状态 | ✅ 原生完备 | `acpx zcode` + `zcode-acp-server@0.69.3`（已修复 Windows `where.exe`、`!process.versions.bun` 与正数 PID `process.kill`） | `0.16.9+0.69.3` `〔实测:T04/T07通过〕` |
 | **团队与子智能体** | DWF 动态工作流与子代理 | ✅ 原生支持 | `session.parent_id`（315 个子会话）+ `session_task_link`（17 条 DWF 链接）+ `Task` 工具 | `0.16.9` `〔实测〕` |
 
 ## 三、当前状态、安全参数与防呆红线

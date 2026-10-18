@@ -24,14 +24,14 @@
 | :--- | :--- | :--- | :--- |
 | **常驻与多会话控制** | `app-server` | 启动 JSON-RPC 2.0 常驻服务（`stdio://` / `ws://`）、管理后台 `daemon`、导出 TS/JSON Schema | 全套 `5+4` 能力原语 |
 | | `agents` | **`0.159.2` 新增**：在共享本地 `app-server` 守护进程上浏览/附着/停止所有智能体会话 | `观察`、`打断` |
-| | `queue` | **`0.159.2` 新增**：向已有会话排入下一轮消息（`--thread <ID> --message <TEXT>`） | `续`（跨进程无锁排队） |
+| | `queue` | **`0.159.2` 新增**：向已有会话排入下一轮消息（`--thread <ID> --message <TEXT>`） | `恢复会话`（跨进程无锁排队） |
 | | `remote-control` | **`0.159.2` 新增 `[EXP]`**：管理开启远程控制的 `app-server` 守护进程（`start`/`stop`/`pair`） | 远程通道接入 |
 | | `exec-server` | **`0.159.2` 新增 `[EXP]`**：独立启动或转发远程沙箱执行服务（`--listen` / `forward`） | 远端沙箱分离 |
-| **非交互单轮运行** | `exec` (别名 `e`) | 非交互式执行一轮（含子命令：`exec resume`、`exec fork`、`exec review`） | `开`、`续`、`分叉` |
-| | `review` | 顶层非交互式代码审查快捷入口（`--uncommitted`、`--base`、`--commit`） | 专项 `开` |
-| **会话生命周期管理** | `resume` | 在交互式 TUI 中恢复历史会话（`[SESSION_ID] [PROMPT] --last --all`） | `续`（TUI） |
+| **非交互单轮运行** | `exec` (别名 `e`) | 非交互式执行一轮（含子命令：`exec resume`、`exec fork`、`exec review`） | `新建会话`、`恢复会话`、`分叉` |
+| | `review` | 顶层非交互式代码审查快捷入口（`--uncommitted`、`--base`、`--commit`） | 专项 `新建会话` |
+| **会话生命周期管理** | `resume` | 在交互式 TUI 中恢复历史会话（`[SESSION_ID] [PROMPT] --last --all`） | `恢复会话`（TUI） |
 | | `fork` | 在交互式 TUI 中分叉历史会话（`[SESSION_ID] [PROMPT] --last --all`） | `分叉`（TUI） |
-| | `archive` / `unarchive` / `delete` | **`0.159.2` 新增**：归档、取消归档或永久删除本地会话（`--force`） | `关` |
+| | `archive` / `unarchive` / `delete` | **`0.159.2` 新增**：归档、取消归档或永久删除本地会话（`--force`） | `关闭会话` |
 | | `migrate-rollouts` | **`0.159.2` 新增**：将旧版巨型 JSONL 会话迁移为分页线程历史（`--apply --thread <ID>`） | `整理`（存储层） |
 | **扩展、工具与环境** | `mcp` | 管理外部 MCP 服务器（`list`、`get`、`add`、`remove`、`login`、`logout`） | 乙路工具与外部能力挂载 |
 | | `plugin` | **`0.159.2` 新增**：管理插件与插件市场（`add`、`list`、`marketplace`、`remove`） | 能力扩展 |

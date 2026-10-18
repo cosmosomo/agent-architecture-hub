@@ -338,7 +338,6 @@ export const SpanCard: FC<ReadonlyProps<SpanCardProps>> = ({
 
   const {
     connectors,
-    contentWidth,
     gridTemplateColumns,
     hasExpandButtonAsFirstChild,
   } = getSpanCardLayout({
@@ -400,20 +399,16 @@ export const SpanCard: FC<ReadonlyProps<SpanCardProps>> = ({
       >
         <div
           className={cn(
-            "relative grid w-full",
-            state.isSelected &&
-              "before:bg-agentprism-muted/75 before:absolute before:-top-2 before:h-2 before:w-full",
-            state.isSelected &&
-              "from-agentprism-muted/75 to-agentprism-muted/75 bg-gradient-to-b",
+            "relative grid w-full items-center rounded-lg transition-colors duration-150",
+            state.isSelected
+              ? "bg-agentprism-brand/15 ring-1 ring-agentprism-brand/45 shadow-[0_2px_14px_-3px_oklch(var(--agentprism-brand)/0.25)]"
+              : "hover:bg-agentprism-secondary/55",
           )}
           style={{
-            backgroundPosition: "top",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "auto calc(100% - 8px)",
             gridTemplateColumns,
           }}
         >
-          <div className="flex flex-nowrap">
+          <div className="flex flex-nowrap self-stretch">
             {connectors.map((connector, idx) => (
               <SpanCardConnector key={`${connector}-${idx}`} type={connector} />
             ))}
@@ -434,31 +429,32 @@ export const SpanCard: FC<ReadonlyProps<SpanCardProps>> = ({
           </div>
           <div
             className={cn(
-              "flex flex-wrap items-start gap-x-2 gap-y-1",
-              "mb-3 min-h-5 w-full cursor-pointer",
+              "flex min-w-0 flex-nowrap items-center justify-between gap-x-3",
+              "my-1 min-h-6 w-full cursor-pointer pr-2",
               getContentIndentClass(level, hasExpandButtonAsFirstChild),
             )}
           >
             <div
-              className="relative flex min-h-4 shrink-0 flex-wrap items-center gap-1.5"
-              style={{
-                minWidth: 140,
-                width: `min(${contentWidth}px, 100%)`,
-              }}
+              className="relative flex min-h-5 min-w-0 flex-1 items-center gap-2 overflow-hidden"
             >
               {avatar ? <Avatar size="4" {...avatar} /> : null}
 
               <h3
-                className="text-agentprism-foreground max-w-[22rem] truncate text-sm leading-[14px]"
+                className={cn(
+                  "min-w-0 flex-1 truncate text-[12.5px] leading-5",
+                  level === 0 ? "font-semibold text-agentprism-foreground" : "font-medium text-agentprism-foreground/95",
+                )}
                 title={data.title}
               >
                 {data.title}
               </h3>
 
-              <SpanCardBadges data={data} />
+              <div className="shrink-0">
+                <SpanCardBadges data={data} />
+              </div>
             </div>
 
-            <div className="flex grow flex-wrap items-center justify-end gap-1">
+            <div className="flex shrink-0 items-center justify-end gap-2">
               {expandButton === "outside" ? statusBadge : null}
 
               <SpanCardTimeline
@@ -467,8 +463,8 @@ export const SpanCard: FC<ReadonlyProps<SpanCardProps>> = ({
                 spanCard={data}
               />
 
-              <div className="flex items-center gap-2">
-                <span className="text-agentprism-foreground inline-block w-14 flex-1 shrink-0 whitespace-nowrap px-1 text-right text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="text-agentprism-secondary-foreground font-mono inline-block w-14 shrink-0 whitespace-nowrap px-0.5 text-right text-[11px] tabular-nums">
                   {formatDuration(durationMs)}
                 </span>
 

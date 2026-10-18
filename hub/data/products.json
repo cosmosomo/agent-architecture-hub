@@ -1,0 +1,416 @@
+{
+  "about": "产品表：本机每个智能体产品一行，是唯一的产品名单。后端（gateway.ts 的 CHANNEL_PROFILES）和命令行网关（agent_gateway.js）都从这里取，不再各写一份。routes 写每条适配路线上每个动作实际执行的命令；codeMark 是它在 gateway.ts 里的特征串，probe/scripts/tables.js 核对它还在，对不上就报出来。env 里的 {HOME} 在启动时展开；envFrom 表示要在启动时从别处读（只有 Claude 一处，代码在 claudeProviderEnv）。",
+  "routes": {
+    "acpx": {
+      "does": "经 acpx 走各产品的 ACP 桥；每一轮起一个 acpx 进程，会话状态记在 ~/.acpx/sessions/",
+      "verbs": {
+        "new": {
+          "command": "acpx --format json --cwd <目录> [--model <模型>] [--append-system-prompt <全局说明>] <acpxAgent> sessions ensure --name <会话名> [--resume-session <原生编号>]",
+          "codeMark": "'ensure'"
+        },
+        "send": {
+          "command": "acpx --format json <权限> --timeout <秒> --cwd <目录> [--model <模型>] <acpxAgent> prompt -s <会话名> -f -（话从 stdin 进，带图时是 ACP 内容块数组）",
+          "codeMark": "'prompt', '-s'"
+        },
+        "cancel": {
+          "command": "acpx --format json <acpxAgent> cancel -s <会话名>，再结束这一轮的进程",
+          "codeMark": "cancel -s"
+        },
+        "set-model": {
+          "command": "acpx --cwd <目录> <acpxAgent> set-model <模型> -s <会话名>",
+          "codeMark": "'set-model'"
+        }
+      }
+    },
+    "agentapi": {
+      "does": "Antigravity 自带的 language_server.exe（由 gateway.ts 的 discoverAntigravityLs 找到路径、端口和 csrf）",
+      "verbs": {
+        "new": {
+          "command": "language_server.exe agentapi new-conversation --model=<档位> --title=<标题> <话>",
+          "codeMark": "'new-conversation'"
+        },
+        "send": {
+          "command": "language_server.exe agentapi send-message <对话编号> <话>",
+          "codeMark": "'send-message'"
+        },
+        "cancel": {
+          "command": "POST http://127.0.0.1:<端口>/exa.language_server_pb.LanguageServerService/CancelCascadeInvocation",
+          "codeMark": "CancelCascadeInvocation"
+        }
+      }
+    },
+    "opencli": {
+      "does": "经 OpenCLI 用 CDP 操作桌面端界面；同一时刻只能一个写者，会和人抢窗口",
+      "verbs": {
+        "send": {
+          "command": "opencli <产品> send <话>",
+          "codeMark": null
+        }
+      }
+    },
+    "app-server": {
+      "does": "Codex 的常驻 JSON-RPC 服务（codex app-server，stdio）。驱动在 trace/apps/cli/src/drivers/codex_app_server.ts，已接进后端 gateway.ts",
+      "inBackend": true,
+      "verbs": {
+        "new": {
+          "command": "thread/start（再 thread/name/set 命名）",
+          "codeMark": "'thread/start'"
+        },
+        "resume": {
+          "command": "thread/resume，重启后要重新带上 model、modelProvider、cwd、sandbox、approvalPolicy",
+          "codeMark": "'thread/resume'"
+        },
+        "send": {
+          "command": "turn/start",
+          "codeMark": "'turn/start'"
+        },
+        "steer": {
+          "command": "turn/steer（带 expectedTurnId，插进当前这一轮）",
+          "codeMark": "'turn/steer'"
+        },
+        "cancel": {
+          "command": "turn/interrupt",
+          "codeMark": "'turn/interrupt'"
+        },
+        "fork": {
+          "command": "thread/fork",
+          "codeMark": "'thread/fork'"
+        },
+        "compact": {
+          "command": "thread/compact/start，等它的压缩轮结束再发下一轮",
+          "codeMark": "'thread/compact/start'"
+        },
+        "set-model": {
+          "command": "thread/settings/update（会话级），或 turn/start 带 model",
+          "codeMark": "'thread/settings/update'"
+        },
+        "approve": {
+          "command": "服务端请求 item/commandExecution|fileChange|permissions/requestApproval，回复 { decision }",
+          "codeMark": "requestApproval"
+        }
+      }
+    },
+    "stream-json": {
+      "does": "Claude Code 的常驻双向流（claude -p --input-format stream-json --output-format stream-json --permission-prompt-tool stdio）。驱动在 trace/apps/cli/src/drivers/claude_stream.ts，已接进后端 gateway.ts",
+      "inBackend": true,
+      "verbs": {
+        "new": {
+          "command": "claude -p --input-format stream-json --output-format stream-json --permission-prompt-tool stdio --model <模型>（常驻进程）",
+          "codeMark": "'--input-format', 'stream-json'"
+        },
+        "resume": {
+          "command": "同上加 --resume <会话编号>",
+          "codeMark": "'--resume'"
+        },
+        "send": {
+          "command": "stdin 写一条 {type:\"user\",message}；一轮进行中再写，会自成下一轮（注入·下一轮），不是插进当前这一轮",
+          "codeMark": "type: 'control_request'"
+        },
+        "cancel": {
+          "command": "control_request subtype=interrupt",
+          "codeMark": "'interrupt'"
+        },
+        "fork": {
+          "command": "同上加 --resume <父会话编号> --fork-session",
+          "codeMark": "'--fork-session'"
+        },
+        "set-model": {
+          "command": "control_request subtype=set_model（协议有；只列出了可选模型，没换模型真跑一轮，未证实）",
+          "codeMark": "'set_model'"
+        },
+        "approve": {
+          "command": "服务端发 control_request subtype=can_use_tool，一轮中挂起；回 control_response 放行或拒绝",
+          "codeMark": "'can_use_tool'"
+        }
+      }
+    }
+  },
+  "products": [
+    {
+      "id": "codex",
+      "name": "Codex",
+      "label": "Codex",
+      "aliases": [],
+      "route": "app-server",
+      "acpxAgent": "codex",
+      "adapter": "codex app-server (stdio JSON-RPC)",
+      "backend": true,
+      "readKind": "codex",
+      "sessionStores": [
+        "~/.codex/sessions",
+        "~/.codex/archived_sessions"
+      ],
+      "hostCard": "codex.md",
+      "defaultModel": "gpt-6-luna",
+      "models": [
+        "gpt-6-luna",
+        "gpt-6.1-sol"
+      ],
+      "forbiddenModels": [
+        "2chat"
+      ],
+      "env": {
+        "HTTP_PROXY": "http://127.0.0.1:7892",
+        "HTTPS_PROXY": "http://127.0.0.1:7892"
+      },
+      "accent": "#10B981",
+      "badge": "App-Server · OpenAI",
+      "notes": "经 codex app-server 常驻进程驱动（插话 turn/steer、打断 turn/interrupt、分叉、压缩、中途换模型、轮内挂起审批 requestApproval 均已接进后端）"
+    },
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "label": "Claude",
+      "aliases": [
+        "claude-code"
+      ],
+      "route": "stream-json",
+      "acpxAgent": "claude",
+      "adapter": "claude --input-format stream-json --permission-prompt-tool stdio",
+      "backend": true,
+      "readKind": "claude-code",
+      "sessionStores": [
+        "~/.claude/projects"
+      ],
+      "hostCard": "claude-code.md",
+      "defaultModel": "haiku",
+      "models": [
+        "haiku",
+        "sonnet",
+        "opus"
+      ],
+      "forbiddenModels": [],
+      "env": {},
+      "envFrom": "claude-settings",
+      "accent": "#F59E0B",
+      "badge": "Stream-JSON · Anthropic",
+      "notes": "经 claude --input-format stream-json --permission-prompt-tool stdio 常驻双向流驱动（轮内挂起审批 can_use_tool、打断 interrupt、热续写、分叉已接进后端；插话排下一轮，中途换模型待换模型实测）"
+    },
+    {
+      "id": "zcode",
+      "name": "ZCode",
+      "label": "ZCode",
+      "aliases": [],
+      "route": "acpx",
+      "acpxAgent": "zcode",
+      "adapter": "zcode-acp-server@0.69.3",
+      "backend": true,
+      "readKind": "zcode",
+      "sessionStores": [
+        "~/.zcode/v2/sessions",
+        "~/.zcode/cli/db/db.sqlite"
+      ],
+      "hostCard": "zcode.md",
+      "defaultModel": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+      "models": [
+        "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+        "builtin:bigmodel-coding-plan\\GLM-5.3",
+        "new-provider-2\\ark-code-latest"
+      ],
+      "forbiddenModels": [],
+      "env": {},
+      "accent": "#818CF8",
+      "badge": "ACP · 智谱 GLM",
+      "notes": "经 zcode-acp-server 无头连接，共享 ~/.zcode/v2 会话库"
+    },
+    {
+      "id": "workbuddy",
+      "name": "WorkBuddy",
+      "label": "WorkBuddy",
+      "aliases": [
+        "codebuddy"
+      ],
+      "route": "acpx",
+      "acpxAgent": "workbuddy",
+      "adapter": "codebuddy --acp (v2.160.0)",
+      "backend": true,
+      "readKind": "workbuddy",
+      "sessionStores": [
+        "~/.workbuddy/projects"
+      ],
+      "hostCard": "workbuddy.md",
+      "defaultModel": "custom-local:glm-5.3",
+      "models": [
+        "custom-local:glm-5.3",
+        "custom-local:glm-5.3-flash"
+      ],
+      "forbiddenModels": [],
+      "env": {
+        "CODEBUDDY_CONFIG_DIR": "{HOME}/.workbuddy",
+        "WORKBUDDY_CONFIG_DIR": "{HOME}/.workbuddy",
+        "ACC_PRODUCT_CONFIG_V3": "{\"authentication\":{\"type\":\"custom-token\",\"attributes\":{\"token\":\"wb-local-byok\"}}}"
+      },
+      "accent": "#06B6D4",
+      "badge": "ACP · CodeBuddy",
+      "notes": "经 codebuddy --acp 原生连接，注入本地 BYOK 凭证，模型名带 custom-local: 前缀经 ~/.workbuddy/models.json 路由"
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "label": "OpenCode",
+      "aliases": [],
+      "route": "acpx",
+      "acpxAgent": "opencode",
+      "adapter": "opencode acp (v1.18.33)",
+      "backend": true,
+      "readKind": "opencode",
+      "sessionStores": [
+        "~/.local/share/opencode/storage"
+      ],
+      "hostCard": "opencode.md",
+      "defaultModel": "opencode/big-pickle",
+      "models": [
+        "opencode/big-pickle",
+        "zhipuai-coding-plan/glm-5.3-flash",
+        "zhipuai-coding-plan/glm-5.3",
+        "zhipuai-coding-plan/glm-5.3-highspeed",
+        "deepseek/deepseek-flash"
+      ],
+      "forbiddenModels": [],
+      "env": {},
+      "accent": "#A78BFA",
+      "badge": "ACP · OpenCode",
+      "notes": "经 opencode acp 标准 stdio 连接；模型名以 opencode acp 10-18 自报为准"
+    },
+    {
+      "id": "hermes",
+      "name": "Hermes Agent",
+      "label": "Hermes",
+      "aliases": [],
+      "route": "acpx",
+      "acpxAgent": "hermes",
+      "adapter": "hermes acp (v0.21.1)",
+      "backend": true,
+      "readKind": "hermes",
+      "sessionStores": [
+        "~/AppData/Local/hermes/state.db"
+      ],
+      "hostCard": null,
+      "defaultModel": "custom:glm-5.3",
+      "models": [
+        "custom:glm-5.3",
+        "custom:zai-glm-5.2:glm-5.2",
+        "custom:codex-packycode:gpt-5.5",
+        "custom:codex-aizzz:gpt-5.6-sol",
+        "custom:aizzz-grok:grok-4.5"
+      ],
+      "forbiddenModels": [],
+      "env": {
+        "HERMES_ACP_SKIP_CONFIGURED_MCP": "1",
+        "PYTHONIOENCODING": "utf-8",
+        "PYTHONUTF8": "1"
+      },
+      "accent": "#F97316",
+      "badge": "ACP · Nous Hermes",
+      "notes": "经 hermes acp 原生连接 Nous Research Hermes Agent；还没有档案卡（hosts/hermes.md 不存在）"
+    },
+    {
+      "id": "antigravity",
+      "name": "Antigravity",
+      "label": "Antigravity",
+      "aliases": [
+        "agy"
+      ],
+      "route": "agentapi",
+      "acpxAgent": null,
+      "adapter": "language_server.exe agentapi + Connect-RPC",
+      "backend": true,
+      "readKind": "antigravity",
+      "sessionStores": [
+        "~/.gemini/antigravity/brain/<对话编号>/.system_generated/logs/transcript.jsonl",
+        "~/.gemini/antigravity/conversation_summaries.db"
+      ],
+      "hostCard": "antigravity.md",
+      "defaultModel": "pro",
+      "models": [
+        "pro",
+        "flash",
+        "flash_lite"
+      ],
+      "forbiddenModels": [],
+      "modelNames": {
+        "pro": "Gemini 4 Argon (High)",
+        "flash": "Gemini 4 Argon (Low) / Gemini 3.8 Flash（待核）",
+        "flash_lite": "Gemini 3.8 Flash (Low)"
+      },
+      "env": {},
+      "accent": "#EC4899",
+      "badge": "LS · Antigravity",
+      "notes": "agentapi 只认 pro、flash、flash_lite 三档；发给已有对话不传模型，沿用对话自己的模型"
+    },
+    {
+      "id": "droid",
+      "name": "Factory Droid",
+      "label": "Droid",
+      "aliases": [
+        "factory-droid",
+        "factory"
+      ],
+      "route": "acpx",
+      "acpxAgent": "droid",
+      "adapter": "droid exec --output-format acp (v0.228.0)",
+      "backend": false,
+      "readKind": "factory",
+      "sessionStores": [
+        "~/.factory/sessions"
+      ],
+      "hostCard": "factory-droid.md",
+      "defaultModel": "claude-sonnet-4-5-20250929",
+      "models": [
+        "claude-sonnet-4-5-20250929"
+      ],
+      "forbiddenModels": [],
+      "env": {},
+      "accent": "#64748B",
+      "badge": "ACP · Factory",
+      "notes": "只经命令行网关独立路径；要 FACTORY_API_KEY 或 droid 已登录"
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini CLI",
+      "label": "Gemini",
+      "aliases": [
+        "gemini-cli"
+      ],
+      "route": "acpx",
+      "acpxAgent": "gemini",
+      "adapter": "gemini --acp (v0.62.0)",
+      "backend": false,
+      "readKind": "gemini",
+      "sessionStores": [
+        "~/.gemini/tmp"
+      ],
+      "hostCard": "gemini-cli.md",
+      "defaultModel": null,
+      "models": [],
+      "forbiddenModels": [],
+      "env": {},
+      "accent": "#3B82F6",
+      "badge": "ACP · Gemini",
+      "notes": "只经命令行网关独立路径；非交互要 GEMINI_API_KEY 或 GOOGLE_API_KEY"
+    },
+    {
+      "id": "doubao-desktop",
+      "name": "豆包桌面端",
+      "label": "Doubao",
+      "aliases": [
+        "doubao"
+      ],
+      "route": "opencli",
+      "acpxAgent": null,
+      "adapter": "opencli doubao (CDP)",
+      "backend": false,
+      "cdpPort": 9225,
+      "readKind": null,
+      "sessionStores": [],
+      "hostCard": "doubao-desktop.md",
+      "defaultModel": null,
+      "models": [],
+      "forbiddenModels": [],
+      "env": {},
+      "accent": "#94A3B8",
+      "badge": "CDP · 豆包",
+      "notes": "经 opencli 操作桌面界面；人在用时（holder=user-active）不抢"
+    }
+  ]
+}

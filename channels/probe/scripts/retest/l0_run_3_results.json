@@ -1,0 +1,23 @@
+{
+  "resume-native": {
+    "result": "pass",
+    "evidence": "{\"type\":\"text\",\"timestamp\":1792233540891,\"sessionID\":\"ses_eb68ee07fffeNWx76FfppCNjwy\",\"part\":{\"id\":\"prt_149718ce6001NTl4RdaZ5Dyin6\",\"messageID\":\"msg_1497160df001dbEgXe4w9O2EO1\",\"sessionID\":\"ses_eb68ee07fffeNWx76FfppCNjwy\",\"type\":\"text\",\"text\":\"PROBE_SECRET_278091\",\"time\":{\"start\":1792233540838,\"end\":1792233540884}}}",
+    "cmd": "opencode run \"之前告诉你的暗号是什么？请只完整复述暗号本身\" -s ses_eb68ee07fffeNWx76FfppCNjwy -m zhipuai-coding-plan/glm-5.3-flash --format json",
+    "condition": "原生命令行会话，第二轮提问复述暗号",
+    "note": "准确回答原暗号 PROBE_SECRET_278091"
+  },
+  "fork": {
+    "result": "pass",
+    "evidence": "{\"baseSessionId\":\"ses_eb68ee07fffeNWx76FfppCNjwy\",\"forkedSessionId\":\"ses_eb68e6b08ffebJ2r5LqjC2wqJh\",\"textEvent\":{\"type\":\"text\",\"timestamp\":1792233562727,\"sessionID\":\"ses_eb68e6b08ffebJ2r5LqjC2wqJh\",\"part\":{\"id\":\"prt_14971e204001u2uahnZPRwxqQw\",\"messageID\":\"msg_1497196e2001YsE7sSKpHc4nF6\",\"sessionID\":\"ses_eb68e6b08ffebJ2r5LqjC2wqJh\",\"type\":\"text\",\"text\":\"PROBE_SECRET_278091\",\"time\":{\"start\":1792233562628,\"end\":1792233562720}}}}",
+    "cmd": "opencode run \"我们现在分叉到了新会话，请回答原会话的暗号是什么？只回复暗号\" -s ses_eb68ee07fffeNWx76FfppCNjwy --fork -m zhipuai-coding-plan/glm-5.3-flash --format json",
+    "condition": "原生命令行带 --fork 分叉，在新会话中提问原暗号",
+    "note": "新会话 ses_eb68e6b08ffebJ2r5LqjC2wqJh 继承原会话上下文并成功复述暗号 PROBE_SECRET_278091"
+  },
+  "model-new": {
+    "result": "pass",
+    "evidence": "{\"info\":{\"role\":\"user\",\"time\":{\"created\":1792233565128},\"agent\":\"build\",\"model\":{\"providerID\":\"zai-coding-plan\",\"modelID\":\"glm-5.3-flash\"},\"summary\":{\"diffs\":[]},\"id\":\"msg_14971ebc8001iMkA4hfXWBg07i\",\"sessionID\":\"ses_eb68e14a6ffehXkV4598Qk1Ls0\"},\"parts\":[{\"type\":\"text\",\"text\":\"回复测试成功四个字\",\"id\":\"prt_14971ebd0001f17eBHSo61g91s\",\"sessionID\":\"ses_eb68e14a6ffehXkV4598Qk1Ls0\",\"messageID\":\"msg_14971ebc800",
+    "cmd": "opencode run \"回复测试成功四个字\" -m zai-coding-plan/glm-5.3-flash --title probe-opencode-model-new-01 --format json",
+    "condition": "使用 -m zai-coding-plan/glm-5.3-flash 创建新会话",
+    "note": "本地存储或导出元数据确认包含指定模型：zai-coding-plan/glm-5.3-flash"
+  }
+}

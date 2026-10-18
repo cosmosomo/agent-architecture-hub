@@ -1,0 +1,283 @@
+{
+  "nativeDispatch": [
+    {
+      "channel": "zcode",
+      "inputTraceSessionId": "zcode:sess_2f9d76a9-0152-48a2-9b09-7525811c9715",
+      "assignedSessionName": "hub-zcode",
+      "returnedRunTraceSessionId": "zcode:sess_2f9d76a9-0152-48a2-9b09-7525811c9715",
+      "response": {
+        "ok": true,
+        "status": "running",
+        "action": "started",
+        "runId": "run_1792244750140_ag7m",
+        "channel": "zcode",
+        "sessionName": "hub-zcode",
+        "run": {
+          "runId": "run_1792244750140_ag7m",
+          "channel": "zcode",
+          "channelId": "zcode",
+          "sessionName": "hub-zcode",
+          "traceSessionId": "zcode:sess_2f9d76a9-0152-48a2-9b09-7525811c9715",
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "model": "builtin:bigmodel-coding-plan\\GLM-5.3-Flash",
+          "permissions": "all",
+          "source": "web",
+          "prompt": "PING-TEST-NATIVE-DISPATCH",
+          "status": "running",
+          "startedAt": "2026-10-17T13:45:50.140Z",
+          "thoughts": "",
+          "text": "",
+          "tools": [],
+          "initialMsgCount": 0,
+          "retryCount": 0
+        }
+      }
+    },
+    {
+      "channel": "codex",
+      "inputTraceSessionId": "codex:01a14366-e657-7af2-8e24-4064d3a80609",
+      "assignedSessionName": "hub-codex",
+      "returnedRunTraceSessionId": "codex:01a14366-e657-7af2-8e24-4064d3a80609",
+      "response": {
+        "ok": true,
+        "status": "running",
+        "action": "started",
+        "runId": "run_1792244751690_scp7",
+        "channel": "codex",
+        "sessionName": "hub-codex",
+        "run": {
+          "runId": "run_1792244751690_scp7",
+          "channel": "codex",
+          "channelId": "codex",
+          "sessionName": "hub-codex",
+          "traceSessionId": "codex:01a14366-e657-7af2-8e24-4064d3a80609",
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "model": "gpt-6-luna",
+          "permissions": "all",
+          "source": "web",
+          "prompt": "PING-TEST-NATIVE-DISPATCH",
+          "status": "running",
+          "startedAt": "2026-10-17T13:45:51.690Z",
+          "thoughts": "",
+          "text": "",
+          "tools": [],
+          "initialMsgCount": 0,
+          "retryCount": 0
+        }
+      }
+    },
+    {
+      "channel": "claude",
+      "inputTraceSessionId": "claude-code:455376bf-3926-4c9b-8324-e29d545a99fe",
+      "assignedSessionName": "hub-claude",
+      "returnedRunTraceSessionId": "claude-code:455376bf-3926-4c9b-8324-e29d545a99fe",
+      "response": {
+        "ok": true,
+        "status": "running",
+        "action": "started",
+        "runId": "run_1792244753266_btif",
+        "channel": "claude",
+        "sessionName": "hub-claude",
+        "run": {
+          "runId": "run_1792244753266_btif",
+          "channel": "claude",
+          "channelId": "claude",
+          "sessionName": "hub-claude",
+          "traceSessionId": "claude-code:455376bf-3926-4c9b-8324-e29d545a99fe",
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "model": "sonnet",
+          "permissions": "all",
+          "source": "web",
+          "prompt": "PING-TEST-NATIVE-DISPATCH",
+          "status": "running",
+          "startedAt": "2026-10-17T13:45:53.266Z",
+          "thoughts": "",
+          "text": "",
+          "tools": [],
+          "initialMsgCount": 0,
+          "retryCount": 0
+        }
+      }
+    },
+    {
+      "channel": "antigravity",
+      "inputTraceSessionId": "antigravity:1b07e8ee-2b57-4420-9651-2239b4f8a439",
+      "assignedSessionName": "agy-1b07e8ee",
+      "returnedRunTraceSessionId": "antigravity:1b07e8ee-2b57-4420-9651-2239b4f8a439",
+      "response": {
+        "ok": true,
+        "status": "running",
+        "action": "started",
+        "runId": "run_1792244754861_qk73",
+        "channel": "antigravity",
+        "sessionName": "agy-1b07e8ee",
+        "run": {
+          "runId": "run_1792244754861_qk73",
+          "channel": "antigravity",
+          "channelId": "antigravity",
+          "sessionName": "agy-1b07e8ee",
+          "traceSessionId": "antigravity:1b07e8ee-2b57-4420-9651-2239b4f8a439",
+          "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+          "model": "pro",
+          "permissions": "all",
+          "source": "web",
+          "prompt": "PING-TEST-NATIVE-DISPATCH",
+          "status": "running",
+          "startedAt": "2026-10-17T13:45:54.861Z",
+          "thoughts": "",
+          "text": "",
+          "tools": [],
+          "initialMsgCount": 168,
+          "retryCount": 0
+        }
+      }
+    }
+  ],
+  "queueTest": {
+    "ok": true,
+    "status": "queued",
+    "action": "queued",
+    "queueLength": 1,
+    "channel": "antigravity",
+    "sessionName": "probe-l2a-queue-test",
+    "queuePosition": 1,
+    "queuedItem": {
+      "id": "q_1792244766390_z8ma",
+      "prompt": "QUEUE_TEST_PROMPT",
+      "model": "flash_lite",
+      "permissions": "all",
+      "source": "web",
+      "enqueuedAt": "2026-10-17T13:46:06.390Z"
+    }
+  },
+  "interruptTest": {
+    "ok": true,
+    "status": "running",
+    "action": "started",
+    "runId": "run_1792244766455_qaaa",
+    "channel": "antigravity",
+    "sessionName": "probe-l2a-queue-test",
+    "run": {
+      "runId": "run_1792244766455_qaaa",
+      "channel": "antigravity",
+      "channelId": "antigravity",
+      "sessionName": "probe-l2a-queue-test",
+      "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "model": "flash_lite",
+      "permissions": "all",
+      "source": "web",
+      "prompt": "INTERRUPT_TEST_PROMPT",
+      "status": "running",
+      "startedAt": "2026-10-17T13:46:06.455Z",
+      "thoughts": "",
+      "text": "",
+      "tools": [],
+      "initialMsgCount": 1,
+      "retryCount": 0
+    }
+  },
+  "cancelTest": {
+    "ok": true,
+    "channel": "antigravity",
+    "sessionName": "probe-l2a-queue-test"
+  },
+  "postCancelRun": {
+    "runId": "run_1792244766618_8gnk",
+    "channel": "antigravity",
+    "channelId": "antigravity",
+    "sessionName": "probe-l2a-queue-test",
+    "traceSessionId": "antigravity:161f1122-26ea-4f7f-94f0-2ff2ef27b84b",
+    "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+    "model": "flash_lite",
+    "permissions": "all",
+    "source": "web",
+    "prompt": "QUEUE_TEST_PROMPT",
+    "status": "aborted",
+    "startedAt": "2026-10-17T13:46:06.618Z",
+    "thoughts": "",
+    "text": "",
+    "tools": [],
+    "initialMsgCount": 1,
+    "retryCount": 0,
+    "endedAt": "2026-10-17T13:46:06.717Z",
+    "durationMs": 99
+  },
+  "resumeTest": {
+    "ok": true,
+    "status": "running",
+    "action": "started",
+    "runId": "run_1792244767797_v98x",
+    "channel": "antigravity",
+    "sessionName": "probe-l2a-queue-test",
+    "run": {
+      "runId": "run_1792244767797_v98x",
+      "channel": "antigravity",
+      "channelId": "antigravity",
+      "sessionName": "probe-l2a-queue-test",
+      "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "model": "flash_lite",
+      "permissions": "all",
+      "source": "web",
+      "prompt": "RESUME_HINT_TOKEN_999",
+      "status": "running",
+      "startedAt": "2026-10-17T13:46:07.797Z",
+      "thoughts": "",
+      "text": "",
+      "tools": [],
+      "initialMsgCount": 1,
+      "retryCount": 0,
+      "resumedByMeta": "meta_resumer"
+    }
+  },
+  "modelSwitch": {
+    "zcode": {
+      "ok": true,
+      "channel": "zcode",
+      "sessionName": "probe-l2a-zcode-round",
+      "model": "builtin:bigmodel-coding-plan\\GLM-5.3"
+    },
+    "antigravity": {
+      "ok": true,
+      "channel": "antigravity",
+      "sessionName": "probe-l2a-antigravity-round",
+      "model": "flash"
+    }
+  },
+  "handoffTest": {
+    "response": {
+      "ok": true,
+      "status": "running",
+      "action": "started",
+      "runId": "run_1792244768100_e6p3",
+      "channel": "antigravity",
+      "sessionName": "probe-l2a-handoff-dst",
+      "run": {
+        "runId": "run_1792244768100_e6p3",
+        "channel": "antigravity",
+        "channelId": "antigravity",
+        "sessionName": "probe-l2a-handoff-dst",
+        "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+        "model": "flash",
+        "permissions": "all",
+        "source": "web",
+        "prompt": "【跨智能体协同接力 (Session Handoff): ZCode -> AGY】\n- 源会话: ZCode (probe-l2a-zcode-round)\n- 工作目录: E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\n- 最近 2 轮上下文摘要:\n- [第 1 轮] 用户指令: 请牢记暗号：SEC_ZCODE_131692，只回复两个字：收到。不要调用任何工具。\n  前序回复摘要: 收到\n- [第 2 轮] 用户指令: 上一轮我告诉你的暗号是什么？请只完整回复该暗号本身。\n  前序回复摘要: SEC_ZCODE_131692\n---\n【接力执行指令】: HANDOFF_INSTRUCTION_TOKEN_123",
+        "status": "running",
+        "startedAt": "2026-10-17T13:46:08.100Z",
+        "thoughts": "",
+        "text": "",
+        "tools": [],
+        "initialMsgCount": 0,
+        "retryCount": 0
+      },
+      "fromChannel": "zcode",
+      "fromSessionName": "probe-l2a-zcode-round",
+      "toChannel": "antigravity",
+      "toSessionName": "probe-l2a-handoff-dst",
+      "toModel": "flash",
+      "cwd": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub",
+      "traceSessionId": "new:antigravity:probe-l2a-handoff-dst"
+    },
+    "promptSample": "【跨智能体协同接力 (Session Handoff): ZCode -> AGY】\n- 源会话: ZCode (probe-l2a-zcode-round)\n- 工作目录: E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\n- 最近 2 轮上下文摘要:\n- [第 1 轮] 用户指令: 请牢记暗号：SEC_ZCODE_131692，只回复两个字：收到。不要调用任何工具。\n  前序回复摘要: 收到\n- [第 2 轮] 用户指令: 上一轮我告诉你的暗号是什么？请只完整回复该暗号本身。\n  前序回复摘要: SEC_ZCODE_131692\n---\n【接力执行指令】: HANDOFF_INSTRUCTION_TOKEN_123"
+  },
+  "pendingApprovalsCount": 0
+}

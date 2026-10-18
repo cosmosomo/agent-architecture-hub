@@ -1,0 +1,16 @@
+import fs from "node:fs";
+import path from "node:path";
+
+const targetFile = "channels/probe/blackboard.jsonl";
+
+const newRows = [
+  {"at":"2026-10-17T20:58:00+08:00","by":"agy-pro-claude2","family":"claude","layer":"L0","route":"claude/L0/claude-cli","surface":"native-cli","capability":"steer","result":"fail","condition":"claude -p --input-format stream-json --output-format stream-json，中途管道写入第二个 user 消息","evidence":"第 1 轮依然完整输出 1~30（result_index: 0），第 2 条 user 消息被作为下一轮排队执行（result_index: 1 输出 'STEER_TRIGGERED'），未能在本轮内生效","cmd":"channels/probe/scripts/retest/test_claude_l0_steer.mjs","note":"claude -p stream-json 将后续管道消息作为新轮次顺序排队，当前轮不受插话打断"},
+  {"at":"2026-10-17T20:58:01+08:00","by":"agy-pro-claude2","family":"claude","layer":"L1a","route":"claude/L1a/claude-agent-acp","surface":"acp-bridge","capability":"steer","result":"fail","condition":"首个 session/prompt 运行中途发送并发的第二个 session/prompt","evidence":"ACP桥返回 JSON-RPC 报错: {\"code\":-32603,\"message\":\"Failed to process request: Claude is already running. Wait for completion or send cancel request first.\"}，且首轮正常输出未受影响","cmd":"channels/probe/scripts/retest/test_claude_l1a_steer.mjs","note":"ACP桥协议层显式拒绝一轮未完时的 prompt 请求，不支持在当前轮插话"},
+  {"at":"2026-10-17T20:58:02+08:00","by":"agy-pro-claude2","family":"claude","layer":"L1a","route":"claude/L1a/claude-agent-acp","surface":"acp-bridge","capability":"resume-native","result":"pass","condition":"claude -p 原生新建会话存入暗号，ACP 桥 loadSession 加载并提问","evidence":"原生会话 013af44f-1769-43ea-a6ad-41946f0a7f35 存有暗号 PROBE_NATIVE_SECRET_9824，ACP 桥 loadSession 成功载入，第二轮 prompt 提问暗号，模型返回 [{\"text\":\"PROBE_NATIVE_SECRET_9824\",\"type\":\"text\"}]","cmd":"channels/probe/scripts/retest/test_claude_l1a_resume_native_fixed.mjs","note":"ACP 桥 loadSession 成功读取原生 CLI 创建的磁盘会话文件并完整继承历史上下文"},
+  {"at":"2026-10-17T20:58:03+08:00","by":"agy-pro-claude2","family":"claude","layer":"L1a","route":"claude/L1a/claude-agent-acp","surface":"acp-bridge","capability":"permission","result":"pass","condition":"setSessionMode 设为 default 模式，触发 Write 工具写文件","evidence":"客户端中途收到 session/request_permission 原文: toolCallId 'toolu_01DgtQ6hKPnLoFyWAwB9dCCH', name 'Write', options 含 'allow-once'；客户端返回 outcome 'selected' optionId 'allow-once' 后，文件成功写入 PERMISSION_APPROVED_TOKEN_7731","cmd":"channels/probe/scripts/retest/test_claude_l1a_permission_write.mjs","note":"default 模式下触发破坏性操作（如写文件）会中途向客户端派发审批请求，客户端批准后正常完成操作"},
+  {"at":"2026-10-17T20:58:04+08:00","by":"agy-pro-claude2","family":"claude","layer":"L1b","route":"claude/L1b/acpx","surface":"acpx","capability":"model-new","result":"pass","condition":"acpx --format json --model <haiku|sonnet> claude exec","evidence":"haiku 运行返回元数据 usage_update._meta._claude/model: 'claude-haiku-5-5' 且 quota.model_usage 为 'claude-haiku-5-5'；sonnet 运行返回元数据 usage_update._meta._claude/model: 'claude-sonnet-5-5' 且 quota.model_usage 为 'claude-sonnet-5-5'","cmd":"channels/probe/scripts/retest/test_claude_l1b_model_new_verified.mjs","note":"acpx 命令行通过全局 --model 参数在创建执行时正确将指定模型传递给桥并在元数据中生效记录"}
+];
+
+const contentToAppend = newRows.map(r => JSON.stringify(r)).join("\n") + "\n";
+fs.appendFileSync(targetFile, contentToAppend, "utf8");
+console.log(`Successfully appended ${newRows.length} rows to ${targetFile}`);

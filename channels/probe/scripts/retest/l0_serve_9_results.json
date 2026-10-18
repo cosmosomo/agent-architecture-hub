@@ -1,0 +1,65 @@
+{
+  "model-list": {
+    "result": "pass",
+    "evidence": "{\"location\":{\"directory\":\"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\",\"project\":{\"id\":\"c3bd25d3876e156e006b698245115cf5d1fa12a4\",\"directory\":\"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\"}},\"data\":[{\"id\":\"ll-alpha-free\",\"providerID\":\"opencode\",\"name\":\"LL Alpha Free\",\"api\":{\"id\":\"ll-alpha-free\",\"type\":\"native\",\"url\":\"https://op",
+    "cmd": "GET http://127.0.0.1:44230/api/model",
+    "condition": "GET /api/model 获取模型列表",
+    "note": "成功获取 94 个模型"
+  },
+  "resume-native": {
+    "result": "fail",
+    "evidence": "{\"data\":[{\"id\":\"evt_149d9134b001o59rmiTIsls3No\",\"type\":\"session.next.prompt.admitted\",\"durable\":{\"aggregateID\":\"ses_eb62721aeffes0cRnNx9vWCgkv\",\"seq\":15,\"version\":1},\"data\":{\"timestamp\":1792240325451,\"sessionID\":\"ses_eb62721aeffes0cRnNx9vWCgkv\",\"messageID\":\"msg_149d9134a001oi7tth2qeGJpAp\",\"prompt\":{\"text\":\"之前告诉你的暗号是什么？请只完整复述暗号\"},\"delivery\":\"steer\"}},{\"id\":\"evt_149d913b70019eFagrE9WBPD70\",\"type\":\"s",
+    "cmd": "POST http://127.0.0.1:44230/api/session/ses_eb62721aeffes0cRnNx9vWCgkv/prompt (prompt: { text: ... })",
+    "condition": "CLI 创建含暗号会话，HTTP 接口发送提问暗号并读取回复",
+    "note": "回复中未包含暗号"
+  },
+  "state": {
+    "result": "fail",
+    "evidence": "{\"idle\":{\"data\":{\"id\":\"ses_eb626b4ddffe0cB0gWFOVXLyP7\",\"projectID\":\"c3bd25d3876e156e006b698245115cf5d1fa12a4\",\"cost\":0,\"tokens\":{\"input\":0,\"output\":0,\"reasoning\":0,\"cache\":{\"read\":0,\"write\":0}},\"time\":{\"created\":1792240339747,\"updated\":1792240339747},\"title\":\"probe-opencode-serve-state\",\"location\":{\"directory\":\"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\"}}},\"busy\":{\"data\":{\"id\":\"ses_eb626b4ddffe0cB0gWFOVXLyP7\",\"projectID\":\"c3bd25d3876e156e006b698245115cf5d1fa12a4\",\"cost\":0,\"tokens\":{\"input\":0,\"output\":0,\"reasoning\":0,\"cache\":{\"read\":0,\"write\":0}},\"time\":{\"created\":1792240339747,\"updated\":1792240339747},\"title\":\"probe-opencode-serve-state\",\"location\":{\"directory\":\"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\"}}}}",
+    "cmd": "GET http://127.0.0.1:44230/api/session/ses_eb626b4ddffe0cB0gWFOVXLyP7",
+    "condition": "分别在空闲时与运行中 GET 会话详情",
+    "note": "GET /api/session/{id} 返回数据中只有 id/projectID/cost/tokens/time/title/location，无标识当前工作中/空闲的 status/state 字段"
+  },
+  "permission": {
+    "result": "fail",
+    "evidence": "{\"data\":[]}",
+    "cmd": "GET http://127.0.0.1:44230/api/session/ses_eb626b4ddffe0cB0gWFOVXLyP7/permission during bash tool execution",
+    "condition": "要求智能体执行 bash 创建文件并在运行中轮询审批端点",
+    "note": "运行中未向 /permission 端点派发拦截请求（无头 HTTP 模式默认自动放行或无拦截）"
+  },
+  "compact": {
+    "result": "fail",
+    "evidence": "{\"status\":503,\"body\":\"{\\\"_tag\\\":\\\"ServiceUnavailableError\\\",\\\"message\\\":\\\"Session compact is not available yet\\\",\\\"service\\\":\\\"session.compact\\\"}\"}",
+    "cmd": "POST http://127.0.0.1:44230/api/session/ses_eb626b4ddffe0cB0gWFOVXLyP7/compact",
+    "condition": "POST /api/session/{id}/compact 触发上下文压缩",
+    "note": "服务端报错断点：HTTP 503 {\"_tag\":\"ServiceUnavailableError\",\"message\":\"Session compact is not available yet\",\"service\":\"session.compact\"}"
+  },
+  "model-new": {
+    "result": "fail",
+    "evidence": "{\"data\":[{\"id\":\"evt_149d96c0b002V5T4FzJw58Ydb3\",\"type\":\"session.next.prompt.admitted\",\"durable\":{\"aggregateID\":\"ses_eb6269409ffe85cGqWiANgiSgG\",\"seq\":1,\"version\":1},\"data\":{\"timestamp\":1792240348171,\"sessionID\":\"ses_eb6269409ffe85cGqWiANgiSgG\",\"messageID\":\"msg_149d96c0b001p55j7C4ArUllaE\",\"prompt\":{\"text\":\"选模型测试回复六个字\"},\"delivery\":\"steer\"}},{\"id\":\"ev",
+    "cmd": "POST http://127.0.0.1:44230/api/session/ses_eb6269409ffe85cGqWiANgiSgG/prompt with model={\"providerID\":\"zai-coding-plan\",\"modelID\":\"glm-5.3-flash\"}",
+    "condition": "在新建会话中指定 model 为 zai-coding-plan/glm-5.3-flash",
+    "note": "未在落盘消息中提取到模型字段"
+  },
+  "model-switch": {
+    "result": "fail",
+    "evidence": "{\"data\":[{\"id\":\"evt_149d96c0b002V5T4FzJw58Ydb3\",\"type\":\"session.next.prompt.admitted\",\"durable\":{\"aggregateID\":\"ses_eb6269409ffe85cGqWiANgiSgG\",\"seq\":1,\"version\":1},\"data\":{\"timestamp\":1792240348171,\"sessionID\":\"ses_eb6269409ffe85cGqWiANgiSgG\",\"messageID\":\"msg_149d96c0b001p55j7C4ArUllaE\",\"prompt\":{\"text\":\"选模型测试回复六个字\"},\"delivery\":\"steer\"}},{\"id\":\"ev",
+    "cmd": "POST http://127.0.0.1:44230/api/session/ses_eb6269409ffe85cGqWiANgiSgG/prompt (turn 2 with DEFAULT_MODEL)",
+    "condition": "同一会话第二轮改用 zhipuai-coding-plan/glm-5.3-flash 提问",
+    "note": "第二轮未见新模型"
+  },
+  "mode-switch": {
+    "result": "pass",
+    "evidence": "{\"status\":204,\"body\":\"\"}",
+    "cmd": "POST http://127.0.0.1:44230/api/session/ses_eb6269409ffe85cGqWiANgiSgG/agent",
+    "condition": "调用 POST /api/session/{id}/agent 切换 agent 模式",
+    "note": "成功切换为 plan 模式（返回 204 No Content）"
+  },
+  "quota": {
+    "result": "n/a",
+    "evidence": "{\"id\":\"ses_eb6269409ffe85cGqWiANgiSgG\",\"projectID\":\"c3bd25d3876e156e006b698245115cf5d1fa12a4\",\"agent\":\"plan\",\"cost\":0,\"tokens\":{\"input\":0,\"output\":0,\"reasoning\":0,\"cache\":{\"read\":0,\"write\":0}},\"time\":{\"created\":1792240348150,\"updated\":1792240373293},\"title\":\"probe-opencode-serve-mnew\",\"location\":{\"directory\":\"E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub\"}}",
+    "cmd": "GET http://127.0.0.1:44230/api/session/ses_eb6269409ffe85cGqWiANgiSgG",
+    "condition": "GET /api/session/{id} 查看会话级 tokens 统计",
+    "note": "无用量统计数据"
+  }
+}

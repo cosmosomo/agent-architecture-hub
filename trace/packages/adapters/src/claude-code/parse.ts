@@ -274,7 +274,10 @@ export function createClaudeParser(file: SourceFile): LineParser {
     finish(opts: FinishOptions): Session {
       B.finishPending();
 
-      const sourceId: string = sessionIdValue || (file.path ? basename(file.path).replace(/\.jsonl$/i, '') : 'unknown');
+      // The file name is the session's own id. A fork copies the parent's records in with the parent's sessionId,
+      // so the first sessionId seen is the parent's, not this session's.
+      const fileId = file.path ? basename(file.path).replace(/\.jsonl$/i, '') : '';
+      const sourceId: string = (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fileId) ? fileId : '') || sessionIdValue || fileId || 'unknown';
       const f = B.fold();
       if (!sessionUsage && usageSum) sessionUsage = usageSum;
 

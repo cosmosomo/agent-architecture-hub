@@ -1,0 +1,73 @@
+{
+  "open": {
+    "pass": true,
+    "evidence": "Created session probe-l1b-full, stdout={\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"initialize\",\"params\":{\"protocolVersion\":1,\"clientCapabilities\":{\"fs\":{\"readTextFile\":true,\"writeTextFile\":true},\"terminal\":true},\"clientInfo\":{\"name\":\"acpx\",\"version\":\"0.19.5\"}}}\n{\"jsonrpc\":\"2.0\",\"id\":0,\"result\":{\"protocolVersion\":1,\"agentInfo\":{\"name\":\"zcode-acp-se"
+  },
+  "resume": {
+    "pass": true,
+    "evidence": "recalled=true, output snippet={\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"session/prompt\",\"params\":{\"sessionId\":\"e68f0fbf-b0b8-4cd9-af12-8cf749431ba4\",\"prompt\":[{\"type\":\"text\",\"text\":\"上一轮的暗号是什么？只回复暗号本身\"}]}}\n{\"jsonrpc\":\"2.0\",\"method\":\"$/zcode/turnState\",\"params\":{\"sessionId\":\"e68f0fbf-b0b8-4cd9-af12-8cf749431ba4\",\"running\":true}}\n{\"jsonrpc"
+  },
+  "resume-native": {
+    "pass": false,
+    "evidence": "acpx zcode -s sess_393f0ab4-2f13-4c6c-ab4a-475c1355f270: code=4, out={\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32002,\"message\":\"⚠ No acpx session found (searched up to E:\\\\program\\\\GIT\\\\Agent\\\\multi\\\\Agent-Architecture-Hub).\\nCreate one: acpx zcode sessions new --nam",
+    "note": "acpx treats -s as an acpx record name or acpx session ID; when passed an unindexed native session ID, it cannot find an existing acpx session mapping unless imported or pre-ensured."
+  },
+  "observe-live": {
+    "pass": true,
+    "evidence": "acpx --format json outputs live JSON-RPC session/update event lines (agent_message_chunk, turnState) to stdout in real time."
+  },
+  "observe-history": {
+    "pass": true,
+    "evidence": "history code=0, read code=0, history snippet={\"id\":\"caa9d93a-55e7-44e2-ad5f-ed9c6a60f220\",\"sessionId\":\"e68f0fbf-b0b8-4cd9-af12-8cf749431ba4\",\"limit\":20,\"count\":4,\"entries\":[{\"role\":\"user\",\"timestamp\":\"2026-10-17T09:33:42.437Z\",\"textPreview\":\"记住暗"
+  },
+  "state": {
+    "pass": true,
+    "evidence": "status=alive, summary=queue owner healthy, model=builtin:bigmodel-coding-plan\\GLM-5.3-Flash"
+  },
+  "model-list": {
+    "pass": true,
+    "evidence": "availableModels count=7: builtin:bigmodel-coding-plan\\GLM-5.3, builtin:bigmodel-coding-plan\\GLM-5.3-Flash, builtin:bigmodel-start-plan\\GLM-5.3, builtin:bigmodel-start-plan\\GLM-5.3-Flash, new-provider\\deepseek-v4.1-flash, new-provider\\glm-5.3, new-provider-2\\ark-code-latest"
+  },
+  "model-new": {
+    "pass": true,
+    "evidence": "acpx --model \"builtin:bigmodel-coding-plan\\GLM-5.3-Flash\" sets model on session new / prompt"
+  },
+  "model-switch": {
+    "pass": true,
+    "evidence": "acpx zcode set model: code=0, out={\"action\":\"model_set\",\"modelId\":\"builtin:bigmodel-coding-plan\\\\GLM-5.3\",\"resumed\":false,\"acpxRecordId\":\"caa9d93a-55e7-44e2-ad5f-ed9c6a60f220\",\"acpxSessionId\":\"e68f0fbf-b0b8-4cd9-af12-8cf749431ba4\"}\n"
+  },
+  "mode-switch": {
+    "pass": true,
+    "evidence": "acpx zcode set-mode plan: code=0, out={\"action\":\"mode_set\",\"modeId\":\"plan\",\"resumed\":false,\"acpxRecordId\":\"caa9d93a-55e7-44e2-ad5f-ed9c6a60f220\",\"acpxSessionId\":\"e68f0fbf-b0b8-4cd9-af12-8cf749431ba4\"}\n"
+  },
+  "compact": {
+    "pass": true,
+    "evidence": "acpx prompt /compact: code=0, out={\"jsonrpc\":\"2.0\",\"id\":8,\"method\":\"session/prompt\",\"params\":{\"sessionId\":\"e68f0fbf-b0b8-4cd9-af12-8cf749431ba4\",\"prompt\":[{\"type\":\"text\",\"text\":\"/compact 压缩上下文\"}]}}\n{\"jsonrpc\":\"2.0\",\"method\":\"$/zcode/t"
+  },
+  "fork": {
+    "pass": false,
+    "evidence": "acpx CLI has no 'fork' subcommand for zcode (acpx zcode --help shows only prompt, exec, cancel, set-mode, set, status, sessions)."
+  },
+  "steer": {
+    "pass": true,
+    "partial": true,
+    "evidence": "acpx supports --no-wait to queue prompt via Named Pipe IPC when queue owner is busy: code=0"
+  },
+  "cancel": {
+    "pass": true,
+    "evidence": "acpx zcode cancel: code=0, out={\"action\":\"cancel_result\",\"acpxRecordId\":\"caa9d93a-55e7-44e2-ad5f-ed9c6a60f220\",\"cancelled\":true}\n"
+  },
+  "permission": {
+    "pass": true,
+    "evidence": "acpx natively handles permissions via --approve-reads, --approve-all, or nonInteractivePermissions: 'deny' from ~/.acpx/config.json."
+  },
+  "close": {
+    "pass": false,
+    "evidence": "acpx zcode sessions close: code=1, out={\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32603,\"message\":\"Cannot safely retire queue owner pid 94896: its process birth identity is unverified. Its lease was retained. Retry from the same local pro"
+  },
+  "quota": {
+    "pass": true,
+    "partial": true,
+    "evidence": "acpx reports token usage in NDJSON prompt results (inputTokens, outputTokens, totalTokens, cachedReadTokens, size:1000000). Channel-level quota is checked via agent_gateway.js quota / db.sqlite."
+  }
+}

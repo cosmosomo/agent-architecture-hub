@@ -142,6 +142,9 @@ function linkChildren(summaries: SessionSummary[]): SessionSummary[] {
   });
 }
 
+/** Sessions per synchronous read of a SQLite store; the adapters take the indexed per-session path up to 40. */
+const SQLITE_BATCH = 4;
+
 export class SessionStore {
   readonly roots: Root[];
   readonly cacheFile: string;
@@ -163,6 +166,8 @@ export class SessionStore {
   /** Database sources: file → parsed sessions, for on-demand reads. */
   private sqliteParsed = new Map<string, Session[]>();
 
+  private cachedIndex: { rev: number; count: number; idx: SessionIndex } | null = null;
+
   constructor(opts: StoreOptions = {}) {
     this.roots = opts.roots || defaultRoots();
     this.cacheFile = opts.cacheFile || defaultCacheFile();
@@ -176,7 +181,26 @@ export class SessionStore {
     try {
       const c = JSON.parse(readFileSync(this.cacheFile, 'utf8')) as CacheFile;
       if (c.contract !== CONTRACT_VERSION || !Array.isArray(c.entries)) return;
-      for (const e of c.entries) this.entries.set(e.path, e);
+      let strippedTurns = false;
+      for (const e of c.entries) {
+        if (e.summary && 'turns' in (e.summary as Record<string, unknown>)) {
+          e.summary = summarize(e.summary as unknown as Session);
+          strippedTurns = true;
+        }
+        this.entries.set(e.path, e);
+        const hash = e.path.indexOf('#');
+        if (hash > 0) {
+          const dbPath = e.path.slice(0, hash);
+          this.dbStamp.set(dbPath, { size: e.size, mtimeMs: e.mtimeMs, adapter: e.adapter });
+          let list = this.dbSessions.get(dbPath);
+          if (!list) {
+            list = [];
+            this.dbSessions.set(dbPath, list);
+          }
+          list.push(e.path);
+        }
+      }
+      if (strippedTurns) this.save();
     } catch {
       // A broken cache is rebuilt by the next scan.
     }
@@ -260,18 +284,20 @@ export class SessionStore {
         const old = this.dbStamp.get(f.path);
         if (old && old.size === st.size && old.mtimeMs === st.mtimeMs && old.adapter === adapterId) {
           for (const p of this.dbSessions.get(f.path) || []) seen.add(p);
+          report.reused++;
           continue;
         }
         try {
-          const sessions = this.readSqliteSessions(f.adapter, f.path, st);
+          const { sessions, allVirtuals } = await this.readSqliteSessionsIncremental(f.adapter, f.path, st, adapterId);
+          for (const v of allVirtuals) seen.add(v);
           for (const s of sessions) {
             const virtual = f.path + '#' + s.sourceId;
-            seen.add(virtual);
-            this.dbSessions.get(f.path)!.push(virtual);
-            this.entries.set(virtual, { path: virtual, kind: f.adapter.kind, adapter: adapterId, size: st.size, mtimeMs: st.mtimeMs, summary: s });
+            this.entries.set(virtual, { path: virtual, kind: f.adapter.kind, adapter: adapterId, size: st.size, mtimeMs: st.mtimeMs, summary: summarize(s) });
           }
+          this.dbSessions.set(f.path, allVirtuals);
           this.dbStamp.set(f.path, { size: st.size, mtimeMs: st.mtimeMs, adapter: adapterId });
-          report.parsed++;
+          if (sessions.length > 0) report.parsed++;
+          else report.reused++;
         } catch (err) {
           report.failed++;
           if (report.errors.length < 20) report.errors.push(f.path + ': ' + (err instanceof Error ? err.message : String(err)));
@@ -298,20 +324,93 @@ export class SessionStore {
       if (!seen.has(p)) { this.entries.delete(p); report.removed++; }
     }
     this.rebuildIds();
-    if (report.parsed || report.removed) { this.rev++; this.save(); }
+    if (report.parsed || report.removed) { this.rev++; this.cachedIndex = null; this.save(); }
     this.lastScan = this.now();
     report.ms = Date.now() - t0;
     return report;
   }
 
-  /** Open a database source read-only and keep its parsed sessions for on-demand reads. */
-  private readSqliteSessions(adapter: SourceAdapter, path: string, st: { size: number; mtimeMs: number }): Session[] {
+  /** Incrementally scan a SQLite store: reuse unchanged session summaries and only parse sessions whose `time_updated` changed. */
+  private async readSqliteSessionsIncremental(
+    adapter: SourceAdapter,
+    path: string,
+    st: { size: number; mtimeMs: number },
+    adapterId: string,
+  ): Promise<{ sessions: Session[]; allVirtuals: string[] }> {
     const db = new DatabaseSync(path, { readOnly: true });
     try {
-      const sessions = adapter.parseSqlite!({ path, size: st.size, mtimeMs: st.mtimeMs }, { all: (sql: string, ...args: unknown[]) => db.prepare(sql).all(...(args as never[])) }, { now: this.now() });
-      this.sqliteParsed.set(path, sessions);
-      this.dbSessions.set(path, []);
-      return sessions;
+      let dirtyIds: Set<string> | undefined;
+      const allVirtuals: string[] = [];
+      try {
+        const rows = db.prepare('SELECT id, time_updated FROM session').all() as { id?: string; time_updated?: number }[];
+        dirtyIds = new Set<string>();
+        for (const r of rows) {
+          if (!r || typeof r.id !== 'string' || !r.id) continue;
+          const virtual = path + '#' + r.id;
+          allVirtuals.push(virtual);
+          const existing = this.entries.get(virtual);
+          const rowIso = typeof r.time_updated === 'number' && Number.isFinite(r.time_updated) && r.time_updated > 0 ? new Date(r.time_updated).toISOString() : undefined;
+          const isOpen = existing && (existing.summary.state.status === 'working' || existing.summary.state.status === 'waiting') && (this.now() - (r.time_updated || st.mtimeMs) < 3600_000);
+          if (existing && existing.adapter === adapterId && existing.summary.updatedAt === rowIso && !isOpen) {
+            existing.size = st.size;
+            existing.mtimeMs = st.mtimeMs;
+          } else {
+            dirtyIds.add(r.id);
+          }
+        }
+      } catch {
+        dirtyIds = undefined;
+      }
+
+      const source = { all: (sql: string, ...args: unknown[]) => db.prepare(sql).all(...(args as never[])) };
+      const file = { path, size: st.size, mtimeMs: st.mtimeMs };
+      let sessions: Session[];
+      if (dirtyIds && dirtyIds.size > SQLITE_BATCH) {
+        // A cold read of a store of 1 GB parsed everything in one synchronous call and held the event loop for ~23s
+        // (zcode, 760 sessions, measured 2026-10-18). Parse in small batches and let pending requests run in between.
+        sessions = [];
+        const ids = Array.from(dirtyIds);
+        for (let i = 0; i < ids.length; i += SQLITE_BATCH) {
+          sessions.push(...adapter.parseSqlite!(file, source, { now: this.now(), onlySourceIds: new Set(ids.slice(i, i + SQLITE_BATCH)) }));
+          await new Promise((r) => setImmediate(r));
+        }
+      } else {
+        sessions = adapter.parseSqlite!(file, source, { now: this.now(), ...(dirtyIds ? { onlySourceIds: dirtyIds } : {}) });
+      }
+
+      if (!dirtyIds) {
+        for (const s of sessions) allVirtuals.push(path + '#' + s.sourceId);
+        this.sqliteParsed.set(path, sessions);
+      } else if (sessions.length > 0) {
+        const prev = this.sqliteParsed.get(path) || [];
+        const byId = new Map(prev.map((s) => [s.id, s]));
+        for (const s of sessions) byId.set(s.id, s);
+        this.sqliteParsed.set(path, Array.from(byId.values()));
+      }
+      return { sessions, allVirtuals };
+    } finally {
+      db.close();
+    }
+  }
+
+  /** Read a single session on-demand from a SQLite store without parsing all other sessions. */
+  private readSingleSqliteSession(adapter: SourceAdapter, path: string, st: { size: number; mtimeMs: number }, sourceId: string): Session | undefined {
+    const db = new DatabaseSync(path, { readOnly: true });
+    try {
+      const sessions = adapter.parseSqlite!(
+        { path, size: st.size, mtimeMs: st.mtimeMs },
+        { all: (sql: string, ...args: unknown[]) => db.prepare(sql).all(...(args as never[])) },
+        { now: this.now(), onlySourceIds: new Set([sourceId]) },
+      );
+      const found = sessions[0];
+      if (found) {
+        const prev = this.sqliteParsed.get(path) || [];
+        const idx = prev.findIndex((x) => x.id === found.id);
+        if (idx >= 0) prev[idx] = found;
+        else prev.push(found);
+        this.sqliteParsed.set(path, prev);
+      }
+      return found;
     } finally {
       db.close();
     }
@@ -338,9 +437,14 @@ export class SessionStore {
   index(): SessionIndex {
     this.load();
     if (!this.byId.size && this.entries.size) this.rebuildIds();
+    if (this.cachedIndex && this.cachedIndex.rev === this.rev && this.cachedIndex.count === this.byId.size) {
+      return this.cachedIndex.idx;
+    }
     const summaries = linkChildren(Array.from(this.byId.values()).map((e) => e.summary));
     summaries.sort((a, b) => ((b.updatedAt || '') < (a.updatedAt || '') ? -1 : 1));
-    return { contract: CONTRACT_VERSION, generatedAt: new Date(this.now()).toISOString(), sessions: summaries };
+    const idx: SessionIndex = { contract: CONTRACT_VERSION, generatedAt: new Date(this.now()).toISOString(), sessions: summaries };
+    this.cachedIndex = { rev: this.rev, count: this.byId.size, idx };
+    return idx;
   }
 
   /** The file behind each session (newest copy), for modules that re-read sources, e.g. the search index. */
@@ -352,11 +456,21 @@ export class SessionStore {
 
   /** Parse one source file as it is now, without caching or linking. */
   parseSource(f: SourceFile): Promise<Session> {
-    // Database sessions resolve from the parsed store, not from the (virtual) path.
+    // Database sessions resolve from the parsed store, or selectively by sourceId.
     const hash = f.path.indexOf('#');
     if (hash > 0) {
-      const fromDb = this.sqliteParsed.get(f.path.slice(0, hash))?.find((s) => s.id === 'zcode:' + f.path.slice(hash + 1) || s.sourceId === f.path.slice(hash + 1));
+      const real = f.path.slice(0, hash);
+      const sourceId = f.path.slice(hash + 1);
+      const fromDb = this.sqliteParsed.get(real)?.find((s) => s.id === f.id || s.sourceId === sourceId);
       if (fromDb) return Promise.resolve(fromDb);
+      if (existsSync(real)) {
+        const dbAdapter = ADAPTERS.find((a) => a.parseSqlite && a.matchFile(real));
+        if (dbAdapter) {
+          const st = statSync(real);
+          const one = this.readSingleSqliteSession(dbAdapter, real, st, sourceId);
+          if (one) return Promise.resolve(one);
+        }
+      }
     }
     const adapter = ADAPTERS.find((a) => a.kind === f.kind);
     if (!adapter) return Promise.reject(new Error('no adapter for ' + f.kind));
@@ -378,15 +492,15 @@ export class SessionStore {
     const hash = e.path.indexOf('#');
     if (hash > 0) {
       const real = e.path.slice(0, hash);
+      const sourceId = e.path.slice(hash + 1);
       if (existsSync(real)) {
         const st = statSync(real);
         const hit = this.parsedCache.get(id);
         if (hit && hit.size === st.size && hit.mtimeMs === st.mtimeMs) return hit.session;
-        let fromDb = this.sqliteParsed.get(real)?.find((s) => s.id === id);
-        if (!fromDb) {
-          const dbAdapter = ADAPTERS.find((a) => a.parseSqlite && a.matchFile(real));
-          if (dbAdapter) fromDb = this.readSqliteSessions(dbAdapter, real, st).find((s) => s.id === id);
-        }
+        const dbAdapter = ADAPTERS.find((a) => a.parseSqlite && a.matchFile(real));
+        const fromDb =
+          (dbAdapter && this.readSingleSqliteSession(dbAdapter, real, st, sourceId)) ||
+          this.sqliteParsed.get(real)?.find((s) => s.id === id);
         if (!fromDb) return undefined;
         const child = linkChildren([summarize(fromDb), ...this.index().sessions.filter((s) => s.links.some((l) => l.rel === 'parent' && l.id === id))])[0];
         fromDb.links = child.links;
