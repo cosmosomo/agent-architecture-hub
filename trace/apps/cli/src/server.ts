@@ -807,6 +807,16 @@ export function createService(opts: ServeOptions): Server {
             }
           }
         }
+        // The page's controls, from frontend entries that carry `ui` (where, label, handler or call/op): one per unit,
+        // on the products any of that unit's frontend entries list (todo excluded).
+        const controls: Array<Record<string, unknown>> = [];
+        for (const [unit, entries] of Object.entries((integ.frontend || {}) as Record<string, Array<Record<string, any>>>)) {
+          const withUi = entries.find((e) => e.ui);
+          if (!withUi) continue;
+          const chans = new Set<string>();
+          for (const e of entries) if (e.status !== 'todo') for (const c of e.channels || []) chans.add(c);
+          controls.push({ unit, ...withUi.ui, channels: [...chans] });
+        }
         return json(res, 200, {
           ok: true,
           updated: integ.updated,
@@ -815,6 +825,7 @@ export function createService(opts: ServeOptions): Server {
           routes: products.routes,
           actions,
           channels,
+          controls,
         });
       }
       // One named session's turn for the command line: `agent_gateway.js read` and `wait` (waitMs > 0).

@@ -1365,33 +1365,66 @@ async function exportSession(id) {
   toast('已导出 ' + (s.turns || []).length + ' 轮');
 }
 
-// The session operations the product has (from the unit → action table); choices that need a value open a second list.
-function sessionControlSheet(meta, ops) {
+// ---------- 控件照“单元 → 动作”表生成 ----------
+// Which controls a page area has, where, in what order and under what name comes from the frontend entries' `ui` in
+// hub/data/integration-map.json (served as /api/capabilities controls). A control shows when its unit lists this
+// product and, if the unit has a backend side, unitAction says the backend has it for this product.
+function webControls(fam, slot) {
+  const chans = (S.caps && S.caps.channels) || {};
+  const hasBackend = (unit) => Object.values(chans).some((u) => u[unit] && u[unit].backend);
+  return ((S.caps && S.caps.controls) || [])
+    .filter((c) => c.slot === slot && (c.channels || []).includes(fam))
+    .map((c) => ({ ...c, act: hasBackend(c.unit) ? unitAction(fam, c.unit, c.label) : { cls: '', title: c.label } }))
+    .filter((c) => c.act)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
+// The session bar's handlers, named by the table's ui.handler (tables.js checks every named handler is here).
+const BAR_HANDLERS = {
+  pin: ({ id, sess }) => { store.set('pin:' + id, store.get('pin:' + id) ? null : '1'); activeSessionStatusFn(sess); },
+  model: ({ meta, sess }) => {
+    const ch = ((S.gw && S.gw.channels) || []).find((c) => c.id === meta.channel) || {};
+    const el = sheet(`<b>换模型（下一句起生效）</b><div class="sub">现在：${esc(meta.model || '默认')}</div>` + (ch.recommendedModels || []).map((m) =>
+      `<button class="card btn-touch" data-m="${esc(m)}">${esc(modelLabel(meta.channel, m))}${m === meta.model ? ' ✓' : ''}</button>`).join(''));
+    el.addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-m]'); if (!b) return;
+      try {
+        await api('/api/gateway/model', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta), traceSessionId: meta.id, model: b.dataset.m }) });
+        meta.model = b.dataset.m; el.remove(); activeSessionStatusFn(sess); toast('下一句起用 ' + b.dataset.m);
+      } catch (err) { toast('没换成：' + err.message); }
+    });
+  },
+  files: ({ id }) => filesSheet(id),
+  export: ({ id }) => exportSession(id).catch((e) => toast('导出失败：' + e.message)),
+  dispatch: ({ meta }) => dispatchSheet(meta),
+};
+
+// The session's 更多: each item is one session-control op from the table; choices are the product's modes or the
+// table's own list; `then: open-session` opens the session the operation made (fork).
+function sessionControlSheet(meta, items) {
   const ch = ((S.gw && S.gw.channels) || []).find((c) => c.id === meta.channel) || {};
-  const EFFORTS = [['low', '低（默认）'], ['medium', '中'], ['high', '高'], ['xhigh', '很高']];
   const el = sheet(`<b>会话操作</b><div class="sub">${esc(FAM[meta.channel] || meta.channel)} · ${esc(cleanTitle(meta.title || '').slice(0, 30))}</div>` +
-    ops.map((x) => `<button class="card btn-touch ${x.act.cls}" data-op="${x.op}" title="${esc(x.act.title)}">${esc(x.act.label)}</button>`).join(''));
-  const run = async (op, value, extra = {}) => {
+    items.map((c, i) => `<button class="card btn-touch ${c.act.cls}" data-i="${i}" title="${esc(c.act.title)}">${esc(c.label)}</button>`).join(''));
+  const run = async (c, value, label) => {
     try {
-      const r = await api('/api/gateway/session-control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta), traceSessionId: meta.id, op, value, ...extra }) });
+      const r = await api('/api/gateway/' + c.call, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta), traceSessionId: meta.id, op: c.op, value }) });
       el.remove();
-      if (op === 'fork' && r.traceSessionId) { toast('已分叉成新会话'); location.hash = '#/s/' + encodeURIComponent(r.traceSessionId); return; }
-      toast(op === 'compact' ? '开始压缩上下文' : op === 'mode' ? '已切到 ' + value : '推理力度：' + value);
+      if (c.then === 'open-session' && r.traceSessionId) { toast(c.label + '：已打开新会话'); location.hash = '#/s/' + encodeURIComponent(r.traceSessionId); return; }
+      toast(c.label + (label ? '：' + label : '：已提交'));
     } catch (e) { toast('没做成：' + e.message); }
   };
   el.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-op]');
+    const b = e.target.closest('[data-i]');
     if (b) {
-      const op = b.dataset.op;
-      if (op === 'compact') return run('compact');
-      if (op === 'fork') return run('fork');
-      const choices = op === 'mode' ? (ch.modes || []).map((m) => [m, m]) : EFFORTS;
-      if (!choices.length) { const v = prompt('模式名'); if (v) run(op, v.trim()); return; }
-      el.querySelector('.box').innerHTML = `<b>${op === 'mode' ? '切到哪个模式' : '推理力度'}</b>` + choices.map(([v, l]) => `<button class="card btn-touch" data-v="${esc(v)}" data-for="${op}">${esc(l)}</button>`).join('');
+      const c = items[Number(b.dataset.i)];
+      const choices = c.choices === 'modes' ? (ch.modes || []).map((m) => [m, m]) : Array.isArray(c.choices) ? c.choices : null;
+      if (!c.choices) return run(c);
+      if (!choices.length) { const v = prompt(c.label); if (v) run(c, v.trim(), v.trim()); return; }
+      el.querySelector('.box').innerHTML = `<b>${esc(c.label)}</b>` + choices.map(([v, l]) => `<button class="card btn-touch" data-v="${esc(v)}" data-l="${esc(l)}" data-c="${b.dataset.i}">${esc(l)}</button>`).join('');
       return;
     }
     const v = e.target.closest('[data-v]');
-    if (v) run(v.dataset.for, v.dataset.v);
+    if (v) run(items[Number(v.dataset.c)], v.dataset.v, v.dataset.l);
   });
 }
 
@@ -1423,43 +1456,18 @@ async function viewSession(id) {
     const acts = resolveSessionActions(meta);
     meta.state = st.status;
 
-    let modelBtnHtml = '';
-    if (acts.modelSwitchAction) {
-      const cls = ('pinb ' + acts.modelSwitchAction.cls).trim();
-      modelBtnHtml = `<button class="${cls}" id="modelBtn" title="${esc(acts.modelSwitchAction.title)}">${esc(acts.modelSwitchAction.label)}</button>`;
-    }
     const coordPill = meta.entry ? `<span class="tag tag-built" title="会话坐标：产品 × 入口 × 所有权">${esc(FAM[meta.channel] || meta.channel)} · ${esc(meta.entry)} · ${esc(meta.ownership || st.status)}</span>` : '';
     const conflictPill = meta.pointCapabilities?.resume?.conflictWarning ? `<span class="tag tag-fill" title="${esc(meta.pointCapabilities.resume.conflictWarning)}">⚠️ 外部活跃中</span>` : '';
-    const artifactBtnHtml = '<button class="pinb" id="filesBtn">产出</button><button class="pinb" id="exportBtn" title="把整个会话导出成 Markdown 文件">导出</button>';
-    const dispatchBtnHtml = '<button class="pinb" id="dispBtn" title="spawn-subagent：从这个会话派活给另一个智能体">派给别人</button>';
-    // Session operations other than a turn (POST /api/gateway/session-control), each shown only when the unit → action
-    // table has it for this product.
-    const ctlOps = [['mode-switch', 'mode', '切模式'], ['compact', 'compact', '压缩上下文'], ['fork', 'fork', '分叉'], ['reasoning-effort', 'effort', '推理力度']]
-      .map(([unit, op, label]) => ({ op, act: unitAction(meta.channel, unit, label) })).filter((x) => x.act);
-    const moreBtnHtml = ctlOps.length ? '<button class="pinb" id="moreBtn" title="切模式、压缩、分叉等会话操作">更多</button>' : '';
+    // The bar's buttons and the 更多 items come from the unit → action table (webControls); handlers in BAR_HANDLERS.
+    const bar = webControls(meta.channel, 'session-bar').filter((c) => BAR_HANDLERS[c.handler]);
+    const more = webControls(meta.channel, 'session-more').filter((c) => c.call);
+    const barBtn = (c) => `<button class="pinb ${c.act.cls}" data-ctl="${esc(c.unit)}" title="${esc(c.act.title)}">${esc(c.handler === 'pin' && store.get('pin:' + id) ? '取消置顶' : c.label)}</button>`;
 
     $('#sl').innerHTML = `${stTag(st.status)} ${coordPill} ${conflictPill}<span>${esc(st.detail || '')}</span> · ${esc(FAM[meta.channel] || meta.channel)}${meta.model ? ' · ' + esc(meta.model) : ''}${usageText(sess)}
-      <button class="pinb" id="pinBtn">${store.get('pin:' + id) ? '取消置顶' : '置顶'}</button>${modelBtnHtml}${artifactBtnHtml}${dispatchBtnHtml}${moreBtnHtml}`;
+      ${bar.map(barBtn).join('')}${more.length ? '<button class="pinb" id="moreBtn" title="切模式、压缩、分叉等会话操作">更多</button>' : ''}`;
 
-    if ($('#moreBtn')) $('#moreBtn').onclick = () => sessionControlSheet(meta, ctlOps);
-    if ($('#exportBtn')) $('#exportBtn').onclick = () => exportSession(id).catch((e) => toast('导出失败：' + e.message));
-    if ($('#filesBtn')) $('#filesBtn').onclick = () => filesSheet(id);
-    if ($('#dispBtn')) $('#dispBtn').onclick = () => dispatchSheet(meta);
-    if ($('#pinBtn')) $('#pinBtn').onclick = () => { store.set('pin:' + id, store.get('pin:' + id) ? null : '1'); activeSessionStatusFn(sess); };
-    
-    const mb = $('#modelBtn');
-    if (mb) mb.onclick = () => {
-      const ch = ((S.gw && S.gw.channels) || []).find((c) => c.id === meta.channel) || {};
-      const el = sheet(`<b>换模型（下一句起生效）</b><div class="sub">现在：${esc(meta.model || '默认')}</div>` + (ch.recommendedModels || []).map((m) =>
-        `<button class="card btn-touch" data-m="${esc(m)}">${esc(modelLabel(meta.channel, m))}${m === meta.model ? ' ✓' : ''}</button>`).join(''));
-      el.addEventListener('click', async (e) => {
-        const b = e.target.closest('[data-m]'); if (!b) return;
-        try {
-          await api('/api/gateway/model', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta), traceSessionId: meta.id, model: b.dataset.m }) });
-          meta.model = b.dataset.m; el.remove(); activeSessionStatusFn(sess); toast('下一句起用 ' + b.dataset.m);
-        } catch (err) { toast('没换成：' + err.message); }
-      });
-    };
+    for (const c of bar) { const b = $('#sl').querySelector(`[data-ctl="${c.unit}"]`); if (b) b.onclick = () => BAR_HANDLERS[c.handler]({ id, meta, sess }); }
+    if ($('#moreBtn')) $('#moreBtn').onclick = () => sessionControlSheet(meta, more);
     setComposer(st.status === 'working');
     renderApprovalBanner(meta);
   };

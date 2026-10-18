@@ -1,5 +1,5 @@
 {
-  "about": "单元 → 动作：每个能力单元在我们的后端由哪个动作实现（action 引用 hub/data/actions.json 的 id），对哪些产品有效，做到什么程度；frontend 一侧记网页上哪个控件、调哪个动作。status：real 实现了且实测通过；partial 实现了一部分；built 实现了还没实测；fill 补齐（原生做不到，搬到 fillLevel 那一级去做）；todo 还没做。依据（实测记录）在黑板，不在这里。改了就重跑 channels/probe/scripts/build_coverage.js。",
+  "about": "单元 → 动作：每个能力单元在我们的后端由哪个动作实现（action 引用 hub/data/actions.json 的 id），对哪些产品有效，做到什么程度；frontend 一侧记网页上哪个控件、调哪个动作。status：real 实现了且实测通过；partial 实现了一部分；built 实现了还没实测；fill 补齐（原生做不到，搬到 fillLevel 那一级去做）；todo 还没做。依据（实测记录）在黑板，不在这里。改了就重跑 channels/probe/scripts/build_coverage.js。 frontend 条目可带 ui：{slot 放在哪（session-bar 会话栏、session-more 会话的“更多”）, order, label, handler（页面里 BAR_HANDLERS 的处理函数）或 call/op（直接调的接口和操作，如 session-control 的 compact）, choices}；网页的这些控件照它生成，一个控件只在一个单元下定义。",
   "updated": "2026-10-18",
   "backend": {
     "open": [
@@ -1786,7 +1786,13 @@
           "droid"
         ],
         "status": "real",
-        "note": "记在手机本地"
+        "note": "记在手机本地",
+        "ui": {
+          "slot": "session-bar",
+          "order": 10,
+          "label": "置顶",
+          "handler": "pin"
+        }
       }
     ],
     "ui-subagent-view": [
@@ -1971,7 +1977,13 @@
           "antigravity"
         ],
         "status": "built",
-        "note": "没在网页上点过"
+        "note": "没在网页上点过",
+        "ui": {
+          "slot": "session-bar",
+          "order": 40,
+          "label": "导出",
+          "handler": "export"
+        }
       }
     ],
     "model-switch": [
@@ -1988,7 +2000,13 @@
           "antigravity"
         ],
         "status": "partial",
-        "note": "ZCode 经后端实测真切换；其余家同一路径未逐家测"
+        "note": "ZCode 经后端实测真切换；其余家同一路径未逐家测",
+        "ui": {
+          "slot": "session-bar",
+          "order": 20,
+          "label": "换模型",
+          "handler": "model"
+        }
       }
     ],
     "ui-artifact-preview": [
@@ -2007,7 +2025,13 @@
           "droid"
         ],
         "status": "real",
-        "note": ""
+        "note": "",
+        "ui": {
+          "slot": "session-bar",
+          "order": 30,
+          "label": "产出",
+          "handler": "files"
+        }
       }
     ],
     "ui-terminal-output": [
@@ -2098,7 +2122,13 @@
           "zcode"
         ],
         "status": "real",
-        "note": "负责人实测 dsp_131220_gadv 四步走完"
+        "note": "负责人实测 dsp_131220_gadv 四步走完",
+        "ui": {
+          "slot": "session-bar",
+          "order": 50,
+          "label": "派给别人",
+          "handler": "dispatch"
+        }
       },
       {
         "page": "/m/（10-18 晚负责人）",
@@ -2161,10 +2191,19 @@
         "channels": [
           "zcode",
           "hermes",
-          "claude"
+          "claude",
+          "codex"
         ],
         "status": "built",
-        "note": "后端已实测，网页按钮没点过"
+        "note": "后端已实测（Codex 的 plan / default 10-19 起），网页按钮没点过",
+        "ui": {
+          "slot": "session-more",
+          "order": 10,
+          "label": "切模式",
+          "call": "session-control",
+          "op": "mode",
+          "choices": "modes"
+        }
       }
     ],
     "compact": [
@@ -2173,15 +2212,31 @@
         "control": "会话页“更多 → 压缩上下文”",
         "action": "session-control",
         "channels": [
+          "zcode"
+        ],
+        "status": "real",
+        "note": "10-19 网页“更多 → 压缩上下文”实测（照表生成的菜单）",
+        "ui": {
+          "slot": "session-more",
+          "order": 20,
+          "label": "压缩上下文",
+          "call": "session-control",
+          "op": "compact"
+        }
+      },
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "会话页“更多 → 压缩上下文”",
+        "action": "session-control",
+        "channels": [
           "codex",
-          "zcode",
           "claude",
           "workbuddy",
           "opencode",
           "hermes"
         ],
         "status": "built",
-        "note": "后端已实测 Codex、ZCode，网页按钮没点过"
+        "note": "同一个菜单项，这些产品没在网页上点过"
       }
     ],
     "fork": [
@@ -2193,7 +2248,15 @@
           "codex"
         ],
         "status": "built",
-        "note": "后端已实测，网页按钮没点过"
+        "note": "后端已实测，网页按钮没点过",
+        "ui": {
+          "slot": "session-more",
+          "order": 30,
+          "label": "分叉",
+          "call": "session-control",
+          "op": "fork",
+          "then": "open-session"
+        }
       }
     ],
     "reasoning-effort": [
@@ -2205,7 +2268,32 @@
           "codex"
         ],
         "status": "built",
-        "note": "后端已实测，网页按钮没点过"
+        "note": "后端已实测，网页按钮没点过",
+        "ui": {
+          "slot": "session-more",
+          "order": 40,
+          "label": "推理力度",
+          "call": "session-control",
+          "op": "effort",
+          "choices": [
+            [
+              "low",
+              "低（默认）"
+            ],
+            [
+              "medium",
+              "中"
+            ],
+            [
+              "high",
+              "高"
+            ],
+            [
+              "xhigh",
+              "很高"
+            ]
+          ]
+        }
       }
     ],
     "ui-approval": [

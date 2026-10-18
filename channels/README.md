@@ -197,7 +197,7 @@ node hub/tools/agent_gateway.js tables
 | 现状 | 每一层的理论极限、我们的目标、现状、依据记在哪 | 生成：`probe/CAPABILITY_MAP.md` 开头 | 依据是黑板 `probe/blackboard.jsonl`，每行带命令和输出 |
 
 - **调用**：单元 → 动作 → 产品的路线上的命令。网页的按钮和命令行网关的子命令是同一个动作的两种外观。运行中的系统也给同样的东西：`GET http://127.0.0.1:8899/api/capabilities` 返回四张表的汇总。
-- **维护**：加一个单元，在“单元 → 动作”加一行；接一个产品，在产品表加一行，路线没有的话在同一个文件的 routes 里加；加一个动作，在路由和动作表各加一行。然后跑 `tables` 核对，跑 `node probe/scripts/build_coverage.js` 重出现状。核对对不上的地方会逐条列出来。
+- **维护**：加一个单元，在“单元 → 动作”加一行；接一个产品，在产品表加一行，路线没有的话在同一个文件的 routes 里加；加一个动作，在路由和动作表各加一行；加一个网页控件，在“单元 → 动作”那个单元的 frontend 条目里写 `ui`（放在哪：会话栏 session-bar 或会话的“更多” session-more，顺序、名字，以及页面里的处理函数或要调的操作），“更多”里的会话操作只要这一行数据，页面照 `/api/capabilities` 的 controls 自己生成。然后跑 `tables` 核对，跑 `node probe/scripts/build_coverage.js` 重出现状。核对对不上的地方会逐条列出来。
 - **出了 bug**：沿网页 → 后端接口 → 运行记录（`~/.agent-hub/runs.jsonl`、`~/.agent-hub/hub-8899.log`）→ 产品表里那条命令手动跑一遍 → 产品表里写的会话记录位置，逐层对。断在哪层修哪层，修完在黑板补一行实测，再重出现状。改后端先 `node -e "import('./trace/apps/cli/src/server.ts')"` 能加载，再按 8899 端口停进程，用命令行网关任一子命令让它自动拉起。
 - **回归**：`node hub/tools/agent_gateway.js verify [--product zcode,hermes] [--unit open,cancel,task-board]` 照四张表逐产品、逐单元真跑一遍，每格写一行黑板。另有四个专项：`probe/scripts/test_taskboard.mjs`（一群会话的判定，不调智能体，几秒）、`probe_acp_approval.js`（常驻 ACP 的轮内审批）、`probe_session_control.js`（切模式、压缩、分叉、推理力度）、`probe_ask_user.js`（智能体轮内向人提问、人答回同一轮）。8899 上有别人的轮在跑、不能重启时，新代码在副本上测：`HUB_BACKGROUND=0 node trace/apps/cli/src/main.ts serve --port 18904`，这份只应答请求，不巡检、不推进目标、不整理派活单，专项脚本加 `--base http://127.0.0.1:18904`。
 
@@ -216,7 +216,7 @@ node hub/tools/agent_gateway.js tables
 | 类型、产品档案与各家环境变量、常量和小工具 | `gateway/types.ts`、`products.ts`、`common.ts` |
 | 接口 | `server.ts`；命令行网关 `hub/tools/agent_gateway.js`；网页 `m/index.html` |
 
-- **还不干净的**：网页每个控件放在哪里仍写在页面代码里；能力开关还有一层由黑板生成的 `hub/data/capabilities.json`；产品编号的类型 `ChannelId` 在 `gateway/types.ts` 里还手写着七个；OpenCode 的“只读”权限不生效（它的 ACP 不报模式、写文件不来请求）；超过 16MB 的会话文件，列表摘要最多 2 分钟、全文索引最多 10 分钟才重读一次（每 30 秒整份重读曾把服务卡住几十秒），所以这类会话的状态会晚一点。
+- **还不干净的**：网页控件只有会话栏和“更多”照表生成，输入框、待处理页、协作页的控件还写在页面里；能力开关还有一层由黑板生成的 `hub/data/capabilities.json`；产品编号的类型 `ChannelId` 在 `gateway/types.ts` 里还手写着七个；OpenCode 的“只读”权限不生效（它的 ACP 不报模式、写文件不来请求）；超过 16MB 的会话文件，列表摘要最多 2 分钟、全文索引最多 10 分钟才重读一次（每 30 秒整份重读曾把服务卡住几十秒），所以这类会话的状态会晚一点。
 
 ## 要动某一块时读什么（按坐标去找）
 

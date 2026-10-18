@@ -90,6 +90,23 @@ function check(t) {
   for (const a of t.actions) for (const sub of String(a.cli || '').split('/').map((x) => x.trim()).filter(Boolean)) {
     if (!cli.includes(`sub === '${sub}'`)) problems.push(`动作表：${a.id} 写的网关子命令 ${sub} 在 agent_gateway.js 里没有`);
   }
+  // Web controls (frontend entries with ui): a known place; a named handler exists in the page; a session-control op
+  // is one the backend takes.
+  const page = read('m', 'index.html');
+  const handlersBlock = (page.split('const BAR_HANDLERS = {')[1] || '').split('\n};')[0];
+  const sessionControl = fs.existsSync(path.join(ROOT, 'trace', 'apps', 'cli', 'src', 'gateway', 'session_control.ts'))
+    ? read('trace', 'apps', 'cli', 'src', 'gateway', 'session_control.ts') : '';
+  for (const [unit, entries] of Object.entries(t.integ.frontend || {})) {
+    for (const e of entries) {
+      if (!e.ui) continue;
+      const ui = e.ui;
+      if (!['session-bar', 'session-more'].includes(ui.slot)) problems.push(`单元 → 动作：${unit} 的网页控件位置 ${ui.slot} 页面不认识`);
+      if (ui.handler && !new RegExp(`^\\s+${ui.handler}: `, 'm').test(handlersBlock)) problems.push(`单元 → 动作：${unit} 的网页控件处理函数 ${ui.handler} 在 m/index.html 的 BAR_HANDLERS 里没有`);
+      if (ui.call === 'session-control' && !sessionControl.includes(`op === '${ui.op}'`)) problems.push(`单元 → 动作：${unit} 的网页控件调 session-control ${ui.op}，后端不认这个操作`);
+      if (ui.call && !t.actions.some((a) => a.id === ui.call)) problems.push(`单元 → 动作：${unit} 的网页控件调的动作 ${ui.call} 不在动作表里`);
+      if (!ui.handler && !ui.call) problems.push(`单元 → 动作：${unit} 的网页控件既没有处理函数也没有要调的动作`);
+    }
+  }
   // Unit → action: actions exist, products exist, units exist.
   const ids = new Set(t.actions.map((a) => a.id));
   const prods = new Set(t.products.products.map((p) => p.id));
