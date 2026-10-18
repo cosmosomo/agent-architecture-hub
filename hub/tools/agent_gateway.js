@@ -702,6 +702,9 @@ function callSharedDaemon(apiPath, method = 'GET', bodyObj = null, timeoutSec = 
   try {
     const curlArgs = [
       '-s',
+      // The service is local; an agent's shell may carry a proxy that cannot or should not reach it.
+      '--noproxy',
+      '*',
       '--max-time',
       String(timeoutSec),
       '-X',
@@ -718,6 +721,8 @@ function callSharedDaemon(apiPath, method = 'GET', bodyObj = null, timeoutSec = 
       encoding: 'utf8',
       timeout: (timeoutSec + 5) * 1000,
       windowsHide: true,
+      // The session list is several MB; the default 1 MB cut it off and the parse failed.
+      maxBuffer: 256 * 1024 * 1024,
     });
     if (res.status !== 0 || !res.stdout || !res.stdout.trim()) return null;
     return JSON.parse(res.stdout.trim());
@@ -726,8 +731,15 @@ function callSharedDaemon(apiPath, method = 'GET', bodyObj = null, timeoutSec = 
   }
 }
 
-function isSharedDaemonOnline() {
-  const health = callSharedDaemon('/api/health', 'GET', null, 2);
+function isDaemonPortOpen() {
+  // A TCP connect answers at once either way (curl on Windows retries a refused port until its timeout).
+  const u = new URL(DAEMON_BASE);
+  const probe = `const s=require('net').connect({host:${JSON.stringify(u.hostname)},port:${Number(u.port) || 80}});s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));setTimeout(()=>process.exit(1),4000)`;
+  return spawnSync(process.execPath, ['-e', probe], { windowsHide: true, timeout: 6000 }).status === 0;
+}
+
+function isSharedDaemonOnline(timeoutSec = 5) {
+  const health = callSharedDaemon('/api/health', 'GET', null, timeoutSec);
   return Boolean(health && health.ok);
 }
 
@@ -735,6 +747,12 @@ function isSharedDaemonOnline() {
 // start it (with --lan when ~/.agent-hub/lan-host is set) instead of driving the agent from here; --standalone keeps the old direct path.
 function ensureSharedDaemon() {
   if (isSharedDaemonOnline()) return true;
+  // Something listens on the port but did not answer in time: the service is busy (it stalls for tens of seconds
+  // while it rescans sessions after a restart). Wait for it; starting a second one only fails on the port.
+  if (isDaemonPortOpen()) {
+    for (let i = 0; i < 6; i++) if (isSharedDaemonOnline(15)) return true;
+    return false;
+  }
   if (process.env.HUB_NO_AUTOSTART === '1' || process.env.HUB_DAEMON_URL) return false;
   const logDir = path.join(os.homedir(), '.agent-hub');
   fs.mkdirSync(logDir, { recursive: true });
@@ -992,7 +1010,7 @@ function cmdPatrol(args) {
       eventKind: args.event || 'manual_patrol',
       targetChannel: prof.id,
       targetSession: args.session || `hub-${prof.id}`,
-      errorSummary: args.prompt || args.summary || `CLI 请求元智能体大脑对 ${prof.id} 执行健康巡检与架构诊断`,
+      errorSummary: args.prompt || args.summary || `CLI 请求元智能体的诊断会话对 ${prof.id} 执行健康巡检与架构诊断`,
     },
     60
   );
@@ -1424,6 +1442,100 @@ function cmdDispatches(args, forceWait) {
   process.exit(0);
 }
 
+// The "一群会话" level (goals made of tasks; trace/apps/cli/src/collab/taskboard.ts):
+//   goals [--id <目标>]                                       list, or one goal with its tasks, graph and trajectory
+//   goal --file <goal.json>                                   start a goal: {title, objective, channel?, verifyBy?, budget?, tasks:[{key,title,acceptance,dependsOn,channel}]}
+//   goal-action --id <目标> --action pause|resume|cancel [--max-dispatches N]
+//   task-action --id <任务> --action verify|retry|reassign|cancel [--passed] [--note ..] [--rework ..] [--channel ..] [--model ..]
+function cmdGoal(args, sub) {
+  if (!ensureSharedDaemon()) {
+    console.error(JSON.stringify({ ok: false, error: 'the 8899 daemon is not running and could not be started' }));
+    process.exit(2);
+  }
+  let res;
+  if (sub === 'goals') {
+    const id = args.id || args._[1];
+    res = callSharedDaemon(`/api/gateway/goals${id ? `?id=${encodeURIComponent(id)}` : ''}`, 'GET', null, 20);
+  } else if (sub === 'goal') {
+    if (!args.file) {
+      console.error(JSON.stringify({ ok: false, error: 'goal needs --file <goal.json>' }));
+      process.exit(2);
+    }
+    res = callSharedDaemon('/api/gateway/goals', 'POST', JSON.parse(fs.readFileSync(args.file, 'utf8')), 60);
+  } else {
+    const body = { id: args.id || args._[1], action: args.action };
+    if (sub === 'goal-action' && args['max-dispatches']) body.budget = { maxDispatches: Number(args['max-dispatches']) };
+    if (sub === 'task-action') {
+      if (args.passed !== undefined) body.passed = args.passed !== 'false';
+      for (const k of ['note', 'rework', 'channel', 'model', 'reason']) if (args[k] !== undefined) body[k] = String(args[k]);
+    }
+    res = callSharedDaemon(`/api/gateway/${sub}`, 'POST', body, 60);
+  }
+  if (!res || !res.ok) {
+    console.error(JSON.stringify({ ok: false, error: (res && res.error) || `${sub} failed` }));
+    process.exit(1);
+  }
+  console.log(JSON.stringify(res, null, 2));
+  process.exit(0);
+}
+
+// Thin commands over the service's other actions (hub/data/actions.json names the endpoint of each):
+//   sessions [--agent X] [--q 文字] [--limit 30]          sessions on this machine, newest first (one line each)
+//   session --id <会话编号> [--tail 5]                     one session: turns and steps
+//   search --q <文字>                                      full-text search over all sessions
+//   state                                                  the service: products, running turns, pending approvals
+//   approve --id <审批编号> [--reject]                      answer an approval (the turn waiting on it continues)
+//   answer --id <问题编号> --text <答案>                  answer a question an agent asked mid-turn (or --answers JSON by question id)
+//   model --agent X --session <名> --model <模型>           switch a session's model
+//   session-control --agent X --session <名> --op mode|compact|fork|effort [--value ..] [--new-session <名>]
+function cmdApi(args, sub) {
+  if (!ensureSharedDaemon()) {
+    console.error(JSON.stringify({ ok: false, error: 'the 8899 daemon is not running and could not be started' }));
+    process.exit(2);
+  }
+  const agentId = () => {
+    const p = resolveProfile(args.agent || args.channel);
+    return p ? p.id : args.agent || args.channel;
+  };
+  let res;
+  if (sub === 'sessions') {
+    res = callSharedDaemon('/api/sessions?slim=1', 'GET', null, 90);
+    if (res && Array.isArray(res.sessions)) {
+      const q = String(args.q || '').toLowerCase();
+      const ch = args.agent || args.channel ? agentId() : '';
+      const rows = res.sessions
+        .filter((s) => (!ch || s.channel === ch) && (!q || String(s.title || s.name || '').toLowerCase().includes(q)))
+        .slice(0, Number(args.limit) || 30)
+        // The slim list gives state as a string ("working"); the full one as { status }.
+        .map((s) => `${s.id}\t${s.channel}\t${(typeof s.state === 'string' ? s.state : s.state && s.state.status) || s.status || ''}\t${s.updatedAt || ''}\t${String(s.title || s.name || '').replace(/\s+/g, ' ').slice(0, 60)}`);
+      console.log(rows.join('\n'));
+      process.exit(0);
+    }
+  } else if (sub === 'session') {
+    const id = args.id || args._[1];
+    res = callSharedDaemon(`/api/sessions/${encodeURIComponent(id)}${args.tail ? `?tail=${Number(args.tail)}` : ''}`, 'GET', null, 90);
+  } else if (sub === 'search') {
+    res = callSharedDaemon(`/api/search?q=${encodeURIComponent(args.q || args._[1] || '')}`, 'GET', null, 60);
+  } else if (sub === 'state') {
+    res = callSharedDaemon('/api/gateway/state', 'GET', null, 30);
+  } else if (sub === 'approve') {
+    res = callSharedDaemon('/api/gateway/approve', 'POST', { id: args.id || args._[1], decision: args.reject ? 'reject' : 'approve' }, 30);
+  } else if (sub === 'answer') {
+    // answer --id q_... --text "选 B"   (one answer for every question), or --answers '{"<question id>":"..."}'
+    res = callSharedDaemon('/api/gateway/answer', 'POST', { id: args.id || args._[1], answer: args.text, answers: args.answers ? JSON.parse(args.answers) : undefined }, 30);
+  } else if (sub === 'model') {
+    res = callSharedDaemon('/api/gateway/model', 'POST', { channel: agentId(), sessionName: args.session, model: args.model }, 30);
+  } else if (sub === 'session-control') {
+    res = callSharedDaemon('/api/gateway/session-control', 'POST', { channel: agentId(), sessionName: args.session, op: args.op, value: args.value, newSessionName: args['new-session'] }, 240);
+  }
+  if (!res || res.ok === false) {
+    console.error(JSON.stringify({ ok: false, error: (res && res.error) || `${sub} failed` }));
+    process.exit(1);
+  }
+  console.log(JSON.stringify(res, null, 2));
+  process.exit(0);
+}
+
 function cmdCollabEvent(args, kind) {
   if (!ensureSharedDaemon()) {
     console.error(JSON.stringify({ ok: false, error: 'the 8899 daemon is not running and could not be started' }));
@@ -1472,12 +1584,19 @@ function main() {
   if (sub === 'dispatch') return cmdDispatch(args);
   if (sub === 'dispatches') return cmdDispatches(args, false);
   if (sub === 'dispatch-wait') return cmdDispatches(args, true);
+  if (sub === 'goals' || sub === 'goal' || sub === 'goal-action' || sub === 'task-action') return cmdGoal(args, sub);
+  if (['sessions', 'session', 'search', 'state', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
   if (sub === 'deliver') return cmdCollabEvent(args, 'deliver');
   if (sub === 'report') return cmdCollabEvent(args, 'report');
   if (sub === 'yield') return cmdCollabEvent(args, 'yield');
   if (sub === 'reclaim') return cmdCollabEvent(args, 'reclaim');
   if (sub === 'patrol') return cmdPatrol(args);
   // The four tables of the pipeline (channels/README.md 管线): products, actions, unit → action, checked against the code.
+  // One command to test the backend for real, unit by unit, following the four tables (channels/probe/scripts/verify.js).
+  if (sub === 'verify') {
+    const r = spawnSync(process.execPath, [path.join(ROOT_DIR, 'channels', 'probe', 'scripts', 'verify.js'), ...process.argv.slice(3)], { stdio: 'inherit' });
+    process.exit(r.status || 0);
+  }
   if (sub === 'tables') {
     const t = require(path.join(ROOT_DIR, 'channels', 'probe', 'scripts', 'tables.js'));
     const tb = t.load();

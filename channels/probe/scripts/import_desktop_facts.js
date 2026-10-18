@@ -12,7 +12,15 @@ const DIR = path.resolve(__dirname, '..');
 const SRC = path.join(DIR, 'results', 'hci-desktop-facts-20261018.md');
 const BB = path.join(DIR, 'blackboard.jsonl');
 const MARK = '桌面端调研导入（hci-desktop-facts-20261018，未逐格核）';
-const SECTIONS = [['### 1.2', 'codex'], ['### 2.2', 'antigravity'], ['### 3.2', 'zcode'], ['### 4.2', 'workbuddy']];
+const SECTIONS = [
+  ['### 1.2', 'codex'],
+  ['### 2.2', 'antigravity'],
+  ['### 3.2', 'zcode'],
+  ['### 4.2', 'workbuddy'],
+  ['### 8.2', 'claude'],
+  ['### 9.2', 'opencode'],
+  ['### 10.2', 'hermes'],
+];
 
 const md = fs.readFileSync(SRC, 'utf8');
 const existing = new Set(

@@ -470,7 +470,7 @@
             '</select>' +
           '</label>';
       } else {
-        modelPillHtml = '<span class="cr-meta-pill cr-model-static-pill" title="当前渠道/会话固定使用本机已验证可用模型">⚡ ' + esc(modelTag) + '</span>';
+        modelPillHtml = '<span class="cr-meta-pill cr-model-static-pill" title="当前渠道/会话固定使用本机已验证可用模型">' + esc(modelTag) + '</span>';
       }
     }
 
@@ -532,7 +532,7 @@
       var isTreeAll = !!(sess && treeShowAll[sess.id]);
       var treeWinBtn = totalTurns > 30
         ? '<button type="button" class="cr-depth-pill' + (isTreeAll ? ' on' : '') + '" data-trace-act="toggle-tree-all" data-id="' + esc(sess.id) + '" title="长会话防卡死保护：默认在调用树中聚焦最近 ' + TREE_TURN_WINDOW + ' 轮">' +
-            (isTreeAll ? '📜 已载入全部 ' + totalTurns + ' 轮 (切回极速窗口)' : '⚡ 极速窗口: 最近 ' + TREE_TURN_WINDOW + ' / ' + totalTurns + ' 轮 (展开全部)') +
+            (isTreeAll ? '📜 已载入全部 ' + totalTurns + ' 轮 (只看最近几轮)' : '只看最近 ' + TREE_TURN_WINDOW + ' / ' + totalTurns + ' 轮 (展开全部)') +
           '</button>'
         : '';
       els.traceSubhead.innerHTML =

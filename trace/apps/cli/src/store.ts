@@ -23,7 +23,11 @@ export type StoreOptions = {
 
 type Entry = { path: string; kind: string; adapter: string; size: number; mtimeMs: number; summary: SessionSummary };
 export type SourceFile = { id: string; path: string; kind: string; adapter: string; size: number; mtimeMs: number; summary: SessionSummary };
-type CacheFile ={ contract: string; entries: Entry[] };
+type CacheFile = {
+  contract: string;
+  entries: Entry[];
+  dbStamps?: Record<string, { size: number; mtimeMs: number; adapter: string }>;
+};
 
 export type ScanReport = { files: number; parsed: number; reused: number; failed: number; removed: number; ms: number; errors: string[] };
 
@@ -144,6 +148,9 @@ function linkChildren(summaries: SessionSummary[]): SessionSummary[] {
 
 /** Sessions per synchronous read of a SQLite store; the adapters take the indexed per-session path up to 40. */
 const SQLITE_BATCH = 4;
+/** Source files above this size are re-parsed at most every BIG_REPARSE_MS (see doScan). */
+const BIG_FILE = 16 * 1024 * 1024;
+const BIG_REPARSE_MS = 120_000;
 
 export class SessionStore {
   readonly roots: Root[];
@@ -151,6 +158,8 @@ export class SessionStore {
   private readonly now: () => number;
   private entries = new Map<string, Entry>();
   private byId = new Map<string, Entry>();
+  /** When each big source file was last parsed. */
+  private readonly parsedAt = new Map<string, number>();
   private loaded = false;
   private scanning: Promise<ScanReport> | null = null;
   private lastScan = 0;
@@ -191,13 +200,23 @@ export class SessionStore {
         const hash = e.path.indexOf('#');
         if (hash > 0) {
           const dbPath = e.path.slice(0, hash);
-          this.dbStamp.set(dbPath, { size: e.size, mtimeMs: e.mtimeMs, adapter: e.adapter });
+          const prev = this.dbStamp.get(dbPath);
+          if (!prev || e.mtimeMs >= prev.mtimeMs) {
+            this.dbStamp.set(dbPath, { size: e.size, mtimeMs: e.mtimeMs, adapter: e.adapter });
+          }
           let list = this.dbSessions.get(dbPath);
           if (!list) {
             list = [];
             this.dbSessions.set(dbPath, list);
           }
           list.push(e.path);
+        }
+      }
+      if (c.dbStamps && typeof c.dbStamps === 'object') {
+        for (const [dbPath, stamp] of Object.entries(c.dbStamps)) {
+          if (stamp && typeof stamp.size === 'number' && typeof stamp.mtimeMs === 'number') {
+            this.dbStamp.set(dbPath, stamp);
+          }
         }
       }
       if (strippedTurns) this.save();
@@ -209,7 +228,11 @@ export class SessionStore {
   private save() {
     mkdirSync(dirname(this.cacheFile), { recursive: true });
     const tmp = this.cacheFile + '.tmp';
-    const body: CacheFile = { contract: CONTRACT_VERSION, entries: Array.from(this.entries.values()) };
+    const body: CacheFile = {
+      contract: CONTRACT_VERSION,
+      entries: Array.from(this.entries.values()),
+      dbStamps: Object.fromEntries(this.dbStamp.entries()),
+    };
     writeFileSync(tmp, JSON.stringify(body));
     renameSync(tmp, this.cacheFile);
   }
@@ -262,12 +285,19 @@ export class SessionStore {
   private async doScan(onProgress?: (done: number, total: number) => void): Promise<ScanReport> {
     const t0 = Date.now();
     this.load();
+    await new Promise((r) => setImmediate(r));
     const files = findFiles(this.roots);
     this.resolveBundles(files);
     const seen = new Set<string>();
     const report: ScanReport = { files: files.length, parsed: 0, reused: 0, failed: 0, removed: 0, ms: 0, errors: [] };
     let i = 0;
+    let dbStampUpdated = false;
+    let lastYield = Date.now();
     for (const f of files) {
+      if (Date.now() - lastYield > 20) {
+        await new Promise((r) => setImmediate(r));
+        lastYield = Date.now();
+      }
       seen.add(f.path);
       i++;
       const members = this.membersByMarker.get(f.path);
@@ -296,6 +326,7 @@ export class SessionStore {
           }
           this.dbSessions.set(f.path, allVirtuals);
           this.dbStamp.set(f.path, { size: st.size, mtimeMs: st.mtimeMs, adapter: adapterId });
+          dbStampUpdated = true;
           if (sessions.length > 0) report.parsed++;
           else report.reused++;
         } catch (err) {
@@ -310,8 +341,15 @@ export class SessionStore {
         report.reused++;
         continue;
       }
+      // A big file is re-read at most every BIG_REPARSE_MS: a live agent's own transcript (47 MB and growing, status
+      // working) was re-parsed on every 30-second refresh and held the service for tens of seconds (full test 10-18).
+      if (old && st.size > BIG_FILE && this.now() - (this.parsedAt.get(f.path) || 0) < BIG_REPARSE_MS) {
+        report.reused++;
+        continue;
+      }
       try {
         const session = await parsePath(f.adapter, f.path, this.now(), members);
+        this.parsedAt.set(f.path, this.now());
         this.entries.set(f.path, { path: f.path, kind: f.adapter.kind, adapter: adapterId, size: st.size, mtimeMs: st.mtimeMs, summary: summarize(session) });
         report.parsed++;
       } catch (err) {
@@ -325,6 +363,7 @@ export class SessionStore {
     }
     this.rebuildIds();
     if (report.parsed || report.removed) { this.rev++; this.cachedIndex = null; this.save(); }
+    else if (dbStampUpdated) { this.save(); }
     this.lastScan = this.now();
     report.ms = Date.now() - t0;
     return report;
@@ -352,8 +391,8 @@ export class SessionStore {
           const rowIso = typeof r.time_updated === 'number' && Number.isFinite(r.time_updated) && r.time_updated > 0 ? new Date(r.time_updated).toISOString() : undefined;
           const isOpen = existing && (existing.summary.state.status === 'working' || existing.summary.state.status === 'waiting') && (this.now() - (r.time_updated || st.mtimeMs) < 3600_000);
           if (existing && existing.adapter === adapterId && existing.summary.updatedAt === rowIso && !isOpen) {
-            existing.size = st.size;
-            existing.mtimeMs = st.mtimeMs;
+            // Keep existing.size and existing.mtimeMs unchanged so SearchIndex.sync does not rebuild
+            // all 783 unchanged SQLite sessions whenever one session in db.sqlite is touched.
           } else {
             dirtyIds.add(r.id);
           }

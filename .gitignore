@@ -33,3 +33,19 @@ deploy-server.bat
 channels/probe/scripts/tmp/
 *.bak
 probe_perm_test_*.txt
+
+# Evidence stays on this machine (user 2026-10-18: “证据和截图不公开”). Public: code, the four tables (hub/data),
+# cognition docs, task books, analysis reports, generated matrices. Local only: the blackboard (the evidence ledger,
+# with session titles and paths), its snapshots, raw outputs and evidence dumps, screenshots.
+channels/probe/blackboard.jsonl
+channels/probe/snapshots/
+channels/probe/results/screenshots*/
+channels/probe/**/*.png
+channels/probe/**/*.jpg
+channels/probe/scripts/**/output/
+channels/probe/scripts/L2/evidence_*.json
+channels/probe/scripts/*_result.json
+channels/probe/scripts/**/*_raw.json
+# The service's own event log carries the first words of every prompt sent through it (promptPreview).
+channels/events.jsonl
+channels/probe/scripts/**/*_result.json

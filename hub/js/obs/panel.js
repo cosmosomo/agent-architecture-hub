@@ -67,7 +67,7 @@
       return cls ? '<span class="' + cls + '">' + esc(ln) + '</span>' : esc(ln);
     }).join('\n');
     return '<div class="ob-diff">' +
-      '<div class="ob-diff-hdr"><span>⚡ 待确认写回预览 · ' + esc(pv.file || 'agents/inbox.md') + '</span><span>' + esc(pv.modeLabel || '先预览后落盘') + '</span></div>' +
+      '<div class="ob-diff-hdr"><span>待确认写回预览 · ' + esc(pv.file || 'agents/inbox.md') + '</span><span>' + esc(pv.modeLabel || '先预览后落盘') + '</span></div>' +
       '<pre class="ob-diff-pre">' + lines + '</pre>' +
       '<div class="ob-acts" style="padding:7px 10px;border-top:1px solid rgba(245,158,11,.22);background:rgba(0,0,0,.14)">' +
         '<button class="btn btn-sim" type="button" data-act="confirm-ctrl">✓ 确认写入并注入轨迹</button>' +
@@ -198,7 +198,7 @@
 
     var patrolOptsHtml = [15, 30, 60].map(function (secVal) {
       return '<option value="' + secVal + '"' + (Number(curPatrolSec) === secVal ? ' selected' : '') + '>' +
-        '每 ' + secVal + ' 秒后台零Token巡检一次</option>';
+        '每 ' + secVal + ' 秒后台用规则巡检一次</option>';
     }).join('');
 
     var brainBoxHtml =
@@ -207,8 +207,8 @@
           '<div class="ob-meta-brain-title">' +
             '<span class="ob-meta-brain-orb">' + (isThinking ? '⚡' : '🧠') + '</span>' +
             '<div>' +
-              '<b>元智能体总管大脑 (Meta-Agent Supervisor Brain)</b>' +
-              '<div class="ob-meta-brain-sub">架构：后台常驻 0-Token 看门狗巡检 + 异常事件唤醒真实 Agent 大脑诊断</div>' +
+              '<b>元智能体的诊断会话</b>' +
+              '<div class="ob-meta-brain-sub">架构：后台用不调模型的规则巡检，出异常时叫一个真实智能体会话来诊断</div>' +
             '</div>' +
           '</div>' +
           '<span class="ob-pill ' + (isThinking ? 'warn' : 'good') + '">' +
@@ -219,17 +219,17 @@
           '<div class="ob-ctrl-row">' +
             '<span>运行模式</span>' +
             '<select data-meta-engine-mode>' +
-              '<option value="agent_brain"' + (curEngineMode === 'agent_brain' ? ' selected' : '') + '>🧠 事件唤醒 Agent+模型大脑 + 本地零Token巡检兜底</option>' +
-              '<option value="local_rules"' + (curEngineMode === 'local_rules' ? ' selected' : '') + '>⚡ 纯本地零Token确定性规则引擎 (不调大模型)</option>' +
+              '<option value="agent_brain"' + (curEngineMode === 'agent_brain' ? ' selected' : '') + '>出事时叫智能体诊断，平时用规则巡检</option>' +
+              '<option value="local_rules"' + (curEngineMode === 'local_rules' ? ' selected' : '') + '>只用本地规则（不调模型）</option>' +
             '</select>' +
           '</div>' +
           (curEngineMode !== 'local_rules'
             ? '<div class="ob-ctrl-row">' +
-                '<span>大脑 Agent</span>' +
+                '<span>诊断用的产品</span>' +
                 '<select data-meta-brain-ch>' + chOptsHtml + '</select>' +
               '</div>' +
               '<div class="ob-ctrl-row">' +
-                '<span>大脑模型</span>' +
+                '<span>诊断用的模型</span>' +
                 '<select data-meta-brain-model>' + modelOptsHtml + '</select>' +
               '</div>'
             : '') +
@@ -239,8 +239,8 @@
           '</div>' +
         '</div>' +
         '<div class="ob-acts" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">' +
-          '<button class="btn btn-p" type="button" data-act="meta-patrol-now" title="立即唤醒元智能体大脑 (' + esc(curBrainCh.label + ' · ' + curBrainModel) + ') 对当前控制室会话与 7 大渠道健康态做一次实况巡检诊断">🧠 立即唤醒大脑巡检诊断</button>' +
-          '<button class="btn" type="button" data-act="meta-open-brain" title="进入元智能体大脑专属协调会话 (meta-brain-supervisor)，查看元智能体的真实思考链与 JSON 决策产出">👁️ 查看大脑实况会话 (' + esc(lead.brainSessionName || 'meta-brain-supervisor') + ')</button>' +
+          '<button class="btn btn-p" type="button" data-act="meta-patrol-now" title="立即唤醒元智能体的诊断会话 (' + esc(curBrainCh.label + ' · ' + curBrainModel) + ') 对当前控制室会话与 7 大渠道健康态做一次实况巡检诊断">立即叫诊断会话巡检诊断</button>' +
+          '<button class="btn" type="button" data-act="meta-open-brain" title="进入元智能体的诊断会话 (meta-brain-supervisor)，查看元智能体的真实思考链与 JSON 决策产出">👁️ 查看大脑实况会话 (' + esc(lead.brainSessionName || 'meta-brain-supervisor') + ')</button>' +
         '</div>' +
       '</div>';
 
@@ -260,7 +260,7 @@
           '<div class="ob-meta-title">' +
             '<span class="ob-meta-ic">' + esc(ma.icon || '🛡️') + '</span>' +
             '<b>' + esc(ma.shortName || ma.name) + '</b>' +
-            (ma.triggerCount > 0 ? '<span class="ob-pill info">已护航 ' + ma.triggerCount + ' 次</span>' : '') +
+            (ma.triggerCount > 0 ? '<span class="ob-pill info">已介入 ' + ma.triggerCount + ' 次</span>' : '') +
           '</div>' +
           '<div class="ob-meta-acts">' +
             resumeBtn +
@@ -285,10 +285,10 @@
       var nameTxt = lg.agentName || lg.metaName || lg.agentId || lg.metaId || '元智能体';
       var detailTxt = lg.detail || lg.summary || lg.action || '';
       var brainTag = lg.brainUsed
-        ? pill('🧠 ' + lg.brainUsed, 'good')
+        ? pill('' + lg.brainUsed, 'good')
         : pill(nameTxt.replace(/^元智能体\s*·\s*/, ''), 'info');
       var jumpAttr = lg.brainTraceSessionId
-        ? 'data-act="session" data-id="' + esc(lg.brainTraceSessionId) + '" title="点击打开元智能体大脑此次诊断的会话轨迹"'
+        ? 'data-act="session" data-id="' + esc(lg.brainTraceSessionId) + '" title="点击打开元智能体的诊断会话此次诊断的会话轨迹"'
         : 'style="cursor:default"';
       return '<div class="ob-row" ' + jumpAttr + '>' +
         brainTag +
@@ -298,7 +298,7 @@
 
     return brainBoxHtml +
       '<div class="ob-meta-grid" style="margin-top:8px">' + cardsHtml + '</div>' +
-      (logsHtml ? '<div class="ds-l" style="margin-top:8px">最近巡检与护航干预日志</div><div class="ob-list" style="margin-top:4px">' + logsHtml + '</div>' : '');
+      (logsHtml ? '<div class="ds-l" style="margin-top:8px">最近的巡检与介入记录</div><div class="ob-list" style="margin-top:4px">' + logsHtml + '</div>' : '');
   }
 
   function drawerCtrl(m, s, a) {
@@ -318,7 +318,7 @@
     '</div>';
     var formRuntime = '<div class="ob-ctrl-form">' +
       '<div class="ob-ctrl-row"><span>目标个体</span><select data-ctrl-target>' + optsTo + '</select></div>' +
-      '<div class="ob-ctrl-row"><span>调控动作</span><select data-ctrl-kind><option value="interject">★ 注入新指令 (interject → inbox.md)</option><option value="urge">⚡ 催办挂起任务 (urge → inbox.md)</option><option value="edit_rule">✎ 修订流程门禁规则 (edit_rule → process.md)</option></select></div>' +
+      '<div class="ob-ctrl-row"><span>调控动作</span><select data-ctrl-kind><option value="interject">★ 注入新指令 (interject → inbox.md)</option><option value="urge">催办挂起任务 (urge → inbox.md)</option><option value="edit_rule">✎ 修订流程门禁规则 (edit_rule → process.md)</option></select></div>' +
       '<div class="ob-ctrl-row"><span>指令载荷</span><input type="text" data-ctrl-text placeholder="输入写入 agents/<id>/inbox.md 的指令…"></div>' +
       '<div class="ob-acts"><button class="btn btn-sim" type="button" data-act="preview-runtime">预览信箱/规则写入 Diff</button></div>' +
     '</div>';
@@ -332,11 +332,11 @@
     }).join('');
     var chatSt = HUB.obsChat && HUB.obsChat.getState ? HUB.obsChat.getState() : {};
     var enabledMetaCount = ((chatSt && chatSt.metaAgents) || []).filter(function (ma) { return ma.enabled; }).length || 4;
-    return hero({ name: '反向调控与元智能体编排台', role: '4 大元智能体实时护航 · 设计态 Markdown 写回 + 运行态信箱指令注入',
+    return hero({ name: '反向调控与元智能体编排台', role: '4 个元智能体值守 · 设计态 Markdown 写回 + 运行态信箱指令注入',
       icon: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>', color: 'var(--gold)',
       chips: chip('元智能体 ' + enabledMetaCount + '/4 启用') + chip('版本 ' + (m.def.version || 'v1')) + chip('已调控 ' + (m.facts.actions || []).length + ' 次') }) +
       (pendingPreview ? renderDiffBox(pendingPreview) : '') +
-      sec('0. 🛡️ 元智能体护航编队（自动批准 · 断网续跑 · 渠道容灾 · 防死循环）', renderMetaFleetSection(null)) +
+      sec('0. 元智能体（自动批准、断网续跑、渠道容灾、防死循环）', renderMetaFleetSection(null)) +
       sec('1. 设计态：增补/调整画布编排连接（写回 relations.md）', formRel) +
       sec('2. 运行态：向个体信箱注入新指令（写回 agents/<id>/inbox.md）', formRuntime) +
       sec('3. 本次会话已执行的人工调控记录', actsLog ? '<div class="ob-list">' + actsLog + '</div>' : '<div class="ob-note">尚未执行人工调控。在上方预览 Diff 后点击“确认写入并注入轨迹”，画布与协作轨迹图将立即点亮金色 ★ 人工调控节点。</div>');
@@ -359,7 +359,7 @@
     var mc = x.model ? 'm-' + (x.model === 'opus' ? 'op' : x.model === 'sonnet' ? 'so' : x.model === 'haiku' ? 'ha' : 'fa') : '';
     var h = hero({ name: x.name, role: role, icon: iconFor(x), phase: x.phase, color: x.kind === 'human' ? '#FBBF24' : x.kind === 'meta' ? '#22C4E6' : '',
       chips: chip(L.indStatus[st.status] || '待命', '') + (x.model ? chip(x.model.toUpperCase(), mc) : '') + (x.isHub ? chip('中枢智能体', 'm-so') : '') + (x.enhanced ? chip('增强', 'm-ha') : '') });
-    var metaCtrlSec = x.kind === 'meta' ? sec('🛡️ 元智能体护航开关与策略配置', renderMetaFleetSection(id)) : '';
+    var metaCtrlSec = x.kind === 'meta' ? sec('元智能体开关与策略', renderMetaFleetSection(id)) : '';
     var info = kv([['职责', esc(x.role || '-')], ['什么时候动', esc(x.trigger || '-')], x.tools && x.tools.length ? ['工具', esc(x.tools.join('、'))] : null,
       x.watches && x.watches.length ? ['盯着', x.watches.map(function (w) { return link('individual', w); }).join('、')] : null]);
     var dv = a.delivery[id];
@@ -752,7 +752,7 @@
 
   function buildSrHead(s, sel, dr) {
     var curDr = s.drawer === 'needs' || s.drawer === 'health' || s.drawer === 'search' ? s.drawer : (dr ? null : 'ctrl');
-    var tabs = [['ctrl', '⚡ 编排与调控'], ['needs', '● 待办'], ['health', '▲ 体检'], ['search', '⌕ 检索']].map(function (t) {
+    var tabs = [['ctrl', '编排与调控'], ['needs', '● 待办'], ['health', '▲ 体检'], ['search', '⌕ 检索']].map(function (t) {
       var isOn = !sel && curDr === t[0];
       return '<button type="button" class="ob-sr-tab' + (isOn ? ' on' : '') + '" data-act="drawer-tab" data-drawer="' + t[0] + '">' + t[1] + '</button>';
     }).join('');

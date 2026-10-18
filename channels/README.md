@@ -198,8 +198,25 @@ node hub/tools/agent_gateway.js tables
 
 - **调用**：单元 → 动作 → 产品的路线上的命令。网页的按钮和命令行网关的子命令是同一个动作的两种外观。运行中的系统也给同样的东西：`GET http://127.0.0.1:8899/api/capabilities` 返回四张表的汇总。
 - **维护**：加一个单元，在“单元 → 动作”加一行；接一个产品，在产品表加一行，路线没有的话在同一个文件的 routes 里加；加一个动作，在路由和动作表各加一行。然后跑 `tables` 核对，跑 `node probe/scripts/build_coverage.js` 重出现状。核对对不上的地方会逐条列出来。
-- **出了 bug**：沿网页 → 后端接口 → 运行记录（`~/.agent-hub/runs.jsonl`、`~/.agent-hub/hub-8899.log`）→ 产品表里那条命令手动跑一遍 → 产品表里写的会话记录位置，逐层对。断在哪层修哪层，修完在黑板补一行实测，再重出现状。改后端先 `node -e "import('./trace/apps/cli/src/server.ts')"` 能加载，再按 8899 端口停进程，用命令行网关 `read` 让它自动拉起。
-- **还不干净的**：网页的控件已照“单元 → 动作”渲染（`m/index.html` 的 `unitAction`，实现未测的用虚线框标出），但每个控件放在哪里仍写在页面代码里；Codex、Claude 能力最全的路线（app-server、stream-json）驱动已有、还没接进后端；能力开关还有一层由黑板生成的 `hub/data/capabilities.json` 去关掉实测不通的；产品编号的类型 `ChannelId` 在 `gateway.ts` 里还手写着七个；acpx 跑一轮仍经 `cmd.exe`；Hermes 没有档案卡。
+- **出了 bug**：沿网页 → 后端接口 → 运行记录（`~/.agent-hub/runs.jsonl`、`~/.agent-hub/hub-8899.log`）→ 产品表里那条命令手动跑一遍 → 产品表里写的会话记录位置，逐层对。断在哪层修哪层，修完在黑板补一行实测，再重出现状。改后端先 `node -e "import('./trace/apps/cli/src/server.ts')"` 能加载，再按 8899 端口停进程，用命令行网关任一子命令让它自动拉起。
+- **回归**：`node hub/tools/agent_gateway.js verify [--product zcode,hermes] [--unit open,cancel,task-board]` 照四张表逐产品、逐单元真跑一遍，每格写一行黑板。另有四个专项：`probe/scripts/test_taskboard.mjs`（一群会话的判定，不调智能体，几秒）、`probe_acp_approval.js`（常驻 ACP 的轮内审批）、`probe_session_control.js`（切模式、压缩、分叉、推理力度）、`probe_ask_user.js`（智能体轮内向人提问、人答回同一轮）。8899 上有别人的轮在跑、不能重启时，新代码在副本上测：`HUB_BACKGROUND=0 node trace/apps/cli/src/main.ts serve --port 18904`，这份只应答请求，不巡检、不推进目标、不整理派活单，专项脚本加 `--base http://127.0.0.1:18904`。
+
+后端各块在哪（一块一个文件，同时改不同的块不冲突）。`gateway.ts` 只留类本身：字段、发话和停止、一轮的收尾、状态与设置；其余每块是 `gateway/` 下一个文件，以 `this` 是后端的函数写成，挂回类上，调用方式不变：
+
+| 块 | 文件 |
+|---|---|
+| 发话（`sendPrompt`）、按产品表的 route 分路（`startRunInternal`）、停止（`cancelRun`）、一轮的收尾（`finalizeRun`）、状态（`getState`）、换模型和工作目录 | `gateway.ts` |
+| 各路线跑一轮 | `gateway/run_codex.ts`（app-server）、`run_claude.ts`（stream-json）、`run_acp.ts`（acp-resident：ZCode、WorkBuddy、OpenCode、Hermes）、`antigravity.ts`（agentapi，含它的会话解析）、`run_acpx.ts`（acpx，以及各 ACP 路线共用的帧解析）；驱动在 `drivers/` |
+| 一轮里人的回答：审批、智能体提的问题 | `gateway/approvals.ts`；各路线拦下请求的入口在各自的 `run_*.ts` |
+| 一轮以外的会话操作（mode、compact、fork、effort、commands） | `gateway/session_control.ts` |
+| 会话列表与身份（WorkBuddy 桌面端、Hermes、acpx 和驱动记录、工作目录、规范编号） | `gateway/sessions.ts` |
+| 两个会话之间（派活、回执、交回、唤醒、交接） | `gateway/collab.ts` |
+| 一群会话（目标、任务、熔断、预算） | `collab/taskboard.ts`，后端持有一个 `gateway.taskboard` |
+| 元智能体（设置、巡检、出事时的诊断会话） | `gateway/meta.ts` |
+| 类型、产品档案与各家环境变量、常量和小工具 | `gateway/types.ts`、`products.ts`、`common.ts` |
+| 接口 | `server.ts`；命令行网关 `hub/tools/agent_gateway.js`；网页 `m/index.html` |
+
+- **还不干净的**：网页每个控件放在哪里仍写在页面代码里；能力开关还有一层由黑板生成的 `hub/data/capabilities.json`；产品编号的类型 `ChannelId` 在 `gateway/types.ts` 里还手写着七个；OpenCode 的“只读”权限不生效（它的 ACP 不报模式、写文件不来请求）；超过 16MB 的会话文件，列表摘要最多 2 分钟、全文索引最多 10 分钟才重读一次（每 30 秒整份重读曾把服务卡住几十秒），所以这类会话的状态会晚一点。
 
 ## 要动某一块时读什么（按坐标去找）
 
@@ -221,7 +238,7 @@ node hub/tools/agent_gateway.js tables
 
 动代码前还要读：`trace/apps/cli/src/gateway.ts`（后端核心）、`trace/apps/cli/src/server.ts`（接口、能力注册表、会话列表的状态与标题校正）、`hub/tools/agent_gateway.js`（智能体用的协作命令行）、`m/index.html`（手机督工台）；旧网页 `console/console.js`、`hub/js/obs/chat.js`；开源基线见“开源基线与我们的分工”。
 
-**改代码的几条经验（10-18）**：带正则或反斜杠的改动不要经 Python 或 bash 字符串转写（转义会吃掉 `\n`、`\s`），用编辑工具或写成脚本文件再执行；`gateway.ts`、`server.ts` 是 CRLF 换行，按行替换要兼容；改后端后先 `node -e "import('./trace/apps/cli/src/server.ts')"` 确认能加载，再重启服务，否则自动拉起会起一个坏服务；用浏览器验页面时只改地址的 `#` 部分不会重新加载页面。
+**改代码的几条经验（10-18）**：带正则或反斜杠的改动不要经 Python 或 bash 字符串转写（转义会吃掉 `\n`、`\s`），用编辑工具或写成脚本文件再执行；`gateway.ts`、`server.ts` 是 CRLF 换行，按行替换要兼容；改后端后先 `node -e "import('./trace/apps/cli/src/server.ts')"` 确认能加载，再重启服务，否则自动拉起会起一个坏服务；服务是 Node 直接剥掉类型跑的，从不做类型检查，提交前要跑 `npm run typecheck`（CI 跑的就是它，10-18 前攒下的 12 个类型错误里有一处把元智能体的参数名全传错了）；用浏览器验页面时只改地址的 `#` 部分不会重新加载页面。
 
 **自检题**：读完能答出每一题（第 11、13、14 题考协作拓扑，见“协作拓扑”），才算建立了认知；答不出的回到对应文档。
 

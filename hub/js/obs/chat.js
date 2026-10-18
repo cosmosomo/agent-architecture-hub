@@ -124,7 +124,7 @@
       trigger: '工具请求权限或门禁待拍板时',
       triggerCount: 0,
       lastTriggeredAt: null,
-      lastActionSummary: '待命护航中（全自动放行读写与命令）'
+      lastActionSummary: '待命（读写与命令全部自动放行）'
     },
     {
       id: 'meta_resumer',
@@ -141,15 +141,15 @@
       brainSessionName: 'meta-brain-supervisor',
       patrolIntervalSec: 30,
       runtimeStatus: 'idle',
-      role: '实时监测断网、API 超时、进程崩溃与异常中断，唤醒元智能体大脑分析断点并自动续跑',
+      role: '实时监测断网、API 超时、进程崩溃与异常中断，唤醒元智能体的诊断会话分析断点并自动续跑',
       trigger: '心跳超时、网络断开或异常退出时',
       triggerCount: 0,
       lastTriggeredAt: null,
-      lastActionSummary: '实时守护 7 大渠道连接与执行断点'
+      lastActionSummary: '看着七个产品的连接和中断'
     },
     {
       id: 'meta_maint',
-      name: '元智能体 · 渠道容灾总管',
+      name: '元智能体 · 渠道容灾',
       shortName: '渠道容灾',
       icon: '🛡️',
       color: '#F59E0B',
@@ -162,11 +162,11 @@
       brainSessionName: 'meta-brain-supervisor',
       patrolIntervalSec: 30,
       runtimeStatus: 'idle',
-      role: '后台定时巡检 7 大渠道并发、配额与限流，被特殊事件触发时唤醒指定 Agent+模型大脑诊断并热切备用模型',
+      role: '后台定时巡检七个产品的并发、配额与限流，出事时叫指定的智能体诊断，并换到备用模型',
       trigger: '定时巡检、429 限流或模型拒绝响应时',
       triggerCount: 0,
       lastTriggeredAt: null,
-      lastActionSummary: '后台定时巡检 7 大渠道负载与配额水位'
+      lastActionSummary: '后台定时巡检七个产品的负载与配额'
     },
     {
       id: 'meta_auditor',
@@ -183,7 +183,7 @@
       brainSessionName: 'meta-brain-supervisor',
       patrolIntervalSec: 30,
       runtimeStatus: 'idle',
-      role: '检测连续重复工具调用或无效重试，唤醒元智能体大脑注入纠偏提示词防止空转消耗 Token',
+      role: '检测连续重复工具调用或无效重试，唤醒元智能体的诊断会话注入纠偏提示词防止空转消耗 Token',
       trigger: '连续 3 次重复报错或轨迹停滞时',
       triggerCount: 0,
       lastTriggeredAt: null,
@@ -194,7 +194,7 @@
   var DEFAULT_TURN_LIMIT = 18;
 
   var QUICK_PROMPTS = [
-    { label: '⚡ 自报家门', text: '请用一句话汇报你的渠道身份、当前模型和工作目录。' },
+    { label: '自报家门', text: '请用一句话汇报你的渠道身份、当前模型和工作目录。' },
     { label: '📋 总结进展', text: '请简要总结当前会话已完成的工作、关键结论以及下一步建议。' },
     { label: '🩺 诊断问题', text: '请检查当前工作区最近的改动或报错，给出根因定位与修复建议。' },
     { label: '🔎 梳理架构', text: '请梳理当前目录的核心模块结构与关键入口文件。' }
@@ -421,7 +421,7 @@
     }
 
     if (HUB.shell && HUB.shell.toast) {
-      HUB.shell.toast('🧠 已将 ' + ch.label + ' (' + sName + ') 模型切换为: ' + model);
+      HUB.shell.toast('已将 ' + ch.label + ' (' + sName + ') 模型切换为: ' + model);
     }
 
     if (typeof window !== 'undefined' && window.fetch && location && (location.protocol === 'http:' || location.protocol === 'https:')) {
@@ -603,7 +603,7 @@
     if (HUB.shell && HUB.shell.toast) {
       HUB.shell.toast(
         next.icon + ' ' + next.shortName + '：' +
-        (next.enabled ? '已开启护航 (' + (next.policy || 'auto') + ')' : '已暂停护航')
+        (next.enabled ? '已开启值守 (' + (next.policy || 'auto') + ')' : '已暂停值守')
       );
     }
     if (typeof window !== 'undefined' && window.fetch && location && (location.protocol === 'http:' || location.protocol === 'https:')) {
@@ -635,9 +635,9 @@
     var bChObj = channelById(first.brainChannel || 'zcode');
     if (HUB.shell && HUB.shell.toast) {
       HUB.shell.toast(
-        '🧠 元智能体总管大脑已更新：' +
+        '元智能体的诊断会话已更新：' +
         (first.engineMode === 'local_rules'
-          ? '纯本地零 Token 规则引擎'
+          ? '只用本地规则（不调模型）'
           : bChObj.label + ' · ' + (first.brainModel || bChObj.defaultModel))
       );
     }
@@ -666,7 +666,7 @@
     refreshUI();
     if (HUB.store && HUB.store.bump) HUB.store.bump();
     if (HUB.shell && HUB.shell.toast) {
-      HUB.shell.toast('🧠 正在唤醒元智能体大脑 (' + bCh.label + ' · ' + bModel + ') 巡检诊断 ' + targetCh + ':' + targetSess + '…');
+      HUB.shell.toast('正在唤醒元智能体的诊断会话 (' + bCh.label + ' · ' + bModel + ') 巡检诊断 ' + targetCh + ':' + targetSess + '…');
     }
     if (typeof window === 'undefined' || !window.fetch) return Promise.resolve();
     return fetch('/api/gateway/meta-agents/patrol', {
@@ -677,21 +677,21 @@
         eventKind: 'manual_patrol',
         targetChannel: targetCh,
         targetSession: targetSess,
-        errorSummary: customSummary || ('请对当前控制室焦点会话 ' + targetCh + ':' + targetSess + ' 及 7 大渠道运行健康态执行一次快速巡检诊断，并给出维护建议。')
+        errorSummary: customSummary || ('请对当前控制室焦点会话 ' + targetCh + ':' + targetSess + ' 及七个产品的运行状态执行一次快速巡检诊断，并给出维护建议。')
       })
     })
       .then(function (r) { return r.json(); })
       .then(function (res) {
         fetchGatewayState();
         if (res && res.ok && HUB.shell && HUB.shell.toast) {
-          HUB.shell.toast('✓ 元智能体大脑巡检完毕 [' + (res.action || 'standby') + ']：' + (res.reason || '系统运行健康'));
+          HUB.shell.toast('✓ 元智能体的诊断会话巡检完毕 [' + (res.action || 'standby') + ']：' + (res.reason || '系统运行健康'));
         }
         return res;
       })
       .catch(function (err) {
         fetchGatewayState();
         if (HUB.shell && HUB.shell.toast) {
-          HUB.shell.toast('✕ 元智能体大脑巡检唤醒异常：' + err.message);
+          HUB.shell.toast('✕ 元智能体的诊断会话巡检唤醒异常：' + err.message);
         }
       });
   }
@@ -715,7 +715,7 @@
       refreshUI(true);
     }
     if (HUB.shell && HUB.shell.toast) {
-      HUB.shell.toast('👁️ 已进入元智能体大脑协调会话 (' + bCh.label + ' · ' + bSessName + ')');
+      HUB.shell.toast('👁️ 已进入元智能体的诊断会话 (' + bCh.label + ' · ' + bSessName + ')');
     }
   }
 
@@ -816,7 +816,7 @@
       .then(function (res) {
         if (!res || !res.ok) throw new Error((res && res.error) || '审批操作失败');
         if (HUB.shell && HUB.shell.toast) {
-          HUB.shell.toast(decision === 'approve' ? '⚡ 已批准权限并自动续跑！' : '✕ 已驳回该工具权限请求');
+          HUB.shell.toast(decision === 'approve' ? '已批准权限并自动续跑！' : '✕ 已驳回该工具权限请求');
         }
         fetchGatewayState();
         refreshUI(true);
@@ -914,7 +914,7 @@
         if (mIdx >= 0) state.metaAgents[mIdx] = Object.assign({}, state.metaAgents[mIdx], ev.metaAgent);
       }
       if (HUB.shell && HUB.shell.toast && logItem.action !== 'auto_approve') {
-        HUB.shell.toast('🛡️ ' + (logItem.agentName || logItem.metaName || '元智能体') + '：' + (logItem.detail || logItem.summary || '已自动介入处理'));
+        HUB.shell.toast('' + (logItem.agentName || logItem.metaName || '元智能体') + '：' + (logItem.detail || logItem.summary || '已自动介入处理'));
       }
       state.lastRenderKey = '';
       refreshUI();
@@ -1338,7 +1338,7 @@
         if (errCount) badges.push('<span class="cr-pchip err">✕ 报错 ' + errCount + '</span>');
         procSummaryHtml =
           '<button type="button" class="cr-proc-bar' + (isProcOpen ? ' open' : '') + '" data-act="toggle-turn-proc" data-turn="' + esc(turnKey) + '" title="点击展开或折叠本轮的内部思考与工具调用明细">' +
-            '<span class="cr-proc-lbl">⚡ 执行轨迹</span>' +
+            '<span class="cr-proc-lbl">执行轨迹</span>' +
             '<span class="cr-proc-badges">' + badges.join('') + '</span>' +
             '<span class="cr-proc-caret">' + (isProcOpen ? '▾ 收起明细' : '▸ 展开 ' + processStepCount + ' 步详情') + '</span>' +
           '</button>';
@@ -1579,7 +1579,7 @@
       windowBarHtml =
         '<div class="cr-win-bar">' +
           '<div class="cr-win-info">' +
-            '<span class="cr-win-badge">⚡ 极速窗口</span>' +
+            '<span class="cr-win-badge">最近几轮</span>' +
             '<span>共 <b>' + totalTurns + '</b> 轮对话 · 已折叠较早的 <b>' + hiddenTurnsCount + '</b> 轮，当前渲染最近 <b>' + (totalTurns - startIdx) + '</b> 轮</span>' +
           '</div>' +
           '<div class="cr-win-acts">' +
@@ -1602,13 +1602,13 @@
         : '直接通过共享 <code>acpx</code> 网关唤醒 <b>' + esc(activeCh.label) + '</b>';
       turnsHtml =
         '<div class="cr-empty-state">' +
-          '<div class="cr-empty-orb" style="color:' + activeCh.color + '">' + (isNewDraft ? '✨' : '💬') + '</div>' +
+          '<div class="cr-empty-orb" style="color:' + activeCh.color + '">' + (isNewDraft ? '＋' : '💬') + '</div>' +
           '<div class="cr-empty-title">' +
             (isNewDraft
               ? '已创建 ' + esc(activeCh.label) + ' 全新会话槽（' + esc(activeSessName) + '）'
               : '智能体实况控制室已就绪（' + esc(activeCh.label) + ' · ' + esc(activeSessName) + '）') +
           '</div>' +
-          '<div class="cr-empty-sub">在下方输入指令，' + bridgeHint + '（模型 <code>' + esc(activeModel) + '</code> · 目录 <code>' + esc(activeCwd) + '</code> · 会话槽 <code>' + esc(activeSessName) + '</code>），并由元智能体护航总管实时守护。</div>' +
+          '<div class="cr-empty-sub">在下方输入指令，' + bridgeHint + '（模型 <code>' + esc(activeModel) + '</code> · 目录 <code>' + esc(activeCwd) + '</code> · 会话槽 <code>' + esc(activeSessName) + '</code>），并由元智能体实时守护。</div>' +
         '</div>';
     }
 
@@ -1652,13 +1652,13 @@
       });
       modelControlHtml =
         '<label class="cr-sess-pick cr-model-pick" title="选择或切换当前渠道已实机验证可用的大模型">' +
-          '<span>🧠 模型:</span>' +
+          '<span>模型:</span>' +
           '<select data-cr-model-select>' + modelOpts.join('') + '</select>' +
         '</label>';
     } else if (activeModel) {
       modelControlHtml =
         '<span class="cr-sess-pick cr-model-static" title="当前渠道/会话固定使用本机已验证可用模型（不支持中途热切其他模型）">' +
-          '<span>🧠 模型:</span>' +
+          '<span>模型:</span>' +
           '<b>' + esc(activeModel) + '</b>' +
         '</span>';
     }
@@ -1669,7 +1669,7 @@
     var brainModelShort = String(leadMeta.brainModel || brainCh.defaultModel || '').split(/[\\/:]/).pop() || (leadMeta.brainModel || brainCh.defaultModel);
     var isBrainThinking = (state.metaAgents || []).some(function (ma) { return ma.runtimeStatus === 'thinking'; });
     var brainLabel = leadMeta.engineMode === 'local_rules'
-      ? '本地零Token规则'
+      ? '本地规则'
       : (brainCh.label + ' · ' + brainModelShort);
 
     var metaPillsHtml = (state.metaAgents || DEFAULT_META_AGENTS).map(function (ma) {
@@ -1705,20 +1705,20 @@
     var metaBarHtml =
       '<div class="cr-meta-bar">' +
         '<div class="cr-meta-top-row">' +
-          '<button type="button" class="cr-meta-brain-pill' + (isBrainThinking ? ' thinking' : '') + '" data-act="open-meta-drawer" title="点击在右侧栏更换元智能体总管所调用的大脑 Agent 与模型（当前：' + esc(brainLabel) + '，后台每 ' + esc(leadMeta.patrolIntervalSec || 30) + 's 零Token巡检 + 异常事件唤醒大脑）">' +
+          '<button type="button" class="cr-meta-brain-pill' + (isBrainThinking ? ' thinking' : '') + '" data-act="open-meta-drawer" title="点击在右侧栏更换元智能体所调用的诊断用的产品 与模型（当前：' + esc(brainLabel) + '，后台每 ' + esc(leadMeta.patrolIntervalSec || 30) + 's 零Token巡检 + 异常事件叫诊断会话）">' +
             '<span class="cr-meta-brain-dot"></span>' +
-            '<span>🧠 元智能体大脑: <b>' + esc(brainLabel) + '</b></span>' +
+            '<span>元智能体的诊断会话: <b>' + esc(brainLabel) + '</b></span>' +
             '<span class="cr-meta-brain-st">' + (isBrainThinking ? '巡检思考中…' : '值守中 ▾') + '</span>' +
           '</button>' +
           '<div class="cr-meta-acts">' +
             (hasInterrupted
-              ? '<button type="button" class="cr-resume-btn warn" data-act="gw-resume" title="调用【断网与Bug续跑元智能体】分析当前会话最后的断点/报错上下文，自动发包无缝续跑">🔄 检测到中断 · 立即续跑</button>'
+              ? '<button type="button" class="cr-resume-btn warn" data-act="gw-resume" title="调用【断网与Bug续跑元智能体】分析当前会话最后的断点/报错上下文，自动发包续跑">🔄 检测到中断 · 立即续跑</button>'
               : '') +
             extAnomBtnHtml +
             '<select class="cr-meta-cfg-btn" data-cr-handoff-select title="将当前会话最近 3 轮上下文与工作目录一键转交给另一个 Agent 渠道接力完成">' + handoffOpts + '</select>' +
-            '<button type="button" class="cr-meta-cfg-btn" data-act="meta-patrol" title="立即唤醒元智能体大脑 (' + esc(brainLabel) + ') 对当前会话与渠道执行一次实况诊断">🧠 唤醒巡检</button>' +
-            '<button type="button" class="cr-meta-cfg-btn" data-act="open-meta-brain" title="进入元智能体大脑专属协调会话 (meta-brain-supervisor)，查看元智能体真实的思考与决策记录">👁️ 脑会话</button>' +
-            '<button type="button" class="cr-meta-cfg-btn" data-act="open-meta-drawer" title="在右侧【⚡ 编排与调控】面板更换元智能体大脑 Agent/模型、巡检周期与触发日志">⚙ 换脑/日志</button>' +
+            '<button type="button" class="cr-meta-cfg-btn" data-act="meta-patrol" title="立即唤醒元智能体的诊断会话 (' + esc(brainLabel) + ') 对当前会话与渠道执行一次实况诊断">唤醒巡检</button>' +
+            '<button type="button" class="cr-meta-cfg-btn" data-act="open-meta-brain" title="进入元智能体的诊断会话 (meta-brain-supervisor)，查看元智能体真实的思考与决策记录">👁️ 诊断会话</button>' +
+            '<button type="button" class="cr-meta-cfg-btn" data-act="open-meta-drawer" title="在右侧【编排与调控】面板更换元智能体的诊断会话 Agent/模型、巡检周期与触发日志">⚙ 换诊断模型/日志</button>' +
           '</div>' +
         '</div>' +
         '<div class="cr-meta-pills">' + metaPillsHtml + '</div>' +
@@ -1753,13 +1753,13 @@
     var pendingApprs = (state.pendingApprovals || []).filter(function (a) { return a && a.status === 'pending'; });
     var approvalsHtml = pendingApprs.length > 0 ? (
       '<div class="cr-queue-banner cr-approval-banner">' +
-        '<div class="cr-queue-hdr"><span>🛡️ 待拍板权限门禁（' + pendingApprs.length + ' 项）</span><span>批准后将自动开启读写权限并无缝续跑</span></div>' +
+        '<div class="cr-queue-hdr"><span>待拍板权限门禁（' + pendingApprs.length + ' 项）</span><span>批准后打开读写权限接着跑</span></div>' +
         pendingApprs.map(function (ap) {
           var apCh = channelById(ap.channel);
           return '<div class="cr-queue-item">' +
             '<span class="cr-queue-idx">🔒 ' + esc(apCh.label + ':' + ap.sessionName) + '</span>' +
             '<span class="cr-queue-txt">请求执行 <b>' + esc(ap.toolName) + '</b> — ' + esc((ap.reason || '').slice(0, 90)) + '</span>' +
-            '<button type="button" class="cr-q-btn" data-act="gw-approve-decision" data-id="' + esc(ap.id) + '" data-decision="approve">⚡ 批准并续跑</button>' +
+            '<button type="button" class="cr-q-btn" data-act="gw-approve-decision" data-id="' + esc(ap.id) + '" data-decision="approve">批准并续跑</button>' +
             '<button type="button" class="cr-q-btn" data-act="gw-approve-decision" data-id="' + esc(ap.id) + '" data-decision="reject" style="opacity:0.8">✕ 驳回</button>' +
           '</div>';
         }).join('') +
@@ -1774,7 +1774,7 @@
           return '<div class="cr-queue-item">' +
             '<span class="cr-queue-idx">#' + (qi + 1) + '</span>' +
             '<span class="cr-queue-txt">' + esc(q.prompt) + '</span>' +
-            '<button type="button" class="cr-q-btn" data-act="gw-promote-interrupt" data-ch="' + esc(q.channelId) + '" data-sess="' + esc(q.sessionName) + '" data-prompt="' + esc(q.prompt) + '">⚡ 立即插队</button>' +
+            '<button type="button" class="cr-q-btn" data-act="gw-promote-interrupt" data-ch="' + esc(q.channelId) + '" data-sess="' + esc(q.sessionName) + '" data-prompt="' + esc(q.prompt) + '">立即插队</button>' +
           '</div>';
         }).join('') +
       '</div>'
@@ -1789,9 +1789,9 @@
     var isBusy = !!(liveRun && liveRun.status === 'running');
     var actionBtnsHtml = isBusy
       ? '<button type="button" class="cr-send-btn queue" data-act="gw-send" data-mode="queue" title="不打断当前执行，排入本会话下一轮自动执行">📥 排队下一轮</button>' +
-        (caps.canCancelRun ? '<button type="button" class="cr-send-btn interrupt" data-act="gw-send" data-mode="interrupt" title="立即中断当前运行并优先执行本条新指令">⚡ 中断并插队</button>' : '') +
+        (caps.canCancelRun ? '<button type="button" class="cr-send-btn interrupt" data-act="gw-send" data-mode="interrupt" title="立即中断当前运行并优先执行本条新指令">中断并插队</button>' : '') +
         (caps.canCancelRun ? '<button type="button" class="cr-send-btn stop" data-act="gw-cancel" data-ch="' + esc(activeCh.id) + '" data-sess="' + esc(activeSessName) + '">⏹ 停止</button>' : '')
-      : '<button type="button" class="cr-send-btn primary" data-act="gw-send" data-mode="send" style="--ch-c:' + activeCh.color + '">🚀 发送指令</button>';
+      : '<button type="button" class="cr-send-btn primary" data-act="gw-send" data-mode="send" style="--ch-c:' + activeCh.color + '">发送</button>';
 
     el.innerHTML =
       liveRunsStripHtml +
@@ -1814,7 +1814,7 @@
             (caps.canCreateSession ? '<button type="button" class="cr-new-sess-btn" data-act="new-sess" title="在当前渠道新建一个干净的独立会话槽位">+ 新会话</button>' : '') +
             (caps.canSetPermissionMode
               ? '<button type="button" class="cr-perm-btn ' + (state.permissions === 'all' ? 'all' : 'reads') + '" data-act="toggle-perm" title="切换工具执行审批策略（与【自动批准督导】元智能体联动）">' +
-                  (state.permissions === 'all' ? '⚡ 自动读写 (all)' : '🛡️ 只读安全 (reads)') +
+                  (state.permissions === 'all' ? '自动读写 (all)' : '只读安全 (reads)') +
                 '</button>'
               : '') +
           '</div>' +
@@ -1922,7 +1922,7 @@
     }
 
     if (HUB.shell && HUB.shell.toast) {
-      HUB.shell.toast('✨ 已新建 ' + ch.label + ' 独立会话槽: ' + sessName);
+      HUB.shell.toast('已新建 ' + ch.label + ' 独立会话槽: ' + sessName);
     }
 
     setTimeout(function () {
@@ -1997,7 +1997,7 @@
         if (res.action === 'queued') {
           if (HUB.shell && HUB.shell.toast) HUB.shell.toast('📥 已排入 ' + ch.label + ' 队列（第 ' + res.queueLength + ' 位）');
         } else {
-          if (HUB.shell && HUB.shell.toast) HUB.shell.toast('🚀 已发送至 ' + ch.label + ' [' + model + '] (' + sessName + ')，正在实况流式接收…');
+          if (HUB.shell && HUB.shell.toast) HUB.shell.toast('已发送至 ' + ch.label + ' [' + model + '] (' + sessName + ')，等它回复…');
         }
         fetchGatewayState();
       })

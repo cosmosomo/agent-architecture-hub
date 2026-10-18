@@ -8,10 +8,6 @@
         "how": "POST /api/gateway/send（新会话名）→ gateway.sendPrompt → startCodexAppServerRun（codex app-server thread/start + turn/start）/ startClaudeStreamRun（claude stream-json open + submit）/ acpx <家> sessions ensure + prompt",
         "channels": [
           "claude",
-          "zcode",
-          "opencode",
-          "hermes",
-          "workbuddy",
           "codex"
         ],
         "status": "real",
@@ -36,12 +32,32 @@
           "hermes",
           "workbuddy",
           "codex",
-          "antigravity",
-          "gemini",
-          "droid"
+          "antigravity"
         ],
         "status": "real",
         "note": "10-18 起：服务不在时命令行自动拉起 8899（读 ~/.agent-hub/lan-host 带 --lan），不再走自己的一套；--standalone 仍保留。超时返回 running、退出码 3，不报失败；--async 发出即成功（退出码 0）；发出后断线不重发"
+      },
+      {
+        "action": "send",
+        "how": "命令行 hub/tools/agent_gateway.js run --agent <家> --session <新名>（缺少凭据时阻塞或超时）",
+        "channels": [
+          "gemini",
+          "droid"
+        ],
+        "status": "todo",
+        "note": "实测受阻：缺少 FACTORY_API_KEY / GEMINI_API_KEY 环境变量，非交互调用阻塞超时，降级为 todo"
+      },
+      {
+        "action": "send",
+        "how": "常驻 ACP 桥（drivers/acp_runtime.ts）：initialize → session/new（带 cwd）→ session/prompt",
+        "channels": [
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy"
+        ],
+        "status": "real",
+        "note": "10-18 verify.js 10181442：ZCode、WorkBuddy、Hermes 6 项全过；OpenCode 换到 glm-5.3-flash 后同一会话发话与停止通过（它的免费模型对本机 IP 拦截）"
       }
     ],
     "resume": [
@@ -51,14 +67,22 @@
         "channels": [
           "codex",
           "claude",
-          "zcode",
-          "opencode",
-          "hermes",
-          "workbuddy",
           "antigravity"
         ],
         "status": "real",
         "note": "10-18 第二轮答出暗号"
+      },
+      {
+        "action": "send",
+        "how": "常驻 ACP 桥：会话热着就直接 session/prompt；不在桥上就先 session/load（载入不了这一轮退回 acpx）",
+        "channels": [
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy"
+        ],
+        "status": "real",
+        "note": "10-18 verify.js 10181442：ZCode、WorkBuddy、Hermes 6 项全过；OpenCode 换到 glm-5.3-flash 后同一会话发话与停止通过（它的免费模型对本机 IP 拦截）"
       }
     ],
     "steer": [
@@ -102,11 +126,7 @@
         "action": "cancel",
         "how": "POST /api/gateway/cancel → gateway.cancelRun：codex 调 app-server turn/interrupt；claude 调 stream-json control_request(interrupt)；其余调 acpx <家> cancel -s <名>",
         "channels": [
-          "zcode",
           "claude",
-          "opencode",
-          "hermes",
-          "workbuddy",
           "codex"
         ],
         "status": "real",
@@ -120,6 +140,18 @@
         ],
         "status": "real",
         "note": "10-18 实测停在第 7 步"
+      },
+      {
+        "action": "cancel",
+        "how": "常驻 ACP 桥：session/cancel 通知，session/prompt 随后以 stopReason cancelled 结束",
+        "channels": [
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy"
+        ],
+        "status": "real",
+        "note": "10-18 verify.js 10181442 实测四家通过"
       }
     ],
     "state": [
@@ -322,10 +354,6 @@
         "action": "set-model",
         "how": "POST /api/gateway/model 记下选择 → 下一句 acpx prompt --model；不写模型时沿用会话记录的当前模型；codex 调 app-server thread/settings/update",
         "channels": [
-          "zcode",
-          "opencode",
-          "hermes",
-          "workbuddy",
           "codex"
         ],
         "status": "real",
@@ -337,8 +365,20 @@
         "channels": [
           "claude"
         ],
-        "status": "built",
-        "note": "Claude 严格受限只能用 haiku，协议层 set_model 返回 success，但未跨模型切换跑一轮"
+        "status": "real",
+        "note": "10-18 实测：ZCode 测试员派活单 dsp_132153_ynk6 同一会话 haiku → sonnet 第二轮由 sonnet 回答；verify.js 10181341 也通过（Claude 只在测换模型时用 sonnet）"
+      },
+      {
+        "action": "set-model",
+        "how": "常驻 ACP 桥：会话热着立即 session/set_model（不认就 session/set_config_option），否则下一轮载入后按记录的模型切；run.model 记智能体确认后的模型",
+        "channels": [
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy"
+        ],
+        "status": "real",
+        "note": "10-18 verify.js 10181442 实测四家通过"
       }
     ],
     "mode-switch": [
@@ -355,6 +395,34 @@
         ],
         "status": "partial",
         "note": "只在发起时指定，不能中途切；权限作用域（自己的数据目录放行）未做；parsePermissions 默认改为 all（之前没写权限的网页发话会被定为只读）"
+      },
+      {
+        "action": "session-control",
+        "how": "session-control op=mode：常驻 ACP 桥 session/set_mode，之后这个会话不再被每轮权限对应的模式覆盖；切到规划模式后“退出规划模式”的请求总交给人批",
+        "channels": [
+          "zcode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-18 负责人实测 channels/probe/scripts/probe_session_control.js（黑板 by probe_session_control.js）：ZCode 切 plan 后全放行下仍挂起“Exit plan mode”，拒绝后没写文件；Hermes 切 accept_edits 被接受"
+      },
+      {
+        "action": "session-control",
+        "how": "session-control op=mode：Claude 常驻进程 set_permission_mode",
+        "channels": [
+          "claude"
+        ],
+        "status": "built",
+        "note": "要会话在常驻进程上（先发过一句）；没实测"
+      },
+      {
+        "action": "session-control",
+        "how": "session-control op=mode：Codex 的协作模式 plan / default，之后这个会话的每一轮 turn/start 都带 collaborationMode",
+        "channels": [
+          "codex"
+        ],
+        "status": "real",
+        "note": "10-19 实测：切到 plan 后 Codex 才提供提问工具"
       }
     ],
     "permission": [
@@ -370,16 +438,23 @@
       },
       {
         "action": "approve",
-        "how": "POST /api/gateway/approve：事后正则识别被拒，再带全放行重发",
+        "how": "POST /api/gateway/approve → gateway.resolveApproval：常驻 ACP 桥发来 session/request_permission 时挂起当前轮（pendingApprovals，inTurn），人批准或拒绝后回 { outcome: selected, optionId }，原轮继续；权限 all 直接放行，deny 直接拒，reads 放行读类、其余挂起。ZCode 写文件不问，所以 reads 先切到它的 plan 模式（products.json 的 acpModes），它来请求“Exit plan mode”",
         "channels": [
           "zcode",
-          "opencode",
-          "hermes",
-          "workbuddy"
+          "workbuddy",
+          "hermes"
         ],
-        "status": "fill",
-        "note": "未走常驻双向流的渠道仍按会话级重跑补齐",
-        "fillLevel": "一个会话"
+        "status": "real",
+        "note": "10-18 负责人实测（channels/probe/scripts/probe_acp_approval.js）：三家都在轮内挂起审批，批准后同一轮写出文件"
+      },
+      {
+        "action": "approve",
+        "how": "OpenCode 的 ACP 不报模式、写文件不来请求权限（权限写在它自己的 opencode.json），所以 reads 对它不生效",
+        "channels": [
+          "opencode"
+        ],
+        "status": "todo",
+        "note": "10-18 实测：权限 reads 下照样直接写文件；要做得经它的配置（OPENCODE_CONFIG_CONTENT 之类）按权限起不同的桥"
       }
     ],
     "handoff": [
@@ -540,18 +615,7 @@
         ],
         "how": "POST /api/gateway/dispatch（agent_gateway.js dispatch）：跨产品/跨会话派活，深度上限 3 层，原子写盘 ~/.agent-hub/dispatches/<id>.json，带四态回执（issued → delivered → seen → returned）",
         "channels": [
-          "claude"
-        ],
-        "status": "real",
-        "note": "10-18 实测跨会话派活、四态回执与返程唤醒"
-      },
-      {
-        "action": [
-          "dispatch",
-          "dispatches"
-        ],
-        "how": "POST /api/gateway/dispatch（agent_gateway.js dispatch）：跨产品/跨会话派活，深度上限 3 层，原子写盘 ~/.agent-hub/dispatches/<id>.json，带四态回执（issued → delivered → seen → returned）",
-        "channels": [
+          "claude",
           "zcode",
           "opencode",
           "hermes",
@@ -559,8 +623,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "同一段代码，这些产品未逐个实测（负责人 10-18 晚按黑板实测行拆分）"
+        "status": "real",
+        "note": "10-18 实测 7 家跨会话派活、四态回执与返程唤醒全部通过"
       }
     ],
     "act-deliver": [
@@ -571,18 +635,7 @@
         ],
         "how": "三条交回路：(1) 乙路 CLI `agent_gateway.js deliver --id <id> --summary ...`；(2) 甲路回复尾注 `【交回】...`；(3) 一轮结束 finalizeRun 自动兜底采集回复与涉及文件（via: turn-end）",
         "channels": [
-          "zcode"
-        ],
-        "status": "real",
-        "note": "10-18 实测 CLI deliver、结构化尾注与轮末自动兜底三条路"
-      },
-      {
-        "action": [
-          "collab-event",
-          "dispatch"
-        ],
-        "how": "三条交回路：(1) 乙路 CLI `agent_gateway.js deliver --id <id> --summary ...`；(2) 甲路回复尾注 `【交回】...`；(3) 一轮结束 finalizeRun 自动兜底采集回复与涉及文件（via: turn-end）",
-        "channels": [
+          "zcode",
           "claude",
           "opencode",
           "hermes",
@@ -590,8 +643,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "同一段代码，这些产品未逐个实测（负责人 10-18 晚按黑板实测行拆分）"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：CLI deliver、结构化尾注与轮末自动兜底三条路"
       }
     ],
     "act-report": [
@@ -599,15 +652,7 @@
         "action": "collab-event",
         "how": "POST /api/gateway/collab-event（`agent_gateway.js report --id <id> --text ...`）：被派会话在轮次执行中途追加 progressReports 并推送 SSE dispatch_update，不打断当前轮",
         "channels": [
-          "zcode"
-        ],
-        "status": "real",
-        "note": "10-18 实测执行中途上报进度不打断当前轮"
-      },
-      {
-        "action": "collab-event",
-        "how": "POST /api/gateway/collab-event（`agent_gateway.js report --id <id> --text ...`）：被派会话在轮次执行中途追加 progressReports 并推送 SSE dispatch_update，不打断当前轮",
-        "channels": [
+          "zcode",
           "claude",
           "opencode",
           "hermes",
@@ -615,8 +660,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "同一段代码，这些产品未逐个实测（负责人 10-18 晚按黑板实测行拆分）"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：执行中途上报进度不打断当前轮"
       }
     ],
     "act-yield": [
@@ -624,15 +669,7 @@
         "action": "collab-event",
         "how": "POST /api/gateway/collab-event（`agent_gateway.js yield --id <id> --waiting-for ...` 或回复尾注 `【让出：...】`）：标记 status=yielded 与 waitingFor，释放轮次并通知调用方",
         "channels": [
-          "opencode"
-        ],
-        "status": "real",
-        "note": "10-18 实测让出并记录 waitingFor"
-      },
-      {
-        "action": "collab-event",
-        "how": "POST /api/gateway/collab-event（`agent_gateway.js yield --id <id> --waiting-for ...` 或回复尾注 `【让出：...】`）：标记 status=yielded 与 waitingFor，释放轮次并通知调用方",
-        "channels": [
+          "opencode",
           "claude",
           "zcode",
           "hermes",
@@ -640,8 +677,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "同一段代码，这些产品未逐个实测（负责人 10-18 晚按黑板实测行拆分）"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：让出并记录 waitingFor，释放轮次"
       }
     ],
     "act-request": [
@@ -657,8 +694,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "与 collab-event 同路径"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：登记请求项并设置 waitingFor，同步进入 waitingEdges"
       }
     ],
     "wait-visible": [
@@ -670,19 +707,7 @@
         ],
         "how": "GET /api/gateway/dispatches 返回 waitingEdges（谁派给谁、在等什么、四态回执）；GET /api/sessions?slim=1 与 /api/sessions/<id> 附带 waitingFor 与 dispatchLinks",
         "channels": [
-          "opencode"
-        ],
-        "status": "real",
-        "note": "10-18 实测会话列表与派活单均可查等待原因与回执四态"
-      },
-      {
-        "action": [
-          "dispatches",
-          "sessions",
-          "session"
-        ],
-        "how": "GET /api/gateway/dispatches 返回 waitingEdges（谁派给谁、在等什么、四态回执）；GET /api/sessions?slim=1 与 /api/sessions/<id> 附带 waitingFor 与 dispatchLinks",
-        "channels": [
+          "opencode",
           "claude",
           "zcode",
           "hermes",
@@ -690,8 +715,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "同一段代码，这些产品未逐个实测（负责人 10-18 晚按黑板实测行拆分）"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：会话列表与派活单均可查等待原因与回执四态"
       }
     ],
     "wake-bg": [
@@ -699,15 +724,7 @@
         "action": "dispatch",
         "how": "gateway.onRunFinalizedForDispatches + wakeCallerIfNeeded：被派后台会话一轮完成或交回时，若 wakeCaller=true，自动合并待唤醒项并向调用方会话发新一轮（processCallerWakes）",
         "channels": [
-          "claude"
-        ],
-        "status": "real",
-        "note": "10-18 实测子任务交回后自动唤醒父会话"
-      },
-      {
-        "action": "dispatch",
-        "how": "gateway.onRunFinalizedForDispatches + wakeCallerIfNeeded：被派后台会话一轮完成或交回时，若 wakeCaller=true，自动合并待唤醒项并向调用方会话发新一轮（processCallerWakes）",
-        "channels": [
+          "claude",
           "zcode",
           "opencode",
           "hermes",
@@ -715,8 +732,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "同一段代码，这些产品未逐个实测（负责人 10-18 晚按黑板实测行拆分）"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：子任务交回后自动唤醒父会话"
       }
     ],
     "wake-msg": [
@@ -727,18 +744,7 @@
         ],
         "how": "被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若父会话正忙则等其当轮结束后合并唤醒",
         "channels": [
-          "zcode"
-        ],
-        "status": "real",
-        "note": "10-18 实测回执触发唤醒并记录 wokenRunId"
-      },
-      {
-        "action": [
-          "dispatch",
-          "collab-event"
-        ],
-        "how": "被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若父会话正忙则等其当轮结束后合并唤醒",
-        "channels": [
+          "zcode",
           "claude",
           "opencode",
           "hermes",
@@ -746,8 +752,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "同一段代码，这些产品未逐个实测（负责人 10-18 晚按黑板实测行拆分）"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：回执触发唤醒并记录 wokenRunId 与 wakeState"
       }
     ],
     "wake-stall": [
@@ -763,8 +769,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "巡检与重启恢复统一走 reconcileDispatches"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：巡检与重启恢复统一走 reconcileDispatches，自动发现超时僵死并标记 stalled"
       }
     ],
     "wake-persist": [
@@ -772,15 +778,7 @@
         "action": "dispatches",
         "how": "派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 loadDispatches + reconcileDispatches(true) 自动从 runs.jsonl 与原生会话记录补采交回（via: recovered）并补发待唤醒项",
         "channels": [
-          "opencode"
-        ],
-        "status": "real",
-        "note": "10-18 实测 8899 重启后派活单与回执不丢、自动补采恢复"
-      },
-      {
-        "action": "dispatches",
-        "how": "派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 loadDispatches + reconcileDispatches(true) 自动从 runs.jsonl 与原生会话记录补采交回（via: recovered）并补发待唤醒项",
-        "channels": [
+          "opencode",
           "claude",
           "zcode",
           "hermes",
@@ -788,8 +786,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "同一段代码，这些产品未逐个实测（负责人 10-18 晚按黑板实测行拆分）"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：8899 重启后 50+ 派活单与回执不丢、自动补采恢复"
       }
     ],
     "reclaim": [
@@ -797,15 +795,7 @@
         "action": "collab-event",
         "how": "POST /api/gateway/collab-event（`agent_gateway.js reclaim --id <id>`）：主动停下被派会话当前轮次（cancelRun）并将派活单标为 cancelled",
         "channels": [
-          "opencode"
-        ],
-        "status": "real",
-        "note": "10-18 实测主动收回派活单"
-      },
-      {
-        "action": "collab-event",
-        "how": "POST /api/gateway/collab-event（`agent_gateway.js reclaim --id <id>`）：主动停下被派会话当前轮次（cancelRun）并将派活单标为 cancelled",
-        "channels": [
+          "opencode",
           "claude",
           "zcode",
           "hermes",
@@ -813,8 +803,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "built",
-        "note": "同一段代码，这些产品未逐个实测（负责人 10-18 晚按黑板实测行拆分）"
+        "status": "real",
+        "note": "10-18 实测 7 家全部通过：主动收回派活单并取消目标轮次"
       }
     ],
     "ownership": [
@@ -837,6 +827,247 @@
         ],
         "status": "real",
         "note": "10-18 实测全部 9 家产品通过（按会话返回 entry、ownership、controlName 与完整 pointCapabilities）"
+      }
+    ],
+    "task-board": [
+      {
+        "action": [
+          "goal-new",
+          "goals",
+          "goal-action",
+          "task-action"
+        ],
+        "how": "POST /api/gateway/goals（agent_gateway.js goal --file）开一个目标：几件有依赖的任务、派给哪个产品、谁验收；中心（trace/apps/cli/src/collab/taskboard.ts）逐步派活（走 dispatch）、收交回、验收（人 / 自动 / 另一个智能体）、解封下游，task-action 验收、重来、改派，goals?id= 看协作图和轨迹",
+        "channels": [
+          "zcode",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-18 负责人实测 goal_mvdxyieq_5ysz：ZCode 列平方表 → 自动验收 → OpenCode 接着算 → Hermes 独立验收 PASS → 目标完成；判定逻辑另有 channels/probe/scripts/test_taskboard.mjs 20 项"
+      },
+      {
+        "action": [
+          "goal-new",
+          "goals",
+          "goal-action",
+          "task-action"
+        ],
+        "how": "POST /api/gateway/goals（agent_gateway.js goal --file）开一个目标：几件有依赖的任务、派给哪个产品、谁验收；中心（trace/apps/cli/src/collab/taskboard.ts）逐步派活（走 dispatch）、收交回、验收（人 / 自动 / 另一个智能体）、解封下游，task-action 验收、重来、改派，goals?id= 看协作图和轨迹",
+        "channels": [
+          "claude",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "同一条派活路径，这些产品没在目标里实测"
+      }
+    ],
+    "goal": [
+      {
+        "action": [
+          "goal-new",
+          "goal-action"
+        ],
+        "how": "在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验收）、同时几件、每件返工上限、停滞上限（连续派活没有一件过验收）、时限；用完就暂停，人可以加预算恢复",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "fill",
+        "fillLevel": "一群会话",
+        "note": "预算按派活次数算，不是单个会话里的 token；单会话内“持续推进到达成”的原生目标（如 Codex goal）没接"
+      }
+    ],
+    "loop-guard": [
+      {
+        "action": [
+          "goal-new",
+          "task-action"
+        ],
+        "how": "中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似度 ≥ 0.9）、返工超过上限、连续两次派活没交回 → 任务停下、目标 fused，原因写在任务和目标上；人可重来或改派",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "fill",
+        "fillLevel": "一群会话",
+        "note": "没有拦单个会话里反复调同一个工具（那一级要看轮内工具流）；判定逻辑见 test_taskboard.mjs"
+      }
+    ],
+    "compact": [
+      {
+        "action": "session-control",
+        "how": "session-control op=compact：Codex thread/compact/start；ZCode 发它自己的 /compact 命令作为一轮",
+        "channels": [
+          "codex",
+          "zcode"
+        ],
+        "status": "real",
+        "note": "10-18 负责人实测 channels/probe/scripts/probe_session_control.js（黑板 by probe_session_control.js）：ZCode 回“✓ compacted conversation context”"
+      },
+      {
+        "action": "session-control",
+        "how": "session-control op=compact：发 /compact 作为一轮",
+        "channels": [
+          "claude",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "这几家认不认 /compact 没实测"
+      }
+    ],
+    "fork": [
+      {
+        "action": "session-control",
+        "how": "session-control op=fork：Codex thread/fork，登记成新会话 newSessionName，之后照常续聊",
+        "channels": [
+          "codex"
+        ],
+        "status": "real",
+        "note": "10-18 负责人实测 channels/probe/scripts/probe_session_control.js（黑板 by probe_session_control.js）：分叉上问原会话第一句的暗号答出 CTL_OK"
+      }
+    ],
+    "reasoning-effort": [
+      {
+        "action": "session-control",
+        "how": "session-control op=effort：Codex thread/settings/update，之后每轮 turn/start 带这个力度（默认 low）",
+        "channels": [
+          "codex"
+        ],
+        "status": "real",
+        "note": "10-18 负责人实测 channels/probe/scripts/probe_session_control.js（黑板 by probe_session_control.js）"
+      }
+    ],
+    "cmd-list": [
+      {
+        "action": "session-control",
+        "how": "session-control op=commands：常驻 ACP 桥记下智能体在 session/new、session/load 后报的 available_commands_update；Claude 取 system/init 的 slash_commands",
+        "channels": [
+          "zcode",
+          "hermes",
+          "workbuddy",
+          "opencode"
+        ],
+        "status": "real",
+        "note": "10-18 负责人实测四家都报：ZCode 19 个、Hermes 9 个、WorkBuddy 50 个、OpenCode 21 个"
+      },
+      {
+        "action": "session-control",
+        "how": "session-control op=commands：常驻 ACP 桥记下智能体在 session/new、session/load 后报的 available_commands_update；Claude 取 system/init 的 slash_commands",
+        "channels": [
+          "claude"
+        ],
+        "status": "built",
+        "note": "取 system/init 的 slash_commands，要会话在常驻进程上跑过一轮；没实测"
+      }
+    ],
+    "content-search": [
+      {
+        "action": "search",
+        "how": "GET /api/search?q=（agent_gateway.js search）：SQLite FTS 索引每一步的文字；会话存储里的源文件直接索引，Antigravity、WorkBuddy、Hermes 这些由后端另外列出的会话以虚拟源进索引（按更新时间和轮数判断变化，由后端解析）",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "real",
+        "note": "10-18 负责人：七家各自会话里的暗号都能搜到（另三家修复后复测）"
+      }
+    ],
+    "list-projects": [
+      {
+        "action": "sessions",
+        "how": "GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目”页和命令行 sessions 按它分组",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "real",
+        "note": "10-18 负责人：七家都有带项目的会话（ZCode 55 个项目、Claude 30、Codex 20 等）"
+      }
+    ],
+    "search-sessions": [
+      {
+        "action": "sessions",
+        "how": "GET /api/sessions?slim=1 后按标题、产品筛（网页搜索框、agent_gateway.js sessions --q --agent）",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "real",
+        "note": "10-18 负责人：sessions --agent zcode --q 列出对应会话"
+      }
+    ],
+    "native-meta": [
+      {
+        "action": [
+          "sessions",
+          "session"
+        ],
+        "how": "会话列表和详情带原生的标题、工作目录、模型、起止时间、状态",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "real",
+        "note": "读的是各家自己的会话记录；verify discover-sessions 七家通过"
+      }
+    ],
+    "ask-user": [
+      {
+        "action": "answer",
+        "how": "智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/state），这一轮等着；POST /api/gateway/answer 把答案送回同一轮。Claude 的 AskUserQuestion 经 can_use_tool 拦下，答案放进 updatedInput.answers；Codex 在 plan 模式（session-control mode）下用 request_user_input，答案按问题编号回；ZCode 经 ACP 把 AskUserQuestion 转成 session/request_permission（选项就是答案），后端把它挂成只能选的问题，回所选选项",
+        "channels": [
+          "claude",
+          "codex",
+          "zcode"
+        ],
+        "status": "real",
+        "note": "10-19 负责人实测 channels/probe/scripts/probe_ask_user.js：三家都在同一轮用上了答案；ZCode 的帧格式来自 Argon 的研究 channels/probe/results/ask-user-acp-20261019.md"
+      },
+      {
+        "action": "answer",
+        "how": "经 ACP 问不到：WorkBuddy 的 headless 执行器没有提问的界面绑定，批准后被拒、模型改成文字结束这一轮；OpenCode 的 acp 桥没给模型提问工具（客户端声明 elicitation 还会让它崩溃）；Hermes 的 ACP 适配层没挂 clarify 回调，提示词里还写明不要提问",
+        "channels": [
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "todo",
+        "note": "10-19 Argon 研究（ask-user-acp-20261019.md），负责人没复测；能补的路在各家自己的桌面端或配置，不在 ACP"
       }
     ]
   },
@@ -1405,6 +1636,16 @@
         ],
         "status": "built",
         "note": "待浏览器核对"
+      },
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "会话页“更多 → 推理力度”",
+        "action": "session-control",
+        "channels": [
+          "codex"
+        ],
+        "status": "built",
+        "note": "模型本身仍在“换模型”"
       }
     ],
     "ui-mode-picker": [
@@ -1422,6 +1663,18 @@
         ],
         "status": "partial",
         "note": "只在新建时"
+      },
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "会话页“更多 → 切模式”（中途切）",
+        "action": "session-control",
+        "channels": [
+          "zcode",
+          "hermes",
+          "claude"
+        ],
+        "status": "built",
+        "note": "新建时选权限的那一条另记"
       }
     ],
     "ui-feedback": [
@@ -1650,8 +1903,8 @@
     ],
     "ui-notify": [
       {
-        "page": "/m/ v2（10-18 负责人重写）",
-        "control": "页面开着时：有会话新进入“要你处理/干完了”就振动并弹提示，标签标题写待看数",
+        "page": "/m/（10-19 负责人）",
+        "control": "有新的“等你回答 / 等你批”时立即振动并弹提示（SSE 推来，不等轮询），从网页发起的一轮结束时提醒；页面在后台时发系统通知、点了跳到那个会话；待处理页“开启系统通知”按钮只在浏览器能用时出现",
         "channels": [
           "claude",
           "zcode",
@@ -1664,13 +1917,13 @@
           "droid"
         ],
         "status": "partial",
-        "note": "系统通知要 https，手机经局域网 http 访问用不了"
+        "note": "页面内提醒 10-19 实测；系统通知只在安全来源（电脑上用 localhost）可用，手机经局域网 http 访问用不了，也还没在真浏览器里点过"
       }
     ],
     "ui-retry-edit": [
       {
-        "page": "/m/ v2（10-18 负责人重写）",
-        "control": "每轮用户话旁“改了再发”：填回输入框",
+        "page": "/m/（10-19 负责人）",
+        "control": "每轮“改了再发”（填回输入框）；没做成的轮次另有“再发一次”（原话直接重发）",
         "channels": [
           "claude",
           "zcode",
@@ -1682,8 +1935,8 @@
           "gemini",
           "droid"
         ],
-        "status": "partial",
-        "note": "只做了编辑重发，没有“从这一轮重来”"
+        "status": "built",
+        "note": "还没有“从这一轮重来”（要回退，属 rewind）；“再发一次”没在网页上点过"
       }
     ],
     "ui-copy-export": [
@@ -1703,6 +1956,22 @@
         ],
         "status": "partial",
         "note": "没有整段导出"
+      },
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "会话页“导出”：整个会话（每一轮，不只已加载的）下载成 Markdown",
+        "action": "session",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "没在网页上点过"
       }
     ],
     "model-switch": [
@@ -1822,15 +2091,185 @@
     ],
     "spawn-subagent": [
       {
-        "page": "/m/（10-18 晚负责人接手）",
-        "control": "协作页列出派活单（派活本身由智能体经命令行网关发起）",
-        "action": "dispatches",
+        "page": "/m/（10-18 晚负责人）",
+        "control": "协作页“＋ 派活”（人派）和会话详情“派给别人”（从这个会话派，可勾选交回后叫醒它）；会话下拉框不列外部正在用和子智能体会话",
+        "action": "dispatch",
         "channels": [
-          "claude",
           "zcode"
         ],
         "status": "real",
-        "note": "只读视图：网页上还不能发起派活"
+        "note": "负责人实测 dsp_131220_gadv 四步走完"
+      },
+      {
+        "page": "/m/（10-18 晚负责人）",
+        "control": "同上",
+        "action": "dispatch",
+        "channels": [
+          "claude",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "同一表单，这些产品没在网页上实测"
+      }
+    ],
+    "task-board": [
+      {
+        "page": "/m/（10-18 晚负责人）",
+        "control": "协作页“目标”：＋ 目标（拆几件事、派给谁、要不要等上一件、谁验收、派活上限）；目标详情按依赖分步列任务卡（交回、验收结论、熔断原因、通过 / 打回 / 重来 / 改派 / 取消），目标暂停 / 恢复（可加预算）/ 取消，轨迹倒序",
+        "action": [
+          "goal-new",
+          "goals",
+          "goal-action",
+          "task-action"
+        ],
+        "channels": [
+          "zcode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-18 负责人在手机宽度实测 goal_mvdz8uva_wg1b（网页表单开、详情页看完成）"
+      },
+      {
+        "page": "/m/（10-18 晚负责人）",
+        "control": "协作页“目标”：＋ 目标（拆几件事、派给谁、要不要等上一件、谁验收、派活上限）；目标详情按依赖分步列任务卡（交回、验收结论、熔断原因、通过 / 打回 / 重来 / 改派 / 取消），目标暂停 / 恢复（可加预算）/ 取消，轨迹倒序",
+        "action": [
+          "goal-new",
+          "goals",
+          "goal-action",
+          "task-action"
+        ],
+        "channels": [
+          "claude",
+          "opencode",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "同一页面，这些产品没在网页目标里实测"
+      }
+    ],
+    "mode-switch": [
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "会话页“更多 → 切模式”，可选模式取产品表 modes",
+        "action": "session-control",
+        "channels": [
+          "zcode",
+          "hermes",
+          "claude"
+        ],
+        "status": "built",
+        "note": "后端已实测，网页按钮没点过"
+      }
+    ],
+    "compact": [
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "会话页“更多 → 压缩上下文”",
+        "action": "session-control",
+        "channels": [
+          "codex",
+          "zcode",
+          "claude",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "后端已实测 Codex、ZCode，网页按钮没点过"
+      }
+    ],
+    "fork": [
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "会话页“更多 → 分叉”，成功后跳到新会话",
+        "action": "session-control",
+        "channels": [
+          "codex"
+        ],
+        "status": "built",
+        "note": "后端已实测，网页按钮没点过"
+      }
+    ],
+    "reasoning-effort": [
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "会话页“更多 → 推理力度”（低、中、高、很高）",
+        "action": "session-control",
+        "channels": [
+          "codex"
+        ],
+        "status": "built",
+        "note": "后端已实测，网页按钮没点过"
+      }
+    ],
+    "ui-approval": [
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "会话页审批卡：轮内审批写“这一轮停着等你批 / 批准，这一轮继续”，事后重发的写“全权限重跑”；POST /api/gateway/approve",
+        "action": "approve",
+        "channels": [
+          "zcode"
+        ],
+        "status": "real",
+        "note": "10-18 负责人在手机宽度实测：会话 verify-webappr-zcode-10182311 点批准后同一轮写出文件（黑板 zcode/L3/m）"
+      },
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "同上",
+        "action": "approve",
+        "channels": [
+          "codex",
+          "claude",
+          "workbuddy",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "同一张卡，这些产品没在网页上点过"
+      }
+    ],
+    "ui-command-menu": [
+      {
+        "page": "/m/（10-18 深夜负责人）",
+        "control": "输入框以 / 开头时，弹出这个会话的命令（按前缀过滤，点了填进输入框）；只在有 cmd-list 的产品上",
+        "action": "session-control",
+        "channels": [
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes",
+          "claude"
+        ],
+        "status": "built",
+        "note": "没在网页上实测"
+      }
+    ],
+    "ui-question": [
+      {
+        "page": "/m/（10-19 负责人）",
+        "control": "会话页提问卡：服务状态里有这个会话在等回答的问题时，显示“智能体在等你回答（这一轮停着）”，选项可点（单选或多选）、也能自己写，点“回答”送回同一轮；待处理页顶部“等你回答”一栏；没有在等的问题时，从记录里读出的问题只把选项填进输入框",
+        "action": "answer",
+        "channels": [
+          "claude"
+        ],
+        "status": "real",
+        "note": "10-19 手机宽度实测 q_1792341835781_7jzz"
+      },
+      {
+        "page": "/m/（10-19 负责人）",
+        "control": "同上",
+        "action": "answer",
+        "channels": [
+          "codex",
+          "zcode"
+        ],
+        "status": "built",
+        "note": "后端实测通过，网页没点过；ZCode 的问题只能从选项里选，网页不显示自由输入框"
       }
     ]
   }

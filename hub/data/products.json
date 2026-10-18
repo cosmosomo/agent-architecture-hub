@@ -123,6 +123,40 @@
           "codeMark": "'can_use_tool'"
         }
       }
+    },
+    "acp-resident": {
+      "does": "常驻地直连各产品的 ACP 桥（不经 acpx）：每个产品每个工作目录一个桥进程，会话载入一次后一直热着，空闲 15 分钟关掉。启动命令取 ~/.acpx/config.json 里 acpx 用的同一条 argv（没有就是 <acpxAgent> acp），环境取本表 env。驱动 trace/apps/cli/src/drivers/acp_runtime.ts，接在 gateway.ts 的 startAcpResidentRun；载入不了的会话这一轮退回 acpx",
+      "inBackend": true,
+      "verbs": {
+        "new": {
+          "command": "initialize → session/new（带 cwd）",
+          "codeMark": "'session/new'"
+        },
+        "resume": {
+          "command": "session/load（带会话编号和 cwd；载入时智能体会重放历史）",
+          "codeMark": "'session/load'"
+        },
+        "send": {
+          "command": "session/prompt（带图时是内容块数组）",
+          "codeMark": "'session/prompt'"
+        },
+        "cancel": {
+          "command": "session/cancel（通知），session/prompt 随后以 stopReason cancelled 结束",
+          "codeMark": "'session/cancel'"
+        },
+        "set-model": {
+          "command": "session/set_model，不认就 session/set_config_option {configId:\"model\"}",
+          "codeMark": "'session/set_model'"
+        },
+        "set-mode": {
+          "command": "session/set_mode，不认就 session/set_config_option {configId:\"mode\"}",
+          "codeMark": "'session/set_mode'"
+        },
+        "approve": {
+          "command": "服务端请求 session/request_permission，回 { outcome: { outcome: \"selected\", optionId } }；权限 all 放行、deny 拒绝、reads 放行读类，其余挂成轮内审批等人答；WorkBuddy 放行后还会请求 fs/write_text_file 让客户端代写",
+          "codeMark": "session/request_permission"
+        }
+      }
     }
   },
   "products": [
@@ -141,10 +175,10 @@
         "~/.codex/archived_sessions"
       ],
       "hostCard": "codex.md",
-      "defaultModel": "gpt-6-luna",
+      "defaultModel": "gpt-6.1-sol",
       "models": [
-        "gpt-6-luna",
-        "gpt-6.1-sol"
+        "gpt-6.1-sol",
+        "gpt-6-luna"
       ],
       "forbiddenModels": [
         "2chat"
@@ -155,7 +189,11 @@
       },
       "accent": "#10B981",
       "badge": "App-Server · OpenAI",
-      "notes": "经 codex app-server 常驻进程驱动（插话 turn/steer、打断 turn/interrupt、分叉、压缩、中途换模型、轮内挂起审批 requestApproval 均已接进后端）"
+      "notes": "经 codex app-server 常驻进程驱动（插话 turn/steer、打断 turn/interrupt、分叉、压缩、中途换模型、轮内挂起审批 requestApproval 均已接进后端） 10-18 起默认 gpt-6.1-sol：中转对 gpt-6-luna 报 503“No available channel for model gpt-6-luna”。",
+      "modes": [
+        "default",
+        "plan"
+      ]
     },
     {
       "id": "claude",
@@ -184,14 +222,21 @@
       "envFrom": "claude-settings",
       "accent": "#F59E0B",
       "badge": "Stream-JSON · Anthropic",
-      "notes": "经 claude --input-format stream-json --permission-prompt-tool stdio 常驻双向流驱动（轮内挂起审批 can_use_tool、打断 interrupt、热续写、分叉已接进后端；插话排下一轮，中途换模型待换模型实测）"
+      "notes": "经 claude --input-format stream-json --permission-prompt-tool stdio 常驻双向流驱动（轮内挂起审批 can_use_tool、打断 interrupt、热续写、分叉已接进后端；插话排下一轮，中途换模型待换模型实测）",
+      "modes": [
+        "default",
+        "acceptEdits",
+        "plan",
+        "bypassPermissions",
+        "dontAsk"
+      ]
     },
     {
       "id": "zcode",
       "name": "ZCode",
       "label": "ZCode",
       "aliases": [],
-      "route": "acpx",
+      "route": "acp-resident",
       "acpxAgent": "zcode",
       "adapter": "zcode-acp-server@0.69.3",
       "backend": true,
@@ -211,7 +256,19 @@
       "env": {},
       "accent": "#818CF8",
       "badge": "ACP · 智谱 GLM",
-      "notes": "经 zcode-acp-server 无头连接，共享 ~/.zcode/v2 会话库"
+      "notes": "经 zcode-acp-server 无头连接，共享 ~/.zcode/v2 会话库 常驻 ACP 下权限靠它自己的模式：yolo 全放行；guarded 在工作目录里写文件也不问（10-18 实测）；plan 拦下修改并请求“Exit plan mode”，所以“只读”映射到 plan，人批准这一个请求后它退出规划模式接着做。它的 ACP 还报了 auto（自主目标循环）、compact（压缩上下文）两个命令。",
+      "acpModes": {
+        "all": "yolo",
+        "reads": "plan",
+        "deny": "plan"
+      },
+      "modes": [
+        "plan",
+        "build",
+        "edit",
+        "guarded",
+        "yolo"
+      ]
     },
     {
       "id": "workbuddy",
@@ -220,7 +277,7 @@
       "aliases": [
         "codebuddy"
       ],
-      "route": "acpx",
+      "route": "acp-resident",
       "acpxAgent": "workbuddy",
       "adapter": "codebuddy --acp (v2.160.0)",
       "backend": true,
@@ -249,7 +306,7 @@
       "name": "OpenCode",
       "label": "OpenCode",
       "aliases": [],
-      "route": "acpx",
+      "route": "acp-resident",
       "acpxAgent": "opencode",
       "adapter": "opencode acp (v1.18.33)",
       "backend": true,
@@ -258,10 +315,10 @@
         "~/.local/share/opencode/storage"
       ],
       "hostCard": "opencode.md",
-      "defaultModel": "opencode/big-pickle",
+      "defaultModel": "zhipuai-coding-plan/glm-5.3-flash",
       "models": [
-        "opencode/big-pickle",
         "zhipuai-coding-plan/glm-5.3-flash",
+        "opencode/big-pickle",
         "zhipuai-coding-plan/glm-5.3",
         "zhipuai-coding-plan/glm-5.3-highspeed",
         "deepseek/deepseek-flash"
@@ -270,14 +327,14 @@
       "env": {},
       "accent": "#A78BFA",
       "badge": "ACP · OpenCode",
-      "notes": "经 opencode acp 标准 stdio 连接；模型名以 opencode acp 10-18 自报为准"
+      "notes": "经 opencode acp 标准 stdio 连接；模型名以 opencode acp 10-18 自报为准 10-18 起 OpenCode 自带的免费模型（opencode/big-pickle 等）对本机出口 IP 拦截（“detected abusive traffic from this IP”），默认改走智谱编程套餐 glm-5.3-flash。 它的 ACP 不报模式、写文件不来请求权限（权限在它自己的 opencode.json 里），所以权限选“只读”对它不生效（10-18 实测）。"
     },
     {
       "id": "hermes",
       "name": "Hermes Agent",
       "label": "Hermes",
       "aliases": [],
-      "route": "acpx",
+      "route": "acp-resident",
       "acpxAgent": "hermes",
       "adapter": "hermes acp (v0.21.1)",
       "backend": true,
@@ -285,7 +342,7 @@
       "sessionStores": [
         "~/AppData/Local/hermes/state.db"
       ],
-      "hostCard": null,
+      "hostCard": "hermes.md",
       "defaultModel": "custom:glm-5.3",
       "models": [
         "custom:glm-5.3",
@@ -302,7 +359,12 @@
       },
       "accent": "#F97316",
       "badge": "ACP · Nous Hermes",
-      "notes": "经 hermes acp 原生连接 Nous Research Hermes Agent；还没有档案卡（hosts/hermes.md 不存在）"
+      "notes": "经 hermes acp 原生连接 Nous Research Hermes Agent；还没有档案卡（hosts/hermes.md 不存在）",
+      "modes": [
+        "default",
+        "accept_edits",
+        "dont_ask"
+      ]
     },
     {
       "id": "antigravity",

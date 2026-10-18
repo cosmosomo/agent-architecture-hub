@@ -54,7 +54,11 @@ function statusOf(s: Step): string {
   return '';
 }
 
+const BIG_SESSION = 16 * 1024 * 1024;
+
 export class SearchIndex {
+  /** When each session was last (re)indexed in this process. */
+  private readonly indexedAt = new Map<string, number>();
   readonly file: string;
   private db: DatabaseSync;
   private progress = { done: 0, total: 0, running: false };
@@ -112,7 +116,13 @@ export class SearchIndex {
       if (!live.has(id)) { this.remove(id); report.removed++; }
     }
     const todo = files
-      .filter((f) => { const k = known.get(f.id); return !k || k.size !== f.size || k.mtime !== f.mtimeMs || k.adapter !== f.adapter; })
+      .filter((f) => {
+        const k = known.get(f.id);
+        if (k && k.size === f.size && k.mtime === f.mtimeMs && k.adapter === f.adapter) return false;
+        // A big session that keeps growing (a live agent's own transcript) is re-indexed at most every 10 minutes:
+        // re-indexing a 47 MB transcript on every 30-second refresh held the service for tens of seconds (full test 10-18).
+        return !(k && f.size > BIG_SESSION && Date.now() - (this.indexedAt.get(f.id) || 0) < 600_000);
+      })
       .sort((a, b) => ((b.summary.updatedAt || '') < (a.summary.updatedAt || '') ? -1 : 1));
     this.progress = { done: files.length - todo.length, total: files.length, running: todo.length > 0 };
     // Parsing and inserting are mostly synchronous, so `await parse` alone never lets the event loop run:
@@ -130,6 +140,7 @@ export class SearchIndex {
       await tick();
       try {
         report.steps += await this.put(f, await parse(f), tick);
+        this.indexedAt.set(f.id, Date.now());
         report.indexed++;
       } catch {
         report.failed++;

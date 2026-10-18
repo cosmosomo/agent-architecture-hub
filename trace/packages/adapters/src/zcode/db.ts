@@ -46,37 +46,54 @@ type MsgRow = { id: string; session_id: string; data: string };
 export function parseZcodeDb(file: SourceFile, db: SqliteSource, opts: FinishOptions): Session[] {
   const only = opts.onlySourceIds;
   if (only && only.size === 0) return [];
-  const allSessions = db.all('SELECT id, parent_id, directory, title, task_type, summary_additions, summary_deletions, time_created, time_updated FROM session') as J[];
-  const sessions = only ? allSessions.filter((s) => s && typeof s.id === 'string' && only.has(s.id)) : allSessions;
-  if (!sessions.length) return [];
-
+  let sessions: J[];
   let messages: MsgRow[];
   let parts: { message_id: string; data: string }[];
+  const taskLinks = new Map<string, string[]>();
+
   if (only && only.size <= 40) {
     const ids = Array.from(only);
     const ph = ids.map(() => '?').join(',');
+    sessions = db.all(
+      `SELECT id, parent_id, directory, title, task_type, summary_additions, summary_deletions, time_created, time_updated FROM session WHERE id IN (${ph})`,
+      ...ids,
+    ) as J[];
+    if (!sessions.length) return [];
     messages = db.all(`SELECT id, session_id, data FROM message WHERE session_id IN (${ph}) ORDER BY session_id, sequence`, ...ids) as MsgRow[];
     parts = db.all(
       `SELECT message_id, data FROM part WHERE message_id IN (SELECT id FROM message WHERE session_id IN (${ph})) ORDER BY message_id, sequence`,
       ...ids,
     ) as { message_id: string; data: string }[];
+    try {
+      const links = db.all(`SELECT session_id, task_id FROM session_task_link WHERE session_id IN (${ph})`, ...ids) as { session_id?: string; task_id?: string }[];
+      for (const r of links || []) {
+        if (r && typeof r.session_id === 'string' && typeof r.task_id === 'string' && r.session_id && r.task_id) {
+          const list = taskLinks.get(r.session_id) || [];
+          list.push(r.task_id);
+          taskLinks.set(r.session_id, list);
+        }
+      }
+    } catch {
+      // Older or mock SQLite stores may not have session_task_link.
+    }
   } else {
+    const allSessions = db.all('SELECT id, parent_id, directory, title, task_type, summary_additions, summary_deletions, time_created, time_updated FROM session') as J[];
+    sessions = only ? allSessions.filter((s) => s && typeof s.id === 'string' && only.has(s.id)) : allSessions;
+    if (!sessions.length) return [];
     messages = db.all('SELECT id, session_id, data FROM message ORDER BY session_id, sequence') as MsgRow[];
     parts = db.all('SELECT message_id, data FROM part ORDER BY message_id, sequence') as { message_id: string; data: string }[];
-  }
-
-  const taskLinks = new Map<string, string[]>();
-  try {
-    const links = db.all('SELECT session_id, task_id FROM session_task_link') as { session_id?: string; task_id?: string }[];
-    for (const r of links || []) {
-      if (r && typeof r.session_id === 'string' && typeof r.task_id === 'string' && r.session_id && r.task_id) {
-        const list = taskLinks.get(r.session_id) || [];
-        list.push(r.task_id);
-        taskLinks.set(r.session_id, list);
+    try {
+      const links = db.all('SELECT session_id, task_id FROM session_task_link') as { session_id?: string; task_id?: string }[];
+      for (const r of links || []) {
+        if (r && typeof r.session_id === 'string' && typeof r.task_id === 'string' && r.session_id && r.task_id) {
+          const list = taskLinks.get(r.session_id) || [];
+          list.push(r.task_id);
+          taskLinks.set(r.session_id, list);
+        }
       }
+    } catch {
+      // Older or mock SQLite stores may not have session_task_link.
     }
-  } catch {
-    // Older or mock SQLite stores may not have session_task_link.
   }
 
   const partsByMessage = new Map<string, J[]>();

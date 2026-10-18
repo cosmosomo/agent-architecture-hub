@@ -359,3 +359,8 @@ await session.setMode('accept_edits');
    - 必须注入 `OPENCODE_DISABLE_AUTOUPDATE: "1"` 与 `OPENCODE_DISABLE_LSP_DOWNLOAD: "1"`，避免后台无提示下载 LSP 或更新二进制导致 JSON-RPC 管道阻塞。
 4. **ZCode 的权限模式特性**：
    - ZCode 桥在 `yolo` 模式下默认信任所有文件读写；若业务场景需要拦截写入，必须通过 `session.setMode("guarded")` 显式切至防护模式。
+
+
+## 总负责人验收（10-18 晚）
+
+通过三家半。一轮之中审批：ZCode、OpenCode、Hermes 以各自库里的暗号为证；WorkBuddy 放行后由客户端代写文件，自己的记录里没有暗号，只有驱动侧证据，记为部分。打断以协议返回的 stopReason=cancelled 为证。已登记产品表 routes["acp-resident"]（inBackend: false），四个产品 nextRoute 指向它。
