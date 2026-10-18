@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..', '..');
-const BASE = 'http://127.0.0.1:8899';
+const BASE = process.env.HUB_BASE || 'http://127.0.0.1:8899';
 const arg = (k) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : undefined; };
 const products = (arg('product') || 'zcode,workbuddy,opencode,hermes').split(',');
 const REJECT = process.argv.includes('--reject');

@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..', '..');
-const BASE = 'http://127.0.0.1:8899';
+const BASE = process.env.HUB_BASE || 'http://127.0.0.1:8899';
 const stamp = new Date().toISOString().replace(/\D/g, '').slice(4, 12);
 async function http(method, p, body, timeoutMs = 240000) {
   const r = await fetch(BASE + p, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(timeoutMs) });

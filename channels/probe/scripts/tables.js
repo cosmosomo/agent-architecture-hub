@@ -62,13 +62,15 @@ function adapterKinds() {
 
 function check(t) {
   const problems = [];
-  // Code marks are looked for in the backend and its drivers.
-  const drivers = path.join(ROOT, 'trace', 'apps', 'cli', 'src', 'drivers');
-  const gw = read('trace', 'apps', 'cli', 'src', 'gateway.ts') +
-    (fs.existsSync(drivers) ? fs.readdirSync(drivers).map((f) => fs.readFileSync(path.join(drivers, f), 'utf8')).join('\n') : '');
+  // Code marks are looked for in the backend: gateway.ts, its blocks in gateway/, and the drivers.
+  const dirText = (...p) => {
+    const d = path.join(ROOT, ...p);
+    return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith('.ts')).map((f) => fs.readFileSync(path.join(d, f), 'utf8')).join('\n') : '';
+  };
+  const gw = read('trace', 'apps', 'cli', 'src', 'gateway.ts') + dirText('trace', 'apps', 'cli', 'src', 'gateway') + dirText('trace', 'apps', 'cli', 'src', 'drivers');
   // Products: their route exists; each command still has its mark in the backend code; the host card exists.
   for (const [route, r] of Object.entries(t.products.routes)) {
-    for (const [verb, v] of Object.entries(r.verbs)) if (v.codeMark && !gw.includes(v.codeMark)) problems.push(`产品表：路线 ${route} 的 ${verb} 在 gateway.ts 里找不到 ${v.codeMark}，命令可能变了`);
+    for (const [verb, v] of Object.entries(r.verbs)) if (v.codeMark && !gw.includes(v.codeMark)) problems.push(`产品表：路线 ${route} 的 ${verb} 在后端代码里找不到 ${v.codeMark}，命令可能变了`);
   }
   const kinds = adapterKinds();
   const backendRead = new Set(['antigravity', 'workbuddy', 'hermes']); // read through the backend, not a local adapter

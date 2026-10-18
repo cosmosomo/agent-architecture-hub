@@ -1,0 +1,803 @@
+/**
+ * Antigravity (route agentapi): its language server, its conversations on disk (brain), and one turn on it.
+ * Mixed into AgentGatewayHub (gateway.ts); `this` is the hub.
+ */
+import type { AgentGatewayHub } from '../gateway.ts';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import type { Session, Step, Turn } from '@hub-trace/contract';
+import type { ChannelProfile, LiveToolCall, ActiveRun, AcpxSessionInfo } from './types.ts';
+import { agentBaseEnv, CHANNEL_PROFILES, normalizeAgyCliModel, resolveAgyProjectId } from './products.ts';
+import { HOME, isSmokeTestPrompt, classifyTool, stripUserRequestTags, agyTitle } from './common.ts';
+
+export const antigravityMethods = {
+  loadAgySessionMap(this: AgentGatewayHub): Record<string, string> {
+    try {
+      if (existsSync(this.agyMapFile)) {
+        return JSON.parse(readFileSync(this.agyMapFile, 'utf8'));
+      }
+    } catch {}
+    return {};
+  },
+
+  saveAgySessionMap(this: AgentGatewayHub, map: Record<string, string>) {
+    try {
+      mkdirSync(join(HOME, '.acpx'), { recursive: true });
+      writeFileSync(this.agyMapFile, JSON.stringify(map, null, 2), 'utf8');
+    } catch {}
+  },
+
+  discoverAntigravityLs(this: AgentGatewayHub, force = false) {
+    if (!force && this.agyLsCache && Date.now() - this.agyLsCache.at < 30_000) {
+      return this.agyLsCache;
+    }
+    const bin = join(
+      HOME,
+      'AppData',
+      'Local',
+      'Programs',
+      'antigravity',
+      'resources',
+      'bin',
+      'language_server.exe',
+    );
+    if (!existsSync(bin)) {
+      throw new Error(`未找到 Antigravity language_server.exe: ${bin}`);
+    }
+    const psScript = `
+$procs = Get-CimInstance Win32_Process -Filter "Name LIKE 'language_server%.exe'"
+foreach ($p in $procs) {
+  if ($p.CommandLine -match '--csrf_token\\s+([a-f0-9-]+)') {
+    $csrf = $matches[1]
+    $pidVal = $p.ProcessId
+    $conns = Get-NetTCPConnection -OwningProcess $pidVal -State Listen -ErrorAction SilentlyContinue
+    foreach ($c in $conns) {
+      Write-Output "FOUND|$pidVal|$csrf|$($c.LocalPort)"
+    }
+  }
+}
+`;
+    const r = spawnSync('powershell.exe', ['-NoProfile', '-Command', psScript], {
+      encoding: 'utf8',
+      timeout: 8000,
+      windowsHide: true,
+    });
+    const lines = String(r.stdout || '')
+      .split(/\r?\n/)
+      .filter((l) => l.startsWith('FOUND|'));
+    if (!lines.length) {
+      throw new Error('未检测到运行中的 Antigravity language_server.exe 进程，请确认 Antigravity 已启动');
+    }
+    // The LS listens on an HTTPS (gRPC) port and a plain-HTTP (Connect-RPC) port in no stable order;
+    // agentapi needs the one that answers GET /healthz over plain HTTP.
+    const found = lines.map((l) => l.split('|'));
+    const hit =
+      found.find(([, , , p]) => {
+        const h = spawnSync('curl.exe', ['-s', '--max-time', '2', `http://127.0.0.1:${p}/healthz`], {
+          encoding: 'utf8',
+          timeout: 3000,
+          windowsHide: true,
+        });
+        return /"status"\s*:\s*"ok"/.test(String(h.stdout || ''));
+      }) || found[0];
+    const [, , csrf, port] = hit;
+    const address = `localhost:${port}`;
+    this.agyLsCache = {
+      at: Date.now(),
+      bin,
+      csrf,
+      port,
+      address,
+      env: {
+        ANTIGRAVITY_CLI_ALIAS: 'agy',
+        ANTIGRAVITY_LS_ADDRESS: address,
+        ANTIGRAVITY_CSRF_TOKEN: csrf,
+      },
+    };
+    return this.agyLsCache;
+  },
+
+  /** Parse a single Antigravity `transcript.jsonl` into `AcpxSessionInfo` + `Session` contract (cached by mtimeMs). */
+  parseAntigravityBrain(this: AgentGatewayHub,
+    cid: string,
+    transcriptPath: string,
+    reverseNameMap: Map<string, string>,
+  ): { info: AcpxSessionInfo; contract: Session } | null {
+    try {
+      const stat = statSync(transcriptPath);
+      const cached = this.agySummaryCache.get(cid);
+      const sessionName = reverseNameMap.get(cid) || `agy-${cid.slice(0, 8)}`;
+      const slot = this.slotKey('antigravity', sessionName);
+      const prof = CHANNEL_PROFILES.antigravity;
+      const activeModel =
+        this.selectedModels.get(slot) ||
+        this.selectedModels.get('antigravity') ||
+        prof.defaultModel;
+      const isRunning = this.activeRuns.get(slot)?.status === 'running';
+
+      if (cached && cached.mtimeMs === stat.mtimeMs) {
+        cached.info.sessionName = sessionName;
+        cached.info.currentModel = activeModel;
+        cached.contract.agent.model = activeModel;
+        cached.contract.state.status = isRunning ? 'working' : 'idle';
+        return cached;
+      }
+
+      const content = readFileSync(transcriptPath, 'utf8');
+      const lines = content.split(/\r?\n/).filter((l) => l.trim());
+      const turns: Turn[] = [];
+      let curSteps: Step[] = [];
+      let curInput = '';
+      let curOutput = '';
+      let curStartedAt = '';
+      let curEndedAt = '';
+      let firstCreatedAt = '';
+      let lastCreatedAt = '';
+      let turnIdx = 0;
+      let stepSeq = 0;
+      let modelCalls = 0;
+      let toolCalls = 0;
+      let toolErrors = 0;
+      let subagents = 0;
+      let detectedCwd = this.repoRoot;
+      let lastInterrupted = false;
+      let lastErrorText = '';
+      const childLinks: { rel: 'child'; id: string; label?: string }[] = [];
+
+      const flushTurn = () => {
+        if (!curSteps.length) return;
+        turnIdx++;
+        turns.push({
+          id: `t${turnIdx}`,
+          index: turnIdx,
+          status: 'completed',
+          startedAt: curStartedAt || firstCreatedAt || new Date(stat.mtimeMs).toISOString(),
+          endedAt: curEndedAt || lastCreatedAt || new Date(stat.mtimeMs).toISOString(),
+          input: curInput || undefined,
+          output: curOutput || undefined,
+          steps: curSteps,
+        });
+        curSteps = [];
+        curInput = '';
+        curOutput = '';
+        curStartedAt = '';
+        curEndedAt = '';
+      };
+
+      for (const line of lines) {
+        try {
+          const obj = JSON.parse(line);
+          const at = String(obj.created_at || '');
+          if (at) {
+            if (!firstCreatedAt) firstCreatedAt = at;
+            lastCreatedAt = at;
+          }
+          if (obj.type === 'USER_INPUT') {
+            flushTurn();
+            curStartedAt = at;
+            const rawText = String(obj.content || '');
+            const cleanText = stripUserRequestTags(rawText);
+            if (/^Error:\s*The stream was interrupted/i.test(cleanText)) {
+              lastInterrupted = true;
+              lastErrorText = cleanText;
+            }
+            curInput = cleanText;
+            stepSeq++;
+            curSteps.push({
+              id: `s${stepSeq}`,
+              kind: 'message',
+              role: 'user',
+              text: cleanText,
+              at: at || undefined,
+            });
+          } else if (obj.type === 'SYSTEM_MESSAGE') {
+            // Words sent from outside (`agentapi send-message`: the hub, the phone page, the command line) arrive
+            // as "[Message] timestamp=… sender=system priority=… content=<text>" and start a new turn, like the
+            // person typing in the window. sender=<conversation>/task-N is the agent's own background task
+            // reporting back: an event inside the current turn, not something a person said (seen 2026-10-18).
+            const raw = String(obj.content || '');
+            const m = /\[Message\] timestamp=(\S+) sender=(\S+) priority=\S+ content=([\s\S]*?)\s*(?:<\/SYSTEM_MESSAGE>[\s\S]*)?$/.exec(raw);
+            if (m && m[2] === 'system') {
+              flushTurn();
+              curStartedAt = at;
+              curInput = m[3].trim();
+              stepSeq++;
+              curSteps.push({ id: `s${stepSeq}`, kind: 'message', role: 'user', text: curInput, at: at || undefined });
+            } else if (m) {
+              stepSeq++;
+              curSteps.push({ id: `s${stepSeq}`, kind: 'event', name: 'note', text: '后台任务回报：' + m[3].trim().slice(0, 200), at: at || undefined });
+            }
+          } else if (obj.type === 'PLANNER_RESPONSE') {
+            curEndedAt = at || curEndedAt;
+            const thinking = typeof obj.thinking === 'string' ? obj.thinking.trim() : '';
+            const text = typeof obj.content === 'string' ? obj.content.trim() : '';
+            if (text) {
+              curOutput = text;
+              lastInterrupted = false;
+            }
+            const rawCalls: any[] = Array.isArray(obj.tool_calls) ? obj.tool_calls : [];
+            const callIds: string[] = [];
+            const toolSteps: Step[] = [];
+
+            for (let i = 0; i < rawCalls.length; i++) {
+              const tc = rawCalls[i];
+              const tName = String(tc?.name || 'tool');
+              const tid = String(tc?.id || `agy_tc_${stepSeq}_${i + 1}`);
+              let argsObj: Record<string, any> | null = null;
+              let inStr = '';
+              if (tc?.args && typeof tc.args === 'object') {
+                argsObj = tc.args;
+                inStr = JSON.stringify(tc.args, null, 2);
+              } else if (typeof tc?.args === 'string') {
+                inStr = tc.args;
+                try {
+                  argsObj = JSON.parse(tc.args);
+                } catch {}
+              }
+              if (argsObj?.Cwd && typeof argsObj.Cwd === 'string') {
+                detectedCwd = argsObj.Cwd;
+              }
+              if (tName === 'invoke_subagent') {
+                subagents++;
+              }
+              const outStr =
+                typeof tc?.result === 'string'
+                  ? tc.result
+                  : typeof tc?.output === 'string'
+                  ? tc.output
+                  : tc?.result
+                  ? JSON.stringify(tc.result, null, 2)
+                  : '';
+              const isErr = Boolean(tc?.error || obj.status === 'ERROR');
+              const cls = classifyTool(tName, inStr);
+              toolCalls++;
+              if (isErr) toolErrors++;
+              callIds.push(tid);
+              toolSteps.push({
+                id: tid,
+                kind: 'tool',
+                name: tName,
+                family: cls.family,
+                callId: tid,
+                input: inStr || undefined,
+                output: outStr || undefined,
+                status: isErr ? 'error' : 'ok',
+                at: at || undefined,
+                effects: [],
+              });
+            }
+
+            if (thinking || text || toolSteps.length) {
+              modelCalls++;
+              stepSeq++;
+              const inTok = Number(obj.input_tokens || 0);
+              const cacheTok = Number(obj.cache_read_tokens || 0);
+              const outTok = Number(obj.output_tokens || 0);
+              curSteps.push({
+                id: `s${stepSeq}`,
+                kind: 'model',
+                model: activeModel,
+                at: at || undefined,
+                reasoning: thinking || undefined,
+                text: text || undefined,
+                phase: toolSteps.length ? 'commentary' : 'final',
+                calls: callIds,
+                usage:
+                  inTok || outTok
+                    ? {
+                        input: inTok,
+                        cachedInput: cacheTok || undefined,
+                        output: outTok,
+                        total: inTok + outTok,
+                      }
+                    : undefined,
+              });
+              curSteps.push(...toolSteps);
+            }
+          }
+        } catch {}
+      }
+      flushTurn();
+
+      const realTurns = turns.filter((t) => !isSmokeTestPrompt(t.input || ''));
+      const finalTurns = (realTurns.length > 0 ? realTurns : turns).map((t, idx) => ({
+        ...t,
+        id: `t${idx + 1}`,
+        index: idx + 1,
+      }));
+
+      const firstUserTurn = finalTurns.find(
+        (t) => t.input && !t.input.startsWith('[上下文压缩检查点]') && !t.input.startsWith('Error:'),
+      );
+      const title =
+        (firstUserTurn?.input || finalTurns[0]?.input || `Antigravity · ${sessionName}`)
+          .replace(/\s+/g, ' ')
+          .slice(0, 110);
+
+      const traceSessionId = `antigravity:${cid}`;
+      const createdAtIso = firstCreatedAt || new Date(stat.birthtimeMs || stat.mtimeMs).toISOString();
+      const updatedAtIso = lastCreatedAt || new Date(stat.mtimeMs).toISOString();
+
+      const info: AcpxSessionInfo = {
+        acpxRecordId: `antigravity:${cid}`,
+        acpSessionId: cid,
+        sessionName,
+        channel: 'antigravity',
+        channelId: 'antigravity',
+        cwd: detectedCwd,
+        title,
+        closed: false,
+        pid: null,
+        createdAt: createdAtIso,
+        updatedAt: updatedAtIso,
+        turnCount: finalTurns.length,
+        traceSessionId,
+        currentModel: activeModel,
+        availableModels: Array.from(new Set([activeModel, ...prof.recommendedModels])),
+        interrupted: lastInterrupted,
+        lastError: lastErrorText || undefined,
+      };
+
+      const contract: Session = {
+        id: traceSessionId,
+        sourceId: cid,
+        source: {
+          kind: 'antigravity',
+          format: 'antigravity/transcript-jsonl',
+          adapter: 'antigravity-ls@1.0',
+          path: transcriptPath,
+          size: stat.size,
+          mtimeMs: stat.mtimeMs,
+        },
+        title,
+        agent: {
+          product: prof.product,
+          name: sessionName,
+          role: 'main',
+          model: activeModel,
+          originator: 'antigravity',
+        },
+        cwd: detectedCwd,
+        startedAt: createdAtIso,
+        updatedAt: updatedAtIso,
+        links: childLinks,
+        turns: finalTurns,
+        state: {
+          status: isRunning ? 'working' : lastInterrupted ? 'failed' : 'idle',
+          detail: lastInterrupted
+            ? `流中断待续跑 (${sessionName})`
+            : `Antigravity Brain: ${sessionName} (${cid.slice(0, 8)})`,
+        },
+        stats: {
+          turns: finalTurns.length,
+          modelCalls,
+          toolCalls,
+          toolErrors,
+          messages: finalTurns.length,
+          compactions: 0,
+          subagents,
+          records: lines.length,
+          skipped: 0,
+        },
+        notes: [],
+      };
+
+      const entry = { mtimeMs: stat.mtimeMs, info, contract };
+      this.agySummaryCache.set(cid, entry);
+      return entry;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * An Antigravity conversation whose transcript is gone (older versions did not keep one, 16 such on 2026-10-18)
+   * but whose brain folder still holds what it produced: task.md, implementation_plan.md, walkthrough.md. Antigravity
+   * still lists it, so we do too, honestly marked, showing those documents as its content.
+   */
+  parseAntigravityArtifactsOnly(this: AgentGatewayHub,
+    cid: string,
+    reverseNameMap: Map<string, string>,
+  ): { info: AcpxSessionInfo; contract: Session } | null {
+    const dir = join(this.agyBrainDir, cid);
+    let names: string[] = [];
+    try {
+      names = readdirSync(dir).filter((n) => /\.md$/i.test(n));
+    } catch {
+      return null;
+    }
+    const order = ['task.md', 'implementation_plan.md', 'walkthrough.md'];
+    names.sort((a, b) => (order.indexOf(a) + 1 || 9) - (order.indexOf(b) + 1 || 9));
+    const docs = names
+      .map((n) => {
+        try {
+          return { name: n, text: readFileSync(join(dir, n), 'utf8') };
+        } catch {
+          return null;
+        }
+      })
+      .filter((d): d is { name: string; text: string } => Boolean(d && d.text.trim()));
+    let row: { lm?: string; ws?: string; title?: string } = {};
+    try {
+      const db = new DatabaseSync(join(homedir(), '.gemini', 'antigravity', 'conversation_summaries.db'), { readOnly: true });
+      try {
+        row = (db.prepare('SELECT last_modified_time AS lm, workspace_uris AS ws, title FROM conversation_summaries WHERE conversation_id = ?').get(cid) as typeof row) || {};
+      } finally {
+        db.close();
+      }
+    } catch {}
+    const at = row.lm ? new Date(String(row.lm).replace(' ', 'T').replace(/(\.\d{3})\d*/, '$1')).toISOString() : new Date(statSync(dir).mtimeMs).toISOString();
+    let cwd = this.repoRoot;
+    try {
+      const uri = (JSON.parse(String(row.ws || '[]')) as string[])[0];
+      if (uri) cwd = decodeURIComponent(uri.replace(/^file:\/\/\//, '')).replace(/\//g, '\\');
+    } catch {}
+    // Only conversations Antigravity itself still lists; an empty one is shown as empty rather than left out.
+    if (!docs.length && !row.lm) return null;
+    const heading = docs.map((d) => /^#+\s+(.+)$/m.exec(d.text)?.[1]).find(Boolean) || row.title || docs[0]?.name || '（没有留下内容的对话）';
+    const sessionName = reverseNameMap.get(cid) || `agy-${cid.slice(0, 8)}`;
+    const title = heading.replace(/\s+/g, ' ').slice(0, 110);
+    const traceSessionId = `antigravity:${cid}`;
+    const steps: Step[] = [
+      { id: 's1', kind: 'event', name: 'note', text: docs.length ? '这个对话的记录文件已经不在了，下面是它留下的产出物' : '这个对话没有留下记录文件，也没有产出物', at },
+      ...docs.map((d, i) => ({ id: `s${i + 2}`, kind: 'model' as const, at, text: `**${d.name}**\n\n${d.text.slice(0, 40000)}`, phase: 'final' as const, calls: [] })),
+    ];
+    const turn: Turn = { id: 't1', index: 1, status: 'completed', startedAt: at, endedAt: at, steps };
+    const info: AcpxSessionInfo = {
+      acpxRecordId: traceSessionId,
+      acpSessionId: cid,
+      sessionName,
+      channel: 'antigravity',
+      channelId: 'antigravity',
+      cwd,
+      title,
+      closed: false,
+      pid: null,
+      createdAt: at,
+      updatedAt: at,
+      turnCount: 1,
+      traceSessionId,
+      currentModel: CHANNEL_PROFILES.antigravity.defaultModel,
+      availableModels: CHANNEL_PROFILES.antigravity.recommendedModels,
+    };
+    const contract: Session = {
+      id: traceSessionId,
+      sourceId: cid,
+      source: { kind: 'antigravity', format: 'antigravity/brain-artifacts', adapter: 'antigravity-ls@1.0', path: dir },
+      title,
+      agent: { product: 'Antigravity', name: sessionName, role: 'main', originator: 'antigravity' },
+      cwd,
+      startedAt: at,
+      updatedAt: at,
+      links: [],
+      turns: [turn],
+      state: { status: 'idle', detail: docs.length ? '只剩产出物，对话记录已不在' : '空对话' },
+      stats: { turns: 1, modelCalls: 0, toolCalls: 0, toolErrors: 0, messages: 0, compactions: 0, subagents: 0, records: docs.length, skipped: 0 },
+      notes: ['transcript missing; artifacts only'],
+    };
+    return { info, contract };
+  },
+
+  /** List all Antigravity sessions from `~/.gemini/antigravity/brain/<cid>/.system_generated/logs/transcript.jsonl`. */
+  listAntigravitySessions(this: AgentGatewayHub): AcpxSessionInfo[] {
+    if (this.agyListCache && Date.now() - this.agyListCache.at < 8_000) {
+      return this.agyListCache.list;
+    }
+    if (!existsSync(this.agyBrainDir)) return [];
+    const nameMap = this.loadAgySessionMap();
+    const reverseNameMap = new Map<string, string>();
+    for (const [sName, cid] of Object.entries(nameMap)) {
+      if (cid) reverseNameMap.set(cid, sName);
+    }
+
+    const out: AcpxSessionInfo[] = [];
+    try {
+      for (const d of readdirSync(this.agyBrainDir, { withFileTypes: true })) {
+        if (!d.isDirectory()) continue;
+        const cid = d.name;
+        const transcriptPath = join(this.agyBrainDir, cid, '.system_generated', 'logs', 'transcript.jsonl');
+        if (!existsSync(transcriptPath)) {
+          const docsOnly = this.parseAntigravityArtifactsOnly(cid, reverseNameMap);
+          if (docsOnly) out.push(docsOnly.info);
+          continue;
+        }
+        const parsed = this.parseAntigravityBrain(cid, transcriptPath, reverseNameMap);
+        if (parsed && parsed.info.turnCount > 0) {
+          out.push(parsed.info);
+        }
+      }
+    } catch {}
+    out.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+    this.agyListCache = { at: Date.now(), list: out };
+    return out;
+  },
+
+  /** Send a message into a running Antigravity conversation; false when it cannot be sent (caller queues). */
+  steerAntigravity(this: AgentGatewayHub, sessionName: string, run: ActiveRun, prompt: string, cwd: string): boolean {
+    try {
+      const ls = this.discoverAntigravityLs();
+      const cid =
+        this.loadAgySessionMap()[sessionName] ||
+        (run.traceSessionId?.startsWith('antigravity:') ? run.traceSessionId.slice('antigravity:'.length) : '');
+      if (!cid) return false;
+      const child = spawn(ls.bin, ['agentapi', 'send-message', cid, prompt], {
+        cwd,
+        env: { ...agentBaseEnv(), ...ls.env, ANTIGRAVITY_PROJECT_ID: resolveAgyProjectId(cwd) },
+        windowsHide: true,
+        stdio: 'ignore',
+      });
+      child.on('error', () => {});
+      (run.warnings ||= []).push('中途插话：' + prompt.slice(0, 80));
+      this.broadcast('run_update', run);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  startAntigravityRun(this: AgentGatewayHub,
+    run: ActiveRun,
+    opts: {
+      prof: ChannelProfile;
+      sessionName: string;
+      traceSessionId?: string;
+      cwd: string;
+      prompt: string;
+      model: string;
+      permissions: 'all' | 'reads' | 'deny';
+      source: 'web' | 'cli';
+    },
+  ): ActiveRun {
+    const { prof, sessionName, cwd, prompt, model } = opts;
+    const key = this.slotKey(prof.id, sessionName);
+    let ls: ReturnType<AgentGatewayHub['discoverAntigravityLs']>;
+    try {
+      ls = this.discoverAntigravityLs();
+    } catch (e: any) {
+      run.status = 'failed';
+      run.error = e?.message || '无法连接 Antigravity language_server.exe';
+      this.finalizeRun(run, opts);
+      return run;
+    }
+
+    const agyMap = this.loadAgySessionMap();
+    let cid = agyMap[sessionName] || '';
+    if (!cid && opts.traceSessionId?.startsWith('antigravity:')) {
+      cid = opts.traceSessionId.slice('antigravity:'.length);
+      agyMap[sessionName] = cid;
+      this.saveAgySessionMap(agyMap);
+    }
+
+    const hasExistingBrain =
+      Boolean(cid) &&
+      existsSync(join(this.agyBrainDir, cid, '.system_generated', 'logs', 'transcript.jsonl'));
+
+    const cliModel = normalizeAgyCliModel(model);
+    const args = hasExistingBrain
+      ? ['agentapi', 'send-message', cid, prompt]
+      : ['agentapi', 'new-conversation', `--model=${cliModel}`, `--title=${agyTitle(sessionName, prompt)}`, prompt];
+
+    const child = spawn(ls.bin, args, {
+      cwd,
+      env: { ...agentBaseEnv(), ...ls.env, ANTIGRAVITY_PROJECT_ID: resolveAgyProjectId(cwd) },
+      windowsHide: true,
+    });
+
+    this.activeProcs.set(key, child);
+    let stdoutBuf = '';
+    let stderrBuf = '';
+
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdoutBuf += chunk.toString('utf8');
+      // Try extracting conversationId early if new-conversation outputs it
+      if (!cid) {
+        const m = /"conversationId"\s*:\s*"([0-9a-f-]{36})"/i.exec(stdoutBuf);
+        if (m) {
+          cid = m[1];
+          agyMap[sessionName] = cid;
+          this.saveAgySessionMap(agyMap);
+          run.traceSessionId = `antigravity:${cid}`;
+        }
+      }
+    });
+
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderrBuf += chunk.toString('utf8');
+    });
+
+    // agentapi only delivers the message and exits; the turn ends when the transcript shows a final
+    // PLANNER_RESPONSE. So after a successful delivery keep polling until then (or cancel / 1h cap).
+    let delivered = false;
+    let finished = false;
+    const deadline = Date.now() + 60 * 60_000;
+    const finish = (status: 'completed' | 'failed' | 'aborted', error?: string) => {
+      if (finished) return;
+      finished = true;
+      clearInterval(pollTimer);
+      run.status = status;
+      if (error) run.error = error;
+      this.finalizeRun(run, opts);
+    };
+    const pollTimer = setInterval(() => {
+      if (cid) {
+        this.syncFromAntigravityTranscript(run, cid);
+      }
+      if (!delivered) return;
+      if (run.status === 'cancelling' || run.status === 'aborted') finish('aborted');
+      else if (this.isAgyTurnDone(run, cid)) finish('completed');
+      else if (Date.now() > deadline) finish('failed', 'Antigravity 一小时内没有在 transcript 里写出最终回复');
+    }, 600);
+
+    child.on('close', (code) => {
+      try {
+        const parsed = JSON.parse(stdoutBuf.trim());
+        const newCid = parsed?.response?.newConversation?.conversationId;
+        if (newCid && !cid) {
+          cid = newCid;
+          agyMap[sessionName] = cid;
+          this.saveAgySessionMap(agyMap);
+        }
+      } catch {}
+
+      if (cid) {
+        run.traceSessionId = `antigravity:${cid}`;
+        this.syncFromAntigravityTranscript(run, cid);
+      }
+
+      if (run.status === 'cancelling' || run.status === 'aborted') {
+        finish('aborted');
+      } else if ((code !== 0 && !run.text) || !cid) {
+        finish('failed', stderrBuf.trim() || stdoutBuf.trim() || `Antigravity 退出码 ${code}`);
+      } else {
+        delivered = true;
+      }
+    });
+
+    return run;
+  },
+
+  /**
+   * The turn is over when the last PLANNER_RESPONSE written since the run began is DONE with no pending
+   * tool calls, the conversation index says idle, and both have held for 5 s with no new transcript lines
+   * (the index can read idle for a moment before a background task registers; seen 2026-10-17).
+   */
+  isAgyTurnDone(this: AgentGatewayHub, run: ActiveRun, cid: string): boolean {
+    try {
+      const transcriptPath = join(this.agyBrainDir, cid, '.system_generated', 'logs', 'transcript.jsonl');
+      if (!existsSync(transcriptPath)) return false;
+      const all = readFileSync(transcriptPath, 'utf8')
+        .split(/\r?\n/)
+        .filter((l) => l.trim());
+      const steps = all
+        .slice(run.initialMsgCount ?? 0)
+        .map((l) => {
+          try {
+            return JSON.parse(l);
+          } catch {
+            return null;
+          }
+        })
+        .filter((s) => s && s.type === 'PLANNER_RESPONSE');
+      const last = steps[steps.length - 1];
+      const textDone = Boolean(last && last.status === 'DONE' && !(Array.isArray(last.tool_calls) && last.tool_calls.length));
+      // A text-only DONE step can also mean the agent yielded while a background command runs;
+      // the conversation index says whether the cascade is really idle (null = index unreadable).
+      const looksDone = textDone && this.agyConversationIdle(cid) !== false;
+      const seen = this.agyDoneSince.get(run.runId);
+      if (!looksDone || !seen || seen.lines !== all.length) {
+        if (looksDone) this.agyDoneSince.set(run.runId, { at: Date.now(), lines: all.length });
+        else this.agyDoneSince.delete(run.runId);
+        return false;
+      }
+      if (Date.now() - seen.at < 5000) return false;
+      this.agyDoneSince.delete(run.runId);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  agyConversationIdle(this: AgentGatewayHub, cid: string): boolean | null {
+    try {
+      const db = new DatabaseSync(join(HOME, '.gemini', 'antigravity', 'conversation_summaries.db'), { readOnly: true });
+      const row = db
+        .prepare('select status, not_fully_idle as busy from conversation_summaries where conversation_id = ?')
+        .get(cid) as { status?: string; busy?: number } | undefined;
+      db.close();
+      if (!row) return null;
+      return !Number(row.busy) && !String(row.status || '').endsWith('RUNNING');
+    } catch {
+      return null;
+    }
+  },
+
+  syncFromAntigravityTranscript(this: AgentGatewayHub, run: ActiveRun, cid: string) {
+    try {
+      const transcriptPath = join(this.agyBrainDir, cid, '.system_generated', 'logs', 'transcript.jsonl');
+      if (!existsSync(transcriptPath)) return;
+      const lines = readFileSync(transcriptPath, 'utf8')
+        .split(/\r?\n/)
+        .filter((l) => l.trim());
+      const minIdx = run.initialMsgCount ?? 0;
+      if (lines.length <= minIdx) return;
+
+      const newLines = lines.slice(minIdx);
+      let thoughts = '';
+      let text = '';
+      let changed = false;
+
+      for (const line of newLines) {
+        try {
+          const obj = JSON.parse(line);
+          if (obj.type === 'PLANNER_RESPONSE') {
+            if (typeof obj.thinking === 'string' && obj.thinking.trim()) {
+              thoughts = obj.thinking.trim();
+            }
+            if (typeof obj.content === 'string' && obj.content.trim()) {
+              text = obj.content.trim();
+            }
+            const rawCalls: any[] = Array.isArray(obj.tool_calls) ? obj.tool_calls : [];
+            for (let i = 0; i < rawCalls.length; i++) {
+              const tc = rawCalls[i];
+              const tid = String(tc?.id || `agy_live_${i + 1}`);
+              const tName = String(tc?.name || 'tool');
+              const inStr =
+                tc?.args && typeof tc.args === 'object'
+                  ? JSON.stringify(tc.args)
+                  : typeof tc?.args === 'string'
+                  ? tc.args
+                  : '';
+              const outStr =
+                typeof tc?.result === 'string'
+                  ? tc.result
+                  : typeof tc?.output === 'string'
+                  ? tc.output
+                  : '';
+              const cls = classifyTool(tName, inStr);
+              const st: LiveToolCall['status'] = tc?.error
+                ? 'error'
+                : outStr || obj.status === 'DONE'
+                ? 'ok'
+                : 'running';
+              const ex = run.tools.find((x) => x.id === tid);
+              if (!ex) {
+                run.tools.push({
+                  id: tid,
+                  name: tName,
+                  category: cls.category,
+                  icon: cls.icon,
+                  summary: cls.summary,
+                  status: st,
+                  input: inStr || undefined,
+                  output: outStr || undefined,
+                  startedAt: new Date().toISOString(),
+                });
+                changed = true;
+              } else if (ex.status !== st || (outStr && !ex.output)) {
+                ex.status = st;
+                if (outStr) ex.output = outStr;
+                changed = true;
+              }
+            }
+          }
+        } catch {}
+      }
+
+      if (thoughts && thoughts !== run.thoughts) {
+        run.thoughts = thoughts;
+        changed = true;
+      }
+      if (text && text !== run.text) {
+        run.text = text;
+        changed = true;
+      }
+      if (changed) {
+        this.markRunSeenByDispatch(run);
+        this.broadcast('run_update', run);
+      }
+    } catch {}
+  },
+};
