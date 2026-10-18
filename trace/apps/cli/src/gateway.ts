@@ -516,14 +516,14 @@ function quoteWinArg(a: string): string {
 }
 
 export const DEFAULT_SUPERVISOR_PERSONA =
-  '你是智能体控制室的元智能体护航总管与系统维护督导。先核对事实，再安排工作；不夸大战果，客观严谨。语言简短清晰，明确谁接手、接什么、故障根因与下一步维护动作。';
+  '你是智能体控制室的元智能体，负责系统的巡检和维护。先核对事实，再安排工作；不夸大战果，客观严谨。语言简短清晰，明确谁接手、接什么、故障根因与下一步维护动作。';
 
 export const DEFAULT_META_AGENTS: Record<MetaAgentId, MetaAgentConfig> = {
   meta_approver: {
     id: 'meta_approver',
     name: '自动批准与代理审批督导',
     role: 'Auto-Approval & Proxy Gate Meta-Agent',
-    badge: '⚡ 自动批准',
+    badge: '自动批准',
     accent: '#10B981',
     enabled: false, // off by default: tools run read-only unless the user widens it (2026-10-17)
     policy: 'reads',
@@ -535,7 +535,7 @@ export const DEFAULT_META_AGENTS: Record<MetaAgentId, MetaAgentConfig> = {
     persona: DEFAULT_SUPERVISOR_PERSONA,
     runtimeStatus: 'standby',
     description:
-      '自动放行安全工具读写与命令调用（--approve-all），并在无人值守时由元智能体大脑代理常规门禁审批，高危操作升级人类',
+      '自动放行安全工具读写与命令调用（--approve-all），并在无人值守时由元智能体的诊断会话代理常规门禁审批，高危操作升级人类',
     triggersCount: 0,
   },
   meta_resumer: {
@@ -555,14 +555,14 @@ export const DEFAULT_META_AGENTS: Record<MetaAgentId, MetaAgentConfig> = {
     persona: DEFAULT_SUPERVISOR_PERSONA,
     runtimeStatus: 'standby',
     description:
-      '后台零 Token 巡检断网超时、进程异常退出、空转报错或流中断，特殊事件触发元智能体大脑裁决并自动注入断点上下文续跑',
+      '后台用不调模型的规则巡检断网超时、进程异常退出、空转报错或流中断，特殊事件触发元智能体的诊断会话裁决并自动注入断点上下文续跑',
     triggersCount: 0,
   },
   meta_maint: {
     id: 'meta_maint',
     name: '渠道熔断与模型容灾督导',
     role: 'Circuit-Breaker & Model Failover Meta-Agent',
-    badge: '🛡️ 渠道容灾',
+    badge: '渠道容灾',
     accent: '#F59E0B',
     enabled: true,
     engineMode: 'agent_brain',
@@ -573,7 +573,7 @@ export const DEFAULT_META_AGENTS: Record<MetaAgentId, MetaAgentConfig> = {
     persona: DEFAULT_SUPERVISOR_PERSONA,
     runtimeStatus: 'standby',
     description:
-      '监测 7 大宿主通道健康度、连续报错熔断、配额耗尽（429/Quota）与模型拒绝，自动切换同渠道已验证备选模型并自愈',
+      '监测七个产品的渠道健康、连续报错熔断、配额耗尽（429/Quota）与模型拒绝，自动换到同一产品已验证的备选模型',
     triggersCount: 0,
   },
   meta_auditor: {
@@ -592,7 +592,7 @@ export const DEFAULT_META_AGENTS: Record<MetaAgentId, MetaAgentConfig> = {
     persona: DEFAULT_SUPERVISOR_PERSONA,
     runtimeStatus: 'standby',
     description:
-      '过滤 stderr 诊断噪音（防假活跃死循环），监控连续重复工具报错与僵死进程，发现异常时唤醒大脑注入纠偏提示或安全中断',
+      '过滤 stderr 诊断噪音（防假活跃死循环），监控连续重复工具报错与僵死进程，发现异常时叫诊断会话注入纠偏提示或安全中断',
     triggersCount: 0,
   },
 };
@@ -1698,14 +1698,13 @@ export class AgentGatewayHub {
               }
               if (!merged.engineMode) merged.engineMode = 'agent_brain';
               if (!merged.patrolIntervalSec) merged.patrolIntervalSec = 15;
-              if (!merged.persona || merged.persona.includes('芙芙')) {
-                merged.persona = DEFAULT_SUPERVISOR_PERSONA;
-              }
-              if (merged.description && merged.description.includes('芙芙')) {
-                merged.description = base.description;
-              }
+              // Name, description and persona are the product's own text, not settings a person changes: they
+              // always come from the code, so a rename (the 10-18 wording cleanup) is not undone by the saved file.
+              merged.name = base.name;
+              merged.description = base.description;
+              merged.persona = base.persona || DEFAULT_SUPERVISOR_PERSONA;
               if (merged.lastAction && merged.lastAction.includes('芙芙')) {
-                merged.lastAction = merged.lastAction.replace(/芙芙大脑/g, '元智能体大脑').replace(/芙芙/g, '元智能体总管');
+                merged.lastAction = merged.lastAction.replace(/芙芙大脑/g, '元智能体的诊断会话').replace(/芙芙/g, '元智能体');
               }
               this.metaAgents.set(id as MetaAgentId, merged);
             }
@@ -1714,7 +1713,7 @@ export class AgentGatewayHub {
             this.metaAgentLogs.push(
               ...raw.logs.slice(0, 40).map((lg: MetaAgentLogEntry) => ({
                 ...lg,
-                detail: String(lg.detail || '').replace(/芙芙大脑/g, '元智能体大脑').replace(/芙芙/g, '元智能体总管'),
+                detail: String(lg.detail || '').replace(/芙芙大脑/g, '元智能体的诊断会话').replace(/芙芙/g, '元智能体'),
               })),
             );
           }
@@ -1817,9 +1816,9 @@ export class AgentGatewayHub {
         targetIds[0],
         sample.brainChannel || 'zcode',
         sample.brainSessionName || 'meta-brain-supervisor',
-        '切换元智能体大脑配置',
-        `大脑设为 ${CHANNEL_PROFILES[sample.brainChannel || 'zcode'].label} · ${sample.brainModel} (${
-          sample.engineMode === 'local_rules' ? '纯本地零Token规则' : '事件触发Agent大脑+本地兜底'
+        '切换元智能体的诊断会话配置',
+        `诊断会话设为 ${CHANNEL_PROFILES[sample.brainChannel || 'zcode'].label} · ${sample.brainModel} (${
+          sample.engineMode === 'local_rules' ? '只用本地规则' : '出事时叫智能体诊断，平时用规则'
         })`,
       );
     } else {
@@ -1875,7 +1874,7 @@ export class AgentGatewayHub {
     this.broadcast('meta_agent_action', entry);
   }
 
-  /** Background 0-Token Watchdog & Patrol Tick Loop. */
+  /** Background patrol: rules only, no model calls; a model is called only for an incident. */
   private startMetaPatrolLoop() {
     if (this.patrolTimer) clearInterval(this.patrolTimer);
     this.patrolTimer = setInterval(() => {
@@ -2057,8 +2056,8 @@ export class AgentGatewayHub {
     if (ma.engineMode === 'local_rules' || (existingBrainRun && existingBrainRun.status === 'running')) {
       const fbReason =
         ma.engineMode === 'local_rules'
-          ? '当前配置为「纯本地零 Token 规则引擎」，直接执行确定性规则底座'
-          : `元智能体大脑 (${brainProf.label}) 当前正在处理其他案件，毫秒级降级为本地确定性规则兜底`;
+          ? '当前配置为只用本地规则，不调模型'
+          : `元智能体的诊断会话 (${brainProf.label}) 当前正在处理其他案件，这次改用本地规则判断`;
       ma.runtimeStatus = 'fallback';
       this.metaAgents.set(metaId, ma);
       this.recordMetaAction(
@@ -2100,7 +2099,7 @@ export class AgentGatewayHub {
       .join('；');
 
     const coordinationPrompt = [
-      `【元智能体护航总管 · 事件唤醒裁决】`,
+      `【元智能体 · 出事时的诊断】`,
       `人设与职责：${ma.persona || DEFAULT_SUPERVISOR_PERSONA}`,
       `触发督导席位：${ma.name} (${ma.id}) · 事件类型：${params.eventKind}`,
       `目标渠道与会话：${targetProf.label} / ${targetSessionName} (当前模型: ${
@@ -2108,7 +2107,7 @@ export class AgentGatewayHub {
       }，可选备选模型: ${targetProf.recommendedModels.join(', ')})`,
       `最近用户指令：${lastInput || '（暂无或刚新建）'}`,
       `事件摘要与现场诊断：${params.summary} | 详细异常：${lastErr}`,
-      `大盘 7 大渠道实时状态：${activeChannelsSummary}`,
+      `七个产品现在的状态：${activeChannelsSummary}`,
       ``,
       `注意：本次为【只读协调裁决运行（coordination_only）】，严禁调用任何修改项目文件的工具，严禁长篇大论。`,
       `请直接用 2~3 句简短清晰的话汇报你的巡检判断，并在末尾紧跟一行 JSON 裁决（不要其他代码块）：`,
@@ -2119,7 +2118,7 @@ export class AgentGatewayHub {
       metaId,
       targetProf.id,
       targetSessionName,
-      `🧠 唤醒元智能体大脑 (${brainProf.label})`,
+      `唤醒元智能体的诊断会话 (${brainProf.label})`,
       `事件 [${params.eventKind}] 唤醒 ${brainProf.label} · ${brainModel} (会话: ${brainSessionName}) 进行协调裁决`,
       {
         brainUsed: `${brainProf.label} · ${brainModel}`,
@@ -2166,12 +2165,12 @@ export class AgentGatewayHub {
           .replace(/\s+/g, ' ')
           .trim()
           .slice(0, 140);
-        const actionLabel = parsedDecision?.action ? `裁决: ${parsedDecision.action}` : '大脑巡检完毕';
+        const actionLabel = parsedDecision?.action ? `裁决: ${parsedDecision.action}` : '巡检完毕';
         this.recordMetaAction(
           metaId,
           targetProf.id,
           targetSessionName,
-          `✨ 元智能体大脑${actionLabel}`,
+          `元智能体的诊断会话${actionLabel}`,
           cleanSummary || parsedDecision?.reason || outText.slice(0, 120),
           {
             brainUsed: `${brainProf.label} · ${brainModel}`,
@@ -2207,8 +2206,8 @@ export class AgentGatewayHub {
           metaId,
           targetProf.id,
           targetSessionName,
-          '🛡️ 大脑超时/本地兜底',
-          `大脑会话 (${brainProf.label} · ${brainModel}) 未返回结构化裁决，已由本地确定性规则底座接管`,
+          '诊断超时，改用本地规则',
+          `诊断会话 (${brainProf.label} · ${brainModel}) 未返回结构化裁决，已由本地确定性规则底座接管`,
           {
             brainUsed: `本地规则兜底 (${brainProf.label})`,
             brainTraceSessionId: brainRun.traceSessionId,
@@ -3890,7 +3889,7 @@ foreach ($p in $procs) {
               ) {
                 isErr = true;
                 outStr =
-                  '⚠️ 权限被拦截 (PERMISSION_DENIED)：此前处于「只读安全 (reads)」模式，acpx 拒绝了命令/写入工具执行。现已默认开启「⚡ 自动读写 (all)」。';
+                  '⚠️ 权限被拦截 (PERMISSION_DENIED)：此前处于「只读安全 (reads)」模式，acpx 拒绝了命令/写入工具执行。现已默认开启「自动读写 (all)」。';
               }
               const cls = classifyTool(tu.name || 'tool', inputStr);
               toolCalls++;
@@ -4927,7 +4926,7 @@ foreach ($p in $procs) {
 
     const instruction =
       (params.customInstruction || '').trim() ||
-      '请基于上述前序智能体会话的上下文与工作目录，无缝接手并继续完成未尽任务（若前序存在报错请直接定位修复）。';
+      '请基于上述前序智能体会话的上下文与工作目录，接手并继续完成未尽任务（若前序存在报错请直接定位修复）。';
 
     const handoffPrompt = [
       `【跨智能体协同接力 (Session Handoff): ${fromProf.label} -> ${toProf.label}】`,
@@ -5756,7 +5755,7 @@ foreach ($p in $procs) {
         prof.id,
         sessionName,
         '死循环预警',
-        `检测到单轮连续 ${errTools.length} 次工具调用报错，已触发元智能体大脑审计`,
+        `检测到单轮连续 ${errTools.length} 次工具调用报错，已触发元智能体的诊断会话审计`,
         { eventKind: 'loop_detected' },
       );
       if (auditor.engineMode !== 'local_rules') {
@@ -5806,7 +5805,7 @@ foreach ($p in $procs) {
         prof.id,
         sessionName,
         `断网/Bug自动续跑 (#${retryCount + 1})`,
-        `检测到异常中断 (${errMsg.slice(0, 60) || '进程非零退出'})，唤醒元智能体大脑诊断并在 ${resumer.retryDelaySec || 2}s 后自动续跑`,
+        `检测到异常中断 (${errMsg.slice(0, 60) || '进程非零退出'})，唤醒元智能体的诊断会话诊断并在 ${resumer.retryDelaySec || 2}s 后自动续跑`,
         { eventKind: 'execution_failure' },
       );
 

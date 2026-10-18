@@ -1,5 +1,5 @@
 /* ============================================================================
- * NEXUS CONSOLE · Mode 2 Ultra-Light Control Workbench (console/console.js)
+ * Console (/console/): sessions, task board and meta-agents, without the canvas (console/console.js)
  * Zero Canvas / Zero Starfield / IndexedDB Tail Cache / Cursor Pagination
  * ============================================================================ */
 (function () {
@@ -61,11 +61,11 @@
 
   var SLASH_COMMANDS = [
     { cmd: '/handoff', label: '跨渠道一键接力', desc: '将当前会话上下文打包接力至指定渠道' },
-    { cmd: '/patrol', label: '立即执行元智能体巡检', desc: '触发总管大脑巡检所有僵死与异常会话' },
+    { cmd: '/patrol', label: '立即执行元智能体巡检', desc: '触发元智能体巡检所有僵死与异常会话' },
     { cmd: '/resume', label: '断点续跑当前会话', desc: '发送黄金恢复提示词继续未完成的步骤' },
     { cmd: '/new', label: '在当前渠道新建会话', desc: '创建独立命名会话并自动切换' },
     { cmd: '/board', label: '切换至协作看板视图', desc: '打开 4 列实时任务流转与会话看板' },
-    { cmd: '/supervisor', label: '切换至护航总管与健康度', desc: '查看 7 渠道断路器与元智能体配置' }
+    { cmd: '/supervisor', label: '切换到元智能体与渠道健康', desc: '查看 7 渠道断路器与元智能体配置' }
   ];
 
   // Application State
@@ -217,7 +217,7 @@
   function sanitizeTitle(raw) {
     return String(raw || '')
       .replace(/你是芙芙[，,]?\s*/g, '')
-      .replace(/芙芙/g, '护航总管')
+      .replace(/芙芙/g, '元智能体')
       .trim();
   }
 
@@ -618,9 +618,9 @@
 
     var parts = [];
     if (norm.durationMs) {
-      parts.push('⚡ 耗时 ' + (norm.durationMs / 1000).toFixed(1) + 's');
+      parts.push('耗时 ' + (norm.durationMs / 1000).toFixed(1) + 's');
     } else if (isRunningTurn) {
-      parts.push('⚡ 正在执行');
+      parts.push('正在执行');
     }
     if (counts.read) parts.push('读取 ' + counts.read + ' 次');
     if (counts.write) parts.push('编辑 ' + counts.write + ' 次');
@@ -713,7 +713,7 @@
     }
 
     strip.hidden = false;
-    var html = '<span class="nx-section-lbl" style="margin-right:4px;">⚡ 实况并发:</span>';
+    var html = '<span class="nx-section-lbl" style="margin-right:4px;">实况并发:</span>';
 
     for (var i = 0; i < perms.length; i++) {
       var p = perms[i];
@@ -1079,7 +1079,7 @@
       '<span class="nx-ch-dot" style="background:' + esc(chMeta.color) + '"></span>' +
       '<span class="nx-ch-hdr-title" title="' + esc(sess.id) + '">' + esc(sess.title || (ch + ':' + logical)) + '</span>' +
       '<span class="nx-ctx-chip">' + esc(chMeta.label) + '</span>' +
-      (modelName ? '<span class="nx-ctx-chip">🧠 ' + esc(String(modelName).replace(/^builtin:[^\\]+\\/i, '')) + '</span>' : '') +
+      (modelName ? '<span class="nx-ctx-chip">' + esc(String(modelName).replace(/^builtin:[^\\]+\\/i, '')) + '</span>' : '') +
       (cwdPath ? '<span class="nx-ctx-chip" title="' + esc(cwdPath) + '">📁 ' + esc(shortPath(cwdPath)) + '</span>' : '') +
       '<span class="nx-ctx-chip">' + totalTurns + ' 轮对话</span>' +
     '</div>' +
@@ -1125,9 +1125,9 @@
     var sess = S.activeSessionDetail;
     if (!sess) {
       stream.innerHTML = '<div style="margin:auto;text-align:center;max-width:460px;padding:32px;color:var(--nx-fg-muted);">' +
-        '<div style="font-size:28px;margin-bottom:8px;">⚡</div>' +
-        '<div style="font-size:14px;font-weight:700;color:var(--nx-fg);margin-bottom:6px;">NEXUS 极速控制台已就绪</div>' +
-        '<div style="font-size:12px;line-height:1.6;">零画布与仿真开销 · IndexedDB 毫秒级会话恢复 · 单行折叠工具链轨迹 · 7 大本机能力渠道实时调度。请从左侧选择会话或直接在下方发送指令。</div>' +
+        
+        '<div style="font-size:14px;font-weight:700;color:var(--nx-fg);margin-bottom:6px;">控制台已就绪</div>' +
+        '<div style="font-size:12px;line-height:1.6;">请从左侧选择会话或直接在下方发送指令。</div>' +
       '</div>';
       return;
     }
@@ -1333,15 +1333,15 @@
       htmlTop += '<label style="font-size:11px;color:var(--nx-fg-muted);font-weight:700;margin-left:4px;">模型:</label>' +
         '<select class="nx-select" id="nxCtlModel" title="切换已验证可用模型">' + mOpts + '</select>';
     } else {
-      htmlTop += '<span class="nx-ctx-chip" title="该渠道固定使用已验证模型">🧠 ' + esc(curModel) + '</span>';
+      htmlTop += '<span class="nx-ctx-chip" title="该渠道固定使用已验证模型">' + esc(curModel) + '</span>';
     }
 
     // Strict Capability Gating: Only show permission selector if channel supports permission mode
     if (caps.canSetPermissionMode) {
       var pm = S.composer.permissionMode || 'approve-reads';
       htmlTop += '<select class="nx-select" id="nxCtlPerm" title="工具调用权限策略">' +
-        '<option value="approve-all" ' + (pm === 'approve-all' ? 'selected' : '') + '>⚡ 自动批准全部 (approve-all)</option>' +
-        '<option value="approve-reads" ' + (pm === 'approve-reads' ? 'selected' : '') + '>🛡️ 仅自动批准读取 (approve-reads)</option>' +
+        '<option value="approve-all" ' + (pm === 'approve-all' ? 'selected' : '') + '>自动批准全部 (approve-all)</option>' +
+        '<option value="approve-reads" ' + (pm === 'approve-reads' ? 'selected' : '') + '>仅自动批准读取 (approve-reads)</option>' +
         '<option value="deny-all" ' + (pm === 'deny-all' ? 'selected' : '') + '>🔒 严格拦截工具 (deny-all)</option>' +
       '</select>';
     }
@@ -1372,11 +1372,11 @@
 
     if (running) {
       if (caps.canCancelRun) {
-        footHtml += '<button type="button" class="nx-mini-btn danger" data-act="interrupt-send" title="中止当前运行并立即发送框内指令">⚡ 中断并立即发送</button>';
+        footHtml += '<button type="button" class="nx-mini-btn danger" data-act="interrupt-send" title="中止当前运行并立即发送框内指令">中断并立即发送</button>';
       }
       footHtml += '<button type="button" class="nx-mini-btn primary" data-act="send-prompt">⏳ 加入排队队列 (Enter)</button>';
     } else {
-      footHtml += '<button type="button" class="nx-mini-btn primary" data-act="send-prompt" style="padding:5px 14px;">🚀 发送指令 (Enter)</button>';
+      footHtml += '<button type="button" class="nx-mini-btn primary" data-act="send-prompt" style="padding:5px 14px;">发送 (Enter)</button>';
     }
     footHtml += '</div>';
     foot.innerHTML = footHtml;
@@ -1731,13 +1731,13 @@
         (s.cwd ? '<div style="font-size:11px;color:var(--nx-fg-muted);font-family:var(--nx-font-mono);">📁 ' + esc(shortPath(s.cwd)) + '</div>' : '') +
         '<div style="display:flex;align-items:center;justify-content:space-between;font-size:10.5px;color:var(--nx-fg-muted);margin-top:2px;">' +
           '<span>' + esc(String(modelName).split('/').pop().replace(/^builtin:[^\\]+\\/i, '')) + ' · ' + turnsCount + ' 轮</span>' +
-          '<span>' + (extraTag || (running ? '⚡ 运行中' : esc(relTime(s.updatedAt || s.startedAt)))) + '</span>' +
+          '<span>' + (extraTag || (running ? '运行中' : esc(relTime(s.updatedAt || s.startedAt)))) + '</span>' +
         '</div>' +
       '</div>';
     }
 
     var columnsSpec = [
-      { title: '⚡ 实况执行中', badge: colRunning.length, color: 'var(--nx-run)', html: colRunning.map(function (s) { return renderCardForSession(s, '⚡ 实时流'); }).join('') },
+      { title: '实况执行中', badge: colRunning.length, color: 'var(--nx-run)', html: colRunning.map(function (s) { return renderCardForSession(s, '实时流'); }).join('') },
       {
         title: '⚠️ 待审批 / 排队 / 异常', badge: colAttention.length, color: 'var(--nx-warn)',
         html: colAttention.map(function (item) {
@@ -1782,7 +1782,7 @@
     var metaAgents = (S.gw && S.gw.metaAgents) || [];
     var sup = metaAgents.find(function (m) { return m.id === 'meta_resumer'; }) || metaAgents[0] || {
       id: 'meta_resumer',
-      name: '元智能体护航总管',
+      name: '元智能体',
       brainChannel: 'zcode',
       brainModel: 'GLM-5-Turbo',
       enabled: true,
@@ -1812,8 +1812,8 @@
     html += '<div class="nx-sup-card">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
         '<div>' +
-          '<div style="font-size:14px;font-weight:800;">🔌 7 大本机能力渠道 · 断路器与投递健康度矩阵</div>' +
-          '<div style="font-size:11.5px;color:var(--nx-fg-muted);">实时追踪各渠道启动次数 (Started)、成功投递 (Delivered)、失败次数与断路器状态 (Closed / Probing / Open)</div>' +
+          '<div style="font-size:14px;font-weight:800;">七个产品的渠道健康</div>' +
+          '<div style="font-size:11.5px;color:var(--nx-fg-muted);">这次服务启动以来，每个产品跑了几轮、成功几轮、失败几轮，以及熔断状态（Closed 正常 / Probing 试探 / Open 已熔断）</div>' +
         '</div>' +
         '<button type="button" class="nx-mini-btn" data-act="refresh-all">↻ 刷新指标</button>' +
       '</div>' +
@@ -1835,7 +1835,7 @@
           '<span style="color:' + ((h.failed || 0) > 0 ? 'var(--nx-danger)' : 'var(--nx-fg-muted)') + ';">失败: <b>' + (h.failed || 0) + '</b></span>' +
         '</div>' +
         '<div style="font-size:10.5px;color:var(--nx-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
-          (h.lastError ? ('最近异常: ' + esc(h.lastError)) : ('默认大脑: ' + esc(c.defaultModel || ''))) +
+          (h.lastError ? ('最近异常: ' + esc(h.lastError)) : ('默认模型: ' + esc(c.defaultModel || ''))) +
         '</div>' +
       '</div>';
     }
@@ -1845,21 +1845,21 @@
     html += '<div class="nx-sup-card">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">' +
         '<div>' +
-          '<div style="font-size:14px;font-weight:800;">🛡️ 元智能体护航总管大脑 (Meta-Brain Supervisor)</div>' +
-          '<div style="font-size:11.5px;color:var(--nx-fg-muted);">常驻后台定期巡检或由特殊事件触发，自动调用指定 Agent+模型大脑诊断僵死会话、批准安全操作与断点续跑</div>' +
+          '<div style="font-size:14px;font-weight:800;">元智能体与诊断会话</div>' +
+          '<div style="font-size:11.5px;color:var(--nx-fg-muted);">常驻后台定期巡检或由特殊事件触发，自动叫指定的智能体诊断僵死会话、批准安全操作与断点续跑</div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;">' +
-          '<button type="button" class="nx-mini-btn primary" data-act="sup-patrol">⚡ 立即唤醒总管巡检</button>' +
-          '<button type="button" class="nx-mini-btn" data-act="sup-save">💾 同步总管大脑配置</button>' +
+          '<button type="button" class="nx-mini-btn primary" data-act="sup-patrol">立即巡检一次</button>' +
+          '<button type="button" class="nx-mini-btn" data-act="sup-save">💾 保存诊断会话配置</button>' +
         '</div>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;padding:12px;border-radius:9px;background:var(--nx-surface-2);border:1px solid var(--nx-border);">' +
         '<div>' +
-          '<label style="font-size:11px;color:var(--nx-fg-muted);display:block;margin-bottom:4px;">总管宿主渠道 (Brain Channel)</label>' +
+          '<label style="font-size:11px;color:var(--nx-fg-muted);display:block;margin-bottom:4px;">诊断用的产品</label>' +
           '<select class="nx-select" id="nxSupChannel" style="width:100%;max-width:none;">' + chOpts + '</select>' +
         '</div>' +
         '<div>' +
-          '<label style="font-size:11px;color:var(--nx-fg-muted);display:block;margin-bottom:4px;">总管推理模型 (Brain Model)</label>' +
+          '<label style="font-size:11px;color:var(--nx-fg-muted);display:block;margin-bottom:4px;">诊断用的模型</label>' +
           '<select class="nx-select" id="nxSupModel" style="width:100%;max-width:none;">' + modelOpts + '</select>' +
         '</div>' +
         '<div>' +
@@ -1882,11 +1882,11 @@
 
     // Card 3: Live Supervisor Patrol & Event Trigger Log Stream
     html += '<div class="nx-sup-card">' +
-      '<div style="font-size:13px;font-weight:800;margin-bottom:10px;">📜 护航总管实时决策与干预日志 (' + logs.length + ')</div>' +
+      '<div style="font-size:13px;font-weight:800;margin-bottom:10px;">📜 元智能体的决策与介入记录 (' + logs.length + ')</div>' +
       '<div style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;" class="thin-scroll">';
 
     if (!logs.length) {
-      html += '<div style="padding:16px;text-align:center;color:var(--nx-fg-muted);font-size:12px;">暂无巡检异常记录，点击右上角「⚡ 立即唤醒总管巡检」可立即触发元智能体大脑扫描。</div>';
+      html += '<div style="padding:16px;text-align:center;color:var(--nx-fg-muted);font-size:12px;">暂无巡检异常记录，点击右上角「立即巡检一次」可立即触发元智能体的诊断会话扫描。</div>';
     } else {
       for (var l = 0; l < logs.length; l++) {
         var entry = logs[l];
@@ -1909,7 +1909,7 @@
     var sess = S.activeSessionDetail || S.sessions.find(function (s) { return s.id === S.activeSessionId; });
     var ch = getSessionChannel(sess);
     var logical = sess ? getSessionLogicalName(sess) : 'hub-codex';
-    toast('🛡️ 正在唤醒元智能体总管大脑执行巡检…');
+    toast('正在唤醒元智能体的诊断会话执行巡检…');
     fetch('/api/gateway/meta-agents/patrol', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1949,7 +1949,7 @@
     })
       .then(function (r) { return r.json(); })
       .then(function () {
-        toast('✓ 已同步所有督导单元的总管大脑配置');
+        toast('✓ 已同步所有督导单元的诊断会话配置');
         refreshGatewayAndSessions();
       })
       .catch(function () { toast('保存失败'); });
@@ -1975,7 +1975,7 @@
 
       body.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;">' +
         '<div style="font-size:12.5px;font-weight:800;">⇄ 跨渠道上下文一键接力</div>' +
-        '<div style="font-size:11.5px;color:var(--nx-fg-muted);line-height:1.5;">将当前会话最近核心上下文与结论自动打包，无缝移交至另一本机 Agent 渠道继续执行。</div>' +
+        '<div style="font-size:11.5px;color:var(--nx-fg-muted);line-height:1.5;">将当前会话最近核心上下文与结论自动打包，交给本机另一个产品接着做。</div>' +
         '<div>' +
           '<label style="font-size:11px;color:var(--nx-fg-muted);display:block;margin-bottom:4px;">目标接力渠道</label>' +
           '<select class="nx-select" id="nxHandoffCh" style="width:100%;max-width:none;">' +
@@ -1996,7 +1996,7 @@
           '<label style="font-size:11px;color:var(--nx-fg-muted);display:block;margin-bottom:4px;">附加接力指令</label>' +
           '<textarea id="nxHandoffPrompt" rows="4" style="width:100%;padding:8px;border-radius:7px;border:1px solid var(--nx-border-strong);background:var(--nx-bg);color:var(--nx-fg);font-size:12px;" placeholder="请基于上述上下文继续完成代码实现与验证…"></textarea>' +
         '</div>' +
-        '<button type="button" class="nx-mini-btn primary" data-act="exec-handoff" style="justify-content:center;padding:7px 12px;">🚀 立即打包并跨渠道接力</button>' +
+        '<button type="button" class="nx-mini-btn primary" data-act="exec-handoff" style="justify-content:center;padding:7px 12px;">打包交给另一个产品</button>' +
       '</div>';
       return;
     }
@@ -2091,10 +2091,10 @@
       { id: 'act:new', title: '+ 在当前渠道新建独立命名会话', tag: '动作' },
       { id: 'view:chat', title: '💬 切换至：实况对话台', tag: '视图' },
       { id: 'view:board', title: '📋 切换至：4 列协作看板', tag: '视图' },
-      { id: 'view:supervisor', title: '🛡️ 切换至：护航总管与 7 渠道断路器健康度', tag: '视图' },
-      { id: 'act:patrol', title: '⚡ 立即触发元智能体总管全量巡检', tag: '护航' },
+      { id: 'view:supervisor', title: '切换至：元智能体与七个渠道的熔断状态', tag: '视图' },
+      { id: 'act:patrol', title: '立即触发元智能体巡检一遍', tag: '元智能体' },
       { id: 'act:theme', title: '☀ 切换深色 / 浅色高对比度主题', tag: '外观' },
-      { id: 'act:hub', title: '🌌 切换至模式一：60 智能体架构拓扑 Hub', tag: '模式切换' }
+      { id: 'act:hub', title: '切换到观察台', tag: '页面' }
     ];
 
     for (var i = 0; i < S.sessions.length; i++) {

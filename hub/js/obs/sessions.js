@@ -148,7 +148,7 @@
         e.preventDefault(); e.stopPropagation();
         if (HUB.store && HUB.store.set) {
           HUB.store.set({ drawer: 'ctrl', selection: null }, { history: false });
-          toast('已在右侧栏打开「🧠 元智能体总管大脑」配置台');
+          toast('已在右侧栏打开「元智能体的诊断会话」配置台');
         }
       }
       else if (act === 'meta-brain-sess') {
@@ -259,14 +259,14 @@
       var totalTrig = Array.isArray(maRaw) ? maRaw.reduce(function (acc, item) { return acc + (item.triggersCount || item.triggerCount || 0); }, 0) : 0;
       out.push('<div class="ob-fufu-mini-card">' +
         '<div class="ob-fufu-mini-top">' +
-          '<span class="ob-fufu-mini-title"><span class="ob-dot working"></span>🛡️ <b>元智能体护航总管</b></span>' +
+          '<span class="ob-fufu-mini-title"><span class="ob-dot working"></span><b>元智能体</b></span>' +
           '<span class="ob-fufu-mini-acts">' +
-            '<button type="button" class="ob-fufu-mini-btn" data-act="meta-patrol" title="立即唤醒元智能体大脑执行一次系统巡检">🧠 巡检</button>' +
-            '<button type="button" class="ob-fufu-mini-btn" data-act="meta-brain-sess" title="打开元智能体大脑的真实协调会话">👁️ 脑会话</button>' +
-            '<button type="button" class="ob-fufu-mini-btn" data-act="meta-config" title="在右侧栏打开元智能体大脑模型与策略配置">⚙ 换脑</button>' +
+            '<button type="button" class="ob-fufu-mini-btn" data-act="meta-patrol" title="立即唤醒元智能体的诊断会话执行一次系统巡检">巡检</button>' +
+            '<button type="button" class="ob-fufu-mini-btn" data-act="meta-brain-sess" title="打开元智能体的诊断会话的真实协调会话">👁️ 诊断会话</button>' +
+            '<button type="button" class="ob-fufu-mini-btn" data-act="meta-config" title="在右侧栏打开元智能体的诊断会话模型与策略配置">⚙ 换诊断模型</button>' +
           '</span>' +
         '</div>' +
-        '<div class="ob-fufu-mini-sub">大脑：<code>' + esc(bCh + ' · ' + bMod) + '</code> · 后台 ' + esc(String(pSec)) + 's 巡检（累计护航 ' + esc(String(totalTrig)) + ' 次）</div>' +
+        '<div class="ob-fufu-mini-sub">诊断用：<code>' + esc(bCh + ' · ' + bMod) + '</code> · 后台 ' + esc(String(pSec)) + 's 巡检（累计介入 ' + esc(String(totalTrig)) + ' 次）</div>' +
       '</div>');
     }
 
@@ -319,7 +319,7 @@
       if (activeTops.length < 5) pushActive(s);
     });
 
-    out.push('<div class="ob-sh" style="display:flex;align-items:center;justify-content:space-between"><span>⚡ 当前与近期焦点会话（' + activeTops.length + '）</span><span style="font-size:9.5px;color:var(--t3);font-weight:400">仅展示活跃对话</span></div>');
+    out.push('<div class="ob-sh" style="display:flex;align-items:center;justify-content:space-between"><span>当前与近期焦点会话（' + activeTops.length + '）</span><span style="font-size:9.5px;color:var(--t3);font-weight:400">仅展示活跃对话</span></div>');
     activeTops.forEach(function (s) {
       var ks = kids[s.id] || [];
       out.push(row(s, 0, ks.length));

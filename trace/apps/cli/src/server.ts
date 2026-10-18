@@ -678,7 +678,7 @@ export function createService(opts: ServeOptions): Server {
               : 'manual_patrol',
           targetChannel: String(body.targetChannel || body.channel || 'codex'),
           targetSessionName: String(body.targetSessionName || body.targetSession || body.sessionName || 'hub-codex'),
-          summary: String(body.summary || body.errorSummary || '用户手动触发元智能体总管大脑立即对当前会话与渠道做健康巡检与架构诊断'),
+          summary: String(body.summary || body.errorSummary || '用户手动触发元智能体的诊断会话立即对当前会话与渠道做健康巡检与架构诊断'),
         });
         return json(res, 200, result);
       }
@@ -976,7 +976,7 @@ export function createService(opts: ServeOptions): Server {
             buckets[ch] = count + 1;
             picked.push(
               titleStr.includes('芙芙')
-                ? { ...s, title: titleStr.replace(/你是芙芙[，,]?\s*/g, '').replace(/芙芙/g, '护航总管') }
+                ? { ...s, title: titleStr.replace(/你是芙芙[，,]?\s*/g, '').replace(/芙芙/g, '元智能体') }
                 : s,
             );
           }

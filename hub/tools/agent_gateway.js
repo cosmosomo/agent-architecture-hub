@@ -1010,7 +1010,7 @@ function cmdPatrol(args) {
       eventKind: args.event || 'manual_patrol',
       targetChannel: prof.id,
       targetSession: args.session || `hub-${prof.id}`,
-      errorSummary: args.prompt || args.summary || `CLI 请求元智能体大脑对 ${prof.id} 执行健康巡检与架构诊断`,
+      errorSummary: args.prompt || args.summary || `CLI 请求元智能体的诊断会话对 ${prof.id} 执行健康巡检与架构诊断`,
     },
     60
   );
