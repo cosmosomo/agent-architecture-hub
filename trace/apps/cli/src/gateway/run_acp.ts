@@ -173,6 +173,26 @@ export const acpRunMethods = {
   async handleAcpApproval(this: AgentGatewayHub, prof: ChannelProfile, req: AcpPermissionRequest): Promise<AcpApprovalDecision> {
     const run = this.activeAcpRunsBySession.get(req.sessionId);
     if (!run) return 'reject_once';
+    // An agent's question that came as a permission ask (ZCode turns AskUserQuestion into one when the client offers
+    // no form: the options are the answers, plus a skip). It goes to the person whatever the permissions, and the
+    // chosen answer goes back as that option.
+    const qs: any[] = Array.isArray(req.toolCall?.rawInput?.questions) ? req.toolCall.rawInput.questions : [];
+    if (qs.length) {
+      const answers = await this.askPerson(
+        run,
+        qs.map((q) => ({
+          id: String(q.question),
+          header: q.header,
+          question: String(q.question),
+          options: (q.options || []).map((o: any) => ({ label: String(o.label), description: o.description })),
+          multiSelect: Boolean(q.multiSelect),
+          choicesOnly: true,
+        })),
+      );
+      const pick = answers ? Object.values(answers)[0]?.[0] : undefined;
+      const opt = pick !== undefined ? req.options.find((o) => o.optionId === pick || o.name === pick) : undefined;
+      return opt ? { optionId: opt.optionId } : 'reject_once';
+    }
     const last = run.tools[run.tools.length - 1];
     const title = String(req.toolCall?.title || '').trim() || run.permissionAsk || (last ? last.name : '某个工具');
     const settle = (allow: boolean): AcpApprovalDecision => {

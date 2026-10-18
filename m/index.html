@@ -1300,7 +1300,7 @@ function renderQuestionBanner(meta, session) {
         ${q.header ? `<div class="sub">${esc(q.header)}</div>` : ''}
         <div style="margin-top:6px;font-weight:600;font-size:14.5px">${esc(q.question)}</div>
         ${q.options.length ? `<div class="q-opts">${q.options.map((o) => `<button class="btn ghost q-opt-chip" data-pick="${esc(o.label)}" title="${esc(o.description || '')}">${esc(o.label)}</button>`).join('')}</div>` : ''}
-        <input class="q-free" placeholder="${q.options.length ? '或者自己写' : '写下你的回答'}" style="margin-top:6px;width:100%">
+        ${q.choicesOnly ? '' : `<input class="q-free" placeholder="${q.options.length ? '或者自己写' : '写下你的回答'}" style="margin-top:6px;width:100%">`}
       </div>`).join('')}
       <div class="cardrow"><button class="btn btn-touch" data-answer="1">回答</button></div>
     </div>`;
@@ -1517,7 +1517,7 @@ async function viewSession(id) {
       const answers = {};
       for (const item of box.querySelectorAll('.q-item')) {
         const picked = [...item.querySelectorAll('[data-pick].on')].map((x) => x.dataset.pick);
-        const free = item.querySelector('.q-free').value.trim();
+        const free = item.querySelector('.q-free') ? item.querySelector('.q-free').value.trim() : '';
         const v = free ? [...picked, free] : picked;
         if (!v.length) return toast('每个问题都要选一个或写一句');
         answers[item.dataset.q] = v;

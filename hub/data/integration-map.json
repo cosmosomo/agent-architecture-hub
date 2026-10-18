@@ -1049,13 +1049,25 @@
     "ask-user": [
       {
         "action": "answer",
-        "how": "智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/state），这一轮等着；POST /api/gateway/answer 把答案送回同一轮。Claude 的 AskUserQuestion 经 can_use_tool 拦下，答案放进 updatedInput.answers；Codex 在 plan 模式（session-control mode）下用 request_user_input，答案按问题编号回",
+        "how": "智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/state），这一轮等着；POST /api/gateway/answer 把答案送回同一轮。Claude 的 AskUserQuestion 经 can_use_tool 拦下，答案放进 updatedInput.answers；Codex 在 plan 模式（session-control mode）下用 request_user_input，答案按问题编号回；ZCode 经 ACP 把 AskUserQuestion 转成 session/request_permission（选项就是答案），后端把它挂成只能选的问题，回所选选项",
         "channels": [
           "claude",
-          "codex"
+          "codex",
+          "zcode"
         ],
         "status": "real",
-        "note": "10-19 负责人实测 channels/probe/scripts/probe_ask_user.js：两家都在同一轮用上了答案"
+        "note": "10-19 负责人实测 channels/probe/scripts/probe_ask_user.js：三家都在同一轮用上了答案；ZCode 的帧格式来自 Argon 的研究 channels/probe/results/ask-user-acp-20261019.md"
+      },
+      {
+        "action": "answer",
+        "how": "经 ACP 问不到：WorkBuddy 的 headless 执行器没有提问的界面绑定，批准后被拒、模型改成文字结束这一轮；OpenCode 的 acp 桥没给模型提问工具（客户端声明 elicitation 还会让它崩溃）；Hermes 的 ACP 适配层没挂 clarify 回调，提示词里还写明不要提问",
+        "channels": [
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "todo",
+        "note": "10-19 Argon 研究（ask-user-acp-20261019.md），负责人没复测；能补的路在各家自己的桌面端或配置，不在 ACP"
       }
     ]
   },
@@ -2253,10 +2265,11 @@
         "control": "同上",
         "action": "answer",
         "channels": [
-          "codex"
+          "codex",
+          "zcode"
         ],
         "status": "built",
-        "note": "后端实测通过，网页没点过"
+        "note": "后端实测通过，网页没点过；ZCode 的问题只能从选项里选，网页不显示自由输入框"
       }
     ]
   }

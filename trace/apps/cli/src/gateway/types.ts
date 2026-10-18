@@ -193,7 +193,8 @@ export type PendingQuestion = {
   channel: ChannelId;
   sessionName: string;
   traceSessionId?: string;
-  questions: Array<{ id: string; header?: string; question: string; options: Array<{ label: string; description?: string }>; multiSelect?: boolean }>;
+  /** choicesOnly: the answer must be one of the options (a question that came as a permission ask has no way to carry text). */
+  questions: Array<{ id: string; header?: string; question: string; options: Array<{ label: string; description?: string }>; multiSelect?: boolean; choicesOnly?: boolean }>;
   createdAt: string;
   status: 'pending' | 'answered' | 'cancelled';
   answers?: Record<string, string[]>;

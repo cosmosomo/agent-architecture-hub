@@ -2,7 +2,7 @@
 // An agent asks a person mid-turn (unit ask-user): ask it to use its own question tool, wait for the question in
 // /api/gateway/state pendingQuestions, answer through POST /api/gateway/answer, and check the same run finishes
 // using the answer. One blackboard row per product.
-//   node channels/probe/scripts/probe_ask_user.js [--product claude,codex] [--base http://127.0.0.1:18904]
+//   node channels/probe/scripts/probe_ask_user.js [--product claude,codex,zcode] [--base http://127.0.0.1:18904]
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -20,9 +20,11 @@ async function http(method, p, body, timeoutMs = 60000) {
 }
 const PROMPT = {
   claude: '用 AskUserQuestion 工具问我一个单选题：我更喜欢红色还是蓝色（两个选项：红色、蓝色）。拿到我的回答后，只回复一行：你选了<颜色>。不要做别的。',
+  // ZCode turns AskUserQuestion into a permission ask whose options are the answers (channels/probe/results/ask-user-acp-20261019.md).
+  zcode: '用 AskUserQuestion 工具问我一个单选题：我更喜欢红色还是蓝色（两个选项：红色、蓝色）。拿到我的回答后，只回复一行：你选了<颜色>。不要做别的。',
   codex: 'Use your request_user_input tool to ask me one question: do I prefer red or blue (options: red, blue). After I answer, reply with exactly one line: YOU CHOSE <colour>. Do nothing else.',
 };
-const ANSWER = { claude: '蓝色', codex: 'blue' };
+const ANSWER = { claude: '蓝色', codex: 'blue', zcode: '蓝色' };
 
 async function one(p) {
   const session = `verify-ask-${p}-${stamp}`;

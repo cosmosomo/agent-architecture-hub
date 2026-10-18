@@ -41,7 +41,8 @@ export interface AcpPermissionRequest {
   raw: any;
 }
 
-export type AcpApprovalDecision = 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' | 'cancel';
+/** A kind of option to pick, or one option by id (an agent's question that came as a permission ask: the options are its answers). */
+export type AcpApprovalDecision = 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' | 'cancel' | { optionId: string };
 
 export interface AcpDriverOptions {
   /** Product id, only for messages. */
@@ -365,6 +366,10 @@ export class AcpResidentDriver extends EventEmitter {
       } catch {}
       if (decision === 'cancel') {
         this.write({ jsonrpc: '2.0', id, result: { outcome: { outcome: 'cancelled' } } });
+        return;
+      }
+      if (typeof decision === 'object') {
+        this.write({ jsonrpc: '2.0', id, result: { outcome: { outcome: 'selected', optionId: decision.optionId } } });
         return;
       }
       const allow = decision.startsWith('allow');
