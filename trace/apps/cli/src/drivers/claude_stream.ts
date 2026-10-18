@@ -29,7 +29,8 @@ export interface ClaudeCanUseToolRequest {
   raw: any;
 }
 
-export type ClaudeApprovalDecision = 'allow' | 'deny';
+/** allow / deny; or allow with a changed input (AskUserQuestion: the person's answers in updatedInput.answers). */
+export type ClaudeApprovalDecision = 'allow' | 'deny' | { behavior: 'allow'; updatedInput: Record<string, any> };
 
 export interface ClaudeTurnResult {
   sessionId: string;
@@ -489,9 +490,7 @@ export class ClaudeStreamSession extends EventEmitter {
       response: {
         subtype: 'success',
         request_id: event.request_id,
-        response: {
-          behavior: decision,
-        },
+        response: typeof decision === 'object' ? decision : { behavior: decision },
       },
     });
 

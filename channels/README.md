@@ -199,7 +199,7 @@ node hub/tools/agent_gateway.js tables
 - **调用**：单元 → 动作 → 产品的路线上的命令。网页的按钮和命令行网关的子命令是同一个动作的两种外观。运行中的系统也给同样的东西：`GET http://127.0.0.1:8899/api/capabilities` 返回四张表的汇总。
 - **维护**：加一个单元，在“单元 → 动作”加一行；接一个产品，在产品表加一行，路线没有的话在同一个文件的 routes 里加；加一个动作，在路由和动作表各加一行。然后跑 `tables` 核对，跑 `node probe/scripts/build_coverage.js` 重出现状。核对对不上的地方会逐条列出来。
 - **出了 bug**：沿网页 → 后端接口 → 运行记录（`~/.agent-hub/runs.jsonl`、`~/.agent-hub/hub-8899.log`）→ 产品表里那条命令手动跑一遍 → 产品表里写的会话记录位置，逐层对。断在哪层修哪层，修完在黑板补一行实测，再重出现状。改后端先 `node -e "import('./trace/apps/cli/src/server.ts')"` 能加载，再按 8899 端口停进程，用命令行网关任一子命令让它自动拉起。
-- **回归**：`node hub/tools/agent_gateway.js verify [--product zcode,hermes] [--unit open,cancel,task-board]` 照四张表逐产品、逐单元真跑一遍，每格写一行黑板。另有三个专项：`probe/scripts/test_taskboard.mjs`（一群会话的判定，不调智能体，几秒）、`probe_acp_approval.js`（常驻 ACP 的轮内审批）、`probe_session_control.js`（切模式、压缩、分叉、推理力度）。
+- **回归**：`node hub/tools/agent_gateway.js verify [--product zcode,hermes] [--unit open,cancel,task-board]` 照四张表逐产品、逐单元真跑一遍，每格写一行黑板。另有四个专项：`probe/scripts/test_taskboard.mjs`（一群会话的判定，不调智能体，几秒）、`probe_acp_approval.js`（常驻 ACP 的轮内审批）、`probe_session_control.js`（切模式、压缩、分叉、推理力度）、`probe_ask_user.js`（智能体轮内向人提问、人答回同一轮）。8899 上有别人的轮在跑、不能重启时，新代码在副本上测：`HUB_BACKGROUND=0 node trace/apps/cli/src/main.ts serve --port 18904`，这份只应答请求，不巡检、不推进目标、不整理派活单，专项脚本加 `--base http://127.0.0.1:18904`。
 
 后端各块在哪（一块一个归属，同时改不同的块不冲突）：
 

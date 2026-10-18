@@ -107,7 +107,7 @@ body.has-composer .fab{bottom:calc(env(safe-area-inset-bottom) + 86px)}
 .q-title{font-size:14px;font-weight:600;color:var(--acc);display:flex;align-items:center;gap:6px}
 .q-opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .q-opt-chip{min-height:44px;padding:0 14px;border-radius:12px;background:var(--card);border:1.5px solid var(--acc);color:var(--acc);font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center}
-.q-opt-chip:active{background:var(--acc);color:#fff}
+.q-opt-chip:active,.q-opt-chip.on{background:var(--acc);color:#fff}
 
 /* Live indicators */
 @keyframes pulseDot{0%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}100%{opacity:1;transform:scale(1)}}
@@ -349,14 +349,45 @@ function renderActiveListDebounced() {
   }, 200);
 }
 
+// ---------- 提醒：有人等你答、等你批，或者你从网页发起的一轮结束了 ----------
+// Driven by SSE (state, run_done). The page vibrates and shows a toast; in the background, and where the browser
+// allows it (a secure origin such as localhost on a computer — not a phone over LAN http), a system notification
+// too, which opens the session when tapped. What is already waiting when the page opens is not announced again.
+const pinged = new Set();
+let pingPrimed = false;
+function notifyPerson(title, body, hash) {
+  try { navigator.vibrate && navigator.vibrate([120, 80, 120]); } catch {}
+  if (!document.hidden) { toast(title + (body ? '：' + body.slice(0, 40) : '')); return; }
+  try {
+    if (window.Notification && Notification.permission === 'granted') {
+      const n = new Notification(title, { body: body || '', tag: hash || title });
+      n.onclick = () => { window.focus(); if (hash) location.hash = hash; n.close(); };
+    }
+  } catch {}
+}
+function notifyFromState(gw) {
+  const waiting = [
+    ...((gw.pendingQuestions || []).map((q) => [q.id, `${FAM[q.channel] || q.channel} 在等你回答`, q.questions.map((x) => x.question).join(' / '), q.traceSessionId || q.sessionName])),
+    ...((gw.pendingApprovals || []).map((a) => [a.id, `${FAM[a.channel] || a.channel} 在等你批`, a.toolName || '', a.traceSessionId || a.sessionName])),
+  ];
+  for (const [id, title, body, sid] of waiting) {
+    if (pinged.has(id)) continue;
+    pinged.add(id);
+    if (pingPrimed) notifyPerson(title, body, '#/s/' + encodeURIComponent(sid));
+  }
+  pingPrimed = true;
+}
+
 function handleSseMessage(msg) {
   if ((msg.type === 'goal_update' || msg.type === 'dispatch_update') && typeof window.__goalRender === 'function') window.__goalRender(msg);
   if ((msg.type === 'goal_update' || msg.type === 'dispatch_update') && S.activeView === 'collab' && typeof window.__collabRender === 'function') window.__collabRender();
   if (msg.type === 'gateway_snapshot' || msg.type === 'state') {
     S.gw = msg;
+    notifyFromState(msg);
     if (S.activeView === 'feed') renderActiveListDebounced();
     if (S.activeView === 'session' && S.currentMeta) {
       renderApprovalBanner(S.currentMeta);
+      renderQuestionBanner(S.currentMeta);
     }
     updateHeaderLive();
   } else if (msg.type === 'run_start') {
@@ -379,6 +410,11 @@ function handleSseMessage(msg) {
   } else if (msg.type === 'run_done') {
     const r = msg.run;
     if (!r) return;
+    // A turn the person started from the page: tell them when it ends, unless they are looking at it.
+    const looking = S.activeView === 'session' && S.currentMeta && (S.currentMeta.id === r.traceSessionId || controlName(S.currentMeta) === r.sessionName);
+    if (r.source === 'web' && (document.hidden || !looking)) {
+      notifyPerson(`${FAM[r.channel] || r.channel} ${r.status === 'completed' ? '干完了' : r.status === 'aborted' ? '停下了' : '没做成'}`, String(r.text || r.error || r.prompt || '').slice(0, 80), r.traceSessionId ? '#/s/' + encodeURIComponent(r.traceSessionId) : '');
+    }
     const s = S.sessions.find((x) => x.id === r.traceSessionId || x.name === r.sessionName);
     if (s) s.state = r.status === 'completed' ? 'idle' : (r.status || 'idle');
     if (S.activeView === 'session') {
@@ -596,7 +632,10 @@ async function viewFeed() {
   if (my !== viewId) return;
   S.level = S.level || 'mine';
   const LEVELS = [['mine', '要我看的'], ['key', '加上在推进的'], ['all', '全部']];
-  main.innerHTML = `<div class="chips">${LEVELS.map(([k, l]) => `<button class="chip ${S.level === k ? 'on' : ''}" data-l="${k}">${l}</button>`).join('')}</div><div id="list"></div>`;
+  const canAsk = window.Notification && window.isSecureContext && Notification.permission === 'default';
+  main.innerHTML = `<div class="chips">${LEVELS.map(([k, l]) => `<button class="chip ${S.level === k ? 'on' : ''}" data-l="${k}">${l}</button>`).join('')}${canAsk ? '<button class="chip" id="notifyOn" title="页面在后台时，有人等你答、等你批，或你发起的一轮结束，弹系统通知">开启系统通知</button>' : ''}</div><div id="list"></div>`;
+  const nb = $('#notifyOn');
+  if (nb) nb.onclick = async () => { const r = await Notification.requestPermission().catch(() => 'denied'); nb.remove(); toast(r === 'granted' ? '已开启系统通知' : '浏览器没给通知权限'); };
   
   const render = () => {
     const all = feedCards();
@@ -608,12 +647,29 @@ async function viewFeed() {
     
     const items = [];
 
-    // 待审批请求最置顶
+    // 等人回答的问题最置顶（这一轮停着），点进会话回答
+    const qs = (S.gw && S.gw.pendingQuestions) || [];
+    if (qs.length) {
+      items.push({ key: 'sec:qs', sig: `qs:${qs.length}`, html: `<div class="sec" data-key="sec:qs" style="color:var(--acc);font-weight:600">等你回答（${qs.length}）</div>` });
+      for (const q of qs) {
+        items.push({
+          key: `q:${q.id}`,
+          sig: `${q.id}:${q.questions.length}`,
+          html: `<div class="card" data-key="q:${esc(q.id)}" style="border-left:4px solid var(--acc)" data-open="1" data-id="${esc(q.traceSessionId || q.sessionName)}">
+              <div class="row"><span class="kind k-action">要你回答</span><span class="tag">${esc(FAM[q.channel] || q.channel)}</span><span class="sub grow">${esc(q.sessionName)}</span></div>
+              <div class="t" style="margin-top:4px">${esc(q.questions.map((x) => x.question).join(' / '))}</div>
+              <div class="sub">点进会话回答，答案回到这一轮</div>
+            </div>`,
+        });
+      }
+    }
+
+    // 待审批请求置顶
     if (apprs.length) {
       items.push({
         key: 'sec:apprs',
         sig: `apprs:${apprs.length}`,
-        html: `<div class="sec" data-key="sec:apprs" style="color:var(--warn);font-weight:600">待审批（${apprs.length}）<span class="tag tag-fill" style="margin-left:6px">补齐·会话级重发</span></div>`
+        html: `<div class="sec" data-key="sec:apprs" style="color:var(--warn);font-weight:600">待审批（${apprs.length}）</div>`
       });
       for (const a of apprs) {
         const sig = `${a.id}:${a.toolName}:${a.reason}:${a.sessionName}:${argOf(a.toolInput)}`;
@@ -1185,7 +1241,7 @@ function turnHtml(t) {
   const rest = first ? steps.slice(1) : steps;
   const long = String(input || '').length > 600;
   return `<div class="turn" data-i="${t.index}" data-sig="${esc(turnSig(t))}">
-    ${input ? `<div class="who" style="text-align:right">第 ${t.index} 轮 · ${esc(ago(t.startedAt))}${/^上一轮在中途断开了，没有拿到回复/.test(input) ? ' · hub 自动续跑代发（上一轮断了，重发你的原话）' : ''} <button class="pinb" data-reuse>改了再发</button></div><div class="user ${long ? 'long' : ''}">${esc(input)}</div>${long ? '<button class="group" data-expand>展开全文</button>' : ''}` : ''}
+    ${input ? `<div class="who" style="text-align:right">第 ${t.index} 轮 · ${esc(ago(t.startedAt))}${/^上一轮在中途断开了，没有拿到回复/.test(input) ? ' · hub 自动续跑代发（上一轮断了，重发你的原话）' : ''}${t.status && t.status !== 'completed' && t.status !== 'working' ? ' <button class="pinb" data-resend title="原话再发一次">再发一次</button>' : ''} <button class="pinb" data-reuse>改了再发</button></div><div class="user ${long ? 'long' : ''}">${esc(input)}</div>${long ? '<button class="group" data-expand>展开全文</button>' : ''}` : ''}
     ${stepsHtml(rest)}
     ${t.status && t.status !== 'completed' ? `<div class="who">这一轮：${esc(STATE[t.status] || t.status)}</div>` : ''}</div>`;
 }
@@ -1221,20 +1277,44 @@ function renderApprovalBanner(meta) {
     </div>`;
 }
 
+function findSessionQuestion(meta) {
+  const qs = (S.gw && S.gw.pendingQuestions) || [];
+  const cName = controlName(meta);
+  return qs.find((q) => q.traceSessionId === meta.id || q.sessionName === meta.name || q.sessionName === cName) || null;
+}
+
+// A question the agent is waiting on right now (pendingQuestions): answered here, the answer goes back into the same
+// turn (POST /api/gateway/answer). Without one, a question read from the last turn's steps only fills the composer
+// (Antigravity: its questions are in the transcript, and a message sent while it works lands in the same turn).
 function renderQuestionBanner(meta, session) {
   const qb = $('#question-banner');
   if (!qb) return;
-  const q = findInteractiveQuestion(session ? session.turns : []);
-  if (!q) {
-    qb.innerHTML = '';
-    qb.hidden = true;
+  const live = findSessionQuestion(meta);
+  if (live) {
+    if (qb.dataset.live === live.id) return; // keep what the person has picked or typed
+    qb.dataset.live = live.id;
+    qb.hidden = false;
+    qb.innerHTML = `<div class="question-box" data-qid="${esc(live.id)}">
+      <div class="q-title"><span>❓</span> 智能体在等你回答（这一轮停着）</div>
+      ${live.questions.map((q) => `<div class="q-item" data-q="${esc(q.id)}" data-multi="${q.multiSelect ? 1 : ''}">
+        ${q.header ? `<div class="sub">${esc(q.header)}</div>` : ''}
+        <div style="margin-top:6px;font-weight:600;font-size:14.5px">${esc(q.question)}</div>
+        ${q.options.length ? `<div class="q-opts">${q.options.map((o) => `<button class="btn ghost q-opt-chip" data-pick="${esc(o.label)}" title="${esc(o.description || '')}">${esc(o.label)}</button>`).join('')}</div>` : ''}
+        <input class="q-free" placeholder="${q.options.length ? '或者自己写' : '写下你的回答'}" style="margin-top:6px;width:100%">
+      </div>`).join('')}
+      <div class="cardrow"><button class="btn btn-touch" data-answer="1">回答</button></div>
+    </div>`;
     return;
   }
-  const opts = Array.isArray(q.options) ? q.options : [];
+  delete qb.dataset.live;
+  if (!session) { if (!qb.querySelector('[data-qid]')) return; qb.innerHTML = ''; qb.hidden = true; return; }
+  const q = findInteractiveQuestion(session.turns || []);
+  if (!q) { qb.innerHTML = ''; qb.hidden = true; return; }
+  const opts = Array.isArray(q.options) ? q.options.map((o) => (typeof o === 'string' ? o : o.label)).filter(Boolean) : [];
   qb.hidden = false;
   qb.innerHTML = `
     <div class="question-box">
-      <div class="q-title"><span>❓</span> 智能体向你提问</div>
+      <div class="q-title"><span>❓</span> 智能体问过你（点选项填进输入框，发出去回答）</div>
       <div style="margin-top:6px;font-weight:600;font-size:14.5px">${esc(q.question || '')}</div>
       ${opts.length ? `<div class="q-opts">${opts.map((opt) => `<button class="btn ghost q-opt-chip" data-ans="${esc(opt)}">${esc(opt)}</button>`).join('')}</div>` : ''}
     </div>`;
@@ -1423,7 +1503,33 @@ async function viewSession(id) {
   };
 
   // Question option click
-  $('#question-banner').onclick = (e) => {
+  $('#question-banner').onclick = async (e) => {
+    const pick = e.target.closest('[data-pick]');
+    if (pick) {
+      const item = pick.closest('.q-item');
+      if (!item.dataset.multi) item.querySelectorAll('[data-pick]').forEach((x) => x !== pick && x.classList.remove('on'));
+      pick.classList.toggle('on');
+      return;
+    }
+    const send = e.target.closest('[data-answer]');
+    if (send) {
+      const box = send.closest('[data-qid]');
+      const answers = {};
+      for (const item of box.querySelectorAll('.q-item')) {
+        const picked = [...item.querySelectorAll('[data-pick].on')].map((x) => x.dataset.pick);
+        const free = item.querySelector('.q-free').value.trim();
+        const v = free ? [...picked, free] : picked;
+        if (!v.length) return toast('每个问题都要选一个或写一句');
+        answers[item.dataset.q] = v;
+      }
+      send.disabled = true;
+      try {
+        await api('/api/gateway/answer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: box.dataset.qid, answers }) });
+        toast('已回答，这一轮接着做');
+        const qb = $('#question-banner'); delete qb.dataset.live; qb.innerHTML = ''; qb.hidden = true;
+      } catch (err) { toast('没答上：' + err.message); send.disabled = false; }
+      return;
+    }
     const b = e.target.closest('.q-opt-chip');
     if (!b) return;
     const ans = b.dataset.ans;
@@ -1452,6 +1558,15 @@ async function viewSession(id) {
   turnsEl.addEventListener('click', (e) => {
     const c = e.target.closest('[data-copy]');
     if (c) { navigator.clipboard?.writeText(c.parentElement.previousElementSibling.innerText).then(() => toast('已复制'), () => toast('复制失败')); return; }
+    const rs = e.target.closest('[data-resend]');
+    if (rs) {
+      const ta = $('#msg'), send = $('#sendBtn');
+      if (!ta || !send) return toast('这个会话不能从网页发话');
+      ta.value = rs.closest('.turn').querySelector('.user').innerText;
+      ta.dispatchEvent(new Event('input'));
+      send.click();
+      return;
+    }
     const r = e.target.closest('[data-reuse]');
     if (r) { const ta = $('#msg'); if (ta) { ta.value = r.closest('.turn').querySelector('.user').innerText; ta.dispatchEvent(new Event('input')); ta.focus(); } return; }
     const b = e.target.closest('[data-expand]'); if (!b) return;
@@ -1696,7 +1811,7 @@ setInterval(async () => {
   if (S.activeView === 'session') return; // 详情页停掉列表拉取
   const cards = feedCards().filter((c) => c.kind === 'action' || c.kind === 'shipped');
   const apprs = (S.gw && S.gw.pendingApprovals) || [];
-  const totalAction = cards.length + apprs.length;
+  const totalAction = cards.length + apprs.length + ((S.gw && S.gw.pendingQuestions) || []).length;
   document.title = totalAction ? `(${totalAction}) 督工台` : '督工台';
   if (S.sseConnected) {
     // SSE 已连通，状态和提醒由事件驱动维护，不发 HTTP 盲轮询

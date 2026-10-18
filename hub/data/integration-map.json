@@ -414,6 +414,15 @@
         ],
         "status": "built",
         "note": "要会话在常驻进程上（先发过一句）；没实测"
+      },
+      {
+        "action": "session-control",
+        "how": "session-control op=mode：Codex 的协作模式 plan / default，之后这个会话的每一轮 turn/start 都带 collaborationMode",
+        "channels": [
+          "codex"
+        ],
+        "status": "real",
+        "note": "10-19 实测：切到 plan 后 Codex 才提供提问工具"
       }
     ],
     "permission": [
@@ -1035,6 +1044,18 @@
         ],
         "status": "real",
         "note": "读的是各家自己的会话记录；verify discover-sessions 七家通过"
+      }
+    ],
+    "ask-user": [
+      {
+        "action": "answer",
+        "how": "智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/state），这一轮等着；POST /api/gateway/answer 把答案送回同一轮。Claude 的 AskUserQuestion 经 can_use_tool 拦下，答案放进 updatedInput.answers；Codex 在 plan 模式（session-control mode）下用 request_user_input，答案按问题编号回",
+        "channels": [
+          "claude",
+          "codex"
+        ],
+        "status": "real",
+        "note": "10-19 负责人实测 channels/probe/scripts/probe_ask_user.js：两家都在同一轮用上了答案"
       }
     ]
   },
@@ -1870,8 +1891,8 @@
     ],
     "ui-notify": [
       {
-        "page": "/m/ v2（10-18 负责人重写）",
-        "control": "页面开着时：有会话新进入“要你处理/干完了”就振动并弹提示，标签标题写待看数",
+        "page": "/m/（10-19 负责人）",
+        "control": "有新的“等你回答 / 等你批”时立即振动并弹提示（SSE 推来，不等轮询），从网页发起的一轮结束时提醒；页面在后台时发系统通知、点了跳到那个会话；待处理页“开启系统通知”按钮只在浏览器能用时出现",
         "channels": [
           "claude",
           "zcode",
@@ -1884,13 +1905,13 @@
           "droid"
         ],
         "status": "partial",
-        "note": "系统通知要 https，手机经局域网 http 访问用不了"
+        "note": "页面内提醒 10-19 实测；系统通知只在安全来源（电脑上用 localhost）可用，手机经局域网 http 访问用不了，也还没在真浏览器里点过"
       }
     ],
     "ui-retry-edit": [
       {
-        "page": "/m/ v2（10-18 负责人重写）",
-        "control": "每轮用户话旁“改了再发”：填回输入框",
+        "page": "/m/（10-19 负责人）",
+        "control": "每轮“改了再发”（填回输入框）；没做成的轮次另有“再发一次”（原话直接重发）",
         "channels": [
           "claude",
           "zcode",
@@ -1902,8 +1923,8 @@
           "gemini",
           "droid"
         ],
-        "status": "partial",
-        "note": "只做了编辑重发，没有“从这一轮重来”"
+        "status": "built",
+        "note": "还没有“从这一轮重来”（要回退，属 rewind）；“再发一次”没在网页上点过"
       }
     ],
     "ui-copy-export": [
@@ -2214,6 +2235,28 @@
         ],
         "status": "built",
         "note": "没在网页上实测"
+      }
+    ],
+    "ui-question": [
+      {
+        "page": "/m/（10-19 负责人）",
+        "control": "会话页提问卡：服务状态里有这个会话在等回答的问题时，显示“智能体在等你回答（这一轮停着）”，选项可点（单选或多选）、也能自己写，点“回答”送回同一轮；待处理页顶部“等你回答”一栏；没有在等的问题时，从记录里读出的问题只把选项填进输入框",
+        "action": "answer",
+        "channels": [
+          "claude"
+        ],
+        "status": "real",
+        "note": "10-19 手机宽度实测 q_1792341835781_7jzz"
+      },
+      {
+        "page": "/m/（10-19 负责人）",
+        "control": "同上",
+        "action": "answer",
+        "channels": [
+          "codex"
+        ],
+        "status": "built",
+        "note": "后端实测通过，网页没点过"
       }
     ]
   }

@@ -1485,6 +1485,7 @@ function cmdGoal(args, sub) {
 //   search --q <文字>                                      full-text search over all sessions
 //   state                                                  the service: products, running turns, pending approvals
 //   approve --id <审批编号> [--reject]                      answer an approval (the turn waiting on it continues)
+//   answer --id <问题编号> --text <答案>                  answer a question an agent asked mid-turn (or --answers JSON by question id)
 //   model --agent X --session <名> --model <模型>           switch a session's model
 //   session-control --agent X --session <名> --op mode|compact|fork|effort [--value ..] [--new-session <名>]
 function cmdApi(args, sub) {
@@ -1519,6 +1520,9 @@ function cmdApi(args, sub) {
     res = callSharedDaemon('/api/gateway/state', 'GET', null, 30);
   } else if (sub === 'approve') {
     res = callSharedDaemon('/api/gateway/approve', 'POST', { id: args.id || args._[1], decision: args.reject ? 'reject' : 'approve' }, 30);
+  } else if (sub === 'answer') {
+    // answer --id q_... --text "选 B"   (one answer for every question), or --answers '{"<question id>":"..."}'
+    res = callSharedDaemon('/api/gateway/answer', 'POST', { id: args.id || args._[1], answer: args.text, answers: args.answers ? JSON.parse(args.answers) : undefined }, 30);
   } else if (sub === 'model') {
     res = callSharedDaemon('/api/gateway/model', 'POST', { channel: agentId(), sessionName: args.session, model: args.model }, 30);
   } else if (sub === 'session-control') {
@@ -1581,7 +1585,7 @@ function main() {
   if (sub === 'dispatches') return cmdDispatches(args, false);
   if (sub === 'dispatch-wait') return cmdDispatches(args, true);
   if (sub === 'goals' || sub === 'goal' || sub === 'goal-action' || sub === 'task-action') return cmdGoal(args, sub);
-  if (['sessions', 'session', 'search', 'state', 'approve', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
+  if (['sessions', 'session', 'search', 'state', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
   if (sub === 'deliver') return cmdCollabEvent(args, 'deliver');
   if (sub === 'report') return cmdCollabEvent(args, 'report');
   if (sub === 'yield') return cmdCollabEvent(args, 'yield');

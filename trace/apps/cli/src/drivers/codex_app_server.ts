@@ -90,6 +90,8 @@ export interface TurnStartOptions {
   effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'ultra';
   outputSchema?: Record<string, any>;
   cwd?: string;
+  /** Experimental collaboration mode; "plan" offers the request_user_input tool (Codex asking the person). */
+  collaborationMode?: { mode: 'plan' | 'default'; settings: { model: string; reasoning_effort: string | null; developer_instructions: string | null } };
 }
 
 export interface ThreadForkOptions {
@@ -491,6 +493,7 @@ export class CodexAppServerDriver extends EventEmitter {
     if (opts.effort) params.effort = opts.effort;
     if (opts.outputSchema) params.outputSchema = opts.outputSchema;
     if (opts.cwd) params.cwd = opts.cwd;
+    if (opts.collaborationMode) params.collaborationMode = opts.collaborationMode;
 
     const res = await this.request('turn/start', params);
     const turnId = res.turn?.id;

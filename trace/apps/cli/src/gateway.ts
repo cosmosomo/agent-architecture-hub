@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Session, SessionSummary, Step, ToolFamily, ToolStep, Turn } from '@hub-trace/contract';
 import { CodexAppServerDriver, type ApprovalDecision, type ServerApprovalRequest } from './drivers/codex_app_server.ts';
-import { ClaudeStreamDriver, type ClaudeCanUseToolRequest, type ClaudeStreamSession } from './drivers/claude_stream.ts';
+import { ClaudeStreamDriver, type ClaudeApprovalDecision, type ClaudeCanUseToolRequest, type ClaudeStreamSession } from './drivers/claude_stream.ts';
 import { TaskBoard, type DispatchView } from './collab/taskboard.ts';
 import { AcpResidentDriver, resolveAcpBridgeCommand, type AcpApprovalDecision, type AcpPermissionRequest } from './drivers/acp_runtime.ts';
 import type { SessionStore } from './store.ts';
@@ -38,6 +38,12 @@ const ACPX_TURN_TIMEOUT_SEC = Number(process.env.HUB_ACPX_TIMEOUT_SEC) > 0 ? Num
 // session the user did not point at a folder gets a new empty one under this root; the hub's own repository
 // is never the default (2026-10-18). Override with HUB_WORKSPACE_ROOT. The pages send NEW_CWD to ask for one.
 const WORKSPACE_ROOT = process.env.HUB_WORKSPACE_ROOT || join(HOME, 'hub-workspaces');
+/**
+ * HUB_BACKGROUND=0: this instance only answers requests — no meta-agent patrol, no goal steps, no reconciling of
+ * dispatch files. For a second copy on another port (a test of new code, an agent's smoke test) beside the main
+ * 8899, which keeps doing that work; two instances doing it would act on the same dispatches twice.
+ */
+const BACKGROUND = process.env.HUB_BACKGROUND !== '0';
 export const NEW_CWD = '__new__';
 const UPSTREAM_ERROR_REPLY = /unexpected status \d{3}|Service Unavailable|Bad Gateway|No available channel/i;
 
@@ -367,6 +373,8 @@ export type ActiveRun = {
   steeredPrompts?: string[];
   /** Currently pending live in-turn approval ID, when the turn is suspended waiting for approval. */
   waitingApprovalId?: string;
+  /** Pending question this turn is waiting on, when the agent asked a person something mid-turn. */
+  waitingQuestionId?: string;
 };
 
 export type AcpxSessionInfo = {
@@ -389,6 +397,19 @@ export type AcpxSessionInfo = {
   fromAcpxStore?: boolean;
   interrupted?: boolean;
   lastError?: string;
+};
+
+/** A question an agent asked a person in the middle of a turn; the turn waits for the answer (unit ask-user). */
+export type PendingQuestion = {
+  id: string;
+  runId: string;
+  channel: ChannelId;
+  sessionName: string;
+  traceSessionId?: string;
+  questions: Array<{ id: string; header?: string; question: string; options: Array<{ label: string; description?: string }>; multiSelect?: boolean }>;
+  createdAt: string;
+  status: 'pending' | 'answered' | 'cancelled';
+  answers?: Record<string, string[]>;
 };
 
 export type PendingApproval = {
@@ -726,6 +747,8 @@ export class AgentGatewayHub {
   private readonly dispatchWaiters = new Map<string, Array<(d: DispatchRecord) => void>>();
   private readonly wakingCallers = new Set<string>();
   private readonly pendingApprovals: PendingApproval[] = [];
+  private readonly pendingQuestions: PendingQuestion[] = [];
+  private readonly liveQuestionResolvers = new Map<string, { runId: string; resolve: (answers: Record<string, string[]> | null) => void }>();
   private readonly liveApprovalResolvers = new Map<
     string,
     { runId: string; channel: ChannelId; resolve: (allow: boolean) => void }
@@ -743,6 +766,8 @@ export class AgentGatewayHub {
   private readonly acpPinnedModes = new Map<string, string>();
   /** Codex reasoning effort per session slot (session-control effort); turns default to low. */
   private readonly codexEfforts = new Map<string, string>();
+  /** Codex collaboration mode per session slot (session-control mode: plan / default). */
+  private readonly codexModes = new Map<string, string>();
   private externalAnomalies: ExternalSessionAnomaly[] = [];
   private readonly metaAgents = new Map<MetaAgentId, MetaAgentConfig>();
   private readonly metaAgentLogs: MetaAgentLogEntry[] = [];
@@ -782,6 +807,7 @@ export class AgentGatewayHub {
     this.loadMetaAgents();
     this.loadRecentRuns();
     this.loadDispatches();
+    if (!BACKGROUND) return;
     this.startMetaPatrolLoop();
     // Dispatches that ended while the service was down, then the board's own steps (budget, stall, unblock).
     for (const d of this.dispatches.values()) this.taskboard.onDispatch(d);
@@ -891,6 +917,7 @@ export class AgentGatewayHub {
    * - If a dispatch has `wake.state === 'pending'` (or was interrupted in `'waking'`), resumes waking the caller (`wake-persist`).
    */
   public reconcileDispatches(isStartup = false) {
+    if (!BACKGROUND) return;
     const nowMs = Date.now();
     const nowIso = new Date(nowMs).toISOString();
     for (const d of this.dispatches.values()) {
@@ -4260,6 +4287,7 @@ foreach ($p in $procs) {
       queues: queuesObj,
       acpxSessions,
       pendingApprovals: this.pendingApprovals.filter((a) => a.status === 'pending'),
+      pendingQuestions: this.pendingQuestions.filter((q) => q.status === 'pending'),
       externalAnomalies: this.externalAnomalies,
       metaAgents: this.getMetaAgents(),
       metaAgentLogs: this.getMetaAgentLogs(),
@@ -4426,6 +4454,12 @@ foreach ($p in $procs) {
         const ok = await live.switchPermissionMode(value as any);
         if (!ok) throw new Error(`Claude 没接受模式 ${value}`);
         return done('set_permission_mode');
+      }
+      if (prof.id === 'codex') {
+        // Codex's collaboration mode, sent with every later turn/start of this session.
+        if (!['plan', 'default'].includes(value)) throw new Error('Codex 的模式只有 plan、default');
+        this.codexModes.set(slot, value);
+        return done('turn/start collaborationMode（之后每一轮）');
       }
       throw new Error(`${prof.label} 还不能中途切模式（权限随每一轮的 permissions 走）`);
     }
@@ -5198,6 +5232,17 @@ foreach ($p in $procs) {
           } catch {}
         }
       }
+      for (const [qid, entry] of this.liveQuestionResolvers.entries()) {
+        if (entry.runId === run.runId) {
+          this.liveQuestionResolvers.delete(qid);
+          const q = this.pendingQuestions.find((x) => x.id === qid);
+          if (q && q.status === 'pending') q.status = 'cancelled';
+          try {
+            entry.resolve(null);
+          } catch {}
+        }
+      }
+      run.waitingQuestionId = undefined;
       run.waitingApprovalId = undefined;
     }
 
@@ -5943,6 +5988,22 @@ foreach ($p in $procs) {
         defaultApprovalPolicy: 'untrusted',
         autoApprove: false,
         onApprovalRequest: (req) => this.handleCodexApproval(req),
+        // Codex asking the person (item/tool/requestUserInput): answers go back by question id, as option labels or text.
+        onUserInputRequest: async (req) => {
+          const run = this.activeCodexRunsByThread.get(req.threadId);
+          if (!run) throw new Error('no run for this thread');
+          const answers = await this.askPerson(
+            run,
+            (req.questions || []).map((q) => ({
+              id: String(q.id),
+              header: q.header,
+              question: String(q.question || ''),
+              options: (q.options || []).map((o) => ({ label: String(o.label), description: o.description })),
+            })),
+          );
+          if (!answers) throw new Error('cancelled');
+          return Object.fromEntries(Object.entries(answers).map(([k, v]) => [k, { answers: v }]));
+        },
       });
 
       driver.on('exit', () => {
@@ -6187,6 +6248,15 @@ foreach ($p in $procs) {
           model,
           effort: (this.codexEfforts.get(this.slotKey('codex', sessionName)) as any) || 'low',
           cwd,
+          // Only after a mode was set with session-control (plan offers Codex's request_user_input tool).
+          ...(this.codexModes.get(this.slotKey('codex', sessionName))
+            ? {
+                collaborationMode: {
+                  mode: this.codexModes.get(this.slotKey('codex', sessionName)) as 'plan' | 'default',
+                  settings: { model, reasoning_effort: this.codexEfforts.get(this.slotKey('codex', sessionName)) || 'low', developer_instructions: null },
+                },
+              }
+            : {}),
         });
         run.codexTurnId = turnRes.turnId;
         this.broadcast('run_update', run);
@@ -6319,9 +6389,29 @@ foreach ($p in $procs) {
     return driver;
   }
 
-  private async handleClaudeApproval(req: ClaudeCanUseToolRequest): Promise<'allow' | 'deny'> {
+  private async handleClaudeApproval(req: ClaudeCanUseToolRequest): Promise<ClaudeApprovalDecision> {
     const run = this.activeClaudeRunsBySession.get(req.sessionId);
     if (!run) return 'deny';
+    // Claude's own question tool: the person answers, and the answers ride back in updatedInput.answers, keyed by
+    // the question text (how Claude Code's AskUserQuestion takes them).
+    if (req.toolName === 'AskUserQuestion') {
+      const qs: any[] = Array.isArray(req.input?.questions) ? req.input.questions : [];
+      const answers = await this.askPerson(
+        run,
+        qs.map((q) => ({
+          id: String(q.question),
+          header: q.header,
+          question: String(q.question),
+          options: (q.options || []).map((o: any) => ({ label: String(o.label), description: o.description })),
+          multiSelect: Boolean(q.multiSelect),
+        })),
+      );
+      if (!answers) return 'deny';
+      return {
+        behavior: 'allow',
+        updatedInput: { ...req.input, answers: Object.fromEntries(qs.map((q) => [String(q.question), (answers[String(q.question)] || []).join(', ')])) },
+      };
+    }
     if (run.permissions === 'all') return 'allow';
     if (run.permissions === 'deny') return 'deny';
 
@@ -6663,6 +6753,63 @@ foreach ($p in $procs) {
     return new Promise<AcpApprovalDecision>((resolve) => {
       this.liveApprovalResolvers.set(apprId, { runId: run.runId, channel: prof.id, resolve: (allow: boolean) => resolve(settle(allow)) });
     });
+  }
+
+  /**
+   * An agent asks a person something mid-turn (unit ask-user): the question is held as a pending question (in
+   * getState, and on the run as waitingQuestionId) and the turn waits until answerQuestion, or the run is cancelled
+   * (resolves null). Asking is never a permission, so it reaches the person whatever the run's permissions.
+   */
+  private askPerson(run: ActiveRun, questions: PendingQuestion['questions']): Promise<Record<string, string[]> | null> {
+    const id = `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    this.pendingQuestions.unshift({
+      id,
+      runId: run.runId,
+      channel: run.channel,
+      sessionName: run.sessionName,
+      traceSessionId: run.traceSessionId,
+      questions,
+      createdAt: new Date().toISOString(),
+      status: 'pending',
+    });
+    if (this.pendingQuestions.length > 20) this.pendingQuestions.pop();
+    run.waitingQuestionId = id;
+    (run.warnings ||= []).push(`轮内等人回答：${questions.map((q) => q.question).join(' / ').slice(0, 120)}`);
+    this.broadcast('run_update', run);
+    this.broadcast('state', this.getState());
+    return new Promise((resolve) => {
+      this.liveQuestionResolvers.set(id, { runId: run.runId, resolve });
+    });
+  }
+
+  /** The person's answer: by question id, one or more choices or free text each. A single answer fills every question. */
+  public answerQuestion(params: { id: string; answers?: Record<string, string | string[]>; answer?: string }) {
+    const q = this.pendingQuestions.find((x) => x.id === params.id);
+    const live = this.liveQuestionResolvers.get(params.id);
+    if (!q || q.status !== 'pending' || !live) throw new Error(`没有在等回答的问题：${params.id}`);
+    const answers: Record<string, string[]> = {};
+    for (const item of q.questions) {
+      const v = params.answers?.[item.id] ?? params.answers?.[item.question] ?? params.answer;
+      if (v === undefined || v === null || (Array.isArray(v) ? !v.length : !String(v).trim())) {
+        throw new Error(`问题「${item.question.slice(0, 40)}」还没有答案`);
+      }
+      answers[item.id] = (Array.isArray(v) ? v : [v]).map(String);
+    }
+    q.status = 'answered';
+    q.answers = answers;
+    this.liveQuestionResolvers.delete(params.id);
+    const run = this.recentRunById(q.runId);
+    if (run && run.waitingQuestionId === q.id) run.waitingQuestionId = undefined;
+    live.resolve(answers);
+    if (run) this.broadcast('run_update', run);
+    this.broadcast('state', this.getState());
+    return { ok: true, id: q.id, answers };
+  }
+
+  /** The active run with this id, if it is still running. */
+  private recentRunById(runId: string): ActiveRun | undefined {
+    for (const r of this.activeRuns.values()) if (r.runId === runId) return r;
+    return undefined;
   }
 
   private startRunInternal(opts: RunOpts): ActiveRun {

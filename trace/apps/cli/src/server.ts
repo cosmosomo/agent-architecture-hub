@@ -467,6 +467,16 @@ export function createService(opts: ServeOptions): Server {
         return json(res, 200, result);
       }
 
+      // A person answers a question an agent asked mid-turn (pendingQuestions in /api/gateway/state).
+      if (req.method === 'POST' && path === '/api/gateway/answer') {
+        const body = await readJsonBody(req);
+        try {
+          return json(res, 200, gateway.answerQuestion({ id: String(body.id || ''), answers: body.answers && typeof body.answers === 'object' ? body.answers : undefined, answer: body.answer !== undefined ? String(body.answer) : undefined }));
+        } catch (e: any) {
+          return json(res, 400, { ok: false, error: e?.message || String(e) });
+        }
+      }
+
       if (req.method === 'POST' && path === '/api/gateway/approve') {
         const body = await readJsonBody(req);
         const result = await gateway.resolveApproval({

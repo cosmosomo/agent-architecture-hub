@@ -245,6 +245,13 @@
       "path": "/api/gateway/session-control",
       "does": "对一个会话做轮以外的操作，按产品分到它自己的驱动：mode 中途切模式（ACP 桥 session/set_mode，Claude set_permission_mode）、compact 压缩上下文（Codex thread/compact/start，Claude 和 ACP 发 /compact）、fork 分叉成新会话（Codex thread/fork）、effort 推理力度（Codex）；做不到的产品直接报错说明",
       "cli": "session-control"
+    },
+    {
+      "id": "answer",
+      "method": "POST",
+      "path": "/api/gateway/answer",
+      "does": "回答智能体在一轮中途向人提的问题（state 里的 pendingQuestions）：答案回到同一轮，智能体接着做；Codex 经 item/tool/requestUserInput，Claude 经 AskUserQuestion 的 updatedInput.answers",
+      "cli": "answer"
     }
   ]
 }

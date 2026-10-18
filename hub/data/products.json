@@ -189,7 +189,11 @@
       },
       "accent": "#10B981",
       "badge": "App-Server · OpenAI",
-      "notes": "经 codex app-server 常驻进程驱动（插话 turn/steer、打断 turn/interrupt、分叉、压缩、中途换模型、轮内挂起审批 requestApproval 均已接进后端） 10-18 起默认 gpt-6.1-sol：中转对 gpt-6-luna 报 503“No available channel for model gpt-6-luna”。"
+      "notes": "经 codex app-server 常驻进程驱动（插话 turn/steer、打断 turn/interrupt、分叉、压缩、中途换模型、轮内挂起审批 requestApproval 均已接进后端） 10-18 起默认 gpt-6.1-sol：中转对 gpt-6-luna 报 503“No available channel for model gpt-6-luna”。",
+      "modes": [
+        "default",
+        "plan"
+      ]
     },
     {
       "id": "claude",
