@@ -671,18 +671,14 @@ export function createService(opts: ServeOptions): Server {
       if (req.method === 'POST' && path === '/api/gateway/meta-agents/patrol') {
         const body = await readJsonBody(req);
         const result = await gateway.invokeMetaBrainForIncident({
-          agentId: body.agentId ? String(body.agentId) : 'meta_maint',
+          metaId: (body.metaId || body.agentId || 'meta_maint') as any,
           eventKind:
-            body.eventKind === 'execution_failure' ||
-            body.eventKind === 'quota_or_model_error' ||
-            body.eventKind === 'loop_detected' ||
-            body.eventKind === 'patrol_anomaly'
+            body.eventKind === 'execution_failure' || body.eventKind === 'quota_or_model_error' || body.eventKind === 'loop_detected'
               ? body.eventKind
               : 'manual_patrol',
           targetChannel: String(body.targetChannel || body.channel || 'codex'),
-          targetSession: String(body.targetSession || body.sessionName || 'hub-codex'),
-          errorSummary: String(body.errorSummary || '用户手动触发元智能体总管大脑立即对当前会话与渠道做健康巡检与架构诊断'),
-          promptPreview: body.promptPreview ? String(body.promptPreview) : undefined,
+          targetSessionName: String(body.targetSessionName || body.targetSession || body.sessionName || 'hub-codex'),
+          summary: String(body.summary || body.errorSummary || '用户手动触发元智能体总管大脑立即对当前会话与渠道做健康巡检与架构诊断'),
         });
         return json(res, 200, result);
       }
@@ -1101,7 +1097,7 @@ export function createService(opts: ServeOptions): Server {
                   ...storeSess,
                   agent: {
                     ...storeSess.agent,
-                    name: storeSess.agent?.name || acpxSess?.agent?.name,
+                    name: storeSess.agent?.name || acpxSess?.agent?.name || '',
                     model: storeSess.agent?.model || acpxSess?.agent?.model,
                   },
                 }

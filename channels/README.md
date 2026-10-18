@@ -234,7 +234,7 @@ node hub/tools/agent_gateway.js tables
 
 动代码前还要读：`trace/apps/cli/src/gateway.ts`（后端核心）、`trace/apps/cli/src/server.ts`（接口、能力注册表、会话列表的状态与标题校正）、`hub/tools/agent_gateway.js`（智能体用的协作命令行）、`m/index.html`（手机督工台）；旧网页 `console/console.js`、`hub/js/obs/chat.js`；开源基线见“开源基线与我们的分工”。
 
-**改代码的几条经验（10-18）**：带正则或反斜杠的改动不要经 Python 或 bash 字符串转写（转义会吃掉 `\n`、`\s`），用编辑工具或写成脚本文件再执行；`gateway.ts`、`server.ts` 是 CRLF 换行，按行替换要兼容；改后端后先 `node -e "import('./trace/apps/cli/src/server.ts')"` 确认能加载，再重启服务，否则自动拉起会起一个坏服务；用浏览器验页面时只改地址的 `#` 部分不会重新加载页面。
+**改代码的几条经验（10-18）**：带正则或反斜杠的改动不要经 Python 或 bash 字符串转写（转义会吃掉 `\n`、`\s`），用编辑工具或写成脚本文件再执行；`gateway.ts`、`server.ts` 是 CRLF 换行，按行替换要兼容；改后端后先 `node -e "import('./trace/apps/cli/src/server.ts')"` 确认能加载，再重启服务，否则自动拉起会起一个坏服务；服务是 Node 直接剥掉类型跑的，从不做类型检查，提交前要跑 `npm run typecheck`（CI 跑的就是它，10-18 前攒下的 12 个类型错误里有一处把元智能体的参数名全传错了）；用浏览器验页面时只改地址的 `#` 部分不会重新加载页面。
 
 **自检题**：读完能答出每一题（第 11、13、14 题考协作拓扑，见“协作拓扑”），才算建立了认知；答不出的回到对应文档。
 

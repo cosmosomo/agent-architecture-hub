@@ -5,7 +5,7 @@ import type { ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import type { Session, SessionSummary, Step, ToolFamily, Turn } from '@hub-trace/contract';
+import type { Session, SessionSummary, Step, ToolFamily, ToolStep, Turn } from '@hub-trace/contract';
 import { CodexAppServerDriver, type ApprovalDecision, type ServerApprovalRequest } from './drivers/codex_app_server.ts';
 import { ClaudeStreamDriver, type ClaudeCanUseToolRequest, type ClaudeStreamSession } from './drivers/claude_stream.ts';
 import { TaskBoard, type DispatchView } from './collab/taskboard.ts';
@@ -2047,7 +2047,7 @@ export class AgentGatewayHub {
       params.errorDetail ||
       lastTurn?.error ||
       lastTurn?.steps
-        ?.filter((s) => s.kind === 'tool' && s.status === 'error')
+        ?.filter((s): s is ToolStep => s.kind === 'tool' && s.status === 'error')
         .map((s) => `${s.name}: ${(s.output || '').slice(0, 100)}`)
         .join('; ') ||
       '无报错（常规健康巡检）';
@@ -2094,7 +2094,7 @@ export class AgentGatewayHub {
       .map((p) => {
         const fail = this.channelFailures.get(p.id);
         return `${p.label}(模型:${this.selectedModels.get(p.id) || p.defaultModel}${
-          fail?.count ? `, 近期异常:${fail.count}次` : ', 健康'
+          fail?.failed ? `, 近期异常:${fail.failed}次` : ', 健康'
         })`;
       })
       .join('；');
@@ -4216,8 +4216,8 @@ foreach ($p in $procs) {
         this.repoRoot;
 
       const health = this.channelFailures.get(p.id) || {
-        started: chSessions.reduce((acc, s) => acc + (s.messageCount > 0 ? 1 : 0), 0),
-        delivered: chSessions.reduce((acc, s) => acc + (s.messageCount > 0 ? 1 : 0), 0),
+        started: chSessions.reduce((acc, s) => acc + (s.turnCount > 0 ? 1 : 0), 0),
+        delivered: chSessions.reduce((acc, s) => acc + (s.turnCount > 0 ? 1 : 0), 0),
         failed: 0,
         consecutiveFailures: 0,
         state: 'closed' as const,
@@ -5761,12 +5761,12 @@ foreach ($p in $procs) {
       );
       if (auditor.engineMode !== 'local_rules') {
         this.invokeMetaBrainForIncident({
-          agentId: 'meta_auditor',
+          metaId: 'meta_auditor',
           eventKind: 'loop_detected',
           targetChannel: prof.id,
-          targetSession: sessionName,
-          errorSummary: errTools.map((t) => `${t.name}: ${(t.output || '').slice(0, 120)}`).join(' | '),
-          promptPreview: opts.prompt,
+          targetSessionName: sessionName,
+          summary: `单轮连续 ${errTools.length} 次工具调用报错`,
+          errorDetail: errTools.map((t) => `${t.name}: ${(t.output || '').slice(0, 120)}`).join(' | '),
         }).catch(() => {});
       }
     }
@@ -5813,12 +5813,11 @@ foreach ($p in $procs) {
       // Wake up Supervisor Meta-Agent brain in parallel if configured
       if (resumer.engineMode !== 'local_rules') {
         this.invokeMetaBrainForIncident({
-          agentId: 'meta_resumer',
+          metaId: 'meta_resumer',
           eventKind: isQuotaErr ? 'quota_or_model_error' : 'execution_failure',
           targetChannel: prof.id,
-          targetSession: sessionName,
-          errorSummary: errMsg || '进程非零退出',
-          promptPreview: opts.prompt,
+          targetSessionName: sessionName,
+          summary: errMsg || '进程非零退出',
         }).catch(() => {});
       }
 
@@ -6052,12 +6051,9 @@ foreach ($p in $procs) {
     if (run.permissions === 'deny') return 'decline';
 
     const apprId = `appr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    const cmdText =
-      typeof req.command === 'string'
-        ? req.command
-        : Array.isArray(req.command)
-        ? req.command.join(' ')
-        : '';
+    // The protocol says a string; older servers sent an argv array.
+    const rawCmd: unknown = req.command;
+    const cmdText = typeof rawCmd === 'string' ? rawCmd : Array.isArray(rawCmd) ? rawCmd.join(' ') : '';
     const toolName =
       req.method === 'item/commandExecution/requestApproval' || req.method === 'execCommandApproval'
         ? `CommandExecution${cmdText ? ': ' + cmdText.slice(0, 80) : ''}`
