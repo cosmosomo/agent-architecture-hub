@@ -36,6 +36,9 @@ const newToken = () => `T${new Date().toISOString().replace(/\D/g, '').slice(4, 
 const USER_WORDS =
   '用户的原话（10-20）：“我其实感觉这种最简单的测试，不应该由你来，，其他智能体做实验，如实记录结果就行，你得围绕基本能力做一个通用测试题集合了，这样其他智能体也知道怎么测，后续也可以快速复用和检测。多一个功能多一个测试题”';
 
+/** A side instance port per product, so testers of different products running at once do not collide. */
+const sidePort = (agent) => 18910 + Math.max(0, ['claude', 'codex', 'antigravity', 'zcode', 'workbuddy', 'opencode', 'hermes', 'doubao'].indexOf(agent));
+
 /** One test question filled in for one product, as lines; null when the unit has no question. */
 function renderTest(unitId, agent, token = newToken()) {
   const T = tests();
@@ -63,6 +66,16 @@ function testTask(agent, unitIds, o, extra = {}) {
     '',
     `照下面 ${qs.length} 道测试题在 ${agent} 上实测，一道测完记一行黑板再做下一道。题目也可以自己打印：node hub/tools/agent_gateway.js test --unit <单元> --agent ${agent}。`,
     extra.why ? `\n为什么测这些：${extra.why}` : '',
+    extra.side
+      ? [
+          '',
+          '这次测的是刚改的中心代码，8899 还在跑旧代码，所以先起一个旁路实例再测（不要重启 8899）：',
+          `  1. 另开一个终端：set HUB_BACKGROUND=0 && set HUB_DATA_DIR=%TEMP%\\hub-side-test && node --no-warnings=ExperimentalWarning trace/apps/cli/src/main.ts serve --port ${sidePort(agent)}`,
+          `  2. 等 http://127.0.0.1:${sidePort(agent)}/api/gateway/goals 能打开。`,
+          `  3. 题里每条 agent_gateway.js 命令前都设环境变量 HUB_DAEMON_URL=http://127.0.0.1:${sidePort(agent)}（Windows：set HUB_DAEMON_URL=http://127.0.0.1:${sidePort(agent)}），记黑板时 --route 用 <产品>/L2/side-${sidePort(agent)}。`,
+          '  4. 测完关掉这个旁路实例。',
+        ].join('\n')
+      : '',
     '',
     '通用规矩：',
     ...T.howToTest.map((h) => '- ' + h),
@@ -168,7 +181,7 @@ function goalForGaps(args) {
         acceptance: `测试员照 ${g.unit.id} 的测试题在 ${g.layer} 测过（下一个任务）`,
       });
       for (const p of g.products) {
-        const t = testTask(p, [g.unit.id], o, { key: `test-${g.unit.id}-${p}`, dependsOn: [`build-${g.unit.id}`], why: `开发任务 build-${g.unit.id} 刚把它接到${g.layer === 'L3' ? '网页' : '中心'}，这次只测 ${g.layer} 这个位置。` });
+        const t = testTask(p, [g.unit.id], o, { key: `test-${g.unit.id}-${p}`, dependsOn: [`build-${g.unit.id}`], side: g.layer === 'L2', why: `开发任务 build-${g.unit.id} 刚把它接到${g.layer === 'L3' ? '网页' : '中心'}，这次只测 ${g.layer} 这个位置。` });
         if (t) tasks.push(t);
       }
     }
