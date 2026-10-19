@@ -210,8 +210,9 @@ node hub/tools/agent_gateway.js tables
 | 一轮里人的回答：审批、智能体提的问题 | `gateway/approvals.ts`；各路线拦下请求的入口在各自的 `run_*.ts` |
 | 一轮以外的会话操作（mode、compact、fork、effort、commands） | `gateway/session_control.ts` |
 | 会话列表与身份（WorkBuddy 桌面端、Hermes、acpx 和驱动记录、工作目录、规范编号） | `gateway/sessions.ts` |
-| 两个会话之间（派活、回执、交回、唤醒、交接） | `gateway/collab.ts` |
+| 两个会话之间（派活、回执、交回、唤醒、交接） | `gateway/collab.ts`。失败谁来重试：一级一个负责的。有派活单等着的轮，轮次层不自动续跑，由派活方或任务板决定；超时不算中途断开 |
 | 一群会话（目标、任务、熔断、预算） | `collab/taskboard.ts`，后端持有一个 `gateway.taskboard` |
+| 中心选派给谁：每家的负载对上限、熔断、额度账号（共用一个账号的几家一起停到报错给的重置时刻） | `gateway/capacity.ts`；每轮收尾记健康在这里（`recordTurnHealth`），任务板的 `channel: "auto"` 和 `pick` 接口都用它 |
 | 元智能体（设置、巡检、出事时的诊断会话） | `gateway/meta.ts` |
 | 类型、产品档案与各家环境变量、常量和小工具 | `gateway/types.ts`、`products.ts`、`common.ts` |
 | 接口 | `server.ts`；命令行网关 `hub/tools/agent_gateway.js`；网页 `m/index.html` |

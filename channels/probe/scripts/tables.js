@@ -79,6 +79,7 @@ function check(t) {
     if (p.hostCard && !fs.existsSync(path.join(ROOT, 'channels', 'hosts', p.hostCard))) problems.push(`产品表：${p.id} 的档案卡 hosts/${p.hostCard} 不存在`);
     if (!p.hostCard) problems.push(`产品表：${p.id} 还没有档案卡`);
     if (p.readKind && !kinds.has(p.readKind) && !backendRead.has(p.readKind)) problems.push(`产品表：${p.id} 的读侧类型 ${p.readKind} 没有对应的适配器`);
+    if (p.quotaAccount && !(t.products.quotaAccounts || {})[p.quotaAccount]) problems.push(`产品表：${p.id} 的额度账号 ${p.quotaAccount} 不在 quotaAccounts 里`);
   }
   // Actions: both ways against the server's routes.
   const { routes } = serverRoutes();

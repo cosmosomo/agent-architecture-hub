@@ -32,7 +32,7 @@ import { antigravityMethods } from './gateway/antigravity.ts';
 import { sessionMethods } from './gateway/sessions.ts';
 import { collabMethods } from './gateway/collab.ts';
 import { metaMethods } from './gateway/meta.ts';
-import { capacityMethods } from './gateway/capacity.ts';
+import { capacityMethods, loadQuotaCooldowns } from './gateway/capacity.ts';
 
 // Everything above the class lives in gateway/: types, products, common. Re-exported for the callers.
 export type { ChannelId, MetaAgentId, MetaAgentConfig, MetaAgentLogEntry, ChannelCapabilities, ChannelProfile, LiveToolCall, QueuedPrompt, ActiveRun, AcpxSessionInfo, PendingQuestion, PendingApproval, ExternalSessionAnomaly, DispatchReceiptState, DispatchStatus, DispatchRecord } from './gateway/types.ts';
@@ -79,6 +79,8 @@ export class AgentGatewayHub {
       lastError?: string;
     }
   >();
+  /** Quota accounts used up, until the provider's reset time (gateway/capacity.ts; kept in quota-cooldowns.json). */
+  readonly quotaCooldowns = loadQuotaCooldowns();
   readonly recentRuns: ActiveRun[] = [];
   /** Image blocks waiting for the acpx prompt whose text is the key (set in sendPrompt, taken in startRunInternal). */
   readonly promptImages = new Map<string, Array<{ type: 'image'; mimeType: string; data: string }>>();
@@ -942,34 +944,8 @@ export class AgentGatewayHub {
       this.onRunFinalizedForDispatches(run);
     } catch {}
 
-    // Update per-channel circuit-breaker & health stats
-    const curHealth = this.channelFailures.get(prof.id) || {
-      started: 1,
-      delivered: 0,
-      failed: 0,
-      consecutiveFailures: 0,
-      state: 'closed' as const,
-      lastAt: Date.now(),
-    };
-    curHealth.lastAt = Date.now();
-    if (run.status === 'completed' && !run.error) {
-      curHealth.delivered += 1;
-      curHealth.consecutiveFailures = 0;
-      curHealth.state = 'closed';
-      curHealth.openedAt = undefined;
-    } else if (run.status === 'failed') {
-      curHealth.failed += 1;
-      curHealth.consecutiveFailures += 1;
-      curHealth.lastError = run.error || '执行异常退出';
-      // A quota or rate limit opens it at once: another try only hits the same wall (WorkBuddy 429, 10-19).
-      const quota = /\b429\b|quota|rate.?limit|速率限制|额度|配额/i.test(curHealth.lastError);
-      if (quota || curHealth.consecutiveFailures >= 3) {
-        curHealth.state = 'open';
-        // Each failure while open starts the cooldown again, so a failed probe after cooldown keeps it out of the pick.
-        curHealth.openedAt = new Date().toISOString();
-      }
-    }
-    this.channelFailures.set(prof.id, curHealth);
+    // The product's breaker and its quota account (gateway/capacity.ts).
+    this.recordTurnHealth(prof, run);
 
     // Append governance event to channels/events.jsonl
     try {

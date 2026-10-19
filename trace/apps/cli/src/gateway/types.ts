@@ -80,6 +80,8 @@ export type ChannelProfile = {
   acpModes?: Partial<Record<'all' | 'reads' | 'deny', string>>;
   modes?: string[];
   maxConcurrent: number;
+  /** The quota account it draws on (quotaAccounts in hub/data/products.json); products sharing one stop together. */
+  quotaAccount?: string;
   acpxAgent: string;
   defaultModel: string;
   recommendedModels: string[];

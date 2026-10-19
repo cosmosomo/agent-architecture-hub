@@ -502,6 +502,21 @@
         ],
         "status": "partial",
         "note": "后端接口和页面上还没有"
+      },
+      {
+        "action": [
+          "pick"
+        ],
+        "how": "产品表 quotaAccounts 写共用的额度账号（智谱 Coding Plan：ZCode、WorkBuddy、OpenCode、Hermes）；一家报额度用完，中心从报错里读出重置时刻（智谱写北京时间），整个账号停到那时，记在 ~/.agent-hub/quota-cooldowns.json，重启不丢；同账号任何一家跑通一轮就解除（gateway/capacity.ts recordTurnHealth）",
+        "channels": [
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "fill",
+        "fillLevel": "一群会话",
+        "note": "只从失败报错里知道窗口，不能事先查剩余额度；10-19 用 ZCode 真实报错文本测过解析和副本上的 pick，真撞额度的全链没有人为复现"
       }
     ],
     "peer-message": [
@@ -1095,7 +1110,7 @@
         "action": [
           "pick"
         ],
-        "how": "每轮结束记到 channelFailures：连续 3 次失败、或一次额度/限流失败（429、quota、速率限制）就熔断，冷却 120 秒内不被选，冷却后放一轮试探，试探失败重新计时；pick 和任务板“自动选”据此跳过（gateway.ts finalizeRun、gateway/capacity.ts）",
+        "how": "每轮结束记到 channelFailures：连续 3 次失败、或一次额度/限流失败（429、quota、速率限制）就熔断（额度类失败还会让同一额度账号的几家一起停到重置时刻，见 quota 单元），冷却 120 秒内不被选，冷却后放一轮试探，试探失败重新计时；pick 和任务板“自动选”据此跳过（gateway.ts finalizeRun、gateway/capacity.ts）",
         "channels": [
           "claude",
           "zcode",

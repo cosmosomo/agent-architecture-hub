@@ -75,8 +75,12 @@ type ProductRow = {
   /** The agent's own working modes, for switching mid-session (session-control mode). */
   modes?: string[];
   maxConcurrent?: number;
+  quotaAccount?: string;
 };
-const PRODUCT_ROWS: ProductRow[] = JSON.parse(readFileSync(join(REPO_ROOT, 'hub', 'data', 'products.json'), 'utf8')).products;
+const PRODUCT_TABLE = JSON.parse(readFileSync(join(REPO_ROOT, 'hub', 'data', 'products.json'), 'utf8'));
+const PRODUCT_ROWS: ProductRow[] = PRODUCT_TABLE.products;
+/** Quota accounts several products may share: label, and the timezone the provider writes its reset time in. */
+export const QUOTA_ACCOUNTS: Record<string, { label: string; resetTimezone?: string; note?: string }> = PRODUCT_TABLE.quotaAccounts || {};
 
 function productEnv(p: ProductRow): Record<string, string> {
   const env = Object.fromEntries(Object.entries(p.env || {}).map(([k, v]) => [k, v.replaceAll('{HOME}', HOME)]));
@@ -112,6 +116,7 @@ export const CHANNEL_PROFILES = Object.fromEntries(
       acpModes: p.acpModes,
       modes: p.modes,
       maxConcurrent: p.maxConcurrent || 3,
+      quotaAccount: p.quotaAccount,
       acpxAgent: p.acpxAgent || p.aliases?.[0] || p.id,
       defaultModel: p.defaultModel || '',
       recommendedModels: p.models,
