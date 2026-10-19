@@ -125,6 +125,8 @@ export interface DispatchView {
   status: string;
   delivery?: { at: string; summary: string; reply: string; files: string[] };
   error?: string;
+  /** Why the turn failed (gateway/failure.ts): 'quota' is the account's, not the task's. */
+  failureKind?: string;
 }
 
 export interface TaskBoardDeps {
@@ -133,6 +135,8 @@ export interface TaskBoardDeps {
   changed?: (goal: GoalRecord) => void;
   /** The center's pick of a product among candidates (gateway/capacity.ts); used by tasks whose channel is "auto". */
   pickChannel?: (candidates?: string[], exclude?: string[]) => { channel: string | null; why: string };
+  /** Why a product cannot take work right now, when that will pass by itself (quota cooldown, breaker, full); else null. */
+  holdFor?: (channel: string) => string | null;
 }
 
 const DEFAULT_BUDGET: GoalBudget = { maxDispatches: 20, maxParallel: 2, maxRework: 2, maxStall: 6, maxWallClockMs: 4 * 3600_000 };
@@ -418,6 +422,16 @@ export class TaskBoard {
   /** Dispatch the task to its product (picking one first for an "auto" task). False when nothing went out. */
   private async dispatchWorker(g: GoalRecord, t: TaskRecord): Promise<boolean> {
     if (t.auto && !t.channel && !this.pick(t)) return false;
+    // A named product that is on hold for now: wait, and say why (once per new reason).
+    const hold = !t.auto ? this.deps.holdFor?.(t.channel) : null;
+    if (hold) {
+      if (t.waitingWhy !== hold) {
+        t.waitingWhy = hold;
+        this.log(t, 'waiting_for_channel', { why: hold });
+      }
+      return false;
+    }
+    t.waitingWhy = undefined;
     const upstream = t.dependsOn
       .map((k) => this.tasksOf(g).find((x) => x.key === k))
       .filter((x): x is TaskRecord => Boolean(x?.delivery))
@@ -475,7 +489,7 @@ export class TaskBoard {
       void this.startVerify(t);
     } else if (['failed', 'stalled', 'cancelled'].includes(d.status)) {
       t.activeDispatchId = null;
-      this.dispatchFailed(t, `派活单 ${d.id} ${d.status}${d.error ? '：' + d.error : ''}`);
+      this.dispatchFailed(t, `派活单 ${d.id} ${d.status}${d.error ? '：' + d.error : ''}`, d.failureKind);
     }
   }
 
@@ -483,8 +497,10 @@ export class TaskBoard {
    * A worker dispatch that did not hand back: try again once, then stop the task. An "auto" task tries again on
    * another product: the one that failed is left out of the next pick.
    */
-  private dispatchFailed(t: TaskRecord, why: string) {
-    t.failedDispatches++;
+  private dispatchFailed(t: TaskRecord, why: string, kind?: string) {
+    // A used-up quota is the account's, not the task's: it does not count toward stopping the task. The task waits
+    // (holdFor) until the account is back, or an "auto" task goes to another product.
+    if (kind !== 'quota') t.failedDispatches++;
     if (t.auto && t.channel) {
       if (!t.auto.excluded.includes(t.channel)) t.auto.excluded.push(t.channel);
       t.channel = '';
@@ -493,7 +509,7 @@ export class TaskBoard {
       t.fuse = `连续 ${t.failedDispatches} 次派活没交回：${why}`;
       this.setTask(t, 'failed', 'loop_fused', { level: 'dispatch', reason: t.fuse });
     } else {
-      this.setTask(t, 'queued', 'dispatch_failed', { reason: why });
+      this.setTask(t, 'queued', 'dispatch_failed', { reason: why, ...(kind ? { kind } : {}) });
     }
     void this.step();
   }

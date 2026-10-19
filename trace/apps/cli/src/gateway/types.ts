@@ -148,6 +148,8 @@ export type ActiveRun = {
   upstreamErrors?: number;
   /** True when `acpx sessions ensure` failed, so no prompt was sent. */
   setupFailed?: boolean;
+  /** Why it failed, decided once in finalizeRun (gateway/failure.ts). */
+  failureKind?: FailureKind;
   /** The tool named by a permission ask that has not been answered yet. */
   permissionAsk?: string;
   /** The user's own words for this turn. Automatic retries reuse them instead of wrapping the last retry prompt. */
@@ -266,6 +268,8 @@ export interface DispatchRecord {
   depth: number;
   parentDispatchId?: string;
   targetRunId?: string;
+  /** Why the turn it waited on failed (gateway/failure.ts). */
+  failureKind?: FailureKind;
   waitingFor?: string;
   progressReports: Array<{ at: string; text: string; via: 'cli' | 'web' }>;
   requests?: Array<{ at: string; text: string; status: 'pending' | 'resolved'; answer?: string }>;
@@ -285,4 +289,5 @@ export interface DispatchRecord {
   };
   error?: string;
   updatedAt: string;
-}
+}import type { FailureKind } from './failure.ts';
+

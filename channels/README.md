@@ -213,6 +213,7 @@ node hub/tools/agent_gateway.js tables
 | 两个会话之间（派活、回执、交回、唤醒、交接） | `gateway/collab.ts`。失败谁来重试：一级一个负责的。有派活单等着的轮，轮次层不自动续跑，由派活方或任务板决定；超时不算中途断开 |
 | 一群会话（目标、任务、熔断、预算） | `collab/taskboard.ts`，后端持有一个 `gateway.taskboard` |
 | 中心选派给谁：每家的负载对上限、熔断、额度账号（共用一个账号的几家一起停到报错给的重置时刻） | `gateway/capacity.ts`；每轮收尾记健康在这里（`recordTurnHealth`），任务板的 `channel: "auto"` 和 `pick` 接口都用它 |
+| 一轮为什么失败（额度、超时、权限、拒绝、没建起来、上游、网络、空回复、中途断开）：收尾时只分一次类，熔断、自动续跑、派活单、任务板都读这个结果，不再各自看报错文字 | `gateway/failure.ts` |
 | 元智能体（设置、巡检、出事时的诊断会话） | `gateway/meta.ts` |
 | 类型、产品档案与各家环境变量、常量和小工具 | `gateway/types.ts`、`products.ts`、`common.ts` |
 | 接口 | `server.ts`；命令行网关 `hub/tools/agent_gateway.js`；网页 `m/index.html` |

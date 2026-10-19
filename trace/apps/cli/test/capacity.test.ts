@@ -6,7 +6,8 @@ import { join } from 'node:path';
 
 // The account cooldown file goes to a temp folder, not the real ~/.agent-hub.
 process.env.HUB_DATA_DIR = mkdtempSync(join(tmpdir(), 'hub-capacity-'));
-const { capacityMethods, isQuotaError, loadQuotaCooldowns, quotaResetAt } = await import('../src/gateway/capacity.ts');
+const { capacityMethods, loadQuotaCooldowns, quotaResetAt } = await import('../src/gateway/capacity.ts');
+const { isQuotaError } = await import('../src/gateway/failure.ts');
 const { CHANNEL_PROFILES } = await import('../src/gateway/products.ts');
 
 const NOW = Date.parse('2026-10-19T02:44:40+08:00');

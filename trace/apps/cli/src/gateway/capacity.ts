@@ -10,6 +10,7 @@ import type { AgentGatewayHub } from '../gateway.ts';
 import type { ActiveRun, ChannelId, ChannelProfile } from './types.ts';
 import { CHANNEL_PROFILES, QUOTA_ACCOUNTS } from './products.ts';
 import { HOME } from './common.ts';
+import { classifyFailure } from './failure.ts';
 
 /** An open breaker keeps a product out of the pick this long; after that one turn may probe it again. */
 const COOLDOWN_MS = 120_000;
@@ -17,11 +18,6 @@ const COOLDOWN_MS = 120_000;
 const MAX_RESET_MS = 7 * 24 * 3600_000;
 
 export type QuotaCooldown = { until: number; reason: string; from: string; at: string };
-
-/** A failure that says the account's quota or rate is used up: another try only hits the same wall. */
-export function isQuotaError(text: string): boolean {
-  return /\b429\b|\b1308\b|quota|rate.?limit|usage limit|速率限制|额度|配额|使用上限|用量上限/i.test(text);
-}
 
 /**
  * When the provider says the quota comes back, as epoch ms, or null when the text does not say. Understands a date
@@ -92,7 +88,7 @@ export const capacityMethods = {
       h.failed += 1;
       h.consecutiveFailures += 1;
       h.lastError = run.error || '执行异常退出';
-      const quota = isQuotaError(h.lastError);
+      const quota = (run.failureKind || classifyFailure(run)) === 'quota';
       if (quota || h.consecutiveFailures >= 3) {
         h.state = 'open';
         h.openedAt = new Date().toISOString();
@@ -140,6 +136,19 @@ export const capacityMethods = {
         ? `额度账号 ${QUOTA_ACCOUNTS[account!]?.label || account} 用完，${clock(ac!.until)} 恢复（${CHANNEL_PROFILES[ac!.from as ChannelId]?.label || ac!.from} 报的）`
         : undefined,
     };
+  },
+
+  /**
+   * Why this product cannot take work right now, when that will pass by itself (its quota account cooling down, its
+   * breaker open, full); null when it can, or when it cannot for good (not driven: sending will say so).
+   */
+  holdFor(this: AgentGatewayHub, id: string): string | null {
+    const l = this.channelLoad(id);
+    if (!l.driven) return null;
+    if (l.accountCooling) return `${l.label}：${l.accountWhy}`;
+    if (l.cooling) return `${l.label}：熔断冷却中${l.lastError ? `（${String(l.lastError).slice(0, 60)}）` : ''}`;
+    if (l.running >= l.cap) return `${l.label}：在跑 ${l.running}/${l.cap} 已满`;
+    return null;
   },
 
   /**

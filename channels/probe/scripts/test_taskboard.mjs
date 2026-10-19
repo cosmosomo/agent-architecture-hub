@@ -11,6 +11,7 @@ import { TaskBoard } from '../../../trace/apps/cli/src/collab/taskboard.ts';
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hub-taskboard-'));
 const sent = []; // every dispatch the board asked for
 const full = new Set(); // products the fake pick treats as full
+const held = new Map(); // product → why the fake center holds it for now (holdFor)
 let n = 0;
 const board = new TaskBoard(
   {
@@ -24,6 +25,7 @@ const board = new TaskBoard(
       const pool = (candidates?.length ? candidates : ['zcode', 'opencode', 'hermes']).filter((c) => !exclude.includes(c) && !full.has(c));
       return pool.length ? { channel: pool[0], why: `${pool[0]} 空闲` } : { channel: null, why: `都满了或被排除：${[...full, ...exclude].join('、')}` };
     },
+    holdFor: (c) => held.get(c) || null,
   },
   dir,
 );
@@ -156,6 +158,24 @@ const taskOf = (g, key) => board.tasksOf(board.getGoal(g.id)).find((t) => t.key 
   board.taskAction(t.id, 'reassign', { channel: 'auto', candidates: ['hermes'] });
   await tick();
   check('改派成 auto 按候选选人', t.status === 'dispatched' && last().toChannel === 'hermes' && t.auto?.candidates[0] === 'hermes', `${t.status} ${last().toChannel}`);
+}
+
+// 6d. a used-up quota is not the task's fault: it does not count toward stopping the task; a held product makes it wait
+{
+  const g = board.createGoal({ title: '额度', objective: 'x', channel: 'hermes', tasks: [{ key: 'a', title: '给 hermes' }] });
+  await tick();
+  const t = taskOf(g, 'a');
+  held.set('hermes', 'Hermes：额度账号 智谱 Coding Plan 用完，06:02 恢复（ZCode 报的）');
+  for (let i = 0; i < 3; i++) {
+    board.onDispatch({ id: last().id, status: 'failed', error: '1308 已达到 5 小时的使用上限', failureKind: 'quota' });
+    await tick();
+  }
+  check('额度失败不计入任务失败次数、任务不熔断', t.failedDispatches === 0 && t.status === 'queued' && board.getGoal(g.id).status === 'running', `${t.failedDispatches} ${t.status} ${board.getGoal(g.id).status}`);
+  check('指定的产品暂停时任务等着、轨迹写原因', /额度账号/.test(t.waitingWhy || '') && t.history.some((h) => h.action === 'waiting_for_channel'), `${t.waitingWhy}`);
+  const before = sent.length;
+  held.delete('hermes');
+  await board.step();
+  check('恢复后派出', sent.length === before + 1 && t.status === 'dispatched' && !t.waitingWhy, `${sent.length - before} ${t.status}`);
 }
 
 // 7. the view: graph and trajectory

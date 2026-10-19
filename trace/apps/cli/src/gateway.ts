@@ -33,6 +33,7 @@ import { sessionMethods } from './gateway/sessions.ts';
 import { collabMethods } from './gateway/collab.ts';
 import { metaMethods } from './gateway/meta.ts';
 import { capacityMethods, loadQuotaCooldowns } from './gateway/capacity.ts';
+import { classifyFailure } from './gateway/failure.ts';
 
 // Everything above the class lives in gateway/: types, products, common. Re-exported for the callers.
 export type { ChannelId, MetaAgentId, MetaAgentConfig, MetaAgentLogEntry, ChannelCapabilities, ChannelProfile, LiveToolCall, QueuedPrompt, ActiveRun, AcpxSessionInfo, PendingQuestion, PendingApproval, ExternalSessionAnomaly, DispatchReceiptState, DispatchStatus, DispatchRecord } from './gateway/types.ts';
@@ -56,6 +57,7 @@ export class AgentGatewayHub {
   readonly taskboard = new TaskBoard({
     dispatch: async (p) => (await this.dispatchTask({ kind: 'spawn-subagent', ...p })).dispatch as DispatchView,
     pickChannel: (candidates, exclude) => this.pickChannel(candidates, exclude),
+    holdFor: (channel) => this.holdFor(channel),
     changed: (g) => this.broadcast('goal_update', { id: g.id, status: g.status, reason: g.reason }),
   });
   readonly eventsFile: string;
@@ -930,6 +932,7 @@ export class AgentGatewayHub {
 
     run.endedAt = new Date().toISOString();
     run.durationMs = Date.now() - Date.parse(run.startedAt);
+    if (run.status === 'failed') run.failureKind = classifyFailure(run);
 
     // Find updated traceSessionId
     const linked = this.listAcpxSessions().find(
@@ -1051,20 +1054,17 @@ export class AgentGatewayHub {
     const retryCount = run.retryCount || 0;
     const maxRetries = resumer?.maxRetries ?? 2;
 
-    // Retry only a turn that never got its own result (the process or the connection broke mid-turn).
-    // A turn that ended (even with a refusal), a failed session setup, or a refused tool is not retried:
-    // retrying those repeats the same outcome and spends a turn each time.
-    // A turn that ran out its time limit did not break: retrying it waits the whole limit again (Codex, 10-19).
-    const timedOut = /timeout waiting for turn|秒没结束/i.test(String(run.error || ''));
-    const brokeMidTurn = !run.stopReason && !run.setupFailed && !run.deniedTools?.length && !timedOut;
+    // Retry only what another try can fix (gateway/failure.ts): the connection dropped, the turn broke before its
+    // result, or the model's upstream channel is down (then on another model). A quota is the account's cooldown's
+    // business (capacity.ts); a timeout, a refusal, a refused tool or a failed setup would only repeat.
+    const retryable = run.failureKind === 'network' || run.failureKind === 'broken' || run.failureKind === 'upstream';
     // A turn a dispatch was waiting on has already been settled into that dispatch; its owner (the caller, or the
     // task board) decides whether to try again and where. A retry here would run unseen and hold the session.
     const ownedByDispatch = [...this.dispatches.values()].some((d) => d.targetRunId === run.runId);
-    if (!isBrainSession && run.status === 'failed' && brokeMidTurn && !ownedByDispatch && resumer?.enabled && retryCount < maxRetries) {
+    if (!isBrainSession && run.status === 'failed' && retryable && !ownedByDispatch && resumer?.enabled && retryCount < maxRetries) {
       let nextModel = model;
       const errMsg = String(run.error || '');
-      const isQuotaErr = /(429|quota|rate[_\s-]?limit|overloaded|model_not_found|unavailable|refusal)/i.test(errMsg);
-      if (maint?.enabled && isQuotaErr) {
+      if (maint?.enabled && run.failureKind === 'upstream') {
         const candidates = prof.recommendedModels.filter((m) => m !== model);
         if (candidates.length > 0) {
           nextModel = candidates[0];
@@ -1094,7 +1094,7 @@ export class AgentGatewayHub {
       if (resumer.engineMode !== 'local_rules') {
         this.invokeMetaBrainForIncident({
           metaId: 'meta_resumer',
-          eventKind: isQuotaErr ? 'quota_or_model_error' : 'execution_failure',
+          eventKind: run.failureKind === 'upstream' ? 'quota_or_model_error' : 'execution_failure',
           targetChannel: prof.id,
           targetSessionName: sessionName,
           summary: errMsg || '进程非零退出',

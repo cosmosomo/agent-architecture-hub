@@ -2,6 +2,7 @@
  * Between two sessions: dispatches (~/.agent-hub/dispatches/), their receipts, hand-backs, waking the caller, handoff.
  * Mixed into AgentGatewayHub (gateway.ts); `this` is the hub.
  */
+import type { FailureKind } from './failure.ts';
 import type { AgentGatewayHub } from '../gateway.ts';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -112,7 +113,7 @@ export const collabMethods = {
               Date.parse(r.startedAt) >= issuedMs - 2000),
         );
         if (matchedRun && matchedRun.status !== 'running') {
-          this.harvestRunIntoDispatch(d, matchedRun.text || '', matchedRun.error, matchedRun.status === 'failed', isStartup ? 'recovered' : 'turn-end', matchedRun.startedAt, matchedRun.traceSessionId);
+          this.harvestRunIntoDispatch(d, matchedRun.text || '', matchedRun.error, matchedRun.status === 'failed', isStartup ? 'recovered' : 'turn-end', matchedRun.startedAt, matchedRun.traceSessionId, matchedRun.failureKind);
           continue;
         }
 
@@ -169,6 +170,7 @@ export const collabMethods = {
     fallbackVia: 'turn-end' | 'recovered',
     seenFallbackIso: string,
     traceSessionId?: string,
+    failureKind?: FailureKind,
   ) {
     const nowIso = new Date().toISOString();
     if (traceSessionId && !traceSessionId.startsWith('new:')) {
@@ -220,6 +222,7 @@ export const collabMethods = {
       d.status = isFailed ? 'failed' : 'completed';
       d.waitingFor = undefined;
       if (isFailed && rawErr) d.error = rawErr;
+      if (isFailed) d.failureKind = failureKind;
       d.receipt = 'returned';
       d.receipts.returnedAt = nowIso;
       d.delivery = {
@@ -289,6 +292,7 @@ export const collabMethods = {
         'turn-end',
         run.startedAt,
         run.traceSessionId,
+        run.failureKind,
       );
       if (d.delivery && toolFiles.length > 0) {
         d.delivery.files = Array.from(new Set([...d.delivery.files, ...toolFiles])).slice(0, 15);
