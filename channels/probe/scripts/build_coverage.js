@@ -23,7 +23,7 @@ const LAYERS = [
   ['L2', '我们的后端'],
   ['L3', '我们的前端'],
 ];
-const FAMILIES = ['antigravity', 'codex', 'claude', 'zcode', 'workbuddy', 'opencode', 'hermes', 'gemini', 'droid'];
+const FAMILIES = ['antigravity', 'codex', 'claude', 'zcode', 'workbuddy', 'opencode', 'hermes', 'doubao', 'gemini', 'droid'];
 const RANK = { pass: 4, partial: 3, unverified: 2, fail: 1 };
 const MARK = { pass: '✓', partial: '◐', unverified: '?', fail: '✗' };
 
@@ -498,7 +498,7 @@ console.log('CAPABILITY_MAP.md:', units.length, 'units;', theory.size, 'with the
 // The same cells as data, for pages that draw the matrix: per unit and product, each place's state
 // (pass / partial / unverified / fail / desktop = seen in the desktop app only / fake) and the gap.
 const state = (c) => (!c ? null : c.desktopSays ? 'desktop' : c.fake ? 'fake' : c.res);
-const PROD7 = ['claude', 'codex', 'antigravity', 'zcode', 'workbuddy', 'opencode', 'hermes'];
+const PROD7 = ['claude', 'codex', 'antigravity', 'zcode', 'workbuddy', 'opencode', 'hermes', 'doubao'];
 const matrix = {
   generatedAt: new Date().toISOString(),
   products: PROD7,

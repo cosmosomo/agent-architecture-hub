@@ -17,6 +17,20 @@ const read = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
 const tests = () => read('hub/data/capability-tests.json');
 const units = () => read('hub/data/capability-units.json').units;
 const matrix = () => read('channels/probe/capability-matrix.json');
+/** Products whose host card says blocked_down (channels/hosts/<card>.md): no work goes to them. Names and aliases. */
+function blocked() {
+  const out = new Set();
+  for (const r of read('hub/data/products.json').products) {
+    let card = '';
+    try {
+      card = fs.readFileSync(path.join(ROOT, 'channels', 'hosts', r.hostCard || ''), 'utf8');
+    } catch {}
+    const front = card.split(/\n---/)[0] || '';
+    const st = (/^status:\s*(.+)$/m.exec(front) || [])[1] || '';
+    if (/blocked_down|auth_wall/.test(st)) for (const n of [r.id, ...(r.aliases || [])]) out.add(n);
+  }
+  return out;
+}
 const list = (v) => (typeof v === 'string' ? v.split(',').map((s) => s.trim()).filter(Boolean) : []);
 const newToken = () => `T${new Date().toISOString().replace(/\D/g, '').slice(4, 10)}${Math.random().toString(36).slice(2, 4).toUpperCase()}`;
 const USER_WORDS =
@@ -91,6 +105,8 @@ function goalForTests(args) {
   if (!agents.length || !us.length) throw new Error('goal-gen test --agents a,b --units u1,u2');
   const missing = us.filter((u) => !tests().tests[u]);
   if (missing.length) throw new Error(`这些单元还没有测试题：${missing.join('、')}（test --missing 看全部）`);
+  const off = agents.filter((a) => blocked().has(a));
+  if (off.length) throw new Error(`这些产品在宿主卡上标了暂停（blocked_down），先看卡上写的原因：${off.join('、')}`);
   const tasks = agents.map((a) => testTask(a, us, o));
   return { title: `测试：${us.join('、')} × ${agents.join('、')}`, objective: '照测试题实测，结果照实记进黑板', acceptance: '每道题在黑板上有一行，结论对得上判据', budget: BUDGET(tasks.length), tasks };
 }
@@ -109,7 +125,8 @@ function goalForGaps(args) {
   const T = tests().tests;
   const onlyAgents = list(args.agents);
   const onlyUnits = list(args.units);
-  const pick = (x) => (!onlyAgents.length || onlyAgents.includes(x.product)) && (!onlyUnits.length || onlyUnits.includes(x.unit.id));
+  const off = blocked();
+  const pick = (x) => !off.has(x.product) && (!onlyAgents.length || onlyAgents.includes(x.product)) && (!onlyUnits.length || onlyUnits.includes(x.unit.id));
   if (kind === 'untested') {
     // Nothing recorded at any place, and a question exists: a tester can just go.
     const todo = cells().filter((x) => pick(x) && ['app', 'api', 'adapter', 'front'].every((L) => !x.c[L]) && T[x.unit.id]);

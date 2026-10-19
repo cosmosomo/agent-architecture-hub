@@ -25,7 +25,7 @@ const args = (s) => {
   check('出题：占位都填上了', q && !/\{(agent|token|session)\}/.test(q.lines.join('\n') + q.record) && q.lines.join('\n').includes('TOK1') && q.lines.join('\n').includes('test-zcode'), q && q.lines.join(' ').slice(0, 200));
 }
 {
-  const g = generate(args('goal-gen test --agents doubao,zcode --units open,resume'));
+  const g = generate(args('goal-gen test --agents opencode,zcode --units open,resume'));
   check('测试目标：每家一个任务，派给测试员、固定会话', g.tasks.length === 2 && g.tasks.every((t) => t.channel === 'zcode' && t.session === `tester-${t.key.replace('test-', '')}` && t.verifyBy === 'agent:claude'), JSON.stringify(g.tasks.map((t) => [t.key, t.channel, t.session])));
   check('测试目标：验收就是题里的“通过”，并要求用 bb find 核对', g.tasks.every((t) => /open：/.test(t.acceptance) && /resume：/.test(t.acceptance) && /bb find/.test(t.acceptance)), g.tasks[0].acceptance.slice(0, 200));
   check('测试目标：任务说明带着用户原话和完整题目', /用户的原话/.test(g.tasks[0].goal) && /恢复会话|resume/.test(g.tasks[0].goal) && /记录：/.test(g.tasks[0].goal), g.tasks[0].goal.slice(0, 200));
