@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import type { Session, Step, Turn } from '@hub-trace/contract';
+import type { Session, Step, ToolStep, Turn } from '@hub-trace/contract';
 import type { ChannelProfile, LiveToolCall, ActiveRun, AcpxSessionInfo } from './types.ts';
 import { agentBaseEnv, CHANNEL_PROFILES, normalizeAgyCliModel, resolveAgyProjectId } from './products.ts';
 import { HOME, isSmokeTestPrompt, classifyTool, stripUserRequestTags, agyTitle } from './common.ts';
@@ -146,6 +146,8 @@ foreach ($p in $procs) {
       let lastInterrupted = false;
       let lastErrorText = '';
       const childLinks: { rel: 'child'; id: string; label?: string }[] = [];
+      // Tool calls carry no id: their results follow as GENERIC records, one per call, in call order.
+      let awaitingResult: ToolStep[] = [];
 
       const flushTurn = () => {
         if (!curSteps.length) return;
@@ -200,7 +202,15 @@ foreach ($p in $procs) {
             // reporting back: an event inside the current turn, not something a person said (seen 2026-10-18).
             const raw = String(obj.content || '');
             const m = /\[Message\] timestamp=(\S+) sender=(\S+) priority=\S+ content=([\s\S]*?)\s*(?:<\/SYSTEM_MESSAGE>[\s\S]*)?$/.exec(raw);
-            if (m && m[2] === 'system') {
+            // Antigravity's own notices also come from sender=system: a sub-agent that failed, "[Notice] All your
+            // subagents … have been stopped". They are events in the current turn, not a person's words (10-19:
+            // three of them showed as the session's last three "turns", hiding the agent's work).
+            const notice = m && m[2] === 'system' && /^(\[Notice\]|The subagent .+ with id ")/.test(m[3].trim());
+            if (notice) {
+              stepSeq++;
+              const text = m![3].trim();
+              curSteps.push({ id: `s${stepSeq}`, kind: 'event', name: text.startsWith('The subagent') ? 'subagent' : 'note', text: text.slice(0, 600), at: at || undefined });
+            } else if (m && m[2] === 'system') {
               flushTurn();
               curStartedAt = at;
               curInput = m[3].trim();
@@ -220,7 +230,7 @@ foreach ($p in $procs) {
             }
             const rawCalls: any[] = Array.isArray(obj.tool_calls) ? obj.tool_calls : [];
             const callIds: string[] = [];
-            const toolSteps: Step[] = [];
+            const toolSteps: ToolStep[] = [];
 
             for (let i = 0; i < rawCalls.length; i++) {
               const tc = rawCalls[i];
@@ -296,6 +306,32 @@ foreach ($p in $procs) {
                     : undefined,
               });
               curSteps.push(...toolSteps);
+            }
+            awaitingResult = toolSteps;
+          } else if (obj.type === 'GENERIC' && obj.source === 'MODEL') {
+            const t = awaitingResult.shift();
+            if (t) {
+              const out = typeof obj.content === 'string' ? obj.content : obj.error ? String(obj.error) : '';
+              if (out) t.output = out;
+              if (obj.error || obj.status === 'ERROR') {
+                if (t.status !== 'error') toolErrors++;
+                t.status = 'error';
+              }
+            }
+          } else if (obj.type === 'ERROR_MESSAGE') {
+            const text = String(obj.error || obj.content || '').trim();
+            if (/stream was interrupted/i.test(text)) {
+              lastInterrupted = true;
+              lastErrorText = text;
+            }
+            // Retries of one failing request ("API error (attempt 1…6)") show as one step with the latest attempt.
+            const prev = curSteps[curSteps.length - 1];
+            if (prev?.kind === 'event' && prev.name === 'error' && /^API error \(attempt/.test(prev.text || '') && /^API error \(attempt/.test(text)) {
+              prev.text = text.slice(0, 600);
+              prev.at = at || prev.at;
+            } else if (text) {
+              stepSeq++;
+              curSteps.push({ id: `s${stepSeq}`, kind: 'event', name: 'error', text: text.slice(0, 600), at: at || undefined });
             }
           }
         } catch {}
