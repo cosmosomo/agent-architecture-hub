@@ -129,6 +129,12 @@ table { border-collapse: collapse; font-size: 14px; }
   </section>
 
   <section>
+    <h2>额度账号</h2>
+    <p class="muted">几家共用一个额度账号时，一家撞上限，几家一起停到恢复时刻（中心按账号自动等待）。数据在 hub/data/products.json 的 quotaAccounts。</p>
+    <div class="tbl-wrap"><table class="tbl" id="quota"></table></div>
+  </section>
+
+  <section>
     <h2>各家独家功能</h2>
     <p class="muted">各家智能体自己登记的本家功能：做什么、入口、是不是只有这一家有、开放到什么程度。登记命令：agent_gateway.js feature。依据分试过、看到、推测三档，“推测”只算线索。</p>
     <div class="tbl-wrap"><table class="tbl" id="open-sum"></table></div>
@@ -236,6 +242,16 @@ document.getElementById('gen').textContent = '生成于 ' + M.generatedAt.slice(
     h += `<tr><td>${name}<small class="muted num"> ${id}</small></td>${P.map((p) => `<td title="${esc(u.cells[p].how)}">${dot(u.cells[p].adapter)}<br>${dot(u.cells[p].front)}</td>`).join('')}</tr>`;
   }
   document.getElementById('display').innerHTML = h;
+}
+
+// quota accounts shared by several products
+{
+  const Q = M.quotaAccounts || [];
+  let h = '<tr><th>账号</th><th>谁在用</th><th>怎么刷新</th><th>别的上限</th><th>什么时候多用</th></tr>';
+  for (const a of Q) {
+    h += `<tr><td>${esc(a.label || a.id)}</td><td style="white-space:normal">${esc(a.products.map((p) => LABEL[p] || p).join('、'))}</td><td style="white-space:normal;min-width:10em">${esc(a.window || '—')}</td><td style="white-space:normal;min-width:12em">${esc(a.otherLimits || '—')}</td><td style="white-space:normal;min-width:12em">${esc(a.bestTime || '—')}${a.userSaid ? `<br><small class="muted">${esc(a.userSaid)}</small>` : ''}</td></tr>`;
+  }
+  document.getElementById('quota').innerHTML = Q.length ? h : '<tr><td>还没有登记</td></tr>';
 }
 
 // features each product registered, and how open each product is

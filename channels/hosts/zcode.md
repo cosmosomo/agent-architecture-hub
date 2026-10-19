@@ -49,6 +49,7 @@ capabilities:
 
 ## 三、当前状态、安全参数与防呆红线
 - **当前状态**：🟢 可用
+- **额度**：智谱 Coding Plan，5 小时一个窗口到点刷新，除此之外没有别的上限，整个 2026 年持续这样。和 WorkBuddy（本地供应商）、OpenCode、Hermes 共用一个账号。晚上用户不用电脑时多用，白天给用户留着。用户 10-19 原话：“在整个 2026 年，zcode的 5 小时刷新都是持续的。没有其他额度限制，然后晚上我不用的时候多用。”账号信息在 `hub/data/products.json` 的 `quotaAccounts`；撞到上限时中心按账号整体等到恢复（`gateway/capacity.ts`）。
 - **桌面安全六步 SOP（铁律）**：
   1. 先快照进程与命令行（`Get-CimInstance Win32_Process`）；
   2. 先备份配置文件；

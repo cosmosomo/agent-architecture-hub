@@ -163,7 +163,11 @@
     "zhipu-coding-plan": {
       "label": "智谱 Coding Plan",
       "resetTimezone": "+08:00",
-      "note": "10-19 核对：ZCode、WorkBuddy 本地供应商、OpenCode、Hermes 用同一把密钥（短指纹 98c7a60c）调 open.bigmodel.cn/api/coding；5 小时用量上限一家撞上，四家一起停。某家换到别的供应商时改它的 quotaAccount"
+      "note": "10-19 核对：ZCode、WorkBuddy 本地供应商、OpenCode、Hermes 用同一把密钥（短指纹 98c7a60c）调 open.bigmodel.cn/api/coding；5 小时用量上限一家撞上，四家一起停。某家换到别的供应商时改它的 quotaAccount",
+      "window": "5 小时一个窗口，到点刷新",
+      "otherLimits": "除了 5 小时窗口没有别的额度上限；整个 2026 年持续这样刷新",
+      "bestTime": "晚上用户不用电脑的时候多用，白天给用户留着",
+      "userSaid": "用户 10-19 原话：“在整个 2026 年，zcode的 5 小时刷新都是持续的。没有其他额度限制，然后晚上我不用的时候多用。”"
     }
   },
   "products": [

@@ -520,6 +520,18 @@ const matrix = {
     ),
   })),
 };
+// Quota accounts several products share (hub/data/products.json quotaAccounts): who uses each, how it refreshes,
+// when to lean on it — so every agent reading the page sees it (用户 10-19：“这种信息……谁都可以看到”).
+try {
+  const prodTable = JSON.parse(fs.readFileSync(path.join(DIR, '..', '..', 'hub', 'data', 'products.json'), 'utf8'));
+  matrix.quotaAccounts = Object.entries(prodTable.quotaAccounts || {}).map(([id, a]) => ({
+    id,
+    ...a,
+    products: prodTable.products.filter((x) => x.quotaAccount === id).map((x) => x.id),
+  }));
+} catch {
+  matrix.quotaAccounts = [];
+}
 // What each product says it has, especially what only it has, as registered with agent_gateway.js feature
 // (channels/probe/features.jsonl, append-only): the latest row per product and name.
 matrix.features = [];
