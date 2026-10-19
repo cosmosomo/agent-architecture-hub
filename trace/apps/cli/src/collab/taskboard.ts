@@ -58,6 +58,8 @@ export interface TaskRecord {
   reworkCount: number;
   failedDispatches: number;
   delivery: { at: string; summary: string; reply: string; files: string[] } | null;
+  /** The worker dispatch the delivery came from; a later hand-back on it replaces a turn-end pick (see onDispatch). */
+  deliveryDispatchId?: string;
   /** Earlier hand-backs, newest last, to notice a rework that changes nothing. */
   previousReplies: string[];
   verdict: { at: string; passed: boolean; note: string; by: string; rework?: string } | null;
@@ -129,7 +131,9 @@ export interface CreateGoalParams {
 export interface DispatchView {
   id: string;
   status: string;
-  delivery?: { at: string; summary: string; reply: string; files: string[] };
+  /** via: how it came back — 'turn-end' / 'recovered' are the center's own pick of the last words; 'cli' and
+   *  'structured-output' are the agent handing back on purpose. */
+  delivery?: { at: string; summary: string; reply: string; files: string[]; via?: string };
   error?: string;
   /** Why the turn failed (gateway/failure.ts): 'quota' is the account's, not the task's. */
   failureKind?: string;
@@ -384,6 +388,7 @@ export class TaskBoard {
   onDispatch(d: DispatchView): void {
     for (const t of this.tasks.values()) {
       if (t.activeDispatchId === d.id && t.status === 'dispatched') this.workerDispatchChanged(t, d);
+      else if (t.deliveryDispatchId === d.id && t.status === 'verifying') this.laterHandBack(t, d);
       else if (t.verifierDispatchId === d.id && t.status === 'verifying') this.verifierDispatchChanged(t, d);
     }
   }
@@ -523,6 +528,7 @@ export class TaskBoard {
   private workerDispatchChanged(t: TaskRecord, d: DispatchView) {
     if (d.status === 'completed' && d.delivery) {
       t.delivery = { at: d.delivery.at, summary: d.delivery.summary || '', reply: d.delivery.reply || '', files: d.delivery.files || [] };
+      t.deliveryDispatchId = d.id;
       t.activeDispatchId = null;
       t.failedDispatches = 0;
       this.setTask(t, 'verifying', 'dispatch_delivered', { dispatchId: d.id, summary: t.delivery.summary.slice(0, 200), files: t.delivery.files });
@@ -602,6 +608,23 @@ export class TaskBoard {
     } finally {
       this.verifyStarting.delete(t.id);
     }
+  }
+
+  /**
+   * The center took the worker's last words at what looked like the end of its turn, the check began, and then the
+   * worker handed back on purpose (10-20: Antigravity paused for over 5 s mid-task, was taken as done with “I am
+   * checking …”, and handed back the real result 9 minutes later). The deliberate hand-back wins: it replaces the
+   * delivery and the check starts again; the old check's verdict is dropped (its dispatch is no longer ours).
+   */
+  private laterHandBack(t: TaskRecord, d: DispatchView) {
+    const v = d.delivery;
+    if (d.status !== 'completed' || !v || !t.delivery || !(v.at > t.delivery.at)) return;
+    if (v.via === 'turn-end' || v.via === 'recovered') return;
+    t.delivery = { at: v.at, summary: v.summary || '', reply: v.reply || '', files: v.files || [] };
+    t.verifierDispatchId = null;
+    t.waitingWhy = undefined;
+    this.log(t, 'delivery_superseded', { dispatchId: d.id, via: v.via, summary: t.delivery.summary.slice(0, 200) });
+    void this.startVerify(t);
   }
 
   private verifierDispatchChanged(t: TaskRecord, d: DispatchView) {

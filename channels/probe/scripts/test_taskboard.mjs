@@ -185,6 +185,23 @@ const taskOf = (g, key) => board.tasksOf(board.getGoal(g.id)).find((t) => t.key 
   check('任务带 session 就派到那个固定会话', taskOf(g, 'a').sessionName === 'research-codex' && last().toSessionName === 'research-codex', `${taskOf(g, 'a').sessionName} ${last().toSessionName}`);
 }
 
+// 6g. the center took the last words at a turn end, then the worker handed back on purpose: that wins, checked again
+{
+  const g = board.createGoal({ title: '后来的正式交回', objective: 'x', channel: 'zcode', verifyBy: 'agent:claude', tasks: [{ key: 'late', title: '会停顿的活' }] });
+  await tick();
+  const w = last();
+  board.onDispatch({ id: w.id, status: 'completed', delivery: { at: '2026-10-20T01:00:00.000Z', summary: '我正在查看文件……', reply: '我正在查看文件……', files: [], via: 'turn-end' } });
+  await tick();
+  const t = taskOf(g, 'late');
+  const firstCheck = last();
+  board.onDispatch({ id: w.id, status: 'completed', delivery: { at: '2026-10-20T01:09:00.000Z', summary: '全部做完', reply: '全部做完', files: [], via: 'cli' } });
+  await tick();
+  check('后来的正式交回替换轮末摘取，并重新验收', t.status === 'verifying' && t.delivery.summary === '全部做完' && last() !== firstCheck && last().toSessionName === `${t.sessionName}-verify` && /全部做完/.test(last().task), `${t.status} ${t.delivery.summary} ${last() === firstCheck}`);
+  board.onDispatch({ id: firstCheck.id, status: 'completed', delivery: { at: '2026-10-20T01:10:00.000Z', summary: 'FAIL 半成品', reply: 'FAIL 半成品', files: [] } });
+  await tick();
+  check('旧验收的结论被丢掉', t.status === 'verifying' && !t.verdict, `${t.status} ${JSON.stringify(t.verdict)}`);
+}
+
 // 6f. a named task's session is reused by the next goal on the same line, one piece of work at a time
 {
   const g1 = board.createGoal({ title: '同一条线一', objective: 'x', channel: 'opencode', verifyBy: 'auto', tasks: [{ key: 'line-x', title: '第一件' }] });
