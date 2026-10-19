@@ -1,6 +1,6 @@
 {
  "generatedFrom": "能力单元登记表_20261017.md",
- "generatedAt": "2026-10-18T06:08:51.362Z",
+ "generatedAt": "2026-10-19T05:41:47.137Z",
  "units": [
   {
    "id": "open",
@@ -1135,6 +1135,15 @@
    "definition": "当前套餐还剩多少、窗口什么时候重置",
    "judge": "和各家额度接口一致",
    "source": "桌面端事实调研 channels/probe/results/hci-desktop-facts-20261018.md（Antigravity 10-18，负责人核过）：Antigravity RetrieveUserQuotaSummary；ZCode /quota；依赖：quota"
+  },
+  {
+   "id": "recall-history",
+   "name": "回顾对话记录",
+   "category": "智能体的动作（候选，10-19 用户要求补登）",
+   "bitmap": null,
+   "definition": "智能体在会话进行中翻回它和人过去的对话记录，包括已被压缩掉的部分和人的原话，按轮次、关键词或说话人取用",
+   "judge": "智能体取回很早或已压缩的原话并据此回答，取回的内容和记录一致",
+   "source": "用户 10-19 原话：“有些agent比如Claudedesktop，就可以看长期对话，回顾自己和用户的对话，用户的原话，这个功能值得注册……我们的系统就可以提供这个能力，做成简单的命令就可以查看”；随后纠正：“是回顾对话记录，回顾过去的记录”"
   }
  ]
 }

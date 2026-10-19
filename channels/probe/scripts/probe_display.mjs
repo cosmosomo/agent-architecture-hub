@@ -76,7 +76,8 @@ const db = (file) => {
 function rawCounts(s) {
   const fmt = s.source.format;
   // results: calls whose result in the record is not empty (some tools return nothing by design).
-  const c = { tools: 0, results: 0, thinking: 0, other: {} };
+  // modelOnly: the starts of texts the record marks as written for the model only; they must not show as the person's words.
+  const c = { tools: 0, results: 0, thinking: 0, other: {}, modelOnly: [] };
   const other = (k) => (c.other[k] = (c.other[k] || 0) + 1);
   if (/jsonl|envelope/.test(fmt)) {
     const ls = s.source.path && lines(s.source.path);
@@ -144,6 +145,7 @@ function rawCounts(s) {
           c.tools++;
           if (has(p.state?.output) || has(p.state?.error)) c.results++;
         } else if (p.type === 'reasoning') c.thinking += len(p.text);
+        else if (p.type === 'text' && p.metadata?.visibility === 'model-only' && has(p.text)) c.modelOnly.push(String(p.text).trim().slice(0, 40));
         if (!PART_PLUMBING.has(p.type)) other(p.type);
       }
       return c;
@@ -241,6 +243,10 @@ for (const fam of Object.values(FAMILY)) {
     agg.notPerson.push(...p.notPerson);
     agg.unknownKinds.push(...p.unknownKinds);
     const raw = rawCounts(s);
+    if (raw?.modelOnly.length) {
+      const said = (s.turns || []).flatMap((t) => (t.steps || []).filter((x) => x.kind === 'message' && x.role === 'user').map((x) => String(x.text || '')));
+      for (const m of new Set(raw.modelOnly)) if (said.some((w) => w.includes(m))) agg.notPerson.push('只给模型看的：' + m);
+    }
     if (raw) {
       agg.raw ||= { sessions: 0, tools: 0, results: 0, thinking: 0, parsedTools: 0, parsedResults: 0, parsedThinking: 0, other: {} };
       agg.raw.sessions++;

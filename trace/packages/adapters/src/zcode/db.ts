@@ -146,7 +146,11 @@ function zcodeSessionFromRows(
       let hadCompaction = false;
       for (const p of parts) {
         records++;
-        if (p.type === 'text' && typeof p.text === 'string') texts.push(p.text);
+        // Text the runtime adds for the model only (a todo reminder and the like, marked visibility "model-only"):
+        // an event in the turn, not the person's words (10-19: shown as "人：" in recall and on the page).
+        if (p.type === 'text' && typeof p.text === 'string' && p.metadata?.visibility === 'model-only') {
+          B.addEvent('note', at, '运行时提醒（' + String(p.metadata?.source || 'model-only') + '）');
+        } else if (p.type === 'text' && typeof p.text === 'string') texts.push(p.text);
         else if (p.type === 'file') {
           const fname = typeof p.filename === 'string' && p.filename ? p.filename : typeof p.url === 'string' ? p.url.slice(0, 60) : 'file';
           texts.push('[附件: ' + fname + ']');

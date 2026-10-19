@@ -1479,6 +1479,62 @@ function cmdGoal(args, sub) {
   process.exit(0);
 }
 
+// recall: look back over a session's past conversation (unit recall-history, 回顾对话记录). Some products let the
+// agent read its own long history (Claude desktop); for the rest the center offers it from the record it already
+// reads in full (probe_display.mjs checks that reading against the raw records).
+//   recall --id <会话编号> | --agent X --session <中心里的会话名>
+//          [--who user|agent|all] [--grep 词] [--turns 3-10] [--last 5] [--max 600，0 = 全文]
+// One block per turn: turn number and time, then the person's words (and with --who agent|all, the agent's reply).
+function cmdRecall(args) {
+  if (!ensureSharedDaemon()) {
+    console.error(JSON.stringify({ ok: false, error: 'the 8899 daemon is not running and could not be started' }));
+    process.exit(2);
+  }
+  let id = args.id || args._[1];
+  if (!id && args.session) {
+    const prof = resolveProfile(args.agent || args.channel);
+    const list = callSharedDaemon('/api/sessions?slim=1', 'GET', null, 90);
+    const hit = ((list && list.sessions) || []).find((s) => (!prof || s.channel === prof.id) && (s.controlName === args.session || s.name === args.session));
+    if (!hit) {
+      console.error(JSON.stringify({ ok: false, error: `没找到会话 ${args.session}；用 sessions --agent ${args.agent || 'X'} 查编号，再 recall --id <编号>` }));
+      process.exit(1);
+    }
+    id = hit.id;
+  }
+  if (!id) {
+    console.error(JSON.stringify({ ok: false, error: 'recall --id <会话编号>，或 --agent X --session <会话名>' }));
+    process.exit(1);
+  }
+  const res = callSharedDaemon(`/api/sessions/${encodeURIComponent(id)}`, 'GET', null, 120);
+  const s = res && res.session;
+  if (!s) {
+    console.error(JSON.stringify({ ok: false, error: (res && res.error) || `读不到会话 ${id}` }));
+    process.exit(1);
+  }
+  const who = ['user', 'agent', 'all'].includes(args.who) ? args.who : 'user';
+  const grep = String(args.grep || '').toLowerCase();
+  // Pasted documents make a person's message thousands of characters long: show the start unless asked for all.
+  const max = args.max === undefined ? 600 : Number(args.max);
+  const cut = (t) => (max > 0 && t.length > max ? `${t.slice(0, max)}…（共 ${t.length} 字，--max 0 看全文）` : t);
+  let turns = s.turns || [];
+  const range = /^(\d+)-(\d+)$/.exec(String(args.turns || ''));
+  if (range) turns = turns.filter((t) => t.index >= Number(range[1]) && t.index <= Number(range[2]));
+  if (args.last) turns = turns.slice(-Number(args.last));
+  const out = [];
+  for (const t of turns) {
+    const said = (t.steps || []).filter((x) => x.kind === 'message' && x.role === 'user').map((x) => String(x.text || '').trim()).filter(Boolean);
+    const reply = String(t.output || '').trim();
+    const parts = [];
+    if (who !== 'agent') for (const w of said) parts.push(`人：${w}`);
+    if (who !== 'user' && reply) parts.push(`智能体：${reply}`);
+    if (!parts.length || (grep && !parts.some((p) => p.toLowerCase().includes(grep)))) continue;
+    out.push(`── 第 ${t.index} 轮 · ${String(t.startedAt || '').replace('T', ' ').slice(0, 16)}\n${parts.map(cut).join('\n')}`);
+  }
+  console.log(`${s.title || id}（${id}，共 ${(s.turns || []).length} 轮）${out.length ? '' : '\n没有符合条件的记录'}`);
+  if (out.length) console.log(out.join('\n\n'));
+  process.exit(0);
+}
+
 // Thin commands over the service's other actions (hub/data/actions.json names the endpoint of each):
 //   sessions [--agent X] [--q 文字] [--limit 30]          sessions on this machine, newest first (one line each)
 //   session --id <会话编号> [--tail 5]                     one session: turns and steps
@@ -1589,6 +1645,7 @@ function main() {
   if (sub === 'dispatches') return cmdDispatches(args, false);
   if (sub === 'dispatch-wait') return cmdDispatches(args, true);
   if (sub === 'goals' || sub === 'goal' || sub === 'goal-action' || sub === 'task-action') return cmdGoal(args, sub);
+  if (sub === 'recall') return cmdRecall(args);
   if (['sessions', 'session', 'search', 'state', 'pick', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
   if (sub === 'deliver') return cmdCollabEvent(args, 'deliver');
   if (sub === 'report') return cmdCollabEvent(args, 'report');

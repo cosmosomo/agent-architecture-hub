@@ -93,8 +93,8 @@
       "id": "session",
       "method": "GET",
       "path": "/api/sessions/<编号>",
-      "does": "一个会话的每一轮每一步（tail、compact 控制取多少）",
-      "cli": "session"
+      "does": "一个会话的每一轮每一步（tail、compact 控制取多少）；recall 只取对话：人的原话、智能体的回复，可按关键词、轮次筛（单元 recall-history）",
+      "cli": "session/recall"
     },
     {
       "id": "session-tree",

@@ -546,6 +546,8 @@ export const collabMethods = {
           `   - 完成并交回："${nodeBin}" "${gwToolPath}" deliver --id ${id} --summary "一句话结论"`,
           `   - 阻塞并让出："${nodeBin}" "${gwToolPath}" yield --id ${id} --waiting-for "等待的输入或条件"`,
           `2. 结构化尾注交回（无需调工具）：在回复末尾写一行 \`【交回】一句话结论\` 或 \`【让出：等待什么】\`。`,
+          // Unit recall-history: the center reads every session in full, so any agent can look back over its own.
+          `【回顾这个会话过去的对话】（含已被压缩掉的部分）："${nodeBin}" "${gwToolPath}" recall --agent ${toProf.id} --session ${toSessionName} [--grep 关键词] [--last 5] [--who user|agent|all]`,
         ]
           .filter(Boolean)
           .join('\n');

@@ -16,7 +16,7 @@ import { clean, oneLine } from '../text.ts';
 import type { FinishOptions, LineParser, SourceFile } from '../types.ts';
 
 export const ZCODE_KIND = 'zcode';
-export const ZCODE_ADAPTER_VERSION = '0.1.0';
+export const ZCODE_ADAPTER_VERSION = '0.1.1';
 export const ZCODE_CAPABILITIES: AdapterCapabilities = {
   observe_only: true,
   control_lifecycle: { start: true, resume: true, fork: false, stop: false },

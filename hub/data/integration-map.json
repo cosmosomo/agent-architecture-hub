@@ -1124,6 +1124,26 @@
         "fillLevel": "一群会话",
         "note": "10-19 副本实测：Codex 超时 → 任务板排除它、换 Claude 重派；WorkBuddy 429 现在记失败并带出原因。失败类别在一轮收尾时分一次（gateway/failure.ts），熔断、续跑、派活单、任务板共用；额度失败不算任务的错，任务等账号恢复，各家原生的健康接口没接"
       }
+    ],
+    "recall-history": [
+      {
+        "action": [
+          "session"
+        ],
+        "how": "agent_gateway.js recall --agent X --session <会话名> | --id <会话编号> [--who user|agent|all] [--grep 词] [--turns 3-10] [--last 5]：从中心读全的会话记录里取对话（人的原话、智能体每轮的回复），已被产品压缩掉的部分也在；派活单的协作说明里写了这条命令",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "fill",
+        "fillLevel": "一个会话",
+        "note": "10-19 在 Antigravity、ZCode 会话上用过：按关键词、轮次、说话人筛都对；它读的就是 probe_display.mjs 核对过的那份数据。各家原生能不能自己翻长历史（Claude 桌面端能）没查；智能体实际调用它回答问题还没测"
+      }
     ]
   },
   "frontend": {
