@@ -1813,6 +1813,41 @@ function cmdNote(args) {
   sendRecords('annotations', [row]);
 }
 
+// test: the test question of a capability unit (hub/data/capability-tests.json), filled in for one product, with the
+// line to record the result. One unit, one question; any agent tests by the same question and records the same way.
+// User 10-20: “你得围绕基本能力做一个通用测试题集合了……多一个功能多一个测试题”.
+//   test --unit <单元> [--agent <产品>] [--token <暗号>]     print the question
+//   test --missing                                           units with no question yet
+function cmdTest(args) {
+  const T = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'hub', 'data', 'capability-tests.json'), 'utf8'));
+  const units = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'hub', 'data', 'capability-units.json'), 'utf8')).units;
+  if (args.missing) {
+    const miss = units.filter((u) => !T.tests[u.id]);
+    console.log(`有题 ${units.length - miss.length} / ${units.length} 个单元。还没有题的：`);
+    for (const u of miss) console.log(`  ${u.id}  ${u.name}  ——  ${u.judge}`);
+    process.exit(0);
+  }
+  const u = units.find((x) => x.id === args.unit);
+  const t = T.tests[args.unit];
+  if (!u || !t) {
+    console.error(JSON.stringify({ ok: false, error: u ? `单元 ${args.unit} 还没有测试题（test --missing 看全部）` : `没有单元 ${args.unit}` }));
+    process.exit(1);
+  }
+  const agent = args.agent || '{agent}';
+  const token = args.token || `T${new Date().toISOString().replace(/\D/g, '').slice(4, 10)}${Math.random().toString(36).slice(2, 4).toUpperCase()}`;
+  const fill = (s) => String(s).replace(/\{session\}/g, `test-${agent}`).replace(/\{agent\}/g, agent).replace(/\{token\}/g, token);
+  const out = [`# 测试题：${u.name}（${u.id}）· ${agent} · 暗号 ${token}`, '', `做什么：${fill(t.do)}`, `单元定义：${u.definition}；怎样算做到：${u.judge}`];
+  if (t.center) out.push('', '经中心（记 L2）：', ...t.center.map((c) => '  ' + fill(c)));
+  if (t.web) out.push('', '在网页（记 L3）：' + fill(t.web));
+  if (t.native) out.push('', '原生入口（记 L0）：' + fill(t.native));
+  out.push('', `通过：${fill(t.pass)}`);
+  if (t.fail) out.push(`当心（遇到记 fail 或 partial）：${fill(t.fail)}`);
+  if (t.auto) out.push(`自动测法：${fill(t.auto)}`);
+  out.push('', '通用规矩：', ...T.howToTest.map((h) => '  - ' + h), '', '记录：', '  ' + fill(T.record).replace('<单元>', u.id));
+  console.log(out.join('\n'));
+  process.exit(0);
+}
+
 // recall: look back over a session's past conversation (unit recall-history, 回顾对话记录). Some products let the
 // agent read its own long history (Claude desktop); for the rest the center offers it from the record it already
 // reads in full (probe_display.mjs checks that reading against the raw records).
@@ -1980,6 +2015,7 @@ function main() {
   if (sub === 'dispatch-wait') return cmdDispatches(args, true);
   if (sub === 'goals' || sub === 'goal' || sub === 'goal-action' || sub === 'task-action') return cmdGoal(args, sub);
   if (sub === 'recall') return cmdRecall(args);
+  if (sub === 'test') return cmdTest(args);
   if (sub === 'feature') return cmdFeature(args);
   if (sub === 'note') return cmdNote(args);
   if (sub === 'bb') return cmdBlackboard(args);
@@ -2003,7 +2039,7 @@ function main() {
     console.log(problems.length ? `核对：${problems.length} 处对不上\n` + problems.map((x) => '  - ' + x).join('\n') : '核对：四张表和代码全部对上');
     return;
   }
-  console.error(`Unknown subcommand: ${sub}. Expected: targets | status | quota | run | read | wait | cancel | handoff | dispatch | dispatches | dispatch-wait | deliver | report | yield | reclaim | patrol | tables`);
+  console.error(`Unknown subcommand: ${sub}. Expected: targets | status | quota | run | read | wait | cancel | handoff | dispatch | dispatches | dispatch-wait | deliver | report | yield | reclaim | patrol | tables | test`);
   process.exit(1);
 }
 

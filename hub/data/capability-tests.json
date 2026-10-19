@@ -1,0 +1,125 @@
+{
+  "about": "能力单元的测试题：一个单元一道题，谁来测都照同一道题做、照同一个格式记。用户 10-20：“你得围绕基本能力做一个通用测试题集合了，这样其他智能体也知道怎么测，后续也可以快速复用和检测。多一个功能多一个测试题”。单元的定义和“怎样算做到”在 capability-units.json，这里只写怎么测。打印一道填好的题：node hub/tools/agent_gateway.js test --unit <单元> --agent <产品>；看哪些单元还没题：test --missing。",
+  "howToTest": [
+    "题里的 {agent} 换成要测的产品（codex、claude、zcode、workbuddy、opencode、hermes、antigravity、doubao），{token} 换成一个这次独有的暗号（例如 T1020A7），{session} 用 test-{agent}：同一家的测试都在这一个会话里做，不每题开新会话。",
+    "一道题可以在几个位置测：center 是经中心（agent_gateway.js 或 8899 接口，记为 L2），web 是在网页 /m/ 上点（记为 L3），native 是绕过中心直接用这家自己的入口（命令行、接口、桌面端，记为 L0，入口见 channels/hosts/<产品>.md 和研究卷宗）。题里写了哪个位置就测哪个；没写的位置照同一个判据自己找入口。",
+    "照 pass 判：看到的现象全对上才算 pass；部分对上记 partial，并写缺了哪条；没跑通记 fail，并写断在哪一步、原样的报错。fail 里列的是常见的假通过，遇到要当 fail。",
+    "不打扰用户：不对用户正在用的会话和窗口发话，不动鼠标键盘；要开会话就开 test- 开头的。"
+  ],
+  "record": "测完就记，一题一行：node hub/tools/agent_gateway.js bb add --by <你的产品或会话名> --family {agent} --capability <单元> --result pass|partial|fail --route {agent}/<L0|L2|L3>/<入口，例如 center-cli、m-page、acp> --condition \"<版本、模型、前提>\" --evidence \"<实际跑的命令和看到的原样结果，带暗号>\"",
+  "tests": {
+    "open": {
+      "do": "新建一个会话，第一句让它只回一行暗号。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session test-open-{agent}-{token} --prompt \"只回复一行：{token}。不要调用任何工具。\""
+      ],
+      "web": "在 /m/ 点新建，选 {agent}，发同一句话。",
+      "pass": "这一轮完成，回复里有 {token}；sessions --agent {agent} 能列出这个新会话。",
+      "fail": "回复是之前别的会话的内容；命令超时但会话里其实没有这一轮。",
+      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit open"
+    },
+    "resume": {
+      "do": "在已有会话里接着说话，让它说出上一轮的暗号。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"记住暗号 {token}，只回复：记住了。\"",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"上一轮让你记住的暗号是什么？只回复暗号。\""
+      ],
+      "pass": "第二轮回复是 {token}，两轮在同一个会话里（session --id 看到两轮）。",
+      "fail": "第二轮开了新会话、答不出暗号；答出来但是因为提示词里带了暗号。",
+      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit resume"
+    },
+    "cancel": {
+      "do": "让它做一件要跑一会儿的事，中途打断，再让它接着答一句。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"从 1 数到 300，每个数单独一行。\"  （另开一个终端，5 秒内执行下一条）",
+        "node hub/tools/agent_gateway.js cancel --agent {agent} --session {session}",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"只回复：{token}\""
+      ],
+      "pass": "第一轮停在中途（状态是打断，没数完），最后一轮在同一个会话里回了 {token}。",
+      "fail": "打断后第一轮其实数完了；打断后会话坏了、只能开新会话。",
+      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit cancel"
+    },
+    "steer": {
+      "do": "它正在干活时插一句话，看它在这一轮里照做。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"慢慢列出 30 种水果，每种一行。\"  （另开终端，几秒内执行下一条）",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"插话：列完后最后一行写 {token}\""
+      ],
+      "pass": "同一轮的回复末尾有 {token}，没有多出一个新的一轮（state 或 session --id 看轮数）。",
+      "fail": "插的话排到了下一轮才执行，这是排队不是插话，记 partial 并写明。"
+    },
+    "ask-user": {
+      "do": "让它在一轮中途向人提问，人答完它在同一轮里用上答案。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"先用你的提问工具问我：苹果还是香蕉？等我答了，再只回复我选的水果和 {token}。\"",
+        "node hub/tools/agent_gateway.js state  （找到待答问题的编号）",
+        "node hub/tools/agent_gateway.js answer --id <问题编号> --text 香蕉"
+      ],
+      "web": "/m/ 上出现问题卡，点“香蕉”。",
+      "pass": "state 里出现待答问题；答完同一轮回复里有“香蕉”和 {token}。",
+      "fail": "它没调提问工具，只在回复里写了问题就结束（那是普通回复，不是提问）；答案到了下一轮。"
+    },
+    "recall-history": {
+      "do": "让它翻回很早的对话取回原话。",
+      "center": [
+        "node hub/tools/agent_gateway.js recall --agent {agent} --session {session} --grep {token} --who user"
+      ],
+      "pass": "取回的原话和会话记录里一致，带轮次；在被压缩过的会话里也能取回压缩前的原话。",
+      "fail": "取回的是摘要不是原话；只在没压缩的会话里测过就记 pass（要写明条件）。"
+    },
+    "native-meta": {
+      "do": "不发话，读这家会话的元数据：标题、工作目录、模型、更新时间、状态。",
+      "center": [
+        "node hub/tools/agent_gateway.js sessions --agent {agent} --limit 5",
+        "node hub/tools/agent_gateway.js session --id <上一条列出的会话编号> --tail 1"
+      ],
+      "pass": "五项都有，和这家自己的界面或存储（见宿主卡）对得上。",
+      "fail": "字段是中心自己编的默认值（比如模型写成产品默认模型而会话实际用的不是）。"
+    },
+    "act-deliver": {
+      "do": "派一件小活给它，它用交回命令交回，派活方拿到结构化结果。",
+      "center": [
+        "node hub/tools/agent_gateway.js dispatch --to {agent} --to-session {session} --task \"写一句话介绍你自己，结尾带 {token}，然后按派活单的要求交回。\"",
+        "node hub/tools/agent_gateway.js dispatches  （看这张单的状态和回执）"
+      ],
+      "pass": "单子走完 issued→delivered→seen→returned，交回内容有 {token}，交回方式是它主动交回（不是中心在轮末替它收）。",
+      "fail": "单子显示交回但内容是中心在轮末抓的最后一段话：记 partial 并写明是轮末收回。"
+    },
+    "task-board": {
+      "do": "建一个两步的目标，第二步依赖第一步，指定另一家验收。",
+      "center": [
+        "node hub/tools/agent_gateway.js goal --file <目标文件>  （两个任务：a 回复 {token}-A；b 依赖 a，回复 a 的结果加 -B；verifyBy agent:claude）",
+        "node hub/tools/agent_gateway.js goals"
+      ],
+      "pass": "a 先派、过验收后 b 才派，b 的说明里带着 a 的交回，目标最后 completed。",
+      "fail": "b 和 a 同时派了；验收是中心自动过的而不是另一家判的。",
+      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit task-board"
+    },
+    "quota": {
+      "do": "查这家（或它的额度账号）还剩多少、什么时候刷新。",
+      "center": [
+        "node hub/tools/agent_gateway.js quota  （各家额度卡）",
+        "node hub/tools/agent_gateway.js state  （中心记下的额度冷却和恢复时刻）"
+      ],
+      "pass": "给出剩余量或“用完、几点恢复”，和这家自己的面板或报错对得上。",
+      "fail": "只给了产品表里写死的说明，没有这一刻的数。"
+    },
+    "computer-use": {
+      "do": "让它在一个桌面应用里做一件别人能核对的事，不占用用户的屏幕和鼠标。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"在后台打开记事本（或你能操作的任一应用），写入 {token}，保存到 channels/probe/tmp/cu-{agent}-{token}.txt，然后告诉我文件路径。\""
+      ],
+      "pass": "文件存在、内容是 {token}；测试期间用户的鼠标和前台窗口没被动过。",
+      "fail": "它用写文件工具直接写了文件，没有操作应用：这测的是写文件，不是操作电脑。"
+    },
+    "ui-usage": {
+      "do": "在网页上看一个会话的用量：上下文占用、token、费用或额度。",
+      "web": "在 /m/ 打开 {session}，看用量显示。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <会话编号> --tail 1  （拿记录里的用量数字对照）"
+      ],
+      "pass": "网页上的数字和会话记录里的一致（误差只来自刷新时间）。",
+      "fail": "网页显示的是估算或占位数。"
+    }
+  }
+}
