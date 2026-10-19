@@ -473,3 +473,30 @@ gl.push('');
 map.splice(6, 0, ...gl);
 fs.writeFileSync(path.join(DIR, 'CAPABILITY_MAP.md'), map.join('\n') + '\n', 'utf8');
 console.log('CAPABILITY_MAP.md:', units.length, 'units;', theory.size, 'with theoretical limits; gaps at the top');
+
+// The same cells as data, for pages that draw the matrix: per unit and product, each place's state
+// (pass / partial / unverified / fail / desktop = seen in the desktop app only / fake) and the gap.
+const state = (c) => (!c ? null : c.desktopSays ? 'desktop' : c.fake ? 'fake' : c.res);
+const PROD7 = ['claude', 'codex', 'antigravity', 'zcode', 'workbuddy', 'opencode', 'hermes'];
+const matrix = {
+  generatedAt: new Date().toISOString(),
+  products: PROD7,
+  places: L4,
+  scales: [...Object.keys(SCALE), '未归尺度'],
+  units: units.map((u) => ({
+    id: u.id,
+    name: u.name,
+    hci: isHci(u),
+    candidate: /候选/.test(String(u.category || '')),
+    scale: isHci(u) ? '人机交互' : scaleOf[u.id] || '未归尺度',
+    theory: theory.has(u.id),
+    cells: Object.fromEntries(
+      PROD7.map((f) => {
+        const cs = {};
+        for (const L of L4) cs[L] = cellOf(f, u.id, L);
+        return [f, { ...Object.fromEntries(L4.map((L) => [L, state(cs[L])])), how: short((cs.front || cs.adapter || cs.api || cs.app || {}).how, 60), gap: gap(u, f, cs) }];
+      }),
+    ),
+  })),
+};
+fs.writeFileSync(path.join(DIR, 'capability-matrix.json'), JSON.stringify(matrix) + '\n', 'utf8');
