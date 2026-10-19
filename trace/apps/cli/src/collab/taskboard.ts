@@ -582,6 +582,8 @@ export class TaskBoard {
       `验收标准：${t.acceptance || '完成了任务说的事，结果可信'}`,
       `它交回的内容：\n${text.slice(0, 6000)}`,
       t.delivery?.files.length ? `它说改动或产出的文件：${t.delivery.files.join('，')}（需要的话自己打开看）` : '',
+      // A hand-back's numbers are checked, not trusted (10-19: “8 rows” was 5).
+      `它说记了黑板的，用 node hub/tools/agent_gateway.js bb find --family <产品> --capability <单元> --since ${g.createdAt} 核对行号和行数；说的和查到的对不上就 FAIL。任务对应测试题的，照题里的“通过”判（node hub/tools/agent_gateway.js test --unit <单元> --agent <产品> 可打印）。`,
       `交回时，第一行只写 PASS 或 FAIL，第二行起写理由；FAIL 时写清楚要怎么改。`,
     ].filter(Boolean);
     try {

@@ -1759,8 +1759,31 @@ function cmdFeature(args) {
 // It goes to the center (POST /api/gateway/records), which stamps the time and appends; nobody else writes the file.
 function cmdBlackboard(args) {
   const sub2 = args._[1];
+  // bb find: rows by product, unit, writer, time — to check a hand-back's claims (“记了 8 行”) against the board.
+  //   bb find [--family X] [--capability U] [--by W] [--since <ISO 时间>] [--limit 20]
+  if (sub2 === 'find') {
+    const rows = fs.readFileSync(path.join(CHANNELS_DIR, 'probe', 'blackboard.jsonl'), 'utf8').split(/\r?\n/);
+    const hits = [];
+    rows.forEach((l, i) => {
+      if (!l.trim()) return;
+      let r;
+      try {
+        r = JSON.parse(l);
+      } catch {
+        return;
+      }
+      if (args.family && r.family !== args.family) return;
+      if (args.capability && r.capability !== args.capability) return;
+      if (args.by && r.by !== args.by) return;
+      if (args.since && !(String(r.at || '') >= String(args.since))) return;
+      hits.push(`${i + 1}  ${r.at || '?'}  ${r.by}  ${r.family}/${r.capability}  ${r.result}  ${r.route || r.layer || ''}  ${String(r.evidence || '').replace(/\s+/g, ' ').slice(0, 100)}`);
+    });
+    console.log(`${hits.length} 行（行号 时间 记录人 产品/单元 结果 位置 证据）`);
+    for (const h of hits.slice(-Number(args.limit || 20))) console.log(h);
+    process.exit(0);
+  }
   if (sub2 !== 'add') {
-    console.error(JSON.stringify({ ok: false, error: 'bb add --by … --family … --capability … --result … --route … --evidence …' }));
+    console.error(JSON.stringify({ ok: false, error: 'bb add --by … --family … --capability … --result … --route … --evidence …；查：bb find --family … --capability … --since …' }));
     process.exit(1);
   }
   const bad = [];
@@ -1827,24 +1850,45 @@ function cmdTest(args) {
     for (const u of miss) console.log(`  ${u.id}  ${u.name}  ——  ${u.judge}`);
     process.exit(0);
   }
-  const u = units.find((x) => x.id === args.unit);
-  const t = T.tests[args.unit];
-  if (!u || !t) {
-    console.error(JSON.stringify({ ok: false, error: u ? `单元 ${args.unit} 还没有测试题（test --missing 看全部）` : `没有单元 ${args.unit}` }));
+  const q = require('./goal_gen.js').renderTest(args.unit, args.agent || '{agent}', args.token);
+  if (!q) {
+    const known = units.some((x) => x.id === args.unit);
+    console.error(JSON.stringify({ ok: false, error: known ? `单元 ${args.unit} 还没有测试题（test --missing 看全部）` : `没有单元 ${args.unit}` }));
     process.exit(1);
   }
-  const agent = args.agent || '{agent}';
-  const token = args.token || `T${new Date().toISOString().replace(/\D/g, '').slice(4, 10)}${Math.random().toString(36).slice(2, 4).toUpperCase()}`;
-  const fill = (s) => String(s).replace(/\{session\}/g, `test-${agent}`).replace(/\{agent\}/g, agent).replace(/\{token\}/g, token);
-  const out = [`# 测试题：${u.name}（${u.id}）· ${agent} · 暗号 ${token}`, '', `做什么：${fill(t.do)}`, `单元定义：${u.definition}；怎样算做到：${u.judge}`];
-  if (t.center) out.push('', '经中心（记 L2）：', ...t.center.map((c) => '  ' + fill(c)));
-  if (t.web) out.push('', '在网页（记 L3）：' + fill(t.web));
-  if (t.native) out.push('', '原生入口（记 L0）：' + fill(t.native));
-  out.push('', `通过：${fill(t.pass)}`);
-  if (t.fail) out.push(`当心（遇到记 fail 或 partial）：${fill(t.fail)}`);
-  if (t.auto) out.push(`自动测法：${fill(t.auto)}`);
-  out.push('', '通用规矩：', ...T.howToTest.map((h) => '  - ' + h), '', '记录：', '  ' + fill(T.record).replace('<单元>', u.id));
-  console.log(out.join('\n'));
+  console.log([...q.lines, '', '通用规矩：', ...T.howToTest.map((h) => '  - ' + h), '', '记录：', '  ' + q.record].join('\n'));
+  process.exit(0);
+}
+
+// goal-gen: a goal written from the test questions or the matrix gaps (hub/tools/goal_gen.js); prints it, or with
+// --go hands it to the task board. Nobody hand-writes goal files, and a task is accepted by its test question.
+//   goal-gen test --agents doubao,zcode --units open,resume [--go]
+//   goal-gen gaps --kind untested|build|research [--agents ..] [--units ..] [--limit N] [--go]
+//   options: --tester zcode --tester-model glm-5.3-flash --dev codex --verify claude
+function cmdGoalGen(args) {
+  let goal;
+  try {
+    goal = require('./goal_gen.js').generate(args);
+  } catch (e) {
+    console.error(JSON.stringify({ ok: false, error: e.message }));
+    process.exit(1);
+  }
+  if (!args.go) {
+    console.log(JSON.stringify(goal, null, 2));
+    console.error(`（只打印了：${goal.tasks.length} 个任务。加 --go 交给任务板）`);
+    process.exit(0);
+  }
+  if (!ensureSharedDaemon()) {
+    console.error(JSON.stringify({ ok: false, error: 'the 8899 daemon is not running and could not be started' }));
+    process.exit(2);
+  }
+  const res = callSharedDaemon('/api/gateway/goals', 'POST', { ...goal, cwd: ROOT_DIR }, 60);
+  if (!res || !res.ok) {
+    console.error(JSON.stringify({ ok: false, error: (res && res.error) || 'goal failed' }));
+    process.exit(1);
+  }
+  const g = res.goal || res;
+  console.log(JSON.stringify({ ok: true, id: g.id, title: g.title, tasks: goal.tasks.map((t) => `${t.key} → ${t.channel}/${t.session}`) }, null, 2));
   process.exit(0);
 }
 
@@ -2016,6 +2060,7 @@ function main() {
   if (sub === 'goals' || sub === 'goal' || sub === 'goal-action' || sub === 'task-action') return cmdGoal(args, sub);
   if (sub === 'recall') return cmdRecall(args);
   if (sub === 'test') return cmdTest(args);
+  if (sub === 'goal-gen') return cmdGoalGen(args);
   if (sub === 'feature') return cmdFeature(args);
   if (sub === 'note') return cmdNote(args);
   if (sub === 'bb') return cmdBlackboard(args);
@@ -2039,7 +2084,7 @@ function main() {
     console.log(problems.length ? `核对：${problems.length} 处对不上\n` + problems.map((x) => '  - ' + x).join('\n') : '核对：四张表和代码全部对上');
     return;
   }
-  console.error(`Unknown subcommand: ${sub}. Expected: targets | status | quota | run | read | wait | cancel | handoff | dispatch | dispatches | dispatch-wait | deliver | report | yield | reclaim | patrol | tables | test`);
+  console.error(`Unknown subcommand: ${sub}. Expected: targets | status | quota | run | read | wait | cancel | handoff | dispatch | dispatches | dispatch-wait | deliver | report | yield | reclaim | patrol | tables | test | goal-gen`);
   process.exit(1);
 }
 
