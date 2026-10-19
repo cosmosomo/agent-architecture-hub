@@ -1513,6 +1513,45 @@ function cmdFeature(args) {
   process.exit(0);
 }
 
+// bb add: the one way to write the blackboard (channels/probe/blackboard.jsonl). It only appends, stamps the time
+// itself, and needs who wrote it (AGENTS.md 铁律 1、2). 10-19 the blackboard was rewritten whole by an agent and fell
+// from ~2600 rows to 18.
+//   bb add --by <你的产品或会话名> --family <产品> --capability <单元 id> --result pass|partial|fail|unverified
+//          --route <产品>/<L0|L1a|L1b|L2|L3>/<入口> --evidence <实际调用和返回> [--cmd <可复跑的命令>] [--condition] [--note]
+function cmdBlackboard(args) {
+  const sub2 = args._[1];
+  if (sub2 !== 'add') {
+    console.error(JSON.stringify({ ok: false, error: 'bb add --by … --family … --capability … --result … --route … --evidence …' }));
+    process.exit(1);
+  }
+  const bad = [];
+  for (const k of ['by', 'family', 'capability', 'route', 'evidence']) if (!String(args[k] || '').trim()) bad.push('--' + k);
+  if (!['pass', 'partial', 'fail', 'unverified'].includes(args.result)) bad.push('--result pass|partial|fail|unverified');
+  if (/^claude-lead/.test(String(args.by || '')) && !process.env.HUB_LEAD) bad.push('--by 写你自己，不用 claude-lead');
+  const m = /^[\w-]+\/(L0|L1a|L1b|L2|L3)\/\S+$/.exec(String(args.route || ''));
+  if (args.route && !m) bad.push('--route <产品>/<L0|L1a|L1b|L2|L3>/<入口>');
+  if (bad.length) {
+    console.error(JSON.stringify({ ok: false, error: '缺少或填错：' + bad.join('，') }));
+    process.exit(1);
+  }
+  const row = {
+    at: new Date().toISOString(),
+    by: String(args.by),
+    family: String(args.family),
+    layer: m[1],
+    route: String(args.route),
+    capability: String(args.capability),
+    result: args.result,
+    condition: args.condition ? String(args.condition) : undefined,
+    evidence: String(args.evidence),
+    cmd: args.cmd ? String(args.cmd) : undefined,
+    note: args.note ? String(args.note) : undefined,
+  };
+  fs.appendFileSync(path.join(ROOT_DIR, 'channels', 'probe', 'blackboard.jsonl'), JSON.stringify(row) + '\n');
+  console.log(JSON.stringify({ ok: true, appended: row }));
+  process.exit(0);
+}
+
 // note: a remark on one capability of one product — a registered unit (its id) or a feature (its name): what it costs,
 // how fast or steady it is, and free tags (用户 10-19：“各项能力都可以加注释，比如成本评估，性能评估，特征标记什么的”).
 // Appends to channels/probe/annotations.jsonl; the matrix page shows the latest remark per product and capability.
@@ -1707,6 +1746,7 @@ function main() {
   if (sub === 'recall') return cmdRecall(args);
   if (sub === 'feature') return cmdFeature(args);
   if (sub === 'note') return cmdNote(args);
+  if (sub === 'bb') return cmdBlackboard(args);
   if (['sessions', 'session', 'search', 'state', 'pick', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
   if (sub === 'deliver') return cmdCollabEvent(args, 'deliver');
   if (sub === 'report') return cmdCollabEvent(args, 'report');

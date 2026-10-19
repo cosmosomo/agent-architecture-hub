@@ -547,6 +547,8 @@ export const collabMethods = {
           `   - 阻塞并让出："${nodeBin}" "${gwToolPath}" yield --id ${id} --waiting-for "等待的输入或条件"`,
           `2. 结构化尾注交回（无需调工具）：在回复末尾写一行 \`【交回】一句话结论\` 或 \`【让出：等待什么】\`。`,
           // Unit recall-history: the center reads every session in full, so any agent can look back over its own.
+          // Every dispatched agent sees these, whatever folder it works in (10-19: an agent rewrote the blackboard whole).
+          `【铁律】共享记录只追加：写黑板只用 "${nodeBin}" "${gwToolPath}" bb add …，不把整个文件读出再写回、不排序去重、不改旧行；署名写你自己（${toProf.id} 或 ${toSessionName}），不冒用别人；不删、不覆盖别人的文件；不打扰用户的会话、窗口、鼠标键盘；不写明文密钥。全文：${join(this.repoRoot, 'AGENTS.md').replace(/\\/g, '/')}`,
           `【回顾这个会话过去的对话】（含已被压缩掉的部分）："${nodeBin}" "${gwToolPath}" recall --agent ${toProf.id} --session ${toSessionName} [--grep 关键词] [--last 5] [--who user|agent|all]`,
         ]
           .filter(Boolean)

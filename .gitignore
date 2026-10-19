@@ -52,3 +52,6 @@ channels/probe/scripts/**/*_result.json
 
 # Generated matrix page (channels/probe/scripts/build_coverage.js), published as an artifact
 channels/probe/capability-matrix.html
+
+# Blackboard copies: backups, damaged and restored versions (evidence stays out of the public repo)
+channels/probe/blackboard.*

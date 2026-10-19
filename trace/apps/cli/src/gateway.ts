@@ -34,6 +34,7 @@ import { collabMethods } from './gateway/collab.ts';
 import { metaMethods } from './gateway/meta.ts';
 import { capacityMethods, loadQuotaCooldowns } from './gateway/capacity.ts';
 import { classifyFailure } from './gateway/failure.ts';
+import { guardMethods } from './gateway/guard.ts';
 
 // Everything above the class lives in gateway/: types, products, common. Re-exported for the callers.
 export type { ChannelId, MetaAgentId, MetaAgentConfig, MetaAgentLogEntry, ChannelCapabilities, ChannelProfile, LiveToolCall, QueuedPrompt, ActiveRun, AcpxSessionInfo, PendingQuestion, PendingApproval, ExternalSessionAnomaly, DispatchReceiptState, DispatchStatus, DispatchRecord } from './gateway/types.ts';
@@ -152,6 +153,9 @@ export class AgentGatewayHub {
     this.loadRecentRuns();
     this.loadDispatches();
     if (!BACKGROUND) return;
+    // Shared append-only records stay append-only (gateway/guard.ts, AGENTS.md 铁律 1).
+    this.guardAppendOnly();
+    setInterval(() => this.guardAppendOnly(), 60_000).unref?.();
     this.startMetaPatrolLoop();
     // Dispatches that ended while the service was down, then the board's own steps (budget, stall, unblock).
     for (const d of this.dispatches.values()) this.taskboard.onDispatch(d);
@@ -1308,6 +1312,11 @@ Object.assign(AgentGatewayHub.prototype, collabMethods);
 type MetaMethods = typeof metaMethods;
 export interface AgentGatewayHub extends MetaMethods {}
 Object.assign(AgentGatewayHub.prototype, metaMethods);
+
+// guardMethods: gateway/guard.ts
+type GuardMethods = typeof guardMethods;
+export interface AgentGatewayHub extends GuardMethods {}
+Object.assign(AgentGatewayHub.prototype, guardMethods);
 
 // capacityMethods: gateway/capacity.ts
 type CapacityMethods = typeof capacityMethods;
