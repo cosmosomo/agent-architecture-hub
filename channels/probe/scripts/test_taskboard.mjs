@@ -178,6 +178,13 @@ const taskOf = (g, key) => board.tasksOf(board.getGoal(g.id)).find((t) => t.key 
   check('恢复后派出', sent.length === before + 1 && t.status === 'dispatched' && !t.waitingWhy, `${sent.length - before} ${t.status}`);
 }
 
+// 6e. a task can name a fixed session (a researcher's research-<topic>), kept across goals
+{
+  const g = board.createGoal({ title: '固定会话', objective: 'x', channel: 'codex', tasks: [{ key: 'a', title: '续研', session: 'research-codex' }] });
+  await tick();
+  check('任务带 session 就派到那个固定会话', taskOf(g, 'a').sessionName === 'research-codex' && last().toSessionName === 'research-codex', `${taskOf(g, 'a').sessionName} ${last().toSessionName}`);
+}
+
 // 7. the view: graph and trajectory
 {
   const g = board.listGoals().find((x) => x.title === '两步');

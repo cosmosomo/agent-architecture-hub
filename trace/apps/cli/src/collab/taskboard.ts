@@ -117,6 +117,9 @@ export interface CreateGoalParams {
     candidates?: string[];
     model?: string;
     verifyBy?: VerifyBy;
+    /** A fixed session to work on, e.g. a researcher's research-<topic> (channels/research/README.md): its context
+     *  carries over from one goal to the next. Without it each task gets a session of its own. */
+    session?: string;
   }>;
 }
 
@@ -287,7 +290,7 @@ export class TaskBoard {
         ...(ch === 'auto' ? { auto: { candidates: t.candidates || p.candidates || [], excluded: [] } } : {}),
         model: t.model || p.model,
         verifyBy: t.verifyBy || p.verifyBy || 'human',
-        sessionName: `goal-${id.slice(5, 11)}-${keys[i]}`.replace(/[^a-zA-Z0-9._-]/g, '_'),
+        sessionName: (t.session || `goal-${id.slice(5, 11)}-${keys[i]}`).replace(/[^a-zA-Z0-9._-]/g, '_'),
         epoch: 0,
         activeDispatchId: null,
         verifierDispatchId: null,
