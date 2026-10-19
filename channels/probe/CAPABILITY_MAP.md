@@ -1,21 +1,21 @@
 # 功能矩阵：每个单元在各家、各位置上的理论上限与现状（由黑板、integration-map 和完整性检查生成，勿手改）
 
-生成时间：2026-10-19T08:54:28.977Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
+生成时间：2026-10-19T11:15:43.558Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
 
 标记：✓ 有行为证据（后面是实现路径）；◐ 部分；? 未验证；✗ 不通；✗假 界面有、实际是别的办法模拟；有（截图/代码） 桌面端界面这一列靠截图或代码分析得出、不是行为实测（这批来自调研，未逐格核）；· 没有记录。
 
 ## 现在还缺什么（外层：按 README“立体认知”的轴把现在的差摆出来）
 
-README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-19T08:54:28.982Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
+README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-19T11:15:43.564Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
 
 **每一层：理论极限、我们的目标、现状、依据记在哪**（一格 = 一个能力单元在一个产品）
 
 | 层 | 理论极限 | 我们的目标 | 现状 | 依据记在哪、记什么 |
 |---|---|---|---|---|
-| 理论 | 每个能力单元最多做到哪、卡在哪、最多补齐到哪一级 | 每个单元都推出来 | 76 / 82 个单元已推 | 设计目录《完整性检查》4.2：上限、靠什么、根本限制、最多补齐到 |
-| 原生面 | 那一级循环开放的时机 × 通向它的入口 | 每格查清：原生能做，或要补齐到哪一级 | 200 / 574 格已证实 | 黑板 route = <产品>/L0 或 L1a/<入口>：命令、原始输出、产品版本、日期 |
-| 适配路线 | 路线挂的那个原生面能给的 | 每个产品走能力最高的路线 | 实测通过的格：经 acpx 命令行 66、直连 ACP 桥（嵌入 acpx 运行时可达） 69、直连 app-server 26、直连 Connect-RPC ＋ agentapi 27、驱动原生命令行 98、直连 CDP 操作桌面端界面 0、经 OpenCLI 操作桌面端界面 9 | 黑板 route = <产品>/L1b/acpx 等 |
-| 后端 | 原生面能给的，加上我们当宿主补齐的（两个会话之间、一群会话全由我们） | 全部能力单元；补齐写明搬到哪一级 | 307 / 574 格已接：实测通过 244、部分 14、补齐 41、实现了未测 8 | `hub/data/integration-map.json`：action、status、fillLevel；实测记黑板 route = <产品>/L2/server-api |
+| 理论 | 每个能力单元最多做到哪、卡在哪、最多补齐到哪一级 | 每个单元都推出来 | 82 / 82 个单元已推 | 设计目录《完整性检查》4.2：上限、靠什么、根本限制、最多补齐到 |
+| 原生面 | 那一级循环开放的时机 × 通向它的入口 | 每格查清：原生能做，或要补齐到哪一级 | 209 / 574 格已证实 | 黑板 route = <产品>/L0 或 L1a/<入口>：命令、原始输出、产品版本、日期 |
+| 适配路线 | 路线挂的那个原生面能给的 | 每个产品走能力最高的路线 | 实测通过的格：经 acpx 命令行 66、直连 ACP 桥（嵌入 acpx 运行时可达） 69、直连 app-server 26、直连 Connect-RPC ＋ agentapi 27、驱动原生命令行 100、直连 CDP 操作桌面端界面 0、经 OpenCLI 操作桌面端界面 9 | 黑板 route = <产品>/L1b/acpx 等 |
+| 后端 | 原生面能给的，加上我们当宿主补齐的（两个会话之间、一群会话全由我们） | 全部能力单元；补齐写明搬到哪一级 | 308 / 574 格已接：实测通过 247、部分 14、补齐 39、实现了未测 8 | `hub/data/integration-map.json`：action、status、fillLevel；实测记黑板 route = <产品>/L2/server-api |
 | 网页 | 后端已接的，加上人机交互单元 | 桌面端有的都有，再加我们独有的（待处理、协作图） | 127 / 574 格网页用得到；桌面端有、网页没有 10 项 | integration-map 的 frontend；实测记黑板 route = <产品>/L3/m |
 | 命令行网关 | 后端的全部动作 | 全部动作 | 23 / 40 个动作有子命令 | `hub/data/actions.json` 的 cli；实测记黑板 route = <产品>/L2/agent_gateway |
 
@@ -24,11 +24,11 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 尺度 | 格数 | 原生面已证实 | 后端已接：实测通过、部分或补齐 | 后端已接：实现了未测 | 网页上用得到 |
 |---|---|---|---|---|---|
 | 一轮之内 | 70 | 28 | 35 | 0 | 36 |
-| 一个会话 | 245 | 114 | 136 | 3 | 40 |
-| 两个会话之间（我们当宿主） | 84 | 18 | 58 | 0 | 21 |
+| 一个会话 | 245 | 119 | 136 | 3 | 40 |
+| 两个会话之间（我们当宿主） | 84 | 19 | 58 | 0 | 21 |
 | 一群会话（我们当宿主） | 35 | 11 | 31 | 4 | 9 |
-| 底座 | 98 | 29 | 39 | 1 | 21 |
-| 高阶能力 | 42 | 0 | 0 | 0 | 0 |
+| 底座 | 98 | 32 | 39 | 1 | 21 |
+| 高阶能力 | 42 | 0 | 1 | 0 | 0 |
 
 **按产品看**（分母是能力单元总数；“网页对桌面端”的分母是这个产品桌面端有的人机交互单元）
 
@@ -36,26 +36,26 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 |---|---|---|---|---|---|
 | claude | 59% | 35% | 45% | 62% | 没查 |
 | codex | 56% | 34% | 44% | 64% | 71% |
-| antigravity | 56% | 46% | 35% | 55% | 70% |
+| antigravity | 59% | 46% | 38% | 55% | 70% |
 | zcode | 60% | 38% | 48% | 68% | 72% |
-| workbuddy | 48% | 23% | 44% | 84% | 71% |
+| workbuddy | 55% | 34% | 45% | 71% | 71% |
 | opencode | 49% | 26% | 41% | 71% | 没查 |
 | hermes | 59% | 41% | 40% | 56% | 没查 |
 
-**自己做**（91 格：原生已证实而后端没接，或这一级本来就由我们当宿主；按涉及的家数排，列前十）
+**自己做**（95 格：原生已证实而后端没接，或这一级本来就由我们当宿主；按涉及的家数排，列前十）
 
 - 通知人（notify-user，两个会话之间）：claude、codex、antigravity、zcode、workbuddy、opencode、hermes
 - 交给人接手（handover-human，两个会话之间）：claude、codex、antigravity、zcode、workbuddy、opencode、hermes
 - 原生应用同步可见（app-sync，两个会话之间）：claude、codex、antigravity、zcode、workbuddy、opencode、hermes
 - 终端（terminal，底座）：claude、codex、antigravity、zcode、opencode、hermes
 - 探测本机（probe-host，底座）：codex、antigravity、zcode、workbuddy、opencode、hermes
+- 删除会话（delete，一个会话）：claude、codex、antigravity、workbuddy、opencode、hermes
 - 智能体间发消息（peer-message，两个会话之间）：claude、codex、antigravity、workbuddy、hermes
 - 设定角色说明（instructions，一个会话）：codex、antigravity、zcode、workbuddy、hermes
-- 删除会话（delete，一个会话）：claude、codex、antigravity、opencode、hermes
 - 分叉（fork，一个会话）：claude、antigravity、opencode、hermes
-- 挂接工具（mount-tools，一个会话）：claude、antigravity、zcode、hermes
+- 定时唤醒（wake-timer，一个会话）：antigravity、zcode、workbuddy、hermes
 
-**后端只做了一部分**（55 格；还缺的写在 `hub/data/integration-map.json` 那一条的 note 里）
+**后端只做了一部分**（53 格；还缺的写在 `hub/data/integration-map.json` 那一条的 note 里）
 
 - 目标与预算（goal）：claude、codex、antigravity、zcode、workbuddy、opencode、hermes
 - 渠道健康与熔断（channel-health）：claude、codex、antigravity、zcode、workbuddy、opencode、hermes
@@ -63,8 +63,8 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 并发容量（capacity）：claude、codex、antigravity、zcode、workbuddy、opencode、hermes
 - 循环熔断（loop-guard）：claude、codex、antigravity、zcode、workbuddy、opencode、hermes
 - 注入·下一轮（inject-next）：claude、codex、zcode、workbuddy、opencode、hermes
-- 回顾对话记录（recall-history）：claude、codex、antigravity、zcode、workbuddy、hermes
 - 插话（注入）（steer）：claude、zcode、workbuddy、opencode、hermes
+- 回顾对话记录（recall-history）：claude、codex、zcode、hermes
 - 关闭会话（close）：codex、zcode
 - 切模式（mode-switch）：antigravity
 
@@ -74,7 +74,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 压缩上下文（compact）：workbuddy、opencode、hermes
 - 可用命令清单（cmd-list）：claude
 
-**派研究**（176 格：这一级由各家当宿主，原生面和后端都没证实；按涉及的家数排，列前十，注明理论上限推了没有）
+**派研究**（171 格：这一级由各家当宿主，原生面和后端都没证实；按涉及的家数排，列前十，注明理论上限推了没有）
 
 - 人中途插话（human-steer，一轮之内）：7 家；理论上限已推
 - 浏览器（browser，高阶能力）：7 家；理论上限已推
@@ -82,10 +82,10 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 借道采样（sampling，底座）：7 家；理论上限已推
 - 记忆开关（memory-mode，一个会话）：7 家；理论上限已推
 - 渠道租约（channel-lease，底座）：7 家；理论上限已推
-- 列工作区文件（workspace-files，底座）：7 家；理论上限已推
 - 写回原生元数据（native-meta-write，一个会话）：7 家；理论上限已推
-- 操作电脑（computer-use，高阶能力）：7 家；理论上限还没推
-- 联网搜索（web-search，高阶能力）：7 家；理论上限还没推
+- 操作电脑（computer-use，高阶能力）：7 家；理论上限已推
+- 深度调研（deep-research，高阶能力）：7 家；理论上限已推
+- 生成图片（image-gen，高阶能力）：7 家；理论上限已推
 
 **桌面端有、网页还没做或没做全的人机交互单元**（按有它的家数排）
 
@@ -93,7 +93,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 **认知本身还缺什么**
 
-- 理论上限还没推的单元：回顾对话记录、操作电脑、联网搜索、深度调研、生成图片、生成办公文档
+- 理论上限还没推的单元：无
 - 桌面端（人机交互）没有数据的家：claude、opencode、hermes
 - 适配路线有实测的：经 OpenCLI antigravity 5 格、zcode 6 格；直连 CDP 无
 - 没归到尺度的能力单元：无
@@ -118,7 +118,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 ### 理论能力
 
-82 个能力单元里 76 个已推出理论上限（完整性检查 4.2；逐个单元见下文各节“理论上限”）。按 README“立体认知”里“理论极限”一段，每个单元在每家理论上都至少能补齐到“新建会话 ＋ 文件”一级，所以理论覆盖率按档看：原生、换入口、宿主补齐、兜底。下面几个矩阵的分母都是全部能力单元，差额就是离理论上限的距离。
+82 个能力单元里 82 个已推出理论上限（完整性检查 4.2；逐个单元见下文各节“理论上限”）。按 README“立体认知”里“理论极限”一段，每个单元在每家理论上都至少能补齐到“新建会话 ＋ 文件”一级，所以理论覆盖率按档看：原生、换入口、宿主补齐、兜底。下面几个矩阵的分母都是全部能力单元，差额就是离理论上限的距离。
 
 ### 实际能力、原生接口与适配器
 
@@ -126,9 +126,9 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 |---|---|---|---|---|
 | claude | 48（59%） | 29（35%） | 37（45%） | 62% |
 | codex | 46（56%） | 28（34%） | 36（44%） | 64% |
-| antigravity | 46（56%） | 38（46%） | 29（35%） | 55% |
+| antigravity | 48（59%） | 38（46%） | 31（38%） | 55% |
 | zcode | 49（60%） | 31（38%） | 39（48%） | 68% |
-| workbuddy | 39（48%） | 19（23%） | 36（44%） | 84% |
+| workbuddy | 45（55%） | 28（34%） | 37（45%） | 71% |
 | opencode | 40（49%） | 21（26%） | 34（41%） | 71% |
 | hermes | 48（59%） | 34（41%） | 33（40%） | 56% |
 | gemini | 4（5%） | 0（0%） | 4（5%） | — |
@@ -142,7 +142,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | 26（32%） | · | · | · | 12（15%） | · | 4（5%） | · | 8（10%） |
 | antigravity | 4（5%） | · | 20（24%） | 15（18%） | · | · | 10（12%） | 6（7%） | 6（7%） | · |
 | zcode | 5（6%） | · | · | · | · | 5（6%） | 6（7%） | 4（5%） | 2（2%） | 20（24%） |
-| workbuddy | · | · | · | · | · | 11（13%） | 2（2%） | 5（6%） | 1（1%） | 8（10%） |
+| workbuddy | · | · | · | · | 4（5%） | 13（16%） | 5（6%） | 5（6%） | 4（5%） | 8（10%） |
 | opencode | · | · | · | · | 8（10%） | 18（22%） | · | 6（7%） | · | 5（6%） |
 | hermes | · | · | · | · | · | 27（33%） | · | · | · | 15（18%） |
 
@@ -152,9 +152,9 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 |---|---|---|---|---|---|---|---|---|
 | claude | 10（12%） | 13（16%） | · | · | 25（30%） | · | · | 37（45%） |
 | codex | 10（12%） | 8（10%） | 26（32%） | · | 12（15%） | · | · | 36（44%） |
-| antigravity | · | · | · | 27（33%） | · | · | 4（5%） | 29（35%） |
+| antigravity | · | · | · | 27（33%） | · | · | 4（5%） | 31（38%） |
 | zcode | 14（17%） | 20（24%） | · | · | 5（6%） | · | 5（6%） | 39（48%） |
-| workbuddy | 12（15%） | 8（10%） | · | · | 11（13%） | · | · | 36（44%） |
+| workbuddy | 12（15%） | 8（10%） | · | · | 13（16%） | · | · | 37（45%） |
 | opencode | 9（11%） | 5（6%） | · | · | 18（22%） | · | · | 34（41%） |
 | hermes | 11（13%） | 15（18%） | · | · | 27（33%） | · | · | 33（40%） |
 | gemini | · | · | · | · | · | · | · | 4（5%） |
@@ -164,17 +164,17 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 已到前端 | 自己做（上限已证实，没接进来） | 派出去研究（上限不清或要找别的路） |
 |---|---|---|---|
-| antigravity | 34 | 46 | 52 |
+| antigravity | 34 | 47 | 51 |
 | codex | 31 | 50 | 51 |
 | claude | 32 | 43 | 57 |
 | zcode | 37 | 48 | 47 |
-| workbuddy | 30 | 43 | 59 |
+| workbuddy | 30 | 48 | 54 |
 | opencode | 31 | 32 | 69 |
 | hermes | 31 | 40 | 61 |
 | gemini | 24 | 2 | 20 |
 | droid | 24 | 2 | 6 |
 
-理论上限：控制与观察类 76 / 82 个已推（完整性检查 4.2）；人机交互类 50 个的上限取决于它依赖的单元在原生接口和我们的后端能否拿到数据。没推的单元，“派研究”的第一步是负责人先推理论上限。
+理论上限：控制与观察类 82 / 82 个已推（完整性检查 4.2）；人机交互类 50 个的上限取决于它依赖的单元在原生接口和我们的后端能否拿到数据。没推的单元，“派研究”的第一步是负责人先推理论上限。
 
 **自己做的清单（按单元，后面是哪几家）**：
 - 接管原生会话（resume-native）：antigravity、codex、claude、zcode、opencode、hermes
@@ -204,7 +204,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 上报（act-report）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 等待可见（wait-visible）：antigravity、codex、workbuddy
 - 后台任务唤醒（wake-bg）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
-- 定时唤醒（wake-timer）：antigravity、zcode、hermes
+- 定时唤醒（wake-timer）：antigravity、zcode、hermes、workbuddy
 - 消息唤醒（wake-msg）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 卡住可发现（wake-stall）：codex、claude、zcode、opencode、hermes、workbuddy
 - 唤醒撑过重启（wake-persist）：codex、claude、zcode、opencode、hermes、workbuddy
@@ -212,6 +212,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 智能体间发消息（peer-message）：zcode、opencode
 - 共享任务板（task-board）：opencode
 - 向人提问（ask-user）：codex、claude、zcode
+- 通知人（notify-user）：workbuddy
 - 产出物发布（artifact）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy、gemini、droid
 - 终端（terminal）：antigravity、codex、claude、zcode、opencode、hermes
 - 挂接工具（mount-tools）：antigravity、claude、zcode、hermes
@@ -224,7 +225,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 探测本机（probe-host）：antigravity、codex、zcode、opencode、hermes、workbuddy
 - 回退到某一步（rewind）：codex、zcode
 - 归档与取回（archive）：codex、hermes
-- 删除会话（delete）：antigravity、codex、claude、opencode、hermes
+- 删除会话（delete）：antigravity、codex、claude、opencode、hermes、workbuddy
 - 回收（reclaim）：antigravity、codex、claude、opencode、hermes、workbuddy
 - 可用命令清单（cmd-list）：antigravity、codex、zcode、opencode、hermes、workbuddy
 - 循环熔断（loop-guard）：antigravity
@@ -232,9 +233,10 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 权限作用域（permission-scope）：zcode
 - 读原生会话元数据（native-meta）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 全文检索（content-search）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
-- 上下文占用（context-usage）：hermes
+- 上下文占用（context-usage）：hermes、workbuddy
 - 推理力度（reasoning-effort）：antigravity、codex、zcode
 - 列项目（list-projects）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 列工作区文件（workspace-files）：workbuddy
 - 用量显示（ui-usage）：antigravity、codex、zcode、workbuddy
 - 引用文件或会话（ui-mention）：antigravity、codex、zcode、workbuddy
 - 命令菜单（ui-command-menu）：antigravity、codex、zcode、workbuddy
@@ -246,6 +248,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 复制与导出（ui-copy-export）：antigravity、codex、zcode、workbuddy
 - 通知（ui-notify）：antigravity、codex、zcode、workbuddy
 - 定时任务台（ui-automation-scheduler）：zcode
+- 联网搜索（web-search）：antigravity
 
 ## 新建会话（open）
 
@@ -397,7 +400,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ✓ driver.steerTurn("01a14e64-55f6-7422-83b6-d2305f79 | ◐ 返回 200 {"ok":true,"writtenFile | ✗假 /console/：中断并插队 | 自己做：接进适配器 |
 | claude | · | ✗ channels/probe/scripts/retest/ | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ✗ 非交互 -p 模式不监听 mid-turn stdin | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | ? 见 probe/results/agy-pro-subage | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ◐ curl assets/use-i18n-*.js 后 gr | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | ? connection.prompt concurrently | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ✓ acp_probe3.py redirect：主轮 terminal background ping | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 自己做：接进适配器 |
 | gemini | · | ✗ timeout 90 node channels/probe | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
@@ -478,7 +481,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ? audit-inspection | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | ✓ claude -p "Write an essay of 500 words about archi | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 自己做：接进适配器 |
 | zcode | · | ✓ node channels/probe/scripts/native_zcode_1019.mjs  | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 自己做：接进适配器 |
-| workbuddy | · | ? codebuddy --help | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ◐ i18n.js grep command.goal | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | ? opencode run --agent plan | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ◐ hermes chat --help; hermes kan | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -757,7 +760,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ? audit-inspection | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
 | claude | ✓ Bash(run_in_background=true) | · | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
 | zcode | · | ◐ node channels/probe/scripts/na | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
+| workbuddy | · | ✓ codebuddy --bg --name probe-wb-nat-bg1 --exec "ech | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
 | opencode | · | ◐ task(prompt="...", background= | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
 | hermes | · | ✓ acp_probe3.py redirect 会话 messages 落盘（Background s | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
 
@@ -773,7 +776,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ✗ codex timer / app-server rpc s | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | ? 工具清单里有 ScheduleWakeup（仅 /loop  | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ✓ sqlite3 ~/.zcode/v2/tasks-index.sqlite "SELECT … F | · | · | 自己做：接进适配器 |
-| workbuddy | · | ? sqlite3 workbuddy.db 'SELECT * | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ✓ sqlite3 ... "select name,status,rrule from automat | · | · | 自己做：接进适配器 |
 | opencode | · | ✗ opencode --help | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ✓ hermes cron create / hermes cron list | · | · | 自己做：接进适配器 |
 
@@ -853,7 +856,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ? audit-inspection | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | ? SendMessage tool schema | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | · | ✓ 智能体在终端里用 agent_gateway.js run --async + wait 给另一家派 | · | 自己做：做到前端 |
-| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ? i18n.js grep team/remoteContro | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | ◐ hub route between ses_* instan | ✓ 智能体在终端里用 agent_gateway.js run --async + wait 给另一家派 | · | 自己做：做到前端 |
 | hermes | · | ◐ hermes peer --help; hermes sen | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -885,7 +888,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ? audit-inspection | ? POST /api/gateway/goals（agent_ | ? /m/（10-18 晚负责人）：协作页“目标”：＋ 目标（拆 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | ? CLAUDE_CODE_ENABLE_TODO_TOOLS= | ? POST /api/gateway/goals（agent_ | ? /m/（10-18 晚负责人）：协作页“目标”：＋ 目标（拆 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ◐ sqlite3 db.sqlite "SELECT coun | ✓ POST /api/gateway/goals（agent_gateway.js goal --fi | ✓ /m/（10-18 晚负责人）：协作页“目标”：＋ 目标（拆几件事、派给谁、要不要等上一件、谁验收、 | 已到前端 |
-| workbuddy | · | ? codebuddy --help / docs | ? POST /api/gateway/goals（agent_ | ? /m/（10-18 晚负责人）：协作页“目标”：＋ 目标（拆 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ◐ node 读 tasks/01a14b28.../1.jso | ? POST /api/gateway/goals（agent_ | ? /m/（10-18 晚负责人）：协作页“目标”：＋ 目标（拆 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | ✓ opencode run "..." --auto -m zhipuai-coding-plan/g | ✓ POST /api/gateway/goals（agent_gateway.js goal --fi | ? /m/（10-18 晚负责人）：协作页“目标”：＋ 目标（拆 | 自己做：做到前端 |
 | hermes | · | ✓ hermes kanban create/list/complete/archive（board=d | ✓ POST /api/gateway/goals（agent_gateway.js goal --fi | ✓ /m/（10-18 晚负责人）：协作页“目标”：＋ 目标（拆几件事、派给谁、要不要等上一件、谁验收、 | 已到前端 |
 
@@ -917,7 +920,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ? audit-inspection | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ◐ 源码 zcode-acp-server/dist/push/ | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ✓ curl -X POST -H "x-codebuddy-request: probe" -d '{ | · | · | 自己做：接进适配器 |
 | opencode | · | ◐ opencode run / opencode serve | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ◐ hermes send --help/--list; net | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -933,7 +936,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ? audit-inspection | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | ? 交互终端 Escape 规范引用 | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ◐ sqlite3 db.sqlite "SELECT deli | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ◐ i18n.js grep placeholderRunnin | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | ◐ opencode run -i / opencode att | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ◐ hermes --tui / ACP redirect tu | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -949,7 +952,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ? audit-inspection | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
 | claude | · | ? 系统提示词屏蔽列表确认 | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
 | zcode | · | · | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
+| workbuddy | · | ✓ node 读 artifact-index/<uuid>.json 首条 | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
 | opencode | · | ? write / opencode export | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
 | hermes | · | ◐ netstat :9119; hermes send --h | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
 | gemini | · | · | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
@@ -967,7 +970,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ? audit-inspection | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ◐ zcode --help / grep browser；ls | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ? curl .../api/v1/browser-previe | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | ◐ webfetch(url) | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ? browser_tool / browser_cdp_too | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -1095,7 +1098,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ✓ thread/name/set { threadId, name: "probe-codex-tes | · | · | 自己做：接进适配器 |
 | claude | · | · | ✓ acpx claude status -s probe-fact-idle-001 | · | 自己做：做到前端 |
 | zcode | · | ◐ sqlite3 db.sqlite "SELECT titl | ✓ acpx zcode sessions list --local | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ acpx workbuddy sessions list --local & codebuddy p | · | 自己做：做到前端 |
+| workbuddy | · | ◐ grep -h '"type":"ai-title"' pr | ✓ acpx workbuddy sessions list --local & codebuddy p | · | 自己做：做到前端 |
 | opencode | · | ✓ opencode run --title "probe-oc-title-1792271841284 | · | · | 自己做：接进适配器 |
 | hermes | · | ✓ hermes sessions rename <id> <t>; hermes sessions p | · | · | 自己做：接进适配器 |
 
@@ -1179,7 +1182,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ✓ thread/revert { threadId, beforeTurnId } | · | · | 自己做：接进适配器 |
 | claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ✓ node channels/probe/scripts/native_zcode_1019.mjs  | · | · | 自己做：接进适配器 |
-| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ◐ i18n.js grep checkpoint；index. | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | ? sqlite3 opencode.db ".schema s | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -1211,7 +1214,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ✓ thread/delete { threadId } | · | · | 自己做：接进适配器 |
 | claude | · | ✓ claude --resume <deleted-uuid> | · | · | 自己做：接进适配器 |
 | zcode | · | ◐ zcode --help；sqlite3 tasks-ind | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ✓ curl -X DELETE -H "x-codebuddy-request: probe" htt | · | · | 自己做：接进适配器 |
 | opencode | · | ✓ opencode session delete ses_eb43241f2ffeMZJZa8UU3V | · | · | 自己做：接进适配器 |
 | hermes | · | ✓ hermes sessions delete --yes 20261018_053930_1a9b7 | · | · | 自己做：接进适配器 |
 
@@ -1259,7 +1262,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ✓ codex help | · | · | 自己做：接进适配器 |
 | claude | · | · | ? session-control op=commands：常驻 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ✓ node channels/probe/scripts/native_zcode_1019.mjs  | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | · | 自己做：做到前端 |
-| workbuddy | · | ? codebuddy --help | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | · | 自己做：做到前端 |
+| workbuddy | · | ✓ codebuddy --help | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | · | 自己做：做到前端 |
 | opencode | · | · | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | · | 自己做：做到前端 |
 | hermes | · | ✓ acp_probe2.py slash（session/prompt [{type:text,tex | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | · | 自己做：做到前端 |
 
@@ -1291,7 +1294,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ? audit-inspection | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ◐ type ~/.zcode/v2/setting.json  | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | ? codebuddy --help | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ◐ ls ~/.workbuddy/memory | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ? hermes --ignore-rules / hermes | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -1371,7 +1374,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
 | claude | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
 | zcode | · | ✓ sqlite3 ~/.zcode/cli/db/db.sqlite "SELECT title_so | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
+| workbuddy | · | ✓ sqlite3 ... ".schema sessions" | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
 | opencode | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
 | hermes | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
 
@@ -1387,7 +1390,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
 | claude | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
 | zcode | · | ◐ sqlite3 db.sqlite "SELECT … FR | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
+| workbuddy | · | ◐ node -e "…readdirSync projects | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
 | opencode | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
 | hermes | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
 
@@ -1403,7 +1406,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ◐ node channels/probe/scripts/na | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ✓ sqlite3 ... "select session_id,used,size from sess | · | · | 自己做：接进适配器 |
 | opencode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ✓ acp_probe5.py /context（compact3.log ctx-before 帧） | · | · | 自己做：接进适配器 |
 
@@ -1451,7 +1454,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ✓ curl -H "x-codebuddy-request: probe" ".../api/v1/f | · | · | 自己做：接进适配器 |
 | opencode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -1587,7 +1590,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页“切换”抽屉：在干活的和最近看过的会话 | 已到前端 |
 | claude | · | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页“切换”抽屉：在干活的和最近看过的会话 | 已到前端 |
 | zcode | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页“切换”抽屉：在干活的和最近看过的会话 | 已到前端 |
-| workbuddy | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页“切换”抽屉：在干活的和最近看过的会话 | 已到前端 |
+| workbuddy | 有（截图/代码） | ? node panel_ctx.js（解析 use-i18n  | · | ✓ /m/ v2（10-18 负责人重写）：详情页“切换”抽屉：在干活的和最近看过的会话 | 已到前端 |
 | opencode | · | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页“切换”抽屉：在干活的和最近看过的会话 | 已到前端 |
 | hermes | · | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页“切换”抽屉：在干活的和最近看过的会话 | 已到前端 |
 | gemini | · | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页“切换”抽屉：在干活的和最近看过的会话 | 已到前端 |
@@ -1623,7 +1626,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | 有（截图/代码） | ? opencli codex pin / unpin | · | ✓ /m/ v2（10-18 负责人重写）：详情页置顶；项目页和项目列表置顶在前 | 已到前端 |
 | claude | · | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页置顶；项目页和项目列表置顶在前 | 已到前端 |
 | zcode | ✗ 数据库 `session` 表无 pin 字段，界面按 `t | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页置顶；项目页和项目列表置顶在前 | 已到前端 |
-| workbuddy | ✗ 数据库中无 pin 字段，按 `updated_at DES | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页置顶；项目页和项目列表置顶在前 | 已到前端 |
+| workbuddy | ✗ 数据库中无 pin 字段，按 `updated_at DES | ✓ curl -X PUT -H "x-codebuddy-request: probe" ".../a | · | ✓ /m/ v2（10-18 负责人重写）：详情页置顶；项目页和项目列表置顶在前 | 已到前端 |
 | opencode | · | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页置顶；项目页和项目列表置顶在前 | 已到前端 |
 | hermes | · | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页置顶；项目页和项目列表置顶在前 | 已到前端 |
 | gemini | · | · | · | ✓ /m/ v2（10-18 负责人重写）：详情页置顶；项目页和项目列表置顶在前 | 已到前端 |
@@ -1695,7 +1698,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：思考折叠 | 已到前端 |
 | claude | · | · | ✓ node channels/probe/scripts/probe_display.mjs --wr | ✓ /m/ v2（10-18 负责人重写）：思考折叠 | 已到前端 |
 | zcode | 有（截图/代码） | · | ✓ node channels/probe/scripts/probe_display.mjs --wr | ✓ /m/ v2（10-18 负责人重写）：思考折叠 | 已到前端 |
-| workbuddy | 有（截图/代码） | · | ✓ node channels/probe/scripts/probe_display.mjs --wr | ✓ /m/ v2（10-18 负责人重写）：思考折叠 | 已到前端 |
+| workbuddy | 有（截图/代码） | ✓ node 读 jsonl 过滤 type=reasoning | ✓ node channels/probe/scripts/probe_display.mjs --wr | ✓ /m/ v2（10-18 负责人重写）：思考折叠 | 已到前端 |
 | opencode | · | · | ✓ node channels/probe/scripts/probe_display.mjs --wr | ✓ /m/ v2（10-18 负责人重写）：思考折叠 | 已到前端 |
 | hermes | · | · | ✓ node channels/probe/scripts/probe_display.mjs --wr | ✓ /m/ v2（10-18 负责人重写）：思考折叠 | 已到前端 |
 | gemini | · | · | · | ✓ /m/ v2（10-18 负责人重写）：思考折叠 | 已到前端 |
@@ -1731,7 +1734,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | 有（截图/代码） | ? opencli codex extract-diff | · | ✓ /m/ v2（10-18 负责人重写）：改文件的工具（Edit、MultiEdit、Write、An | 已到前端 |
 | claude | · | · | · | ✓ /m/ v2（10-18 负责人重写）：改文件的工具（Edit、MultiEdit、Write、An | 已到前端 |
 | zcode | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：改文件的工具（Edit、MultiEdit、Write、An | 已到前端 |
-| workbuddy | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：改文件的工具（Edit、MultiEdit、Write、An | 已到前端 |
+| workbuddy | 有（截图/代码） | ? i18n.js/index.js 关键词扫描 | · | ✓ /m/ v2（10-18 负责人重写）：改文件的工具（Edit、MultiEdit、Write、An | 已到前端 |
 | opencode | · | · | · | ✓ /m/ v2（10-18 负责人重写）：改文件的工具（Edit、MultiEdit、Write、An | 已到前端 |
 | hermes | · | · | · | ✓ /m/ v2（10-18 负责人重写）：改文件的工具（Edit、MultiEdit、Write、An | 已到前端 |
 | gemini | · | · | · | ✓ /m/ v2（10-18 负责人重写）：改文件的工具（Edit、MultiEdit、Write、An | 已到前端 |
@@ -1821,7 +1824,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | 有（截图/代码） | · | · | ◐ /m/ v2（10-18 负责人重写）：状态行显示最近几轮输 | 自己做：后端先供数据，再做前端 |
 | claude | · | · | · | ◐ /m/ v2（10-18 负责人重写）：状态行显示最近几轮输 | 派研究：这家桌面端有没有、数据在哪 |
 | zcode | 有（截图/代码） | · | · | ◐ /m/ v2（10-18 负责人重写）：状态行显示最近几轮输 | 自己做：后端先供数据，再做前端 |
-| workbuddy | 有（截图/代码） | · | · | ◐ /m/ v2（10-18 负责人重写）：状态行显示最近几轮输 | 自己做：后端先供数据，再做前端 |
+| workbuddy | 有（截图/代码） | ? i18n.js grep contextUsage；GET  | · | ◐ /m/ v2（10-18 负责人重写）：状态行显示最近几轮输 | 自己做：后端先供数据，再做前端 |
 | opencode | · | · | · | ◐ /m/ v2（10-18 负责人重写）：状态行显示最近几轮输 | 派研究：这家桌面端有没有、数据在哪 |
 | hermes | · | · | · | ◐ /m/ v2（10-18 负责人重写）：状态行显示最近几轮输 | 派研究：这家桌面端有没有、数据在哪 |
 | gemini | · | · | · | ◐ /m/ v2（10-18 负责人重写）：状态行显示最近几轮输 | 派研究：这家桌面端有没有、数据在哪 |
@@ -1953,7 +1956,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：在干活时发话，提示插进本轮或排下一轮 | 已到前端 |
 | claude | · | · | · | ✓ /m/ v2（10-18 负责人重写）：在干活时发话，提示插进本轮或排下一轮 | 已到前端 |
 | zcode | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：在干活时发话，提示插进本轮或排下一轮 | 已到前端 |
-| workbuddy | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：在干活时发话，提示插进本轮或排下一轮 | 已到前端 |
+| workbuddy | 有（截图/代码） | ? i18n.js grep queue | · | ✓ /m/ v2（10-18 负责人重写）：在干活时发话，提示插进本轮或排下一轮 | 已到前端 |
 | opencode | · | · | · | ✓ /m/ v2（10-18 负责人重写）：在干活时发话，提示插进本轮或排下一轮 | 已到前端 |
 | hermes | · | · | · | ✓ /m/ v2（10-18 负责人重写）：在干活时发话，提示插进本轮或排下一轮 | 已到前端 |
 
@@ -1969,7 +1972,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | 有（截图/代码） | · | · | ? /m/（10-18 深夜负责人）：同上 | 自己做：后端先供数据，再做前端 |
 | claude | · | · | · | ? /m/（10-18 深夜负责人）：同上 | 派研究：这家桌面端有没有、数据在哪 |
 | zcode | 有（截图/代码） | · | · | ✓ /m/（10-18 深夜负责人）：会话页审批卡：轮内审批写“这一轮停着等你批 / 批准，这一轮继续” | 已到前端 |
-| workbuddy | 有（截图/代码） | · | · | ? /m/（10-18 深夜负责人）：同上 | 自己做：后端先供数据，再做前端 |
+| workbuddy | 有（截图/代码） | ◐ i18n.js/index.js 关键词扫描 | · | ? /m/（10-18 深夜负责人）：同上 | 自己做：后端先供数据，再做前端 |
 | opencode | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | hermes | · | · | · | ? /m/（10-18 深夜负责人）：同上 | 派研究：这家桌面端有没有、数据在哪 |
 
@@ -1985,7 +1988,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | 有（截图/代码） | · | · | ? /m/（10-19 负责人）：同上 | 自己做：后端先供数据，再做前端 |
 | claude | · | · | · | ✓ /m/（10-19 负责人）：会话页提问卡：服务状态里有这个会话在等回答的问题时，显示“智能体在等你 | 已到前端 |
 | zcode | 有（截图/代码） | · | · | ? /m/（10-19 负责人）：同上 | 自己做：后端先供数据，再做前端 |
-| workbuddy | 有（截图/代码） | · | · | · | 自己做：后端先供数据，再做前端 |
+| workbuddy | 有（截图/代码） | ◐ i18n.js/index.js 关键词扫描 | · | · | 自己做：后端先供数据，再做前端 |
 | opencode | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | hermes | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 
@@ -2037,7 +2040,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | 有（截图/代码） | ? opencli codex export | · | ◐ /m/ v2（10-18 负责人重写）：智能体每段文字下“复 | 自己做：后端先供数据，再做前端 |
 | claude | · | · | · | ◐ /m/ v2（10-18 负责人重写）：智能体每段文字下“复 | 派研究：这家桌面端有没有、数据在哪 |
 | zcode | 有（截图/代码） | · | · | ◐ /m/ v2（10-18 负责人重写）：智能体每段文字下“复 | 自己做：后端先供数据，再做前端 |
-| workbuddy | 有（截图/代码） | · | · | ◐ /m/ v2（10-18 负责人重写）：智能体每段文字下“复 | 自己做：后端先供数据，再做前端 |
+| workbuddy | 有（截图/代码） | ? i18n.js/index.js 关键词扫描 | · | ◐ /m/ v2（10-18 负责人重写）：智能体每段文字下“复 | 自己做：后端先供数据，再做前端 |
 | opencode | · | · | · | ◐ /m/ v2（10-18 负责人重写）：智能体每段文字下“复 | 派研究：这家桌面端有没有、数据在哪 |
 | hermes | · | · | · | ◐ /m/ v2（10-18 负责人重写）：智能体每段文字下“复 | 派研究：这家桌面端有没有、数据在哪 |
 | gemini | · | · | · | ◐ /m/ v2（10-18 负责人重写）：智能体每段文字下“复 | 派研究：这家桌面端有没有、数据在哪 |
@@ -2089,7 +2092,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：深浅色跟随系统 | 已到前端 |
 | claude | · | · | · | ✓ /m/ v2（10-18 负责人重写）：深浅色跟随系统 | 已到前端 |
 | zcode | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：深浅色跟随系统 | 已到前端 |
-| workbuddy | 有（截图/代码） | · | · | ✓ /m/ v2（10-18 负责人重写）：深浅色跟随系统 | 已到前端 |
+| workbuddy | 有（截图/代码） | ? i18n.js/index.js 关键词扫描 | · | ✓ /m/ v2（10-18 负责人重写）：深浅色跟随系统 | 已到前端 |
 | opencode | · | · | · | ✓ /m/ v2（10-18 负责人重写）：深浅色跟随系统 | 已到前端 |
 | hermes | · | · | · | ✓ /m/ v2（10-18 负责人重写）：深浅色跟随系统 | 已到前端 |
 | gemini | · | · | · | ✓ /m/ v2（10-18 负责人重写）：深浅色跟随系统 | 已到前端 |
@@ -2207,7 +2210,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | · | · | · | ◐ /m/ v2（10-18 负责人重写）：同上（会话内计划清单 | 派研究：这家桌面端有没有、数据在哪 |
 | claude | · | · | · | ◐ /m/ v2（10-18 负责人重写）：同上（会话内计划清单 | 派研究：这家桌面端有没有、数据在哪 |
 | zcode | · | · | · | ◐ /m/ v2（10-18 负责人重写）：同上（会话内计划清单 | 派研究：这家桌面端有没有、数据在哪 |
-| workbuddy | · | · | · | ◐ /m/ v2（10-18 负责人重写）：同上（会话内计划清单 | 派研究：这家桌面端有没有、数据在哪 |
+| workbuddy | · | ? i18n.js/index.js 关键词扫描 | · | ◐ /m/ v2（10-18 负责人重写）：同上（会话内计划清单 | 派研究：这家桌面端有没有、数据在哪 |
 | opencode | · | · | · | ◐ /m/ v2（10-18 负责人重写）：同上（会话内计划清单 | 派研究：这家桌面端有没有、数据在哪 |
 | hermes | · | · | · | ◐ /m/ v2（10-18 负责人重写）：同上（会话内计划清单 | 派研究：这家桌面端有没有、数据在哪 |
 | gemini | · | · | · | ◐ /m/ v2（10-18 负责人重写）：同上（会话内计划清单 | 派研究：这家桌面端有没有、数据在哪 |
@@ -2273,7 +2276,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | claude | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | zcode | · | ✓ opencli zcode tasks | · | · | 自己做：后端先供数据，再做前端 |
-| workbuddy | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
+| workbuddy | · | ? i18n.js grep scheduled | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | opencode | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | hermes | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 
@@ -2321,7 +2324,7 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 | codex | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | claude | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | zcode | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
-| workbuddy | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
+| workbuddy | · | ? i18n.js grep creditUnit | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | opencode | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 | hermes | · | · | · | · | 派研究：这家桌面端有没有、数据在哪 |
 
@@ -2345,94 +2348,94 @@ Markdown、代码块（高亮、可复制）、表格、链接、图片按格式
 
 智能体在会话进行中翻回它和人过去的对话记录，包括已被压缩掉的部分和人的原话，按轮次、关键词或说话人取用。怎样算支持：智能体取回很早或已压缩的原话并据此回答，取回的内容和记录一致。类别：智能体的动作（候选，10-19 用户要求补登）。
 
-**理论上限**：还没推（完整性检查 4.2 未覆盖）。
+**理论上限**：智能体在长会话进行中翻回它和人过去的完整对话记录（含已压缩历史和原始工具返回），按轮次、关键词或发言角色精准提取原话注入当前推理（靠 智能体动作层（内置 recall 工具）＋ 本地持久化转录日志（如 transcript_full.jsonl、rollout.jsonl、SQLite message 表））。根本限制：宿主未落盘或已物理删除的中间态无法找回；加密专有格式无法解析。原生做不到时最多补齐到：中心提供冷历史全文倒排与轮次提取代理（agent_gateway.js recall），挂载为 MCP/CLI 工具按需查取原话回填，代价：查询与回填原话占用当前轮的部分上下文窗口与推理 Token 预算。
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：先推理论上限，再探查 |
-| codex | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：先推理论上限，再探查 |
-| claude | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：先推理论上限，再探查 |
-| zcode | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：先推理论上限，再探查 |
-| workbuddy | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：先推理论上限，再探查 |
-| opencode | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：先推理论上限，再探查 |
-| hermes | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：先推理论上限，再探查 |
+| antigravity | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| codex | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| claude | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| zcode | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| hermes | · | · | ◐ agent_gateway.js recall --agen | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 操作电脑（computer-use）
 
 按指令看屏幕、点击、输入，在桌面应用里完成一件事并交回结果。怎样算支持：指定一件桌面操作（例如在某个应用里打开某处、填一项），做完后结果可以由别人核对。类别：高阶能力（候选，10-19 用户要求补登）。
 
-**理论上限**：还没推（完整性检查 4.2 未覆盖）。
+**理论上限**：按自然语言指令看屏幕、点击、输入，操作宿主桌面上的任意第三方图形应用并交回执行结果（靠 宿主操作系统无头/有头驱动层（CDP 调试通道、Windows UIAutomation 控件树、或 VLM 截图驱动的物理键鼠注入））。根本限制：没有暴露 CDP 调试端口或 Accessibility 无障碍树的完全自绘窗口，只能依赖多模态视觉识别与模拟点击；模拟点击受屏幕分辨率与遮挡限制。原生做不到时最多补齐到：优先直连目标应用调试端口（CDP 9240）或 UIAutomation 控件树静默后台操作；兜底使用视觉多模态模型推理坐标并模拟物理鼠标键盘（OSWorld 模式），代价：物理模拟点击会抢占用户前台鼠标键盘焦点，存在误触风险；需严格设立权限确认与急停保护。
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | · | · | · | 派研究：先推理论上限，再探查 |
-| codex | · | · | · | · | 派研究：先推理论上限，再探查 |
-| claude | · | · | · | · | 派研究：先推理论上限，再探查 |
-| zcode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| workbuddy | · | · | · | · | 派研究：先推理论上限，再探查 |
-| opencode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| hermes | · | · | · | · | 派研究：先推理论上限，再探查 |
+| antigravity | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| codex | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| zcode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| hermes | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 联网搜索（web-search）
 
 按问题检索网页，返回带来源链接的结果。怎样算支持：返回的链接能打开，内容和结论对得上。类别：高阶能力（候选，10-19 用户要求补登）。
 
-**理论上限**：还没推（完整性检查 4.2 未覆盖）。
+**理论上限**：按自然语言问题检索全网公开网页，返回带真实来源 URL、权威摘要与正文切片的高时效性结果（靠 智能体工具调用层（标准 Search MCP 工具）＋ 多检索源聚合路由网关（Tavily、SerpApi、AnySearch 等））。根本限制：无互联网网络连接；目标网页有深度反爬验证码（Cloudflare Turnstile / 强防爬）；单源 API 限流或宕机。原生做不到时最多补齐到：中心统一部署多 Key 轮换与健康熔断池（如 search_hub.js 22-Key 轮转），将检索能力包装为统一 MCP 工具挂给智能体，代价：消耗外部搜索服务提供商 API 配额；搜索返回内容长短不一需本地提取与净化。
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | · | · | · | 派研究：先推理论上限，再探查 |
-| codex | · | · | · | · | 派研究：先推理论上限，再探查 |
-| claude | · | · | · | · | 派研究：先推理论上限，再探查 |
-| zcode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| workbuddy | · | · | · | · | 派研究：先推理论上限，再探查 |
-| opencode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| hermes | · | · | · | · | 派研究：先推理论上限，再探查 |
+| antigravity | · | · | ✓ node hub/tools/search_hub.js search 'MCP sampling  | · | 自己做：做到前端 |
+| codex | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| zcode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| hermes | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 深度调研（deep-research）
 
 多轮检索、阅读、比对后，写成带引用的报告。怎样算支持：报告里的引用可核对，问题的各个方面都有覆盖，结论有出处。类别：高阶能力（候选，10-19 用户要求补登）。
 
-**理论上限**：还没推（完整性检查 4.2 未覆盖）。
+**理论上限**：面对复杂开放性议题，自主进行多轮递归发散检索、正交子课题拆解、多源交叉验证、事实核对并产出结构化引用研报（靠 “一群会话”协作层（中心调度器持有编排状态机，分发 Planner、Dispatcher、Synthesizer 多角色））。根本限制：单会话上下文窗口有限，多轮深入抓取会导致单会话上下文溢出早衰；单次检索发散容易偏离主题。原生做不到时最多补齐到：中心调度器充当宿主（goal deep-research），拆解子课题并并发派发轻快子智能体检索，最后由高阶模型交叉比对矛盾并合成完整研报，代价：执行耗时较长（分钟级）；消耗多次并发模型轮次与搜索 API 调用。
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | · | · | · | 派研究：先推理论上限，再探查 |
-| codex | · | · | · | · | 派研究：先推理论上限，再探查 |
-| claude | · | · | · | · | 派研究：先推理论上限，再探查 |
-| zcode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| workbuddy | · | · | · | · | 派研究：先推理论上限，再探查 |
-| opencode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| hermes | · | · | · | · | 派研究：先推理论上限，再探查 |
+| antigravity | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| codex | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| zcode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| hermes | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 生成图片（image-gen）
 
 按描述生成图片并存成文件。怎样算支持：图片文件存在，内容符合描述。类别：高阶能力（候选，10-19 用户要求补登）。
 
-**理论上限**：还没推（完整性检查 4.2 未覆盖）。
+**理论上限**：按自然语言描述、风格与尺寸要求生成高质量栅格或矢量图像文件并落盘，返回本地路径与预览（靠 会话工具挂载层（图像生成 MCP 工具或本地图形渲染引擎）＋ 多模态生成模型 API（DALL-E 3、Flux、Midjourney 网关）或本地渲染器（Graphviz、Mermaid、SVG））。根本限制：纯文本代码模型架构自身无扩散生成能力；复杂的构图与多图连贯性受生成模型能力限制。原生做不到时最多补齐到：适配器挂载 gpt-image 或本地绘图工具（Mermaid/Graphviz/Playwright 渲染），智能体调用工具生成图片落盘并在前端展示，代价：消耗专有多模态生图 API 配额；本地渲染需要额外安装图形环境依赖。
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | · | · | · | 派研究：先推理论上限，再探查 |
-| codex | · | · | · | · | 派研究：先推理论上限，再探查 |
-| claude | · | · | · | · | 派研究：先推理论上限，再探查 |
-| zcode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| workbuddy | · | · | · | · | 派研究：先推理论上限，再探查 |
-| opencode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| hermes | · | · | · | · | 派研究：先推理论上限，再探查 |
+| antigravity | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| codex | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| zcode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| hermes | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 生成办公文档（office-docs）
 
 生成或修改演示文稿、文档、表格文件。怎样算支持：文件能用对应软件打开，内容和格式符合要求。类别：高阶能力（候选，10-19 用户要求补登）。
 
-**理论上限**：还没推（完整性检查 4.2 未覆盖）。
+**理论上限**：端到端生成或修改符合排版规范、样式统一、内容严谨的二进制办公文档（.docx、.pptx、.xlsx、.pdf），能被对应办公软件无损打开且通过格式断言（靠 会话工具挂载层（本地无头文档库 python-docx/openpyxl/python-pptx）＋ 确定性文件结构核验器（verifier CLI））。根本限制：模型直接输出二进制容易损坏（文件损坏无法打开）；纯提示词无法精确控制复杂表格跨行跨列或 PPT 布局碰撞。原生做不到时最多补齐到：中心挂载专用文档 Skill 与本地 Python 环境，采用“模板填充/代码生成 ＋ 确定性规则核验打回（verifier 校验）”双重闭环，代价：依赖本地 Python 运行时与第三方文档处理库；核验失败需要额外一轮纠偏。
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | · | · | · | 派研究：先推理论上限，再探查 |
-| codex | · | · | · | · | 派研究：先推理论上限，再探查 |
-| claude | · | · | · | · | 派研究：先推理论上限，再探查 |
-| zcode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| workbuddy | · | · | · | · | 派研究：先推理论上限，再探查 |
-| opencode | · | · | · | · | 派研究：先推理论上限，再探查 |
-| hermes | · | · | · | · | 派研究：先推理论上限，再探查 |
+| antigravity | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| codex | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| claude | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| zcode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| hermes | · | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |

@@ -151,22 +151,47 @@ function runCommandSync(cmd, cmdArgs, extraEnv, timeoutMs = 120000) {
   const isWin = process.platform === 'win32';
   const env = { ...agentBaseEnv(), ...extraEnv };
   const startedAt = Date.now();
-  const res = isWin
-    ? spawnSync('cmd.exe', ['/d', '/s', '/c', [cmd, ...cmdArgs.map(quoteWinArg)].join(' ')], {
-        cwd: ROOT_DIR,
-        env,
-        encoding: 'utf8',
-        timeout: timeoutMs,
-        maxBuffer: MAX_OUTPUT_BYTES,
-        windowsHide: true,
-      })
-    : spawnSync(cmd, cmdArgs, {
-        cwd: ROOT_DIR,
-        env,
-        encoding: 'utf8',
-        timeout: timeoutMs,
-        maxBuffer: MAX_OUTPUT_BYTES,
-      });
+  let res;
+  const opencliMain =
+    cmd === 'opencli' && isWin
+      ? path.join(
+          process.env.APPDATA || path.join(HOME, 'AppData', 'Roaming'),
+          'npm',
+          'node_modules',
+          '@jackwener',
+          'opencli',
+          'dist',
+          'src',
+          'main.js'
+        )
+      : null;
+  if (opencliMain && fs.existsSync(opencliMain)) {
+    res = spawnSync(process.execPath, [opencliMain, ...cmdArgs], {
+      cwd: ROOT_DIR,
+      env,
+      encoding: 'utf8',
+      timeout: timeoutMs,
+      maxBuffer: MAX_OUTPUT_BYTES,
+      windowsHide: true,
+    });
+  } else {
+    res = isWin
+      ? spawnSync('cmd.exe', ['/d', '/s', '/c', [cmd, ...cmdArgs.map(quoteWinArg)].join(' ')], {
+          cwd: ROOT_DIR,
+          env,
+          encoding: 'utf8',
+          timeout: timeoutMs,
+          maxBuffer: MAX_OUTPUT_BYTES,
+          windowsHide: true,
+        })
+      : spawnSync(cmd, cmdArgs, {
+          cwd: ROOT_DIR,
+          env,
+          encoding: 'utf8',
+          timeout: timeoutMs,
+          maxBuffer: MAX_OUTPUT_BYTES,
+        });
+  }
   return {
     exitCode: res.status ?? 1,
     stdout: (res.stdout || '').trim(),
@@ -613,6 +638,78 @@ function runAntigravityAgentApi(prof, gate, args, promptText) {
   process.exit(output.ok ? 0 : 1);
 }
 
+function ensureDoubaoDesktopDaemon(cdpPort = 9225) {
+  const localAppData = process.env.LOCALAPPDATA || path.join(HOME, 'AppData', 'Local');
+  const doubaoExe = path.join(localAppData, 'Doubao', 'Application', 'Doubao.exe');
+  if (!fs.existsSync(doubaoExe)) return false;
+
+  const srcUserData = path.join(localAppData, 'Doubao', 'User Data');
+  const bgProfileDir = path.join(localAppData, 'Temp', 'doubao_cdp_test');
+  const bgLocalStatePath = path.join(bgProfileDir, 'Local State');
+
+  try {
+    fs.mkdirSync(path.join(bgProfileDir, 'Default', 'Network'), { recursive: true });
+    let needLocalState = !fs.existsSync(bgLocalStatePath);
+    if (!needLocalState) {
+      try {
+        const lsObj = JSON.parse(fs.readFileSync(bgLocalStatePath, 'utf8'));
+        if (!lsObj?.devtools?.remote_debugging?.allowed) needLocalState = true;
+      } catch {
+        needLocalState = true;
+      }
+    }
+    if (needLocalState && fs.existsSync(path.join(srcUserData, 'Local State'))) {
+      const lsObj = JSON.parse(fs.readFileSync(path.join(srcUserData, 'Local State'), 'utf8'));
+      lsObj.devtools = lsObj.devtools || {};
+      lsObj.devtools.remote_debugging = { allowed: true };
+      fs.writeFileSync(bgLocalStatePath, JSON.stringify(lsObj), 'utf8');
+    }
+    for (const rel of ['saman_app_state', path.join('Default', 'Preferences'), path.join('Default', 'Secure Preferences')]) {
+      const s = path.join(srcUserData, rel);
+      const d = path.join(bgProfileDir, rel);
+      if (fs.existsSync(s) && !fs.existsSync(d)) {
+        try {
+          fs.copyFileSync(s, d);
+        } catch {}
+      }
+    }
+  } catch {}
+
+  const cmdLine = `"${doubaoExe}" --user-data-dir="${bgProfileDir}" --no-startup-window --keep-alive-for-test --remote-debugging-port=${cdpPort} --remote-allow-origins=*`;
+  const psScript = `$cmd = '${cmdLine.replace(/'/g, "''")}'; Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $cmd } | Out-Null`;
+  spawnSync('powershell.exe', ['-NoProfile', '-Command', psScript], { windowsHide: true, timeout: 8000 });
+
+  for (let i = 0; i < 12; i++) {
+    spawnSync('powershell.exe', ['-NoProfile', '-Command', 'Start-Sleep -Milliseconds 500'], { windowsHide: true });
+    const check = runCommandSync('opencli', ['doubao-app', 'status', '-f', 'json'], {}, 6000);
+    if (check.exitCode === 0 && !/not reachable|ECONNREFUSED/i.test(check.stdout || check.stderr)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function parseOpencliJsonOutput(rawText) {
+  const text = String(rawText || '').trim();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    const firstBracket = text.search(/[\[{]/);
+    if (firstBracket >= 0) {
+      const openChar = text[firstBracket];
+      const closeChar = openChar === '[' ? ']' : '}';
+      const lastClose = text.lastIndexOf(closeChar);
+      if (lastClose > firstBracket) {
+        try {
+          return JSON.parse(text.slice(firstBracket, lastClose + 1));
+        } catch {}
+      }
+    }
+    return null;
+  }
+}
+
 function runOpencliCdp(prof, gate, args, promptText) {
   const startedAt = Date.now();
   const sessionName = args.session || `gw-${prof.id}`;
@@ -620,11 +717,20 @@ function runOpencliCdp(prof, gate, args, promptText) {
 
   const adapterCmd = prof.id === 'doubao-desktop' ? 'doubao-app' : prof.id;
 
-  // 1. Probe CDP availability via opencli status
-  const statusRes = runCommandSync('opencli', [adapterCmd, 'status', '-f', 'json'], {}, 10000);
-  const isCdpDown =
+  // 1. Probe CDP availability via opencli status (auto-starting headless Doubao daemon if needed)
+  let statusRes = runCommandSync('opencli', [adapterCmd, 'status', '-f', 'json'], {}, 10000);
+  let isCdpDown =
     statusRes.exitCode !== 0 ||
     /not reachable|is not reachable|ECONNREFUSED/i.test(statusRes.stdout || statusRes.stderr);
+
+  if (isCdpDown && prof.id === 'doubao-desktop') {
+    if (ensureDoubaoDesktopDaemon(prof.cdpPort || 9225)) {
+      statusRes = runCommandSync('opencli', [adapterCmd, 'status', '-f', 'json'], {}, 10000);
+      isCdpDown =
+        statusRes.exitCode !== 0 ||
+        /not reachable|is not reachable|ECONNREFUSED/i.test(statusRes.stdout || statusRes.stderr);
+    }
+  }
 
   if (isCdpDown) {
     const output = {
@@ -636,7 +742,7 @@ function runOpencliCdp(prof, gate, args, promptText) {
       session: sessionName,
       error: `Agent '${prof.id}' is not reachable on CDP port ${prof.cdpPort || 9225}.`,
       details: (statusRes.stdout || statusRes.stderr || statusRes.error || '').trim(),
-      help: `Start ${prof.name || prof.id} manually with --remote-debugging-port=${prof.cdpPort || 9225} --remote-allow-origins=*, or launch via PiP virtual desktop session without disturbing active desktop.`,
+      help: `Start ${prof.name || prof.id} with --user-data-dir="%LOCALAPPDATA%\\Temp\\doubao_cdp_test" --no-startup-window --keep-alive-for-test --remote-debugging-port=${prof.cdpPort || 9225} --remote-allow-origins=*`,
       durationMs: Date.now() - startedAt,
     };
     console.log(JSON.stringify(output, null, 2));
@@ -644,24 +750,40 @@ function runOpencliCdp(prof, gate, args, promptText) {
   }
 
   // 2. If CDP is open, execute ask
-  const askRes = runCommandSync('opencli', [adapterCmd, 'ask', promptText, '-f', 'json'], {}, timeoutSec * 1000);
+  const askRes = runCommandSync(
+    'opencli',
+    [adapterCmd, 'ask', promptText, '--timeout', String(timeoutSec), '-f', 'json'],
+    {},
+    (timeoutSec + 15) * 1000
+  );
   let reply = askRes.stdout;
-  let parsed = null;
-  try {
-    parsed = JSON.parse(askRes.stdout);
-    if (parsed && typeof parsed.reply === 'string') reply = parsed.reply;
-    else if (parsed && typeof parsed.text === 'string') reply = parsed.text;
-  } catch {}
+  const parsed = parseOpencliJsonOutput(askRes.stdout);
+  if (Array.isArray(parsed)) {
+    const assistantMsg =
+      [...parsed].reverse().find((m) => m && /assistant/i.test(m.Role || m.role || '')) ||
+      parsed[parsed.length - 1];
+    if (assistantMsg && typeof (assistantMsg.Text ?? assistantMsg.text) === 'string') {
+      reply = assistantMsg.Text ?? assistantMsg.text;
+    }
+  } else if (parsed && typeof parsed === 'object') {
+    if (typeof parsed.reply === 'string') reply = parsed.reply;
+    else if (typeof parsed.text === 'string') reply = parsed.text;
+    else if (typeof parsed.Text === 'string') reply = parsed.Text;
+  }
+
+  const isTimeoutReply =
+    typeof reply === 'string' && /^No response received within \d+s\.$/i.test(reply.trim());
+  const ok = askRes.exitCode === 0 && !isTimeoutReply;
 
   const output = {
-    ok: askRes.exitCode === 0,
+    ok,
     agent: prof.id,
     driver: prof.driver,
     session: sessionName,
     reply: reply,
     raw: parsed || askRes.stdout,
     durationMs: Date.now() - startedAt,
-    error: askRes.exitCode !== 0 ? { message: askRes.stderr || askRes.stdout || 'opencli execution failed' } : null,
+    error: !ok ? { message: isTimeoutReply ? reply : askRes.stderr || askRes.stdout || 'opencli execution failed' } : null,
   };
   console.log(JSON.stringify(output, null, 2));
   process.exit(output.ok ? 0 : 1);
@@ -720,8 +842,14 @@ function cmdStatus(args) {
     );
     process.exit(live.ok ? 0 : 1);
   } else {
-    const cliTarget = prof.id === 'doubao-desktop' ? 'doubao' : prof.id;
-    const res = runCommandSync('opencli', [cliTarget, 'status'], {}, 10000);
+    const cliTarget = prof.id === 'doubao-desktop' ? 'doubao-app' : prof.id;
+    let res = runCommandSync('opencli', [cliTarget, 'status', '-f', 'json'], {}, 10000);
+    if (res.exitCode !== 0 && prof.id === 'doubao-desktop') {
+      if (ensureDoubaoDesktopDaemon(prof.cdpPort || 9225)) {
+        res = runCommandSync('opencli', [cliTarget, 'status', '-f', 'json'], {}, 10000);
+      }
+    }
+    const parsed = parseOpencliJsonOutput(res.stdout);
     console.log(
       JSON.stringify(
         {
@@ -730,7 +858,8 @@ function cmdStatus(args) {
           driver: prof.driver,
           boardStatus: card.status,
           holder: card.holder,
-          stdout: res.stdout,
+          cdpPort: prof.cdpPort || 9225,
+          status: parsed || res.stdout,
           stderr: res.stderr,
         },
         null,

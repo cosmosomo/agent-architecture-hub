@@ -23,8 +23,10 @@ export const WORKSPACE_ROOT = process.env.HUB_WORKSPACE_ROOT || join(HOME, 'hub-
  * HUB_BACKGROUND=0: this instance only answers requests — no meta-agent patrol, no goal steps, no reconciling of
  * dispatch files. For a second copy on another port (a test of new code, an agent's smoke test) beside the main
  * 8899, which keeps doing that work; two instances doing it would act on the same dispatches twice.
+ * Off under `node --test` (NODE_TEST_CONTEXT is set in each test file's process): a test that builds a real hub
+ * would otherwise step the real goals and dispatch real tasks into its temp repo (seen 2026-10-19).
  */
-export const BACKGROUND = process.env.HUB_BACKGROUND !== '0';
+export const BACKGROUND = process.env.HUB_BACKGROUND !== '0' && !process.env.NODE_TEST_CONTEXT;
 export const NEW_CWD = '__new__';
 export const UPSTREAM_ERROR_REPLY = /unexpected status \d{3}|Service Unavailable|Bad Gateway|No available channel/i;
 

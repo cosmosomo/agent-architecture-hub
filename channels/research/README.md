@@ -8,16 +8,16 @@
 
 | 议题 | 卷宗 | 要回答的问题 | 研究员 | 已有报告（channels/probe/results/） | 在跑 | 下一步 |
 |---|---|---|---|---|---|---|
-| ACP 常驻桥 | [acp.md](acp.md) | ZCode、WorkBuddy、OpenCode、Hermes 经 ACP 能做到哪一步，断在哪 | ZCode · research-acp | acp-runtime-20261018、ask-user-acp-20261019、native-zcode/opencode/hermes-20261019 | | WorkBuddy、OpenCode、Hermes 提问断在 ACP 这一层：查有没有别的入口 |
+| ACP 常驻桥 | [acp.md](acp.md) | ZCode、WorkBuddy、OpenCode、Hermes 经 ACP 能做到哪一步，断在哪 | ZCode · research-acp | acp-runtime-20261018、ask-user-acp-20261019、native-zcode/opencode/hermes-20261019 | | 三家同轮问答入口已找到（WB 2.168.2 ACP 三步流、OC serve HTTP question/reply、HM 换宿主 clarify）：下一步中枢接入 + WB 能力必要性 A/B、OC elicitation 崩溃复验、HM 上游接线动向 |
 | Codex app-server | [codex.md](codex.md) | app-server 协议能给到的上限 | Codex · research-codex | codex-app-driver-20261018 | | 原生 thread/goal、计划模式提问 |
 | Claude stream-json | [claude-stream.md](claude-stream.md) | stream-json 能给到的上限 | Claude（haiku）· research-claude | claude-stream-driver-20261018 | | 合成报错、压缩、子智能体在流里怎么出现 |
-| Antigravity agentapi / Connect-RPC | [agy.md](agy.md) | 332 个方法里哪些能从外部真正用起来 | Antigravity · research-agy | agy-fact-antigravity-20261018、native-antigravity-20261019（核验后只有 7 格有证据） | 23 格补行为证据 | 等交回 |
-| 界面路线：OpenCLI / CDP | [ui-route.md](ui-route.md) | 只能操作界面的产品怎么接，豆包怎么接 | Antigravity · research-ui-route | opencli-route-20261018 | 豆包两条免打扰路线已完成（明文会话直读 + PiP 影子会话机制） | 编写本地会话发现模块提给中心，探查 PiP 家庭版环境边界 |
+| Antigravity agentapi / Connect-RPC | [agy.md](agy.md) | 332 个方法里哪些能从外部真正用起来 | Antigravity · research-agy | agy-fact-antigravity-20261018、native-antigravity-20261019、self-report-antigravity-20261019 | | act-request 交互流逆向、archive 写回与 capacity 并发压测 |
+| 界面路线：OpenCLI / CDP | [ui-route.md](ui-route.md) | 只能操作界面的产品怎么接，豆包怎么接 | Antigravity · research-ui-route | opencli-route-20261018、doubao-closed-loop-20261019 | 豆包端到端闭环实测通过（真活下发+研报产出）+ 会话发现工具落地 | 探查 PiP 家庭版环境边界并入会话聚合链 |
 | 通用 GUI 适配器 | [gui.md](gui.md) | 不占用用户屏幕地看、用任意桌面应用，技术路线有哪些，哪条能通用 | Codex · research-gui | | 不占屏幕读各家面板（Antigravity flash） | 开源与社区路线调研（见任务书 gui-adapter-20261019） |
 | 微信适配器 | [wechat.md](wechat.md) | 攻防最激烈的接入：各种路线怎么做、怎么被封、哪些技术能借到别家 | 未定 | | | 还没派 |
-| 打破能力单元边界 | [frontier.md](frontier.md) | 原生做不到的单元，适配器能补到哪一级 | Argon（Antigravity pro）· research-frontier | adapter-frontier-20261018、theory-limits-20261018 | | 按矩阵“派研究”的 192 格排队 |
+| 打破能力单元边界 | [frontier.md](frontier.md) | 原生做不到的单元，适配器能补到哪一级 | Argon（Antigravity pro）· research-frontier | adapter-frontier-20261018、theory-limits-20261018、frontier.md | MCP Sampling 代理中间件 + CDP 动态探测工具落地通过 | 跨进程并发租约管理器（channel-lease）中心服务化 |
 | 底座渠道 | [base.md](base.md) | 按调用选渠道、额度、熔断、并发 | Codex · research-base | channel-base-20261018 | | 官方积分的无头鉴权（WorkBuddy） |
-| 开源工作台对照 | [oss.md](oss.md) | 别人的多智能体工作台做到了什么 | Antigravity · research-oss | openrig-matrix-20261018、agy-pro-openrig-source-20261018 | | |
+| 开源工作台对照 | [oss.md](oss.md) | 别人的多智能体工作台做到了什么 | Antigravity · research-oss | openrig-matrix-20261018、agy-pro-openrig-source-20261018、oss.md | 已建卷宗推进 8 项开源突破与能力矩阵对照 | 网关代际编号锁与智能体 MCP 协作工具集（乙路）落地 |
 
 研究员一栏是这次排定的，以后谁接着做就改这一栏。表里的会话名还没有全部开出来，派第一件活时才会开。
 
