@@ -139,7 +139,9 @@ export function resolveChannel(raw?: string | null): ChannelProfile | null {
   if (k === 'agy' || k === 'antigravity') return CHANNEL_PROFILES.antigravity;
   if (k === 'hermes' || k === 'hermes-agent') return CHANNEL_PROFILES.hermes;
   if (k in CHANNEL_PROFILES) return CHANNEL_PROFILES[k as ChannelId];
-  return null;
+  // Any alias the product table gives (doubao → doubao-desktop).
+  const row = PRODUCT_ROWS.find((p) => p.backend && (p.aliases || []).some((a) => a.toLowerCase() === k));
+  return row ? CHANNEL_PROFILES[row.id as ChannelId] : null;
 }
 
 export function detectChannelFromCommand(cmd: string): ChannelId {

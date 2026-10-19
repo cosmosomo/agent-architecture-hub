@@ -28,6 +28,7 @@ import { sessionControlMethods } from './gateway/session_control.ts';
 import { codexRunMethods } from './gateway/run_codex.ts';
 import { claudeRunMethods } from './gateway/run_claude.ts';
 import { acpxRunMethods } from './gateway/run_acpx.ts';
+import { opencliRunMethods } from './gateway/run_opencli.ts';
 import { antigravityMethods } from './gateway/antigravity.ts';
 import { sessionMethods } from './gateway/sessions.ts';
 import { collabMethods } from './gateway/collab.ts';
@@ -1257,6 +1258,9 @@ export class AgentGatewayHub {
     if (prof.id === 'claude') {
       return this.startClaudeStreamRun(run, opts);
     }
+    if (prof.route === 'opencli') {
+      return this.startOpencliRun(run, opts);
+    }
     if (prof.route === 'acp-resident') {
       return this.startAcpResidentRun(run, opts);
     }
@@ -1293,6 +1297,11 @@ Object.assign(AgentGatewayHub.prototype, claudeRunMethods);
 type AcpxRunMethods = typeof acpxRunMethods;
 export interface AgentGatewayHub extends AcpxRunMethods {}
 Object.assign(AgentGatewayHub.prototype, acpxRunMethods);
+
+// opencliRunMethods: gateway/run_opencli.ts
+type OpencliRunMethods = typeof opencliRunMethods;
+export interface AgentGatewayHub extends OpencliRunMethods {}
+Object.assign(AgentGatewayHub.prototype, opencliRunMethods);
 
 // antigravityMethods: gateway/antigravity.ts
 type AntigravityMethods = typeof antigravityMethods;

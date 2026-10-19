@@ -16,7 +16,7 @@ export type RunOpts = {
   resumedByMeta?: string;
   originalPrompt?: string;
 };
-export type ChannelId = 'codex' | 'claude' | 'zcode' | 'workbuddy' | 'opencode' | 'antigravity' | 'hermes';
+export type ChannelId = 'codex' | 'claude' | 'zcode' | 'workbuddy' | 'opencode' | 'antigravity' | 'hermes' | 'doubao-desktop';
 
 export type MetaAgentId = 'meta_approver' | 'meta_resumer' | 'meta_maint' | 'meta_auditor';
 

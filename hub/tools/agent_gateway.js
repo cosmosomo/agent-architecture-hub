@@ -759,10 +759,13 @@ function runOpencliCdp(prof, gate, args, promptText) {
     process.exit(1);
   }
 
-  // 2. If CDP is open, execute ask
+  // 2. If CDP is open, execute ask. One line only: a prompt with line breaks never got an answer through
+  // `opencli doubao-app ask` (10-20: one line answered in 8 s, two lines still waiting after 160 s), and every
+  // dispatch is many lines.
+  const oneLine = promptText.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).join(' ');
   const askRes = runCommandSync(
     'opencli',
-    [adapterCmd, 'ask', promptText, '--timeout', String(timeoutSec), '-f', 'json'],
+    [adapterCmd, 'ask', oneLine, '--timeout', String(timeoutSec), '-f', 'json'],
     {},
     (timeoutSec + 15) * 1000
   );
@@ -900,6 +903,7 @@ const SHARED_DAEMON_CHANNELS = new Set([
   'opencode',
   'antigravity',
   'hermes',
+  'doubao-desktop',
 ]);
 
 function callSharedDaemon(apiPath, method = 'GET', bodyObj = null, timeoutSec = 130) {

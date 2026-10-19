@@ -192,7 +192,8 @@ export const capacityMethods = {
    * others were left out.
    */
   pickChannel(this: AgentGatewayHub, candidates?: string[], exclude: string[] = []) {
-    const pool = (candidates && candidates.length ? candidates : Object.keys(CHANNEL_PROFILES)).filter((c) => !exclude.includes(c));
+    // A product driven through its desktop UI (Doubao) is slow and shares one window: only when named.
+    const pool = (candidates && candidates.length ? candidates : Object.keys(CHANNEL_PROFILES).filter((c) => CHANNEL_PROFILES[c as ChannelId].route !== 'opencli')).filter((c) => !exclude.includes(c));
     const loads = pool.map((c) => this.channelLoad(c));
     const left: string[] = [];
     const ok = loads.filter((l) => {
