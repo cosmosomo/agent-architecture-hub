@@ -156,6 +156,9 @@ for (const [k, v] of fact) {
   const back = latest4.get(`${fam}|${fam}/L2/server-api|${unit}|adapter`);
   if (back && back.r.by === 'probe_display.mjs' && String(back.r.at) > String(v.r.at)) fact.delete(k);
 }
+// What a family is good at for a unit, as the latest row that says so (field strength: a short note with its reason).
+const strengthOf = new Map();
+for (const r of rows) if (r.family && r.capability && r.strength) strengthOf.set(`${r.family}|${r.capability}`, String(r.strength));
 // built: implemented, not yet tested; fill: done one level up (README “立体认知”: 理论极限).
 const INTEG = { real: 'pass', partial: 'partial', fill: 'partial', built: 'unverified', todo: 'unverified', fake: 'fail' };
 function integCell(side, unit, fam) {
@@ -364,10 +367,12 @@ const GF = ['claude', 'codex', 'antigravity', 'zcode', 'workbuddy', 'opencode', 
 // Scale of each capability unit (README “立体认知”: “尺度”, “能力单元在这个空间里的位置”). Human-facing units take the scale of what they show.
 const SCALE = {
   '一轮之内': 'observe-live observe-steps follow-progress steer inject-next inject-tool inject-inbox inject-silent cancel permission ask-user human-steer attach',
-  '一个会话': 'open open-idle resume resume-native fork rewind compact model-new model-switch mode-switch reasoning-effort close archive delete label native-meta native-meta-write context-usage observe-history state wait-visible wake-bg wake-timer wake-msg wake-stall wake-persist workspace instructions mount-tools memory-mode output-contract guard permission-scope goal',
+  '一个会话': 'recall-history open open-idle resume resume-native fork rewind compact model-new model-switch mode-switch reasoning-effort close archive delete label native-meta native-meta-write context-usage observe-history state wait-visible wake-bg wake-timer wake-msg wake-stall wake-persist workspace instructions mount-tools memory-mode output-contract guard permission-scope goal',
   '两个会话之间': 'spawn-subagent peer-message handoff reclaim ownership act-deliver act-request act-yield act-report notify-user handover-human app-sync',
   '一群会话': 'discover-sessions content-search list-projects task-board loop-guard',
-  '底座': 'model-list quota channel-route channel-health capacity channel-lease sampling probe-host host-drain terminal browser artifact dev-preview cmd-list workspace-files',
+  '底座': 'model-list quota channel-route channel-health capacity channel-lease sampling probe-host host-drain terminal artifact dev-preview cmd-list workspace-files',
+  // What an ecosystem is good at and others can borrow by sending it the work (用户 10-19：高阶能力渠道矩阵).
+  '高阶能力': 'computer-use browser web-search deep-research image-gen office-docs',
 };
 // Scales no family holds across families, so we are the host there (README “立体认知”: “每一级由谁当宿主”). A gap at
 // these scales is ours to build whether or not some family exposes the unit.
@@ -510,7 +515,7 @@ const matrix = {
       PROD7.map((f) => {
         const cs = {};
         for (const L of L4) cs[L] = cellOf(f, u.id, L);
-        return [f, { ...Object.fromEntries(L4.map((L) => [L, state(cs[L])])), how: short((cs.front || cs.adapter || cs.api || cs.app || {}).how, 60), gap: gap(u, f, cs) }];
+        return [f, { ...Object.fromEntries(L4.map((L) => [L, state(cs[L])])), how: short((cs.front || cs.adapter || cs.api || cs.app || {}).how, 60), gap: gap(u, f, cs), strength: strengthOf.get(`${f}|${u.id}`) }];
       }),
     ),
   })),

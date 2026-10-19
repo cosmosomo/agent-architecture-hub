@@ -129,6 +129,12 @@ table { border-collapse: collapse; font-size: 14px; }
   </section>
 
   <section>
+    <h2>高阶能力渠道</h2>
+    <p class="muted">各家生态自带、别人可以派活借用的能力：操作电脑、浏览器、联网搜索、深度调研、生成图片、生成办公文档。格里是这家在任一位置上的最好状态，有核验过的优势说明就一并列出。来源：各家自报（线索）加照判据核验（证据），流程见 channels/probe/SOP_对话探查生态功能.md。</p>
+    <div class="tbl-wrap"><table class="tbl" id="advanced"></table></div>
+  </section>
+
+  <section>
     <h2>按尺度：哪一级还空着</h2>
     <div class="tbl-wrap"><table class="tbl" id="scales"></table></div>
   </section>
@@ -221,6 +227,22 @@ document.getElementById('gen').textContent = '生成于 ' + M.generatedAt.slice(
     h += `<tr><td>${name}<small class="muted num"> ${id}</small></td>${P.map((p) => `<td title="${esc(u.cells[p].how)}">${dot(u.cells[p].adapter)}<br>${dot(u.cells[p].front)}</td>`).join('')}</tr>`;
   }
   document.getElementById('display').innerHTML = h;
+}
+
+// advanced capabilities: best state anywhere, plus what each family is good at
+{
+  const ORDER = ['pass', 'partial', 'unverified', 'fail'];
+  const word = { pass: '通过', partial: '部分', unverified: '未证实', fail: '不通' };
+  const best = (c) => ORDER.find((k) => ['app', 'api', 'adapter', 'front'].some((L) => st(c[L]) === k)) || 'none';
+  const us = M.units.filter((u) => u.scale === '高阶能力');
+  let h = `<tr><th>能力</th>${P.map((p) => `<th>${LABEL[p]}</th>`).join('')}</tr>`;
+  for (const u of us) {
+    h += `<tr><td>${esc(u.name)}<small class="muted num"> ${esc(u.id)}</small></td>${P.map((p) => {
+      const c = u.cells[p], b = best(c);
+      return `<td title="${esc(c.how || '')}" style="white-space:normal;min-width:7em"><span class="sw s-${b}"></span> ${word[b] || '没有记录'}${c.strength ? `<br><small>${esc(c.strength)}</small>` : ''}</td>`;
+    }).join('')}</tr>`;
+  }
+  document.getElementById('advanced').innerHTML = us.length ? h : '<tr><td>还没有登记高阶能力单元</td></tr>';
 }
 
 // scales

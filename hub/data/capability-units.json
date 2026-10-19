@@ -1,6 +1,6 @@
 {
  "generatedFrom": "能力单元登记表_20261017.md",
- "generatedAt": "2026-10-19T05:41:47.137Z",
+ "generatedAt": "2026-10-19T07:11:17.761Z",
  "units": [
   {
    "id": "open",
@@ -1144,6 +1144,51 @@
    "definition": "智能体在会话进行中翻回它和人过去的对话记录，包括已被压缩掉的部分和人的原话，按轮次、关键词或说话人取用",
    "judge": "智能体取回很早或已压缩的原话并据此回答，取回的内容和记录一致",
    "source": "用户 10-19 原话：“有些agent比如Claudedesktop，就可以看长期对话，回顾自己和用户的对话，用户的原话，这个功能值得注册……我们的系统就可以提供这个能力，做成简单的命令就可以查看”；随后纠正：“是回顾对话记录，回顾过去的记录”"
+  },
+  {
+   "id": "computer-use",
+   "name": "操作电脑",
+   "category": "高阶能力（候选，10-19 用户要求补登）",
+   "bitmap": null,
+   "definition": "按指令看屏幕、点击、输入，在桌面应用里完成一件事并交回结果",
+   "judge": "指定一件桌面操作（例如在某个应用里打开某处、填一项），做完后结果可以由别人核对",
+   "source": "用户 10-19 原话：“其实可以做一些高阶能力渠道矩阵，然后把各家优势记录和注册下来。比如computeruse，browseruse什么的”；又：“有些生态他们的那个 Computer Use 会做的很好，豆包的 Computer Use 就做的很好”"
+  },
+  {
+   "id": "web-search",
+   "name": "联网搜索",
+   "category": "高阶能力（候选，10-19 用户要求补登）",
+   "bitmap": null,
+   "definition": "按问题检索网页，返回带来源链接的结果",
+   "judge": "返回的链接能打开，内容和结论对得上",
+   "source": "用户 10-19 原话：“其实可以做一些高阶能力渠道矩阵，然后把各家优势记录和注册下来。比如computeruse，browseruse什么的”；又：“有些生态他们的那个 Computer Use 会做的很好，豆包的 Computer Use 就做的很好”"
+  },
+  {
+   "id": "deep-research",
+   "name": "深度调研",
+   "category": "高阶能力（候选，10-19 用户要求补登）",
+   "bitmap": null,
+   "definition": "多轮检索、阅读、比对后，写成带引用的报告",
+   "judge": "报告里的引用可核对，问题的各个方面都有覆盖，结论有出处",
+   "source": "用户 10-19 原话：“其实可以做一些高阶能力渠道矩阵，然后把各家优势记录和注册下来。比如computeruse，browseruse什么的”；又：“有些生态他们的那个 Computer Use 会做的很好，豆包的 Computer Use 就做的很好”"
+  },
+  {
+   "id": "image-gen",
+   "name": "生成图片",
+   "category": "高阶能力（候选，10-19 用户要求补登）",
+   "bitmap": null,
+   "definition": "按描述生成图片并存成文件",
+   "judge": "图片文件存在，内容符合描述",
+   "source": "用户 10-19 原话：“其实可以做一些高阶能力渠道矩阵，然后把各家优势记录和注册下来。比如computeruse，browseruse什么的”；又：“有些生态他们的那个 Computer Use 会做的很好，豆包的 Computer Use 就做的很好”"
+  },
+  {
+   "id": "office-docs",
+   "name": "生成办公文档",
+   "category": "高阶能力（候选，10-19 用户要求补登）",
+   "bitmap": null,
+   "definition": "生成或修改演示文稿、文档、表格文件",
+   "judge": "文件能用对应软件打开，内容和格式符合要求",
+   "source": "用户 10-19 原话：“其实可以做一些高阶能力渠道矩阵，然后把各家优势记录和注册下来。比如computeruse，browseruse什么的”；又：“有些生态他们的那个 Computer Use 会做的很好，豆包的 Computer Use 就做的很好”"
   }
  ]
 }
