@@ -55,3 +55,6 @@ channels/probe/capability-matrix.html
 
 # Blackboard copies: backups, damaged and restored versions (evidence stays out of the public repo)
 channels/probe/blackboard.*
+
+# Research briefs are generated from the map; regenerate with build_briefs.mjs
+channels/research/briefs/
