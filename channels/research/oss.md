@@ -1,7 +1,15 @@
 # 开源工作台对照卷宗
 
+> **议题**：别人的多智能体工作台做到了什么  
+> **研究员**：Argon（Antigravity pro）· research-oss  
+> **最近更新**：2026-10-19 21:30
+
+---
+
 ## 关键信息
 
+- **开源多智能体工作台桌面与界面驱动对照**：
+  开源方案（如 OpenRig、Superset、Camofox）在处理本地 GUI 与桌面操作时，普遍避开脆弱易抢焦点的 OS 物理鼠标模拟，优先采用 CDP（Chrome DevTools Protocol）调试通道或远程无头浏览器协议；这与我们本轮在 ZCode（:9240）、Antigravity（:9234）、豆包（:9225）通过原生 WebSocket CDP 直连完成零抢占静默读取 DOM 与无头截屏（黑板 1977-1981）的工程实践完全吻合。
 - **开源多智能体工作台样本集与版本**：
   - **OpenRig**（`mvschwarz/openrig`，v0.6.10 / commit `e8f0ab34`，本地镜像 `C:\Users\COLORFIRE\hub-workspaces\ref-openrig`）：7 层架构（L1-L7），以 Node.js + TypeScript + SQLite 为核心，解耦了席位（Seat）、占用者任期（Occupant Tenure）和原生会话（Native Session）三层模型。依据：看到，[agy-pro-openrig-source-20261018.md](../probe/results/agy-pro-openrig-source-20261018.md)、[openrig-matrix-20261018.md](../probe/results/openrig-matrix-20261018.md)。
   - **Superset**（`superset-sh/superset`，GitHub 15.3k stars，2026 智能体 IDE）：主打轻量 Git Worktree 任务级强隔离，并行调度 10~100+ 智能体，内置 Diff 审查与 In-app 浏览器，解决多智能体写代码的文件锁与冲突。依据：看到，GitHub topics 与官网公开资料。
@@ -55,6 +63,8 @@
 - 仓库报告：[agy-pro-openrig-source-20261018.md](../probe/results/agy-pro-openrig-source-20261018.md)（OpenRig 源码四块核心控制机制剖析）
 - 仓库全景：[CAPABILITY_MAP.md](../probe/CAPABILITY_MAP.md)（功能矩阵：每个单元在各家、各位置上的理论上限与现状）
 - 仓库矩阵：[MATRIX.md](../probe/MATRIX.md)（实测矩阵：黑板 2709 条证据生成的各单元状态）
+- 黑板实测证据行（2026-10-19 批次）：
+  - **黑板 1977-1981 行**：三大 Electron 桌面端（ZCode/Antigravity/Doubao）CDP 直连静默读取 DOM 与无头截屏（对应开源无头 CDP 驱动模式）
 - 能力真源：`E:\program\GIT\Jobs\08_简历设计工作区\02_项目打磨与展示\智能体技术\多智能体协作\能力单元登记表_20261017.md`（109 项能力单元登记表）
 - 开源项目：[mvschwarz/openrig](https://github.com/mvschwarz/openrig)（v0.6.10，commit `e8f0ab34` / `3001cc43`，本地镜像 `C:\Users\COLORFIRE\hub-workspaces\ref-openrig`）
 - 开源项目：[superset-sh/superset](https://github.com/superset-sh/superset)（Agentic IDE，Git worktree 强隔离并行编排）

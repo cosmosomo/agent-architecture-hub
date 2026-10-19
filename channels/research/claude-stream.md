@@ -92,8 +92,10 @@
    → 下一步：构造长会话（注入大量文件/历史），压测驱动吞吐与内存。
 
 5. **多会话并发池化**：
-   - 当前驱动 `ClaudeStreamDriver.sessions` 是 Map，未做空闲回收、最大并发限制、冷热分级。  
+   - 当前驱动 `ClaudeStreamDriver.sessions` 是 Map，未做空闲回收、最大并发限制、冷热分级。
    → 下一步：在 gateway.ts 对接时补齐连接池策略（LRU、TTL、预热）。
+
+6. **本轮边界推进未获得 Claude 运行证据**：本轮实际运行的是 Codex app-server 的 goal 元数据持久化探针；没有启动 Claude CLI/stream-json 进程或模型轮，因此不把 Codex 的跨重启结果外推给 Claude。网络研究入口 `search_hub.js` 返回 `All AnySearch keys failed`。下一步仍按 Claude 边界清单先挑 `inject-next` 或 goal/预算相关格，联网资料可用后做真实 stream-json 输入、同轮结束/次轮续跑及预算停止验证。**试过**：本轮搜索命令结果；**看到**：[Codex 边界清单](briefs/codex-边界.md)。
 
 ---
 

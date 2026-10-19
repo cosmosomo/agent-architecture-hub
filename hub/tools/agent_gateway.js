@@ -683,10 +683,12 @@ function ensureDoubaoDesktopDaemon(cdpPort = 9225, forceReauth = false) {
     }
   } catch {}
 
+  const bgLocalAppData = path.join(bgProfileDir, 'localappdata');
+  try { fs.mkdirSync(bgLocalAppData, { recursive: true }); } catch {}
   // 安全审计收紧：完全移除 --remote-allow-origins=* 通配符！
   // Chromium 默认对缺乏 Origin 头的原生本地客户端放行，而阻断浏览器网页跨域访问 127.0.0.1:9225（返回 403 Forbidden）
-  const cmdLine = `"${doubaoExe}" --user-data-dir="${bgProfileDir}" --no-startup-window --keep-alive-for-test --remote-debugging-port=${cdpPort}`;
-  const psScript = `$cmd = '${cmdLine.replace(/'/g, "''")}'; Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $cmd } | Out-Null`;
+  // 环境变量隔离：重设 LOCALAPPDATA 使得 Doubao.dll 的 sdk_storage/log 与 agent_infra sandbox 落在私有目录，不污染前台
+  const psScript = `$env:LOCALAPPDATA = '${bgLocalAppData.replace(/'/g, "''")}'; Start-Process -FilePath '${doubaoExe.replace(/'/g, "''")}' -ArgumentList @('--user-data-dir=${bgProfileDir.replace(/'/g, "''")}', '--no-startup-window', '--keep-alive-for-test', '--remote-debugging-port=${cdpPort}') -WindowStyle Hidden`;
   spawnSync('powershell.exe', ['-NoProfile', '-Command', psScript], { windowsHide: true, timeout: 8000 });
 
   for (let i = 0; i < 12; i++) {
@@ -784,8 +786,25 @@ function runOpencliCdp(prof, gate, args, promptText) {
     else if (typeof parsed.Text === 'string') reply = parsed.Text;
   }
 
-  const isTimeoutReply =
+  let isTimeoutReply =
     typeof reply === 'string' && /^No response received within \d+s\.$/i.test(reply.trim());
+
+  // 回复收割兜底：若 ask 轮询超时，但豆包实际已在 DOM 渲染 Assistant 回复，立即执行 read 收割
+  if (isTimeoutReply) {
+    try {
+      const fbRes = runCommandSync('opencli', [adapterCmd, 'read', '-f', 'json'], {}, 8000);
+      const fbParsed = parseOpencliJsonOutput(fbRes.stdout);
+      if (Array.isArray(fbParsed) && fbParsed.length > 0) {
+        const lastMsg = fbParsed[fbParsed.length - 1];
+        const fbText = lastMsg.Text ?? lastMsg.text;
+        if (fbText && !/^No response received/i.test(fbText)) {
+          reply = fbText;
+          isTimeoutReply = false;
+        }
+      }
+    } catch {}
+  }
+
   const isAuthExpired =
     typeof reply === 'string' && /请先登录|扫码登录|登录失效|登录后继续|账号已被登出/i.test(reply);
   const ok = askRes.exitCode === 0 && !isTimeoutReply && !isAuthExpired;
@@ -1972,8 +1991,29 @@ function cmdApi(args, sub) {
     if (res && Array.isArray(res.sessions)) {
       const q = String(args.q || '').toLowerCase();
       const ch = args.agent || args.channel ? agentId() : '';
-      const rows = res.sessions
-        .filter((s) => (!ch || s.channel === ch) && (!q || String(s.title || s.name || '').toLowerCase().includes(q)))
+      let filtered = res.sessions.filter(
+        (s) => (!ch || s.channel === ch) && (!q || String(s.title || s.name || '').toLowerCase().includes(q))
+      );
+      if ((ch === 'doubao-desktop' || ch === 'doubao') && filtered.length === 0) {
+        try {
+          const discTool = path.join(ROOT_DIR, 'hub', 'tools', 'doubao_sessions_discover.js');
+          if (fs.existsSync(discTool)) {
+            const raw = spawnSync(process.execPath, [discTool, 'list', '--limit', String(args.limit || 30)], { encoding: 'utf8', timeout: 5000 }).stdout || '';
+            const discLines = raw.trim().split('\n').filter((l) => l.startsWith('doubao:'));
+            filtered = discLines.map((l) => {
+              const parts = l.split('\t');
+              return {
+                id: parts[0] || '',
+                channel: 'doubao-desktop',
+                state: parts[1] || 'idle',
+                updatedAt: parts[2] || '',
+                title: parts.slice(6).join('\t') || parts[0],
+              };
+            });
+          }
+        } catch {}
+      }
+      const rows = filtered
         .slice(0, Number(args.limit) || 30)
         // The slim list gives state as a string ("working"); the full one as { status }.
         .map((s) => `${s.id}\t${s.channel}\t${(typeof s.state === 'string' ? s.state : s.state && s.state.status) || s.status || ''}\t${s.updatedAt || ''}\t${String(s.title || s.name || '').replace(/\s+/g, ' ').slice(0, 60)}`);

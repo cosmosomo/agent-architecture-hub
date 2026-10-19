@@ -3,7 +3,7 @@ channel_id: doubao-desktop
 name: 豆包 Desktop (Doubao & DoubaoWork)
 category: host
 maintainer: S5
-status: 🔴 blocked_down（10-20 02:35 负责人暂停：后台实例和前台共用 sdk_storage、sandbox_runtime 等目录，前台沙箱在后台实例开着时出过“Sandbox could not be provisioned”；研究员证实两实例互不干扰后再改回 healthy）
+status: 🔴 blocked_down（10-20 研究员实测证实：后台实例与前台复用同账号登录态时，豆包云端 SSE 工具调用流 [/alice/office/tool_local/chunk_stream] 会被广播给后台无沙箱环境的实例并抢先报错返回 sandbox_environment_not_ready，打崩前台用户的正常工具执行；且 C++ 组件硬编码 %LOCALAPPDATA% 争抢锁文件。双实例在同账号下不可物理共存，必须保持 blocked_down，建议中心改用前台单实例 CDP Attach 或纯离线 Strategy.LOCAL）
 upgrade_status: 🔍 watch_external_sessions
 verified_version: "2.32.6 (CDP:9225)"
 detected_version: "2.32.6 (CDP:9225)"
@@ -54,6 +54,10 @@ capabilities:
   3. **派活前可按需指定交付文件路径**，或直接通过 `agent_gateway.js run --channel doubao-desktop --prompt "..."` 同步收回结构化 JSON 回复。
 
 ## 四、渠道升级与功能演进日志
+- **2026-10-20 03:55 · 🔴 确证后台双实例冲突根因并保持 blocked_down，完成回复收集与会话表接入**：
+  - **确证双实例致命冲突根因**：深入分析 `saman_2026.1020.0.log` 发现，后台实例（PID 88012）复用前台登录 Cookie 时，豆包云端将用户账号级的 SSE 工具调用流（`/alice/office/tool_local/chunk_stream`）同时广播给前后台两端。当用户在前台执行文件读写等工具时，未初始化本地沙箱的后台实例抢先回包报错 `Sandbox could not be provisioned: sandbox_environment_not_ready`，打崩前台；同时 C++ 组件硬编码 `%LOCALAPPDATA%` 争抢锁文件。确认同账号下无法长期共存第二实例，宿主卡保持 `🔴 blocked_down`；
+  - **打通 OpenCLI 回复收集与三项能力单元实测（黑板 2188-2190 全部 pass）**：修复 `@jackwener/opencli` 的 `utils.js`（可见性判定与倒序查找最后一个 Assistant 容器）及 `ask.js`（轮询超时前基于 `readMessagesScript` 兜底收割），并在 `agent_gateway.js` 实现 Fallback Read，彻底攻克连续对话中 `No response received within 600s` 假超时问题；实测 `open`（暗号 T102001，28s）、`resume`（暗号 T102002，7.8s）、`act-deliver`（暗号 T102003，9s，dsp_195237_gz3s 结构化主动交回）全绿；
+  - **打通 `sessions --agent doubao` 桥接与 `trace/` 接入方案**：在 `agent_gateway.js` 实现自动桥接 `doubao_sessions_discover.js`，秒级列出 70+ 智能体模式本地会话，并向负责人提交 `trace/apps/cli/src/gateway/sessions.ts` 原生集成方案。
 - **2026-10-19 20:30 · 🟢 生产级长期化与安全收紧**：
   - **移除 `--remote-allow-origins=*` 攻防隐患**：查实并实测 Chromium DevTools 机制，完全移除通配符后，本机浏览器内的恶意网页（携带 `Origin: https://...`）建连 WebSocket 被 403 Forbidden 彻底阻断，而本地 opencli（无 Origin 头）正常握手通过；
   - **Profile 迁移至持久目录 `~/.agent-hub/doubao-daemon`**：远离 `%TEMP%` 易被系统磁盘清理和权限暴露的风险；
