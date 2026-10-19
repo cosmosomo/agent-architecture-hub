@@ -60,6 +60,8 @@ export interface TaskRecord {
   delivery: { at: string; summary: string; reply: string; files: string[] } | null;
   /** The worker dispatch the delivery came from; a later hand-back on it replaces a turn-end pick (see onDispatch). */
   deliveryDispatchId?: string;
+  /** Checks that came back with no verdict (the checker's dispatch failed, stalled, or its reply had no PASS/FAIL). */
+  verifyRetries?: number;
   /** Earlier hand-backs, newest last, to notice a rework that changes nothing. */
   previousReplies: string[];
   verdict: { at: string; passed: boolean; note: string; by: string; rework?: string } | null;
@@ -420,8 +422,8 @@ export class TaskBoard {
           continue;
         }
         let running = tasks.filter((t) => t.status === 'dispatched' || (t.status === 'verifying' && t.verifierDispatchId)).length;
-        // Checks that waited for a busy checker session.
-        for (const t of tasks.filter((x) => x.status === 'verifying' && !x.verifierDispatchId && x.waitingWhy)) {
+        // Checks that waited for a busy checker session, and checks left with no checker and no retry yet.
+        for (const t of tasks.filter((x) => x.status === 'verifying' && !x.verifierDispatchId && x.verifyBy.startsWith('agent:') && (x.waitingWhy || !x.verifyRetries))) {
           if (running >= g.budget.maxParallel) break;
           if (await this.startVerify(t)) running++;
         }
@@ -633,9 +635,13 @@ export class TaskBoard {
     const reply = String(d.delivery?.reply || d.delivery?.summary || '');
     const m = reply.match(/^\s*\**\s*(PASS|FAIL)\b[\s:：*]*(.*)$/im);
     if (d.status !== 'completed' || !m) {
+      // One more check before a person is needed: a checker that died with a restart, or answered without the
+      // PASS/FAIL line, left tasks waiting for nobody (10-20: three tasks sat in verifying overnight).
+      t.verifyRetries = (t.verifyRetries || 0) + 1;
       this.saveTask(t);
-      this.log(t, 'verify_inconclusive', { dispatchId: d.id, status: d.status, reply: reply.slice(0, 200) });
-      return; // a person decides
+      this.log(t, 'verify_inconclusive', { dispatchId: d.id, status: d.status, reply: reply.slice(0, 200), retry: t.verifyRetries <= 1 });
+      if (t.verifyRetries <= 1) void this.startVerify(t);
+      return; // after that, a person decides
     }
     const rest = (m[2] + '\n' + reply.slice(reply.indexOf(m[0]) + m[0].length)).trim();
     this.verdict(t, m[1].toUpperCase() === 'PASS', rest.slice(0, 1000), t.verifyBy, m[1].toUpperCase() === 'FAIL' ? rest.slice(0, 1500) : undefined);

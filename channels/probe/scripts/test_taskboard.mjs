@@ -202,6 +202,24 @@ const taskOf = (g, key) => board.tasksOf(board.getGoal(g.id)).find((t) => t.key 
   check('旧验收的结论被丢掉', t.status === 'verifying' && !t.verdict, `${t.status} ${JSON.stringify(t.verdict)}`);
 }
 
+// 6h. a check with no verdict is tried once more, then left to a person
+{
+  const g = board.createGoal({ title: '验收没结论', objective: 'x', channel: 'zcode', verifyBy: 'agent:claude', tasks: [{ key: 'inc', title: '验收会断的活' }] });
+  await tick();
+  board.onDispatch({ id: last().id, status: 'completed', delivery: { at: new Date().toISOString(), summary: '做完了', reply: '做完了', files: [], via: 'cli' } });
+  await tick();
+  const t = taskOf(g, 'inc');
+  const c1 = last();
+  board.onDispatch({ id: c1.id, status: 'stalled' });
+  await tick();
+  const c2 = last();
+  check('验收员卡死：自动再验一次', c2 !== c1 && c2.toSessionName === `${t.sessionName}-verify` && t.status === 'verifying' && t.verifyRetries === 1, `${c2 === c1} ${t.status} ${t.verifyRetries}`);
+  board.onDispatch({ id: c2.id, status: 'completed', delivery: { at: new Date().toISOString(), summary: '看过了', reply: '看过了，挺好', files: [] } });
+  await tick();
+  await board.step();
+  check('第二次还没结论：停下等人，不再自动派', last() === c2 && t.status === 'verifying' && t.verifyRetries === 2, `${last() === c2} ${t.status} ${t.verifyRetries}`);
+}
+
 // 6f. a named task's session is reused by the next goal on the same line, one piece of work at a time
 {
   const g1 = board.createGoal({ title: '同一条线一', objective: 'x', channel: 'opencode', verifyBy: 'auto', tasks: [{ key: 'line-x', title: '第一件' }] });
