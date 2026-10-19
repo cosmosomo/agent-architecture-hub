@@ -933,6 +933,7 @@ const STEP_TEXT = {
   goal_created: '开了目标', task_created: '建了任务', dependency_unblocked: '前置都过了，可以开始', dispatch_issued: '派出', dispatch_delivered: '交回',
   dispatch_failed: '派活没交回，重派', verify_dispatched: '请另一个智能体验收', verify_inconclusive: '验收结论不明，等人定', verify_dispatch_failed: '验收没派出去',
   verdict_passed: '验收通过', rework_requested: '打回返工', loop_fused: '熔断停下', task_cancelled: '取消任务', cancelled_with_goal: '随目标取消', retry: '重来', reassign: '改派',
+  channel_picked: '中心选了', waiting_for_channel: '没有能接的产品，等',
   goal_running: '目标恢复', goal_paused: '目标暂停', goal_fused: '目标熔断', goal_completed: '目标完成', goal_cancelled: '目标取消',
 };
 const VERIFY_TEXT = (v) => (v === 'auto' ? '自动验收' : v === 'human' ? '人验收' : String(v).startsWith('agent:') ? `${FAM[v.slice(6)] || v.slice(6)} 验收` : v);
@@ -951,7 +952,8 @@ async function goalSheet() {
   if (!S.caps) toast('读取中…');
   await loadCaps().catch(() => {});
   const fams = Object.keys(S.caps ? S.caps.channels : {}).filter((f) => getBackendCap(f, 'spawn-subagent') && FAM[f]);
-  const opts = (sel) => fams.map((f) => `<option value="${f}" ${f === sel ? 'selected' : ''}>${esc(FAM[f])}</option>`).join('');
+  // "auto": the center picks by health and load when the task is dispatched, and moves it on when a product fails.
+  const opts = (sel) => fams.map((f) => `<option value="${f}" ${f === sel ? 'selected' : ''}>${esc(FAM[f])}</option>`).join('') + `<option value="auto" ${sel === 'auto' ? 'selected' : ''}>自动选（看健康和负载）</option>`;
   const def = store.get('dispFam') || fams[0];
   const row = (i) => `<div class="card" data-row style="padding:8px"><input data-k="title" placeholder="第 ${i} 件事：要做什么">
       <div class="row" style="gap:8px;margin-top:6px"><select data-k="channel" class="grow">${opts(def)}</select>
@@ -992,8 +994,10 @@ async function goalSheet() {
 
 function taskNode(t) {
   const [st, cls] = TASK_ST[t.status] || [t.status, ''];
-  const sid = sessionIdOf({ channel: t.channel, sessionName: t.sessionName });
-  const who = `${esc(FAM[t.channel] || t.channel)}${t.model ? ' · ' + esc(modelLabel(t.channel, t.model)) : ''}`;
+  const sid = t.channel ? sessionIdOf({ channel: t.channel, sessionName: t.sessionName }) : null;
+  const who = t.channel
+    ? `${esc(FAM[t.channel] || t.channel)}${t.auto ? '（中心选的）' : ''}${t.model ? ' · ' + esc(modelLabel(t.channel, t.model)) : ''}`
+    : `等中心选${t.waitingWhy ? '：' + esc(t.waitingWhy.slice(0, 80)) : ''}`;
   const d = t.delivery;
   const v = t.verdict;
   const acts = [];
@@ -1036,7 +1040,7 @@ async function viewGoal(id) {
       <div class="sec">任务（从左到右按依赖先后）</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start">${cols.map((c, i) => `<div style="flex:1 1 260px;min-width:0"><div class="sub">第 ${i + 1} 步</div>${c.map(taskNode).join('')}</div>`).join('')}</div>
       <div class="sec">轨迹</div>
-      <div class="card">${v.trajectory.slice().reverse().slice(0, 80).map((h) => `<div class="sub">${clock(h.at)} ${h.scope === 'goal' ? '目标' : esc(h.scope)} · ${esc(STEP_TEXT[h.action] || h.action)}${h.detail && (h.detail.reason || h.detail.rework || h.detail.to || h.detail.summary) ? '：' + esc(String(h.detail.reason || h.detail.rework || h.detail.to || h.detail.summary).slice(0, 120)) : ''}</div>`).join('')}</div>`;
+      <div class="card">${v.trajectory.slice().reverse().slice(0, 80).map((h) => `<div class="sub">${clock(h.at)} ${h.scope === 'goal' ? '目标' : esc(h.scope)} · ${esc(STEP_TEXT[h.action] || h.action)}${h.detail && (h.detail.reason || h.detail.rework || h.detail.to || h.detail.summary || h.detail.why) ? '：' + esc(String(h.detail.reason || h.detail.rework || h.detail.to || h.detail.summary || h.detail.why).slice(0, 160)) : ''}</div>`).join('')}</div>`;
     main.querySelectorAll('[data-ga]').forEach((b) => (b.onclick = async () => {
       const action = b.dataset.ga;
       const body = { id: g.id, action };
@@ -1055,7 +1059,7 @@ async function viewGoal(id) {
       else if (a === 'rework') { const r = prompt('要它怎么改？'); if (!r) return; body = { ...body, action: 'verify', passed: false, note: r, rework: r }; }
       else if (a === 'reassign') {
         const fams = Object.keys(FAM).filter((f) => getBackendCap(f, 'spawn-subagent'));
-        const pick = prompt('改派给哪个产品？可选：' + fams.map((f) => `${f}（${FAM[f]}）`).join('，'), fams[0]);
+        const pick = prompt('改派给哪个产品？可选：' + fams.map((f) => `${f}（${FAM[f]}）`).join('，') + '，auto（中心自动选）', 'auto');
         if (!pick) return;
         body = { ...body, action: 'reassign', channel: pick.trim() };
       } else body = { ...body, action: a };

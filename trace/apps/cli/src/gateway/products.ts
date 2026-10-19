@@ -74,6 +74,7 @@ type ProductRow = {
   acpModes?: Partial<Record<'all' | 'reads' | 'deny', string>>;
   /** The agent's own working modes, for switching mid-session (session-control mode). */
   modes?: string[];
+  maxConcurrent?: number;
 };
 const PRODUCT_ROWS: ProductRow[] = JSON.parse(readFileSync(join(REPO_ROOT, 'hub', 'data', 'products.json'), 'utf8')).products;
 
@@ -110,6 +111,7 @@ export const CHANNEL_PROFILES = Object.fromEntries(
       route: p.route,
       acpModes: p.acpModes,
       modes: p.modes,
+      maxConcurrent: p.maxConcurrent || 3,
       acpxAgent: p.acpxAgent || p.aliases?.[0] || p.id,
       defaultModel: p.defaultModel || '',
       recommendedModels: p.models,

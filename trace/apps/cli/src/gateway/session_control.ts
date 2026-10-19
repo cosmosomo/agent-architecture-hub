@@ -48,7 +48,7 @@ export const sessionControlMethods = {
       if (!value) throw new Error('切模式要给 value（模式名）');
       if (prof.route === 'acp-resident') {
         if (!nativeId) throw new Error('这个会话还没在智能体那边建出来，先发一句话');
-        const driver = await this.ensureAcpDriver(prof, cwd);
+        const driver = await this.ensureAcpDriver(prof, cwd, sessionName);
         if (!driver.getSession(nativeId)) await driver.loadSession(nativeId, cwd);
         const modes = driver.getSession(nativeId)?.availableModes;
         if (modes && !modes.includes(value)) throw new Error(`${prof.label} 没有模式 ${value}，可选：${modes.join('、')}`);
@@ -117,7 +117,7 @@ export const sessionControlMethods = {
       // Read-only: the slash commands the agent itself lists for this session (not logged as an event).
       if (prof.route === 'acp-resident') {
         if (!nativeId) throw new Error('这个会话还没在智能体那边建出来，先发一句话');
-        const driver = await this.ensureAcpDriver(prof, cwd);
+        const driver = await this.ensureAcpDriver(prof, cwd, sessionName);
         if (!driver.getSession(nativeId)) await driver.loadSession(nativeId, cwd);
         // The agent announces its commands just after session/new or session/load.
         for (let i = 0; i < 15 && !driver.getCommands(nativeId).length; i++) await new Promise((r) => setTimeout(r, 200));

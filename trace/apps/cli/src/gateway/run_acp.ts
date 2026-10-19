@@ -22,7 +22,7 @@ export const acpRunMethods = {
       let sid = '';
       let handedOff = false;
       try {
-        const driver = await this.ensureAcpDriver(prof, cwd);
+        const driver = await this.ensureAcpDriver(prof, cwd, sessionName);
         const rec = this.listAcpxSessions().find((s) => s.channel === prof.id && s.sessionName === sessionName && s.acpSessionId);
         const prefix = prof.traceKind + ':';
         sid = rec?.acpSessionId || (opts.traceSessionId?.startsWith(prefix) ? opts.traceSessionId.slice(prefix.length) : '');
@@ -41,6 +41,9 @@ export const acpRunMethods = {
           info = await driver.createSession(cwd);
           sid = info.sessionId;
         }
+        // Two hub sessions must never share one agent session (WorkBuddy handed out one id twice, 10-19).
+        const other = this.activeAcpRunsBySession.get(sid);
+        if (other && other.runId !== run.runId) throw new Error(`智能体给的会话 ${sid} 正被另一轮（${other.sessionName}）占着`);
         run.acpSessionId = sid;
         if (model && info.currentModel !== model) {
           try {
@@ -87,6 +90,11 @@ export const acpRunMethods = {
           const outcome = this.judgeAcpxTurn(run, 0, '');
           run.status = outcome.status;
           if (outcome.error) run.error = outcome.error;
+          // A turn that ended without a word or a tool did nothing; counting it done would hand back an empty reply.
+          if (run.status === 'completed' && !run.text.trim() && !run.tools.length) {
+            run.status = 'failed';
+            run.error = `智能体这一轮什么都没回就结束了（stopReason ${res.stopReason || '?'}）`;
+          }
         }
         if (ownRecord) {
           this.saveDriverSessionRecord({
@@ -118,9 +126,10 @@ export const acpRunMethods = {
     return run;
   },
 
-  /** The resident bridge for this product and folder, started on first use; idle ones close after ACP_IDLE_MS. */
-  async ensureAcpDriver(this: AgentGatewayHub, prof: ChannelProfile, cwd: string): Promise<AcpResidentDriver> {
-    const key = `${prof.id}|${cwd.toLowerCase()}`;
+  /** The resident bridge for this product, folder and hub session, started on first use; idle ones close after ACP_IDLE_MS. */
+  async ensureAcpDriver(this: AgentGatewayHub, prof: ChannelProfile, cwd: string, sessionName: string): Promise<AcpResidentDriver> {
+    // One bridge per hub session: WorkBuddy ended a second turn at once, empty, when two sessions shared its process (10-19).
+    const key = `${prof.id}|${cwd.toLowerCase()}|${sessionName}`;
     let driver = this.acpDrivers.get(key);
     if (!driver) {
       const d = new AcpResidentDriver({

@@ -32,6 +32,7 @@ import { antigravityMethods } from './gateway/antigravity.ts';
 import { sessionMethods } from './gateway/sessions.ts';
 import { collabMethods } from './gateway/collab.ts';
 import { metaMethods } from './gateway/meta.ts';
+import { capacityMethods } from './gateway/capacity.ts';
 
 // Everything above the class lives in gateway/: types, products, common. Re-exported for the callers.
 export type { ChannelId, MetaAgentId, MetaAgentConfig, MetaAgentLogEntry, ChannelCapabilities, ChannelProfile, LiveToolCall, QueuedPrompt, ActiveRun, AcpxSessionInfo, PendingQuestion, PendingApproval, ExternalSessionAnomaly, DispatchReceiptState, DispatchStatus, DispatchRecord } from './gateway/types.ts';
@@ -54,6 +55,7 @@ export class AgentGatewayHub {
    */
   readonly taskboard = new TaskBoard({
     dispatch: async (p) => (await this.dispatchTask({ kind: 'spawn-subagent', ...p })).dispatch as DispatchView,
+    pickChannel: (candidates, exclude) => this.pickChannel(candidates, exclude),
     changed: (g) => this.broadcast('goal_update', { id: g.id, status: g.status, reason: g.reason }),
   });
   readonly eventsFile: string;
@@ -315,6 +317,7 @@ export class AgentGatewayHub {
         notes: p.notes,
         status: running.length > 0 ? 'working' : 'idle',
         activeRuns: running.length,
+        maxConcurrent: p.maxConcurrent,
         queuedCount,
         health,
         sessions: chSessions,
@@ -958,9 +961,12 @@ export class AgentGatewayHub {
       curHealth.failed += 1;
       curHealth.consecutiveFailures += 1;
       curHealth.lastError = run.error || '执行异常退出';
-      if (curHealth.consecutiveFailures >= 3) {
+      // A quota or rate limit opens it at once: another try only hits the same wall (WorkBuddy 429, 10-19).
+      const quota = /\b429\b|quota|rate.?limit|速率限制|额度|配额/i.test(curHealth.lastError);
+      if (quota || curHealth.consecutiveFailures >= 3) {
         curHealth.state = 'open';
-        if (!curHealth.openedAt) curHealth.openedAt = new Date().toISOString();
+        // Each failure while open starts the cooldown again, so a failed probe after cooldown keeps it out of the pick.
+        curHealth.openedAt = new Date().toISOString();
       }
     }
     this.channelFailures.set(prof.id, curHealth);
@@ -1072,8 +1078,13 @@ export class AgentGatewayHub {
     // Retry only a turn that never got its own result (the process or the connection broke mid-turn).
     // A turn that ended (even with a refusal), a failed session setup, or a refused tool is not retried:
     // retrying those repeats the same outcome and spends a turn each time.
-    const brokeMidTurn = !run.stopReason && !run.setupFailed && !run.deniedTools?.length;
-    if (!isBrainSession && run.status === 'failed' && brokeMidTurn && resumer?.enabled && retryCount < maxRetries) {
+    // A turn that ran out its time limit did not break: retrying it waits the whole limit again (Codex, 10-19).
+    const timedOut = /timeout waiting for turn|秒没结束/i.test(String(run.error || ''));
+    const brokeMidTurn = !run.stopReason && !run.setupFailed && !run.deniedTools?.length && !timedOut;
+    // A turn a dispatch was waiting on has already been settled into that dispatch; its owner (the caller, or the
+    // task board) decides whether to try again and where. A retry here would run unseen and hold the session.
+    const ownedByDispatch = [...this.dispatches.values()].some((d) => d.targetRunId === run.runId);
+    if (!isBrainSession && run.status === 'failed' && brokeMidTurn && !ownedByDispatch && resumer?.enabled && retryCount < maxRetries) {
       let nextModel = model;
       const errMsg = String(run.error || '');
       const isQuotaErr = /(429|quota|rate[_\s-]?limit|overloaded|model_not_found|unavailable|refusal)/i.test(errMsg);
@@ -1321,3 +1332,8 @@ Object.assign(AgentGatewayHub.prototype, collabMethods);
 type MetaMethods = typeof metaMethods;
 export interface AgentGatewayHub extends MetaMethods {}
 Object.assign(AgentGatewayHub.prototype, metaMethods);
+
+// capacityMethods: gateway/capacity.ts
+type CapacityMethods = typeof capacityMethods;
+export interface AgentGatewayHub extends CapacityMethods {}
+Object.assign(AgentGatewayHub.prototype, capacityMethods);

@@ -538,6 +538,7 @@ export function createService(opts: ServeOptions): Server {
             objective: String(body.objective || ''),
             acceptance: body.acceptance ? String(body.acceptance) : undefined,
             channel: body.channel ? String(body.channel) : undefined,
+            candidates: Array.isArray(body.candidates) ? body.candidates.map(String) : undefined,
             model: body.model ? String(body.model) : undefined,
             verifyBy: body.verifyBy ? String(body.verifyBy) as any : undefined,
             cwd: body.cwd ? String(body.cwd) : undefined,
@@ -834,6 +835,11 @@ export function createService(opts: ServeOptions): Server {
         if (!channel || !session) return json(res, 400, { ok: false, error: 'channel and session required' });
         const waitMs = Math.min(Math.max(Number(url.searchParams.get('waitMs')) || 0, 0), 2 * 3600 * 1000);
         return json(res, 200, await gateway.sessionRun(channel, session, waitMs));
+      }
+      // Who would get a piece of work now: the center's pick among candidates (load, limit, breaker), with the reasons.
+      if (path === '/api/gateway/pick') {
+        const list = (k: string) => String(url.searchParams.get(k) || '').split(',').map((x) => x.trim()).filter(Boolean);
+        return json(res, 200, { ok: true, ...gateway.pickChannel(list('candidates'), list('exclude')) });
       }
       if (path === '/api/gateway/state') {
         return json(res, 200, gateway.getState());

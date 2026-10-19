@@ -104,6 +104,16 @@ export class AcpResidentDriver extends EventEmitter {
   private commands = new Map<string, Array<{ name: string; description: string; hint: string }>>();
   private onApprovalRequest?: AcpDriverOptions['onApprovalRequest'];
   private stderrTail = '';
+  /**
+   * session/new and session/load go one at a time on a bridge: two session/new sent together to WorkBuddy came back
+   * with the same session id (10-19), and two hub sessions then shared one agent session.
+   */
+  private sessionQueue: Promise<unknown> = Promise.resolve();
+  private serial<T>(fn: () => Promise<T>): Promise<T> {
+    const next = this.sessionQueue.then(fn, fn);
+    this.sessionQueue = next.catch(() => undefined);
+    return next;
+  }
 
   constructor(options: AcpDriverOptions) {
     super();
@@ -167,7 +177,7 @@ export class AcpResidentDriver extends EventEmitter {
   /** session/new in the given folder. */
   public async createSession(cwd: string): Promise<AcpSessionInfo> {
     await this.start();
-    const res = await this.call('session/new', { cwd, mcpServers: [] });
+    const res = await this.serial(() => this.call('session/new', { cwd, mcpServers: [] }));
     if (!res?.sessionId) throw new Error(`${this.product} session/new 没给会话编号：${JSON.stringify(res).slice(0, 200)}`);
     return this.remember(res.sessionId, res);
   }
@@ -178,7 +188,7 @@ export class AcpResidentDriver extends EventEmitter {
     if (this.agentCapabilities && this.agentCapabilities.loadSession === false) {
       throw new Error(`${this.product} 不支持 session/load`);
     }
-    const res = await this.call('session/load', { sessionId, cwd, mcpServers: [] });
+    const res = await this.serial(() => this.call('session/load', { sessionId, cwd, mcpServers: [] }));
     return this.remember(sessionId, res || {});
   }
 

@@ -6,6 +6,8 @@
  *   goal ─1:N─ task ─1:N─ dispatch (the gateway's own, ~/.agent-hub/dispatches/)
  *
  * - who is next: the task's channel (or the goal's), on a session of its own that keeps its context across rework;
+ *   a channel of "auto" lets the center pick (deps.pickChannel: health and load), and a failed dispatch picks again
+ *   leaving out the product that failed;
  * - what they get: the goal, the task, its acceptance, what the tasks it depends on handed back, the rework note;
  * - stop or not: the verdict (a person, a verifier agent, or "auto"), the rework limit, a rework that hands back
  *   the same thing again, a goal that keeps dispatching without finishing anything, and the goal's budget.
@@ -34,7 +36,13 @@ export interface TaskRecord {
   acceptance: string;
   status: TaskStatus;
   dependsOn: string[];
+  /** The product it runs on; for an "auto" task, '' until the center picks one. */
   channel: string;
+  /** Set when the task's channel was "auto": the products the center may pick from (empty: any it drives) and
+   *  those left out because a dispatch to them failed. */
+  auto?: { candidates: string[]; excluded: string[] };
+  /** Why an "auto" task is still waiting for a product, as the pick last said. */
+  waitingWhy?: string;
   model?: string;
   verifyBy: VerifyBy;
   /** The session this task runs on; kept across rework so the worker keeps its context. */
@@ -91,8 +99,10 @@ export interface CreateGoalParams {
   title: string;
   objective: string;
   acceptance?: string;
-  /** Default channel, model and verification for tasks that do not name their own. */
+  /** Default channel, model and verification for tasks that do not name their own. "auto": the center picks. */
   channel?: string;
+  /** For "auto": the products it may pick from (empty: any it drives). */
+  candidates?: string[];
   model?: string;
   verifyBy?: VerifyBy;
   cwd?: string;
@@ -104,6 +114,7 @@ export interface CreateGoalParams {
     acceptance?: string;
     dependsOn?: string[];
     channel?: string;
+    candidates?: string[];
     model?: string;
     verifyBy?: VerifyBy;
   }>;
@@ -120,6 +131,8 @@ export interface TaskBoardDeps {
   dispatch: (p: { toChannel: string; toSessionName: string; toModel?: string; cwd?: string; task: string }) => Promise<DispatchView>;
   /** Told after every change (goal or task), for the page. */
   changed?: (goal: GoalRecord) => void;
+  /** The center's pick of a product among candidates (gateway/capacity.ts); used by tasks whose channel is "auto". */
+  pickChannel?: (candidates?: string[], exclude?: string[]) => { channel: string | null; why: string };
 }
 
 const DEFAULT_BUDGET: GoalBudget = { maxDispatches: 20, maxParallel: 2, maxRework: 2, maxStall: 6, maxWallClockMs: 4 * 3600_000 };
@@ -202,7 +215,7 @@ export class TaskBoard {
     const byKey = new Map(tasks.map((t) => [t.key, t]));
     const nodes = [
       ...tasks.map((t) => ({ id: t.id, type: 'task', key: t.key, title: t.title, status: t.status, depth: this.depth(t, byKey) })),
-      ...[...new Set(tasks.map((t) => `${t.channel}/${t.sessionName}`))].map((s) => ({ id: s, type: 'session' })),
+      ...[...new Set(tasks.filter((t) => t.channel).map((t) => `${t.channel}/${t.sessionName}`))].map((s) => ({ id: s, type: 'session' })),
     ];
     const edges = [
       ...tasks.flatMap((t) => t.dependsOn.map((k) => ({ from: byKey.get(k)?.id || k, to: t.id, type: 'depends_on' }))),
@@ -256,6 +269,7 @@ export class TaskBoard {
       updatedAt: at,
     };
     for (const [i, t] of p.tasks.entries()) {
+      const ch = (t.channel || p.channel)!;
       const task: TaskRecord = {
         id: shortId('tsk'),
         goalId: id,
@@ -265,7 +279,8 @@ export class TaskBoard {
         acceptance: (t.acceptance || '').trim(),
         status: (t.dependsOn || []).length ? 'blocked' : 'queued',
         dependsOn: t.dependsOn || [],
-        channel: (t.channel || p.channel)!,
+        channel: ch === 'auto' ? '' : ch,
+        ...(ch === 'auto' ? { auto: { candidates: t.candidates || p.candidates || [], excluded: [] } } : {}),
         model: t.model || p.model,
         verifyBy: t.verifyBy || p.verifyBy || 'human',
         sessionName: `goal-${id.slice(5, 11)}-${keys[i]}`.replace(/[^a-zA-Z0-9._-]/g, '_'),
@@ -312,8 +327,8 @@ export class TaskBoard {
   }
 
   /**
-   * verify {passed, note, rework?} | retry | reassign {channel, model?} | cancel. Retry and reassign put a stopped
-   * task back in the queue (and a fused goal back to running).
+   * verify {passed, note, rework?} | retry | reassign {channel ("auto" too), candidates?, model?} | cancel. Retry and
+   * reassign put a stopped task back in the queue (and a fused goal back to running).
    */
   taskAction(id: string, action: string, body: any = {}): TaskRecord {
     const t = this.mustTask(id);
@@ -325,15 +340,20 @@ export class TaskBoard {
       if (!['failed', 'cancelled', 'queued', 'verifying'].includes(t.status)) throw new Error(`任务是 ${t.status}，不能重来`);
       if (action === 'reassign') {
         if (!body.channel) throw new Error('改派要说派给哪个产品（channel）');
-        t.channel = String(body.channel);
+        const ch = String(body.channel);
+        t.channel = ch === 'auto' ? '' : ch;
+        t.auto = ch === 'auto' ? { candidates: Array.isArray(body.candidates) ? body.candidates.map(String) : t.auto?.candidates || [], excluded: [] } : undefined;
+        t.waitingWhy = undefined;
         t.model = body.model ? String(body.model) : undefined;
         t.sessionName = `${t.sessionName.replace(/-r\d+$/, '')}-r${t.epoch + 1}`;
       }
       t.failedDispatches = 0;
       t.fuse = undefined;
+      // A person's retry gives every product another chance.
+      if (t.auto) t.auto.excluded = [];
       t.activeDispatchId = null;
       t.verifierDispatchId = null;
-      this.setTask(t, this.depsDone(t) ? 'queued' : 'blocked', action, action === 'reassign' ? { channel: t.channel, model: t.model } : undefined);
+      this.setTask(t, this.depsDone(t) ? 'queued' : 'blocked', action, action === 'reassign' ? { channel: t.channel || 'auto', model: t.model } : undefined);
       if (g.status === 'fused') this.setGoal(g, 'running', `任务 ${t.key} ${action === 'retry' ? '重来' : '改派'}`);
     } else if (action === 'cancel') {
       this.setTask(t, 'cancelled', 'task_cancelled', { reason: body.reason || '人取消' });
@@ -387,8 +407,7 @@ export class TaskBoard {
             this.setGoal(g, 'paused', `派活次数用完（${g.budget.maxDispatches}）`);
             break;
           }
-          running++;
-          await this.dispatchWorker(g, t);
+          if (await this.dispatchWorker(g, t)) running++;
         }
       }
     } finally {
@@ -396,7 +415,9 @@ export class TaskBoard {
     }
   }
 
-  private async dispatchWorker(g: GoalRecord, t: TaskRecord) {
+  /** Dispatch the task to its product (picking one first for an "auto" task). False when nothing went out. */
+  private async dispatchWorker(g: GoalRecord, t: TaskRecord): Promise<boolean> {
+    if (t.auto && !t.channel && !this.pick(t)) return false;
     const upstream = t.dependsOn
       .map((k) => this.tasksOf(g).find((x) => x.key === k))
       .filter((x): x is TaskRecord => Boolean(x?.delivery))
@@ -424,6 +445,25 @@ export class TaskBoard {
     } catch (e: any) {
       this.dispatchFailed(t, `派不出去：${e?.message || e}`);
     }
+    return true;
+  }
+
+  /** The center's pick for an "auto" task; false (and why, logged once per new reason) when no product can take it now. */
+  private pick(t: TaskRecord): boolean {
+    const r = this.deps.pickChannel
+      ? this.deps.pickChannel(t.auto!.candidates, t.auto!.excluded)
+      : { channel: null, why: '中心没有接上选人（pickChannel）' };
+    if (!r.channel) {
+      if (t.waitingWhy !== r.why) {
+        t.waitingWhy = r.why;
+        this.log(t, 'waiting_for_channel', { why: r.why });
+      }
+      return false;
+    }
+    t.channel = r.channel;
+    t.waitingWhy = undefined;
+    this.log(t, 'channel_picked', { channel: r.channel, why: r.why });
+    return true;
   }
 
   private workerDispatchChanged(t: TaskRecord, d: DispatchView) {
@@ -439,9 +479,16 @@ export class TaskBoard {
     }
   }
 
-  /** A worker dispatch that did not hand back: try again once, then stop the task. */
+  /**
+   * A worker dispatch that did not hand back: try again once, then stop the task. An "auto" task tries again on
+   * another product: the one that failed is left out of the next pick.
+   */
   private dispatchFailed(t: TaskRecord, why: string) {
     t.failedDispatches++;
+    if (t.auto && t.channel) {
+      if (!t.auto.excluded.includes(t.channel)) t.auto.excluded.push(t.channel);
+      t.channel = '';
+    }
     if (t.failedDispatches >= 2) {
       t.fuse = `连续 ${t.failedDispatches} 次派活没交回：${why}`;
       this.setTask(t, 'failed', 'loop_fused', { level: 'dispatch', reason: t.fuse });

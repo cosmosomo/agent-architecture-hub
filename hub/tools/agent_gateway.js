@@ -1516,6 +1516,10 @@ function cmdApi(args, sub) {
     res = callSharedDaemon(`/api/sessions/${encodeURIComponent(id)}${args.tail ? `?tail=${Number(args.tail)}` : ''}`, 'GET', null, 90);
   } else if (sub === 'search') {
     res = callSharedDaemon(`/api/search?q=${encodeURIComponent(args.q || args._[1] || '')}`, 'GET', null, 60);
+  } else if (sub === 'pick') {
+    // pick [--candidates zcode,hermes] [--exclude codex]: who the center would give a piece of work to now, and why
+    const qs = [args.candidates ? `candidates=${encodeURIComponent(args.candidates)}` : '', args.exclude ? `exclude=${encodeURIComponent(args.exclude)}` : ''].filter(Boolean).join('&');
+    res = callSharedDaemon(`/api/gateway/pick${qs ? '?' + qs : ''}`, 'GET', null, 20);
   } else if (sub === 'state') {
     res = callSharedDaemon('/api/gateway/state', 'GET', null, 30);
   } else if (sub === 'approve') {
@@ -1585,7 +1589,7 @@ function main() {
   if (sub === 'dispatches') return cmdDispatches(args, false);
   if (sub === 'dispatch-wait') return cmdDispatches(args, true);
   if (sub === 'goals' || sub === 'goal' || sub === 'goal-action' || sub === 'task-action') return cmdGoal(args, sub);
-  if (['sessions', 'session', 'search', 'state', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
+  if (['sessions', 'session', 'search', 'state', 'pick', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
   if (sub === 'deliver') return cmdCollabEvent(args, 'deliver');
   if (sub === 'report') return cmdCollabEvent(args, 'report');
   if (sub === 'yield') return cmdCollabEvent(args, 'yield');

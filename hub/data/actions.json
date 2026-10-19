@@ -252,6 +252,13 @@
       "path": "/api/gateway/answer",
       "does": "回答智能体在一轮中途向人提的问题（state 里的 pendingQuestions）：答案回到同一轮，智能体接着做；Codex 经 item/tool/requestUserInput，Claude 经 AskUserQuestion 的 updatedInput.answers",
       "cli": "answer"
+    },
+    {
+      "id": "pick",
+      "method": "GET",
+      "path": "/api/gateway/pick",
+      "does": "中心现在会把一件活派给谁：在候选产品里排除熔断冷却中、在跑已满（产品表 maxConcurrent）、后端不能发话的，挑最空闲的，并说明理由；目标里产品写 auto 的任务就照它派",
+      "cli": "pick"
     }
   ]
 }

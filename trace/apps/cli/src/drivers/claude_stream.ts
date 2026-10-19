@@ -120,6 +120,9 @@ export class ClaudeStreamSession extends EventEmitter {
   private rl: readline.Interface | null = null;
   private options: ClaudeStreamDriverOptions;
   private pendingControlRequests = new Map<string, { resolve: (res: any) => void; reject: (err: any) => void; timeout?: NodeJS.Timeout }>();
+  /** This turn's API error, when Claude Code stood one in for the reply (a "<synthetic>" assistant message with
+   *  `error`, e.g. "API Error: Connection dropped (ECONNRESET)"): its result frame still says success (10-19). */
+  private turnApiError: string | null = null;
   private pendingTurns: Array<{ resolve: (res: ClaudeTurnResult) => void; reject: (err: any) => void; startedAt: number }> = [];
   private isAlive = false;
   /** The slash commands Claude Code lists in its system/init message (filled after the first turn). */
@@ -425,14 +428,28 @@ export class ClaudeStreamSession extends EventEmitter {
       return;
     }
 
+    if (event.type === 'assistant' && (event.error || event.message?.model === '<synthetic>')) {
+      const text = (event.message?.content || []).map((c: any) => (c?.type === 'text' ? c.text : '')).join('').trim();
+      this.turnApiError = text || String(event.error);
+    }
+
     // 4. 轮次事件收集与结果结算
     if (event.type === 'result') {
+      const apiError = this.turnApiError;
+      this.turnApiError = null;
       const turnHandler = this.pendingTurns.shift();
       const rawUsage = event.usage || {};
       const result: ClaudeTurnResult = {
         sessionId: this.sessionId,
         uuid: event.uuid,
-        status: event.is_error || event.subtype === 'error_during_execution' ? (event.stop_reason === null ? 'interrupted' : 'failed') : 'completed',
+        status:
+          event.is_error || event.subtype === 'error_during_execution'
+            ? event.stop_reason === null
+              ? 'interrupted'
+              : 'failed'
+            : apiError && String(event.result || '').trim() === apiError
+              ? 'failed'
+              : 'completed',
         resultText: event.result || '',
         stopReason: event.stop_reason,
         durationMs: event.duration_ms,

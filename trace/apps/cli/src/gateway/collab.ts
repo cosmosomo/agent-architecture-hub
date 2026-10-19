@@ -215,7 +215,9 @@ export const collabMethods = {
         files,
       };
     } else {
-      d.status = isFailed && !text ? 'failed' : 'completed';
+      // A failed turn is a failed dispatch even when it left text: the text may be the error itself (Claude's
+      // "API Error: …", 10-19). Only an explicit hand-back (【交回】 above, or deliver from the CLI) beats a failure.
+      d.status = isFailed ? 'failed' : 'completed';
       d.waitingFor = undefined;
       if (isFailed && rawErr) d.error = rawErr;
       d.receipt = 'returned';

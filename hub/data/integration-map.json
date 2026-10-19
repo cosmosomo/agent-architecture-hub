@@ -1,6 +1,6 @@
 {
   "about": "单元 → 动作：每个能力单元在我们的后端由哪个动作实现（action 引用 hub/data/actions.json 的 id），对哪些产品有效，做到什么程度；frontend 一侧记网页上哪个控件、调哪个动作。status：real 实现了且实测通过；partial 实现了一部分；built 实现了还没实测；fill 补齐（原生做不到，搬到 fillLevel 那一级去做）；todo 还没做。依据（实测记录）在黑板，不在这里。改了就重跑 channels/probe/scripts/build_coverage.js。 frontend 条目可带 ui：{slot 放在哪（session-bar 会话栏、session-more 会话的“更多”）, order, label, handler（页面里 BAR_HANDLERS 的处理函数）或 call/op（直接调的接口和操作，如 session-control 的 compact）, choices}；网页的这些控件照它生成，一个控件只在一个单元下定义。",
-  "updated": "2026-10-18",
+  "updated": "2026-10-19",
   "backend": {
     "open": [
       {
@@ -837,14 +837,14 @@
           "goal-action",
           "task-action"
         ],
-        "how": "POST /api/gateway/goals（agent_gateway.js goal --file）开一个目标：几件有依赖的任务、派给哪个产品、谁验收；中心（trace/apps/cli/src/collab/taskboard.ts）逐步派活（走 dispatch）、收交回、验收（人 / 自动 / 另一个智能体）、解封下游，task-action 验收、重来、改派，goals?id= 看协作图和轨迹",
+        "how": "POST /api/gateway/goals（agent_gateway.js goal --file）开一个目标：几件有依赖的任务、派给哪个产品、谁验收；中心（trace/apps/cli/src/collab/taskboard.ts）逐步派活（走 dispatch）、收交回、验收（人 / 自动 / 另一个智能体）、解封下游，task-action 验收、重来、改派，goals?id= 看协作图和轨迹；任务的 channel 写 auto（可带 candidates）由中心按健康和负载选，选了谁、为什么、等什么都记进轨迹，派活失败就排除这家再选",
         "channels": [
           "zcode",
           "opencode",
           "hermes"
         ],
         "status": "real",
-        "note": "10-18 负责人实测 goal_mvdxyieq_5ysz：ZCode 列平方表 → 自动验收 → OpenCode 接着算 → Hermes 独立验收 PASS → 目标完成；判定逻辑另有 channels/probe/scripts/test_taskboard.mjs 20 项"
+        "note": "10-18 负责人实测 goal_mvdxyieq_5ysz：ZCode 列平方表 → 自动验收 → OpenCode 接着算 → Hermes 独立验收 PASS → 目标完成；判定逻辑另有 channels/probe/scripts/test_taskboard.mjs 20 项；10-19 副本实测自动选：goal_mvepttzn_vxr0 中心选 WorkBuddy 交回通过，goal_mve5hqqb_yqc7 Codex 超时后换 Claude；test_taskboard.mjs 26 项"
       },
       {
         "action": [
@@ -1068,6 +1068,46 @@
         ],
         "status": "todo",
         "note": "10-19 Argon 研究（ask-user-acp-20261019.md），负责人没复测；能补的路在各家自己的桌面端或配置，不在 ACP"
+      }
+    ],
+    "capacity": [
+      {
+        "action": [
+          "pick"
+        ],
+        "how": "中心自己数：每家在跑几轮（activeRuns）对上限（products.json 的 maxConcurrent，默认 3）；GET /api/gateway/pick（agent_gateway.js pick）连同熔断一起给出 loads（trace/apps/cli/src/gateway/capacity.ts）",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "fill",
+        "fillLevel": "一群会话",
+        "note": "只数这一个中心发出的轮次，看不到产品自己桌面端或另一个中心占的；各家原生的并发上限没读到，上限是表里写的"
+      }
+    ],
+    "channel-health": [
+      {
+        "action": [
+          "pick"
+        ],
+        "how": "每轮结束记到 channelFailures：连续 3 次失败、或一次额度/限流失败（429、quota、速率限制）就熔断，冷却 120 秒内不被选，冷却后放一轮试探，试探失败重新计时；pick 和任务板“自动选”据此跳过（gateway.ts finalizeRun、gateway/capacity.ts）",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "fill",
+        "fillLevel": "一群会话",
+        "note": "10-19 副本实测：Codex 超时 → 任务板排除它、换 Claude 重派；WorkBuddy 429 现在记失败并带出原因。失败类别只按报错文字认，各家原生的健康接口没接"
       }
     ]
   },

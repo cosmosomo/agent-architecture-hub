@@ -79,6 +79,7 @@ export type ChannelProfile = {
   route: string;
   acpModes?: Partial<Record<'all' | 'reads' | 'deny', string>>;
   modes?: string[];
+  maxConcurrent: number;
   acpxAgent: string;
   defaultModel: string;
   recommendedModels: string[];

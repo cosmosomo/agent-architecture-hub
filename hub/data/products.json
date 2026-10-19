@@ -1,5 +1,5 @@
 {
-  "about": "产品表：本机每个智能体产品一行，是唯一的产品名单。后端（gateway.ts 的 CHANNEL_PROFILES）和命令行网关（agent_gateway.js）都从这里取，不再各写一份。routes 写每条适配路线上每个动作实际执行的命令；codeMark 是它在 gateway.ts 里的特征串，probe/scripts/tables.js 核对它还在，对不上就报出来。env 里的 {HOME} 在启动时展开；envFrom 表示要在启动时从别处读（只有 Claude 一处，代码在 claudeProviderEnv）。",
+  "about": "产品表：本机每个智能体产品一行，是唯一的产品名单。后端（gateway.ts 的 CHANNEL_PROFILES）和命令行网关（agent_gateway.js）都从这里取，不再各写一份。routes 写每条适配路线上每个动作实际执行的命令；codeMark 是它在 gateway.ts 里的特征串，probe/scripts/tables.js 核对它还在，对不上就报出来。env 里的 {HOME} 在启动时展开；envFrom 表示要在启动时从别处读（只有 Claude 一处，代码在 claudeProviderEnv）。 maxConcurrent：这个产品同时最多跑几轮，中心自动选派给谁时，跑满了的不选。",
   "routes": {
     "acpx": {
       "does": "经 acpx 走各产品的 ACP 桥；每一轮起一个 acpx 进程，会话状态记在 ~/.acpx/sessions/",
@@ -193,7 +193,8 @@
       "modes": [
         "default",
         "plan"
-      ]
+      ],
+      "maxConcurrent": 3
     },
     {
       "id": "claude",
@@ -229,7 +230,8 @@
         "plan",
         "bypassPermissions",
         "dontAsk"
-      ]
+      ],
+      "maxConcurrent": 3
     },
     {
       "id": "zcode",
@@ -268,7 +270,8 @@
         "edit",
         "guarded",
         "yolo"
-      ]
+      ],
+      "maxConcurrent": 3
     },
     {
       "id": "workbuddy",
@@ -299,7 +302,8 @@
       },
       "accent": "#06B6D4",
       "badge": "ACP · CodeBuddy",
-      "notes": "经 codebuddy --acp 原生连接，注入本地 BYOK 凭证，模型名带 custom-local: 前缀经 ~/.workbuddy/models.json 路由"
+      "notes": "经 codebuddy --acp 原生连接，注入本地 BYOK 凭证，模型名带 custom-local: 前缀经 ~/.workbuddy/models.json 路由",
+      "maxConcurrent": 3
     },
     {
       "id": "opencode",
@@ -327,7 +331,8 @@
       "env": {},
       "accent": "#A78BFA",
       "badge": "ACP · OpenCode",
-      "notes": "经 opencode acp 标准 stdio 连接；模型名以 opencode acp 10-18 自报为准 10-18 起 OpenCode 自带的免费模型（opencode/big-pickle 等）对本机出口 IP 拦截（“detected abusive traffic from this IP”），默认改走智谱编程套餐 glm-5.3-flash。 它的 ACP 不报模式、写文件不来请求权限（权限在它自己的 opencode.json 里），所以权限选“只读”对它不生效（10-18 实测）。"
+      "notes": "经 opencode acp 标准 stdio 连接；模型名以 opencode acp 10-18 自报为准 10-18 起 OpenCode 自带的免费模型（opencode/big-pickle 等）对本机出口 IP 拦截（“detected abusive traffic from this IP”），默认改走智谱编程套餐 glm-5.3-flash。 它的 ACP 不报模式、写文件不来请求权限（权限在它自己的 opencode.json 里），所以权限选“只读”对它不生效（10-18 实测）。",
+      "maxConcurrent": 3
     },
     {
       "id": "hermes",
@@ -364,7 +369,8 @@
         "default",
         "accept_edits",
         "dont_ask"
-      ]
+      ],
+      "maxConcurrent": 3
     },
     {
       "id": "antigravity",
@@ -398,7 +404,8 @@
       "env": {},
       "accent": "#EC4899",
       "badge": "LS · Antigravity",
-      "notes": "agentapi 只认 pro、flash、flash_lite 三档；发给已有对话不传模型，沿用对话自己的模型"
+      "notes": "agentapi 只认 pro、flash、flash_lite 三档；发给已有对话不传模型，沿用对话自己的模型",
+      "maxConcurrent": 3
     },
     {
       "id": "droid",

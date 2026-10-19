@@ -10,6 +10,7 @@ import { TaskBoard } from '../../../trace/apps/cli/src/collab/taskboard.ts';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hub-taskboard-'));
 const sent = []; // every dispatch the board asked for
+const full = new Set(); // products the fake pick treats as full
 let n = 0;
 const board = new TaskBoard(
   {
@@ -17,6 +18,11 @@ const board = new TaskBoard(
       const d = { id: `dsp_test_${++n}`, status: 'issued', ...p };
       sent.push(d);
       return { id: d.id, status: 'issued' };
+    },
+    // A fake of the center's pick (gateway/capacity.ts): the first candidate not left out and not full.
+    pickChannel: (candidates, exclude = []) => {
+      const pool = (candidates?.length ? candidates : ['zcode', 'opencode', 'hermes']).filter((c) => !exclude.includes(c) && !full.has(c));
+      return pool.length ? { channel: pool[0], why: `${pool[0]} 空闲` } : { channel: null, why: `都满了或被排除：${[...full, ...exclude].join('、')}` };
     },
   },
   dir,
@@ -113,6 +119,43 @@ const taskOf = (g, key) => board.tasksOf(board.getGoal(g.id)).find((t) => t.key 
   board.onDispatch({ id: last().id, status: 'failed', error: '上游 503' });
   await tick();
   check('连续两次失败 → 任务熔断、目标 fused', t.status === 'failed' && board.getGoal(g.id).status === 'fused', `${t.status} ${board.getGoal(g.id).status}`);
+}
+
+// 6b. "auto": the center picks, waits when nobody is free, and a failure moves the task to another product
+{
+  full.add('zcode');
+  full.add('opencode');
+  full.add('hermes');
+  const before = sent.length;
+  const g = board.createGoal({ title: '自动选', objective: 'x', channel: 'auto', verifyBy: 'auto', tasks: [{ key: 'a', title: '谁空谁做' }] });
+  await tick();
+  const t = taskOf(g, 'a');
+  check('auto 没人空 → 不派、记等待原因、不算派活', sent.length === before && t.status === 'queued' && /都满了/.test(t.waitingWhy || '') && board.getGoal(g.id).usage.dispatches === 0, `${sent.length - before} ${t.status} ${t.waitingWhy}`);
+  await board.step();
+  check('等待原因没变不重复记轨迹', t.history.filter((h) => h.action === 'waiting_for_channel').length === 1, t.history.map((h) => h.action).join(','));
+  full.delete('opencode');
+  await board.step();
+  check('有人空了 → 选它、轨迹写明为什么', t.status === 'dispatched' && last().toChannel === 'opencode' && t.history.some((h) => h.action === 'channel_picked' && /空闲/.test(h.detail?.why)), `${t.status} ${last().toChannel}`);
+  full.clear();
+  board.onDispatch({ id: last().id, status: 'failed', error: '429 限流' });
+  await tick();
+  check('派活失败 → 排除这家、换另一家重派', t.status === 'dispatched' && last().toChannel === 'zcode' && t.auto.excluded.includes('opencode'), `${t.status} ${last().toChannel} ${JSON.stringify(t.auto)}`);
+  await deliver(last(), '做完了');
+  check('换家后交回、自动验收完成', t.status === 'completed' && t.channel === 'zcode', `${t.status} ${t.channel}`);
+}
+
+// 6c. reassign to "auto" with candidates
+{
+  const g = board.createGoal({ title: '改派自动', objective: 'x', channel: 'zcode', tasks: [{ key: 'a', title: '先给 zcode' }] });
+  await tick();
+  const t = taskOf(g, 'a');
+  for (let i = 0; i < 2; i++) {
+    board.onDispatch({ id: last().id, status: 'failed', error: '挂了' });
+    await tick();
+  }
+  board.taskAction(t.id, 'reassign', { channel: 'auto', candidates: ['hermes'] });
+  await tick();
+  check('改派成 auto 按候选选人', t.status === 'dispatched' && last().toChannel === 'hermes' && t.auto?.candidates[0] === 'hermes', `${t.status} ${last().toChannel}`);
 }
 
 // 7. the view: graph and trajectory
