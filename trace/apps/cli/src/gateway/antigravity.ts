@@ -8,10 +8,127 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import type { Session, Step, ToolStep, Turn } from '@hub-trace/contract';
+import type { Session, Step, Turn } from '@hub-trace/contract';
 import type { ChannelProfile, LiveToolCall, ActiveRun, AcpxSessionInfo } from './types.ts';
 import { agentBaseEnv, CHANNEL_PROFILES, normalizeAgyCliModel, resolveAgyProjectId } from './products.ts';
 import { HOME, isSmokeTestPrompt, classifyTool, stripUserRequestTags, agyTitle } from './common.ts';
+
+/** A tool call in a model step. Calls carry no id: theirs is `agy_<step_index>_<n>`. */
+export type AgyCall = { id: string; name: string; args: Record<string, any> | null; input: string; output?: string; error: boolean; background: boolean };
+export type AgyEntry =
+  | { kind: 'user'; at: string; text: string }
+  | { kind: 'model'; at: string; done: boolean; thinking: string; text: string; usage?: { input: number; cached: number; output: number }; calls: AgyCall[] }
+  | { kind: 'event'; at: string; name: 'subagent' | 'note' | 'error'; text: string };
+
+/**
+ * The one reader of an Antigravity transcript (brain/<cid>/.system_generated/logs/transcript.jsonl): the session page
+ * (parseAntigravityBrain), the live view of a running turn (syncFromAntigravityTranscript) and "is the turn over"
+ * (isAgyTurnDone) all read through it, so a fix here reaches all three (10-19: three readers had drifted apart).
+ * - USER_INPUT, and words sent from outside (`agentapi send-message` arrives as a SYSTEM_MESSAGE "[Message] … sender=system
+ *   … content=<text>"), are a person's words. Antigravity's own notices also come from sender=system (a sub-agent that
+ *   failed, "[Notice] … stopped"): those are events. sender=<conversation>/task-N is a background task reporting back.
+ * - PLANNER_RESPONSE is one model step with its tool calls; the results follow as GENERIC records, one per call, in
+ *   call order (status RUNNING: it went to the background).
+ * - ERROR_MESSAGE is an error event; retries of one request ("API error (attempt 1…6)") fold into one.
+ * - Each tool argument value is itself JSON ("\"E:\\\\program…\""), unwrapped once here.
+ */
+export function readAgyTranscript(lines: string[]): { entries: AgyEntry[]; firstAt: string; lastAt: string } {
+  const entries: AgyEntry[] = [];
+  let firstAt = '';
+  let lastAt = '';
+  let awaiting: AgyCall[] = [];
+  const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+  for (const line of lines) {
+    let o: any;
+    try {
+      o = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const at = String(o?.created_at || '');
+    if (at) {
+      if (!firstAt) firstAt = at;
+      lastAt = at;
+    }
+    if (o.type === 'USER_INPUT') {
+      entries.push({ kind: 'user', at, text: stripUserRequestTags(String(o.content || '')) });
+    } else if (o.type === 'SYSTEM_MESSAGE') {
+      const m = /\[Message\] timestamp=(\S+) sender=(\S+) priority=\S+ content=([\s\S]*?)\s*(?:<\/SYSTEM_MESSAGE>[\s\S]*)?$/.exec(String(o.content || ''));
+      if (!m) continue;
+      const text = m[3].trim();
+      if (m[2] !== 'system') entries.push({ kind: 'event', at, name: 'note', text: '后台任务回报：' + text.slice(0, 200) });
+      else if (/^(\[Notice\]|The subagent .+ with id ")/.test(text)) entries.push({ kind: 'event', at, name: text.startsWith('The subagent') ? 'subagent' : 'note', text: text.slice(0, 600) });
+      else entries.push({ kind: 'user', at, text });
+    } else if (o.type === 'PLANNER_RESPONSE') {
+      const raw: any[] = Array.isArray(o.tool_calls) ? o.tool_calls : [];
+      const calls = raw.map((tc, i) => agyCall(tc, `agy_${o.step_index ?? entries.length}_${i + 1}`, o.status === 'ERROR'));
+      awaiting = [...calls];
+      const input = Number(o.input_tokens || 0);
+      const output = Number(o.output_tokens || 0);
+      entries.push({
+        kind: 'model',
+        at,
+        done: o.status === 'DONE',
+        thinking: str(o.thinking),
+        text: str(o.content),
+        usage: input || output ? { input, cached: Number(o.cache_read_tokens || 0), output } : undefined,
+        calls,
+      });
+    } else if (o.type === 'GENERIC' && o.source === 'MODEL') {
+      const c = awaiting.shift();
+      if (!c) continue;
+      const out = typeof o.content === 'string' ? o.content : o.error ? String(o.error) : '';
+      if (out) c.output = out;
+      if (o.error || o.status === 'ERROR') c.error = true;
+      c.background = o.status === 'RUNNING';
+    } else if (o.type === 'ERROR_MESSAGE') {
+      const text = String(o.error || o.content || '').trim();
+      if (!text) continue;
+      const prev = entries[entries.length - 1];
+      const retry = /^API error \(attempt/;
+      if (prev?.kind === 'event' && prev.name === 'error' && retry.test(prev.text) && retry.test(text)) {
+        prev.text = text.slice(0, 600);
+        prev.at = at || prev.at;
+      } else {
+        entries.push({ kind: 'event', at, name: 'error', text: text.slice(0, 600) });
+      }
+    }
+  }
+  return { entries, firstAt, lastAt };
+}
+
+function agyCall(tc: any, fallbackId: string, failed: boolean): AgyCall {
+  let args: Record<string, any> | null = null;
+  if (tc?.args && typeof tc.args === 'object') args = tc.args;
+  else if (typeof tc?.args === 'string') {
+    try {
+      args = JSON.parse(tc.args);
+    } catch {}
+  }
+  if (args) {
+    const plain: Record<string, any> = {};
+    for (const [k, v] of Object.entries(args)) {
+      let x = v;
+      if (typeof v === 'string' && /^(".*"|\[.*\]|\{.*\}|true|false|-?\d+(\.\d+)?)$/s.test(v)) {
+        try {
+          x = JSON.parse(v);
+        } catch {}
+      }
+      plain[k] = x;
+    }
+    args = plain;
+  }
+  const output = typeof tc?.result === 'string' ? tc.result : typeof tc?.output === 'string' ? tc.output : tc?.result ? JSON.stringify(tc.result, null, 2) : undefined;
+  return {
+    id: String(tc?.id || fallbackId),
+    name: String(tc?.name || 'tool'),
+    args,
+    input: args ? JSON.stringify(args, null, 2) : typeof tc?.args === 'string' ? tc.args : '',
+    output,
+    error: Boolean(tc?.error || failed),
+    background: false,
+  };
+}
 
 export const antigravityMethods = {
   loadAgySessionMap(this: AgentGatewayHub): Record<string, string> {
@@ -128,14 +245,13 @@ foreach ($p in $procs) {
 
       const content = readFileSync(transcriptPath, 'utf8');
       const lines = content.split(/\r?\n/).filter((l) => l.trim());
+      const { entries, firstAt: firstCreatedAt, lastAt: lastCreatedAt } = readAgyTranscript(lines);
       const turns: Turn[] = [];
       let curSteps: Step[] = [];
       let curInput = '';
       let curOutput = '';
       let curStartedAt = '';
       let curEndedAt = '';
-      let firstCreatedAt = '';
-      let lastCreatedAt = '';
       let turnIdx = 0;
       let stepSeq = 0;
       let modelCalls = 0;
@@ -146,8 +262,6 @@ foreach ($p in $procs) {
       let lastInterrupted = false;
       let lastErrorText = '';
       const childLinks: { rel: 'child'; id: string; label?: string }[] = [];
-      // Tool calls carry no id: their results follow as GENERIC records, one per call, in call order.
-      let awaitingResult: ToolStep[] = [];
 
       const flushTurn = () => {
         if (!curSteps.length) return;
@@ -169,188 +283,66 @@ foreach ($p in $procs) {
         curEndedAt = '';
       };
 
-      for (const line of lines) {
-        try {
-          const obj = JSON.parse(line);
-          const at = String(obj.created_at || '');
-          if (at) {
-            if (!firstCreatedAt) firstCreatedAt = at;
-            lastCreatedAt = at;
+      for (const e of entries) {
+        const at = e.at || undefined;
+        if (e.kind === 'user') {
+          flushTurn();
+          curStartedAt = e.at;
+          curInput = e.text;
+          if (/^Error:\s*The stream was interrupted/i.test(e.text)) {
+            lastInterrupted = true;
+            lastErrorText = e.text;
           }
-          if (obj.type === 'USER_INPUT') {
-            flushTurn();
-            curStartedAt = at;
-            const rawText = String(obj.content || '');
-            const cleanText = stripUserRequestTags(rawText);
-            if (/^Error:\s*The stream was interrupted/i.test(cleanText)) {
-              lastInterrupted = true;
-              lastErrorText = cleanText;
-            }
-            curInput = cleanText;
-            stepSeq++;
+          curSteps.push({ id: `s${++stepSeq}`, kind: 'message', role: 'user', text: e.text, at });
+        } else if (e.kind === 'event') {
+          if (e.name === 'error' && /stream was interrupted/i.test(e.text)) {
+            lastInterrupted = true;
+            lastErrorText = e.text;
+          }
+          curSteps.push({ id: `s${++stepSeq}`, kind: 'event', name: e.name, text: e.text, at });
+        } else {
+          curEndedAt = e.at || curEndedAt;
+          if (e.text) {
+            curOutput = e.text;
+            lastInterrupted = false;
+          }
+          for (const c of e.calls) {
+            if (typeof c.args?.Cwd === 'string') detectedCwd = c.args.Cwd;
+            if (c.name === 'invoke_subagent') subagents++;
+            if (c.error) toolErrors++;
+          }
+          toolCalls += e.calls.length;
+          if (!e.thinking && !e.text && !e.calls.length) continue;
+          modelCalls++;
+          curSteps.push({
+            id: `s${++stepSeq}`,
+            kind: 'model',
+            model: activeModel,
+            at,
+            reasoning: e.thinking || undefined,
+            text: e.text || undefined,
+            phase: e.calls.length ? 'commentary' : 'final',
+            calls: e.calls.map((c) => c.id),
+            usage: e.usage
+              ? { input: e.usage.input, cachedInput: e.usage.cached || undefined, output: e.usage.output, total: e.usage.input + e.usage.output }
+              : undefined,
+          });
+          for (const c of e.calls) {
+            const cls = classifyTool(c.name, c.input);
             curSteps.push({
-              id: `s${stepSeq}`,
-              kind: 'message',
-              role: 'user',
-              text: cleanText,
-              at: at || undefined,
+              id: c.id,
+              kind: 'tool',
+              name: c.name,
+              family: cls.family,
+              callId: c.id,
+              input: c.input || undefined,
+              output: c.output || undefined,
+              status: c.error ? 'error' : 'ok',
+              at,
+              effects: [],
             });
-          } else if (obj.type === 'SYSTEM_MESSAGE') {
-            // Words sent from outside (`agentapi send-message`: the hub, the phone page, the command line) arrive
-            // as "[Message] timestamp=… sender=system priority=… content=<text>" and start a new turn, like the
-            // person typing in the window. sender=<conversation>/task-N is the agent's own background task
-            // reporting back: an event inside the current turn, not something a person said (seen 2026-10-18).
-            const raw = String(obj.content || '');
-            const m = /\[Message\] timestamp=(\S+) sender=(\S+) priority=\S+ content=([\s\S]*?)\s*(?:<\/SYSTEM_MESSAGE>[\s\S]*)?$/.exec(raw);
-            // Antigravity's own notices also come from sender=system: a sub-agent that failed, "[Notice] All your
-            // subagents … have been stopped". They are events in the current turn, not a person's words (10-19:
-            // three of them showed as the session's last three "turns", hiding the agent's work).
-            const notice = m && m[2] === 'system' && /^(\[Notice\]|The subagent .+ with id ")/.test(m[3].trim());
-            if (notice) {
-              stepSeq++;
-              const text = m![3].trim();
-              curSteps.push({ id: `s${stepSeq}`, kind: 'event', name: text.startsWith('The subagent') ? 'subagent' : 'note', text: text.slice(0, 600), at: at || undefined });
-            } else if (m && m[2] === 'system') {
-              flushTurn();
-              curStartedAt = at;
-              curInput = m[3].trim();
-              stepSeq++;
-              curSteps.push({ id: `s${stepSeq}`, kind: 'message', role: 'user', text: curInput, at: at || undefined });
-            } else if (m) {
-              stepSeq++;
-              curSteps.push({ id: `s${stepSeq}`, kind: 'event', name: 'note', text: '后台任务回报：' + m[3].trim().slice(0, 200), at: at || undefined });
-            }
-          } else if (obj.type === 'PLANNER_RESPONSE') {
-            curEndedAt = at || curEndedAt;
-            const thinking = typeof obj.thinking === 'string' ? obj.thinking.trim() : '';
-            const text = typeof obj.content === 'string' ? obj.content.trim() : '';
-            if (text) {
-              curOutput = text;
-              lastInterrupted = false;
-            }
-            const rawCalls: any[] = Array.isArray(obj.tool_calls) ? obj.tool_calls : [];
-            const callIds: string[] = [];
-            const toolSteps: ToolStep[] = [];
-
-            for (let i = 0; i < rawCalls.length; i++) {
-              const tc = rawCalls[i];
-              const tName = String(tc?.name || 'tool');
-              const tid = String(tc?.id || `agy_tc_${stepSeq}_${i + 1}`);
-              let argsObj: Record<string, any> | null = null;
-              let inStr = '';
-              if (tc?.args && typeof tc.args === 'object') {
-                argsObj = tc.args;
-                inStr = JSON.stringify(tc.args, null, 2);
-              } else if (typeof tc?.args === 'string') {
-                inStr = tc.args;
-                try {
-                  argsObj = JSON.parse(tc.args);
-                } catch {}
-              }
-              // Each argument value is itself JSON ("\"E:\\\\program\\\\…\""): unwrap it once, or the folder comes out
-              // quoted with doubled backslashes and the session lands in a project of its own (10-19).
-              if (argsObj) {
-                const plain: Record<string, any> = {};
-                for (const [k, v] of Object.entries(argsObj)) {
-                  let x = v;
-                  if (typeof v === 'string' && /^(".*"|\[.*\]|\{.*\}|true|false|-?\d+(\.\d+)?)$/s.test(v)) {
-                    try {
-                      x = JSON.parse(v);
-                    } catch {}
-                  }
-                  plain[k] = x;
-                }
-                argsObj = plain;
-                inStr = JSON.stringify(plain, null, 2);
-              }
-              if (argsObj?.Cwd && typeof argsObj.Cwd === 'string') {
-                detectedCwd = argsObj.Cwd;
-              }
-              if (tName === 'invoke_subagent') {
-                subagents++;
-              }
-              const outStr =
-                typeof tc?.result === 'string'
-                  ? tc.result
-                  : typeof tc?.output === 'string'
-                  ? tc.output
-                  : tc?.result
-                  ? JSON.stringify(tc.result, null, 2)
-                  : '';
-              const isErr = Boolean(tc?.error || obj.status === 'ERROR');
-              const cls = classifyTool(tName, inStr);
-              toolCalls++;
-              if (isErr) toolErrors++;
-              callIds.push(tid);
-              toolSteps.push({
-                id: tid,
-                kind: 'tool',
-                name: tName,
-                family: cls.family,
-                callId: tid,
-                input: inStr || undefined,
-                output: outStr || undefined,
-                status: isErr ? 'error' : 'ok',
-                at: at || undefined,
-                effects: [],
-              });
-            }
-
-            if (thinking || text || toolSteps.length) {
-              modelCalls++;
-              stepSeq++;
-              const inTok = Number(obj.input_tokens || 0);
-              const cacheTok = Number(obj.cache_read_tokens || 0);
-              const outTok = Number(obj.output_tokens || 0);
-              curSteps.push({
-                id: `s${stepSeq}`,
-                kind: 'model',
-                model: activeModel,
-                at: at || undefined,
-                reasoning: thinking || undefined,
-                text: text || undefined,
-                phase: toolSteps.length ? 'commentary' : 'final',
-                calls: callIds,
-                usage:
-                  inTok || outTok
-                    ? {
-                        input: inTok,
-                        cachedInput: cacheTok || undefined,
-                        output: outTok,
-                        total: inTok + outTok,
-                      }
-                    : undefined,
-              });
-              curSteps.push(...toolSteps);
-            }
-            awaitingResult = toolSteps;
-          } else if (obj.type === 'GENERIC' && obj.source === 'MODEL') {
-            const t = awaitingResult.shift();
-            if (t) {
-              const out = typeof obj.content === 'string' ? obj.content : obj.error ? String(obj.error) : '';
-              if (out) t.output = out;
-              if (obj.error || obj.status === 'ERROR') {
-                if (t.status !== 'error') toolErrors++;
-                t.status = 'error';
-              }
-            }
-          } else if (obj.type === 'ERROR_MESSAGE') {
-            const text = String(obj.error || obj.content || '').trim();
-            if (/stream was interrupted/i.test(text)) {
-              lastInterrupted = true;
-              lastErrorText = text;
-            }
-            // Retries of one failing request ("API error (attempt 1…6)") show as one step with the latest attempt.
-            const prev = curSteps[curSteps.length - 1];
-            if (prev?.kind === 'event' && prev.name === 'error' && /^API error \(attempt/.test(prev.text || '') && /^API error \(attempt/.test(text)) {
-              prev.text = text.slice(0, 600);
-              prev.at = at || prev.at;
-            } else if (text) {
-              stepSeq++;
-              curSteps.push({ id: `s${stepSeq}`, kind: 'event', name: 'error', text: text.slice(0, 600), at: at || undefined });
-            }
           }
-        } catch {}
+        }
       }
       flushTurn();
 
@@ -723,18 +715,9 @@ foreach ($p in $procs) {
       const all = readFileSync(transcriptPath, 'utf8')
         .split(/\r?\n/)
         .filter((l) => l.trim());
-      const steps = all
-        .slice(run.initialMsgCount ?? 0)
-        .map((l) => {
-          try {
-            return JSON.parse(l);
-          } catch {
-            return null;
-          }
-        })
-        .filter((s) => s && s.type === 'PLANNER_RESPONSE');
-      const last = steps[steps.length - 1];
-      const textDone = Boolean(last && last.status === 'DONE' && !(Array.isArray(last.tool_calls) && last.tool_calls.length));
+      const models = readAgyTranscript(all.slice(run.initialMsgCount ?? 0)).entries.filter((e) => e.kind === 'model');
+      const last = models[models.length - 1];
+      const textDone = Boolean(last && last.done && !last.calls.length);
       // A text-only DONE step can also mean the agent yielded while a background command runs;
       // the conversation index says whether the cascade is really idle (null = index unreadable).
       const looksDone = textDone && this.agyConversationIdle(cid) !== false;
@@ -776,66 +759,37 @@ foreach ($p in $procs) {
       const minIdx = run.initialMsgCount ?? 0;
       if (lines.length <= minIdx) return;
 
-      const newLines = lines.slice(minIdx);
       let thoughts = '';
       let text = '';
       let changed = false;
-
-      for (const line of newLines) {
-        try {
-          const obj = JSON.parse(line);
-          if (obj.type === 'PLANNER_RESPONSE') {
-            if (typeof obj.thinking === 'string' && obj.thinking.trim()) {
-              thoughts = obj.thinking.trim();
-            }
-            if (typeof obj.content === 'string' && obj.content.trim()) {
-              text = obj.content.trim();
-            }
-            const rawCalls: any[] = Array.isArray(obj.tool_calls) ? obj.tool_calls : [];
-            for (let i = 0; i < rawCalls.length; i++) {
-              const tc = rawCalls[i];
-              const tid = String(tc?.id || `agy_live_${i + 1}`);
-              const tName = String(tc?.name || 'tool');
-              const inStr =
-                tc?.args && typeof tc.args === 'object'
-                  ? JSON.stringify(tc.args)
-                  : typeof tc?.args === 'string'
-                  ? tc.args
-                  : '';
-              const outStr =
-                typeof tc?.result === 'string'
-                  ? tc.result
-                  : typeof tc?.output === 'string'
-                  ? tc.output
-                  : '';
-              const cls = classifyTool(tName, inStr);
-              const st: LiveToolCall['status'] = tc?.error
-                ? 'error'
-                : outStr || obj.status === 'DONE'
-                ? 'ok'
-                : 'running';
-              const ex = run.tools.find((x) => x.id === tid);
-              if (!ex) {
-                run.tools.push({
-                  id: tid,
-                  name: tName,
-                  category: cls.category,
-                  icon: cls.icon,
-                  summary: cls.summary,
-                  status: st,
-                  input: inStr || undefined,
-                  output: outStr || undefined,
-                  startedAt: new Date().toISOString(),
-                });
-                changed = true;
-              } else if (ex.status !== st || (outStr && !ex.output)) {
-                ex.status = st;
-                if (outStr) ex.output = outStr;
-                changed = true;
-              }
-            }
+      for (const e of readAgyTranscript(lines.slice(minIdx)).entries) {
+        if (e.kind !== 'model') continue;
+        if (e.thinking) thoughts = e.thinking;
+        if (e.text) text = e.text;
+        for (const c of e.calls) {
+          // Running until its result is written (or while it works in the background).
+          const st: LiveToolCall['status'] = c.error ? 'error' : c.output && !c.background ? 'ok' : 'running';
+          const ex = run.tools.find((x) => x.id === c.id);
+          if (!ex) {
+            const cls = classifyTool(c.name, c.input);
+            run.tools.push({
+              id: c.id,
+              name: c.name,
+              category: cls.category,
+              icon: cls.icon,
+              summary: cls.summary,
+              status: st,
+              input: c.input || undefined,
+              output: c.output || undefined,
+              startedAt: e.at || new Date().toISOString(),
+            });
+            changed = true;
+          } else if (ex.status !== st || (c.output && ex.output !== c.output)) {
+            ex.status = st;
+            if (c.output) ex.output = c.output;
+            changed = true;
           }
-        } catch {}
+        }
       }
 
       if (thoughts && thoughts !== run.thoughts) {
