@@ -638,18 +638,20 @@ function runAntigravityAgentApi(prof, gate, args, promptText) {
   process.exit(output.ok ? 0 : 1);
 }
 
-function ensureDoubaoDesktopDaemon(cdpPort = 9225) {
+function ensureDoubaoDesktopDaemon(cdpPort = 9225, forceReauth = false) {
   const localAppData = process.env.LOCALAPPDATA || path.join(HOME, 'AppData', 'Local');
   const doubaoExe = path.join(localAppData, 'Doubao', 'Application', 'Doubao.exe');
   if (!fs.existsSync(doubaoExe)) return false;
 
   const srcUserData = path.join(localAppData, 'Doubao', 'User Data');
-  const bgProfileDir = path.join(localAppData, 'Temp', 'doubao_cdp_test');
+  // 持久化在 ~/.agent-hub/doubao-daemon，远离 Temp 临时目录被清理风险与多用户共享泄露隐患
+  const bgProfileDir = path.join(HOME, '.agent-hub', 'doubao-daemon');
   const bgLocalStatePath = path.join(bgProfileDir, 'Local State');
+  const bgCookiesPath = path.join(bgProfileDir, 'Default', 'Network', 'Cookies');
 
   try {
     fs.mkdirSync(path.join(bgProfileDir, 'Default', 'Network'), { recursive: true });
-    let needLocalState = !fs.existsSync(bgLocalStatePath);
+    let needLocalState = !fs.existsSync(bgLocalStatePath) || forceReauth;
     if (!needLocalState) {
       try {
         const lsObj = JSON.parse(fs.readFileSync(bgLocalStatePath, 'utf8'));
@@ -667,15 +669,23 @@ function ensureDoubaoDesktopDaemon(cdpPort = 9225) {
     for (const rel of ['saman_app_state', path.join('Default', 'Preferences'), path.join('Default', 'Secure Preferences')]) {
       const s = path.join(srcUserData, rel);
       const d = path.join(bgProfileDir, rel);
-      if (fs.existsSync(s) && !fs.existsSync(d)) {
+      if (fs.existsSync(s) && (!fs.existsSync(d) || forceReauth)) {
         try {
           fs.copyFileSync(s, d);
         } catch {}
       }
     }
+    // 若要求重新认证或初次同步 Cookies
+    if ((forceReauth || !fs.existsSync(bgCookiesPath)) && fs.existsSync(path.join(srcUserData, 'Default', 'Network', 'Cookies'))) {
+      try {
+        fs.copyFileSync(path.join(srcUserData, 'Default', 'Network', 'Cookies'), bgCookiesPath);
+      } catch {}
+    }
   } catch {}
 
-  const cmdLine = `"${doubaoExe}" --user-data-dir="${bgProfileDir}" --no-startup-window --keep-alive-for-test --remote-debugging-port=${cdpPort} --remote-allow-origins=*`;
+  // 安全审计收紧：完全移除 --remote-allow-origins=* 通配符！
+  // Chromium 默认对缺乏 Origin 头的原生本地客户端放行，而阻断浏览器网页跨域访问 127.0.0.1:9225（返回 403 Forbidden）
+  const cmdLine = `"${doubaoExe}" --user-data-dir="${bgProfileDir}" --no-startup-window --keep-alive-for-test --remote-debugging-port=${cdpPort}`;
   const psScript = `$cmd = '${cmdLine.replace(/'/g, "''")}'; Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $cmd } | Out-Null`;
   spawnSync('powershell.exe', ['-NoProfile', '-Command', psScript], { windowsHide: true, timeout: 8000 });
 
@@ -723,8 +733,8 @@ function runOpencliCdp(prof, gate, args, promptText) {
     statusRes.exitCode !== 0 ||
     /not reachable|is not reachable|ECONNREFUSED/i.test(statusRes.stdout || statusRes.stderr);
 
-  if (isCdpDown && prof.id === 'doubao-desktop') {
-    if (ensureDoubaoDesktopDaemon(prof.cdpPort || 9225)) {
+  if ((isCdpDown || args.reauth) && prof.id === 'doubao-desktop') {
+    if (ensureDoubaoDesktopDaemon(prof.cdpPort || 9225, !!args.reauth)) {
       statusRes = runCommandSync('opencli', [adapterCmd, 'status', '-f', 'json'], {}, 10000);
       isCdpDown =
         statusRes.exitCode !== 0 ||
@@ -742,7 +752,7 @@ function runOpencliCdp(prof, gate, args, promptText) {
       session: sessionName,
       error: `Agent '${prof.id}' is not reachable on CDP port ${prof.cdpPort || 9225}.`,
       details: (statusRes.stdout || statusRes.stderr || statusRes.error || '').trim(),
-      help: `Start ${prof.name || prof.id} with --user-data-dir="%LOCALAPPDATA%\\Temp\\doubao_cdp_test" --no-startup-window --keep-alive-for-test --remote-debugging-port=${prof.cdpPort || 9225} --remote-allow-origins=*`,
+      help: `Start ${prof.name || prof.id} with --user-data-dir="%USERPROFILE%\\.agent-hub\\doubao-daemon" --no-startup-window --keep-alive-for-test --remote-debugging-port=${prof.cdpPort || 9225}`,
       durationMs: Date.now() - startedAt,
     };
     console.log(JSON.stringify(output, null, 2));
@@ -773,17 +783,28 @@ function runOpencliCdp(prof, gate, args, promptText) {
 
   const isTimeoutReply =
     typeof reply === 'string' && /^No response received within \d+s\.$/i.test(reply.trim());
-  const ok = askRes.exitCode === 0 && !isTimeoutReply;
+  const isAuthExpired =
+    typeof reply === 'string' && /请先登录|扫码登录|登录失效|登录后继续|账号已被登出/i.test(reply);
+  const ok = askRes.exitCode === 0 && !isTimeoutReply && !isAuthExpired;
 
   const output = {
     ok,
+    code: isAuthExpired ? 'AUTH_EXPIRED' : ok ? 'OK' : 'EXEC_FAILED',
     agent: prof.id,
     driver: prof.driver,
     session: sessionName,
     reply: reply,
     raw: parsed || askRes.stdout,
     durationMs: Date.now() - startedAt,
-    error: !ok ? { message: isTimeoutReply ? reply : askRes.stderr || askRes.stdout || 'opencli execution failed' } : null,
+    error: !ok
+      ? {
+          message: isAuthExpired
+            ? '豆包后台实例登录态已过期，请在前台打开豆包登录，或运行 node hub/tools/agent_gateway.js run --channel doubao-desktop --reauth 重新同步登录凭据。'
+            : isTimeoutReply
+            ? reply
+            : askRes.stderr || askRes.stdout || 'opencli execution failed',
+        }
+      : null,
   };
   console.log(JSON.stringify(output, null, 2));
   process.exit(output.ok ? 0 : 1);
@@ -939,8 +960,6 @@ function ensureSharedDaemon() {
   if (process.env.HUB_NO_AUTOSTART === '1' || process.env.HUB_DAEMON_URL) return false;
   const logDir = path.join(os.homedir(), '.agent-hub');
   fs.mkdirSync(logDir, { recursive: true });
-  const out = fs.openSync(path.join(logDir, 'hub-8899.log'), 'a');
-  const err = fs.openSync(path.join(logDir, 'hub-8899.err.log'), 'a');
   // The phone page reaches the service over EasyTier; ~/.agent-hub/lan-host names that address (10.126.126.1).
   let lanHost = process.env.HUB_LAN_HOST || '';
   try {
@@ -948,12 +967,24 @@ function ensureSharedDaemon() {
   } catch {}
   const serveArgs = ['--no-warnings=ExperimentalWarning', path.join(ROOT_DIR, 'trace', 'apps', 'cli', 'src', 'main.ts'), 'serve', '--port', '8899'];
   if (lanHost) serveArgs.push('--lan', lanHost);
-  const child = spawn(
-    process.execPath,
-    serveArgs,
-    { cwd: ROOT_DIR, detached: true, stdio: ['ignore', out, err], windowsHide: true },
-  );
-  child.unref();
+  // On Windows a detached child still belongs to the caller's job object: when the caller is an agent's sandboxed
+  // command or one tool call, closing that job took the shared service down with it (10-19, down from about 21:37
+  // until a restart at 00:03). WMI starts it outside any job, as ensureDoubaoDesktopDaemon does for Doubao.
+  let started = false;
+  if (process.platform === 'win32') {
+    const q = (s) => `"${s}"`;
+    const line = `cmd.exe /d /c "${[process.execPath, ...serveArgs].map(q).join(' ')} >> ${q(path.join(logDir, 'hub-8899.log'))} 2>> ${q(path.join(logDir, 'hub-8899.err.log'))}"`;
+    const ps = `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '${line.replace(/'/g, "''")}'; CurrentDirectory = '${ROOT_DIR.replace(/'/g, "''")}' }; exit $r.ReturnValue`;
+    started = spawnSync('powershell.exe', ['-NoProfile', '-Command', ps], { windowsHide: true, timeout: 15000 }).status === 0;
+  }
+  if (!started) {
+    const child = spawn(
+      process.execPath,
+      serveArgs,
+      { cwd: ROOT_DIR, detached: true, stdio: ['ignore', fs.openSync(path.join(logDir, 'hub-8899.log'), 'a'), fs.openSync(path.join(logDir, 'hub-8899.err.log'), 'a')], windowsHide: true },
+    );
+    child.unref();
+  }
   for (let i = 0; i < 60; i++) {
     spawnSync(process.execPath, ['-e', 'setTimeout(()=>{},1000)']);
     if (isSharedDaemonOnline()) return true;

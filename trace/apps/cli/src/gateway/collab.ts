@@ -123,8 +123,10 @@ export const collabMethods = {
           this.getAcpxSessionAsContract(d.to.sessionName);
         if (contract && contract.turns.length > 0) {
           const lastTurn = contract.turns[contract.turns.length - 1];
-          const turnEndedMs = lastTurn.endedAt ? Date.parse(lastTurn.endedAt) : lastTurn.startedAt ? Date.parse(lastTurn.startedAt) : 0;
-          if (lastTurn.output && (turnEndedMs >= issuedMs - 2000 || isStartup)) {
+          // Only a turn that began after the dispatch went out can be its answer. Taking the last turn on startup
+          // regardless handed a reused checker session's previous verdict to the next check (argon, 10-20 00:03).
+          const turnStartedMs = Date.parse(lastTurn.startedAt || lastTurn.endedAt || '') || 0;
+          if (lastTurn.output && turnStartedMs >= issuedMs - 2000) {
             if (!d.to.traceSessionId && contract.id) d.to.traceSessionId = contract.id;
             this.harvestRunIntoDispatch(
               d,
