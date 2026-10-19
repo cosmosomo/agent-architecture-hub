@@ -9,6 +9,8 @@
  */
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { HOME } from './common.ts';
 import type { AgentGatewayHub } from '../gateway.ts';
 
 const GUARDED = ['blackboard.jsonl', 'features.jsonl', 'annotations.jsonl'];
@@ -17,6 +19,22 @@ const KEEP = 48;
 
 type Seen = { size: number; snapshotAt: number; snapshotSize: number };
 const seen = new Map<string, Seen>();
+
+/**
+ * Every snapshot also goes into a private local git repository (never pushed): each version of each record stays
+ * retrievable and comparable, not only the last 48 copies. HUB_RECORDS_HISTORY moves it (tests).
+ */
+export function commitHistory(name: string, src: string, why: string) {
+  const dir = process.env.HUB_RECORDS_HISTORY || join(HOME, '.agent-hub', 'records-history');
+  try {
+    mkdirSync(dir, { recursive: true });
+    const git = (...a: string[]) => spawnSync('git', ['-c', 'user.name=hub-guard', '-c', 'user.email=hub-guard@localhost', ...a], { cwd: dir, windowsHide: true, encoding: 'utf8' });
+    if (!existsSync(join(dir, '.git'))) git('init', '-q');
+    copyFileSync(src, join(dir, name));
+    git('add', name);
+    git('commit', '-q', '-m', `${name}: ${why}`);
+  } catch {}
+}
 
 const stamp = () => new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
 
@@ -64,7 +82,60 @@ export function rebuild(snapshotText: string, shortText: string): string[] {
   return rows;
 }
 
+/**
+ * What each shared record must have; everything else is kept as given (用户 10-19：“要考虑智能体负担，不要预先定的
+ * 太死”). The center stamps the time and who it came through; it never refuses a row for style, only for a missing field.
+ */
+const RECORDS: Record<string, { file: string; need: string[] }> = {
+  blackboard: { file: 'blackboard.jsonl', need: ['by', 'family', 'capability', 'evidence'] },
+  features: { file: 'features.jsonl', need: ['product', 'name', 'what'] },
+  annotations: { file: 'annotations.jsonl', need: ['product', 'on'] },
+};
+const RESULTS = ['pass', 'partial', 'fail', 'unverified'];
+
+/** One row as the center will write it, or why not. */
+export function normalizeRecord(kind: string, raw: any): { row?: Record<string, any>; error?: string } {
+  const spec = RECORDS[kind];
+  if (!spec) return { error: `不认识的记录：${kind}（blackboard、features、annotations）` };
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { error: '每一行要是一个对象' };
+  const missing = spec.need.filter((k) => !String(raw[k] ?? '').trim());
+  if (missing.length) return { error: '缺：' + missing.join('、') };
+  const row: Record<string, any> = { ...raw, at: new Date().toISOString(), via: 'center' };
+  if (kind === 'blackboard') {
+    const res = String(raw.result || '').toLowerCase();
+    row.result = RESULTS.includes(res) ? res : 'unverified';
+    const m = /^[\w-]+\/(L0|L1a|L1b|L2|L3)\/\S+$/.exec(String(raw.route || ''));
+    if (m) row.layer = m[1];
+  }
+  return { row };
+}
+
 export const guardMethods = {
+  /**
+   * The one writer of the shared records (AGENTS.md 铁律 1): rows come in through POST /api/gateway/records and
+   * `agent_gateway.js bb add | feature | note`, and only the center appends them to the files.
+   */
+  appendRecords(this: AgentGatewayHub, kind: string, rows: any[]) {
+    const spec = RECORDS[kind];
+    if (!spec) return { ok: false, error: `不认识的记录：${kind}（blackboard、features、annotations）` };
+    const list = Array.isArray(rows) ? rows : [rows];
+    const good: string[] = [];
+    const errors: Array<{ index: number; error: string }> = [];
+    list.forEach((raw, index) => {
+      const r = normalizeRecord(kind, raw);
+      if (r.row) good.push(JSON.stringify(r.row));
+      else errors.push({ index, error: r.error! });
+    });
+    if (good.length) {
+      const file = join(this.repoRoot, 'channels', 'probe', spec.file);
+      appendFileSync(file, good.join('\n') + '\n');
+      // The guard must not read our own growth as anything but growth.
+      const s = seen.get(spec.file);
+      if (s) s.size = statSync(file).size;
+    }
+    return { ok: errors.length === 0, appended: good.length, errors };
+  },
+
   guardAppendOnly(this: AgentGatewayHub) {
     const dir = join(this.repoRoot, 'channels', 'probe');
     const snapDir = join(dir, 'snapshots');
@@ -91,6 +162,7 @@ export const guardMethods = {
             JSON.stringify({ ts: new Date().toISOString(), kind: 'guard_restore', file: `channels/probe/${name}`, from: prev.size, shrunkTo: size, restoredTo: after, snapshot: newest || null, shortCopy: shortCopy.slice(this.repoRoot.length + 1) }) + '\n',
           );
           this.broadcast('guard_restore', { file: name, from: prev.size, shrunkTo: size, restoredTo: after });
+          commitHistory(name, file, `restored after it shrank from ${prev.size} to ${size} bytes`);
           seen.set(name, { size: after, snapshotAt: prev.snapshotAt, snapshotSize: prev.snapshotSize });
           continue;
         }
@@ -99,6 +171,7 @@ export const guardMethods = {
         if (size !== s.snapshotSize && Date.now() - s.snapshotAt >= SNAPSHOT_EVERY_MS) {
           mkdirSync(snapDir, { recursive: true });
           copyFileSync(file, join(snapDir, `${name}.${stamp()}.snap`));
+          commitHistory(name, file, `${size} bytes`);
           s.snapshotAt = Date.now();
           s.snapshotSize = size;
           const all = copies();

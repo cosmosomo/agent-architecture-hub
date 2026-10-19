@@ -5,6 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { guardMethods, jsonRows, rebuild } from '../src/gateway/guard.ts';
 
+// Snapshots go to a throwaway history, never the real ~/.agent-hub/records-history.
+process.env.HUB_RECORDS_HISTORY = mkdtempSync(join(tmpdir(), 'hub-history-all-'));
+
 test('rows glued onto one line are split apart', () => {
   assert.deepEqual(jsonRows('{"a":1}{"b":"x}y"}\n\n{"c":"\\"{"}\n'), ['{"a":1}', '{"b":"x}y"}', '{"c":"\\"{"}']);
 });
@@ -38,4 +41,30 @@ test('a rewritten blackboard is set aside and restored from the newest copy plus
   assert.ok(readdirSync(join(dir, 'snapshots')).some((f) => f.startsWith('blackboard.jsonl.shrunk-')));
   assert.match(readFileSync(hub.eventsFile, 'utf8'), /"kind":"guard_restore"/);
   assert.deepEqual(events, ['guard_restore']);
+});
+
+test('records need only the essentials; the center stamps the time and keeps the rest', async () => {
+  const { normalizeRecord } = await import('../src/gateway/guard.ts');
+  assert.match(String(normalizeRecord('blackboard', { by: 'zcode', family: 'zcode' }).error), /缺：capability、evidence/);
+  const ok = normalizeRecord('blackboard', { by: 'zcode', family: 'zcode', capability: 'open', evidence: '跑通', result: 'PASS', route: 'zcode/L2/server-api', extra: 1, at: 'forged' }).row!;
+  assert.equal(ok.result, 'pass');
+  assert.equal(ok.layer, 'L2');
+  assert.equal(ok.extra, 1);
+  assert.notEqual(ok.at, 'forged');
+  assert.equal(normalizeRecord('blackboard', { by: 'x', family: 'x', capability: 'y', evidence: 'z', result: '大概能' }).row!.result, 'unverified');
+  assert.match(String(normalizeRecord('nope', {}).error), /不认识/);
+});
+
+test('a snapshot also lands in the private history', async () => {
+  const { commitHistory } = await import('../src/gateway/guard.ts');
+  const { execFileSync } = await import('node:child_process');
+  const hist = mkdtempSync(join(tmpdir(), 'hub-history-'));
+  process.env.HUB_RECORDS_HISTORY = hist;
+  const src = join(mkdtempSync(join(tmpdir(), 'hub-src-')), 'blackboard.jsonl');
+  writeFileSync(src, '{"n":1}\n');
+  commitHistory('blackboard.jsonl', src, 'first');
+  writeFileSync(src, '{"n":1}\n{"n":2}\n');
+  commitHistory('blackboard.jsonl', src, 'second');
+  const log = execFileSync('git', ['log', '--format=%s'], { cwd: hist, encoding: 'utf8' }).trim().split('\n');
+  assert.deepEqual(log, ['blackboard.jsonl: second', 'blackboard.jsonl: first']);
 });

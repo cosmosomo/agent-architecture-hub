@@ -10,9 +10,9 @@
 ## 铁律（做不到就停下来，在交回里说明）
 
 1. **共享记录只能追加。** `channels/probe/blackboard.jsonl`（黑板）、`channels/probe/features.jsonl`、`channels/probe/annotations.jsonl` 只能往末尾加行：
-   - 写黑板用 `node hub/tools/agent_gateway.js bb add …`；
+   - 写黑板用 `node hub/tools/agent_gateway.js bb add …`。命令把记录交给中心，由中心盖时间、往末尾加，智能体自己不碰文件。必填只有四项：谁写的（`--by`）、哪家（`--family`）、哪个单元（`--capability`）、证据（`--evidence`）；结果不填就记成“未证实”；
    - 其余两份用 `agent_gateway.js feature`、`note` 写；
-   - 自己写代码时只用追加模式（Node 的 `appendFileSync`，Python 的 `open(…, 'a')`）。
+   - 不要自己写代码去打开这些文件；一次要写很多行，就把它们以 `{"kind":"blackboard","rows":[…]}` 的形式发到中心的 `POST http://127.0.0.1:8899/api/gateway/records`。
 
    不许把整个文件读出来再写回去，不许排序、去重、过滤，也不许改旧行。10-19 有一个智能体把黑板整份重写了，两千多行实测证据只剩 18 行。
 2. **署名写你自己**：产品 id，或者派活单里给你的会话名。不冒用别人的名字（比如 `claude-lead`）。时间用当前时间，不编造。

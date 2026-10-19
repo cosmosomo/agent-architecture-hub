@@ -613,10 +613,64 @@ function runAntigravityAgentApi(prof, gate, args, promptText) {
   process.exit(output.ok ? 0 : 1);
 }
 
+function runOpencliCdp(prof, gate, args, promptText) {
+  const startedAt = Date.now();
+  const sessionName = args.session || `gw-${prof.id}`;
+  const timeoutSec = Number(args.timeout || 60);
+
+  const adapterCmd = prof.id === 'doubao-desktop' ? 'doubao-app' : prof.id;
+
+  // 1. Probe CDP availability via opencli status
+  const statusRes = runCommandSync('opencli', [adapterCmd, 'status', '-f', 'json'], {}, 10000);
+  const isCdpDown =
+    statusRes.exitCode !== 0 ||
+    /not reachable|is not reachable|ECONNREFUSED/i.test(statusRes.stdout || statusRes.stderr);
+
+  if (isCdpDown) {
+    const output = {
+      ok: false,
+      code: 'CDP_UNREACHABLE',
+      agent: prof.id,
+      driver: prof.driver,
+      cdpPort: prof.cdpPort || 9225,
+      session: sessionName,
+      error: `Agent '${prof.id}' is not reachable on CDP port ${prof.cdpPort || 9225}.`,
+      details: (statusRes.stdout || statusRes.stderr || statusRes.error || '').trim(),
+      help: `Start ${prof.name || prof.id} manually with --remote-debugging-port=${prof.cdpPort || 9225} --remote-allow-origins=*, or launch via PiP virtual desktop session without disturbing active desktop.`,
+      durationMs: Date.now() - startedAt,
+    };
+    console.log(JSON.stringify(output, null, 2));
+    process.exit(1);
+  }
+
+  // 2. If CDP is open, execute ask
+  const askRes = runCommandSync('opencli', [adapterCmd, 'ask', promptText, '-f', 'json'], {}, timeoutSec * 1000);
+  let reply = askRes.stdout;
+  let parsed = null;
+  try {
+    parsed = JSON.parse(askRes.stdout);
+    if (parsed && typeof parsed.reply === 'string') reply = parsed.reply;
+    else if (parsed && typeof parsed.text === 'string') reply = parsed.text;
+  } catch {}
+
+  const output = {
+    ok: askRes.exitCode === 0,
+    agent: prof.id,
+    driver: prof.driver,
+    session: sessionName,
+    reply: reply,
+    raw: parsed || askRes.stdout,
+    durationMs: Date.now() - startedAt,
+    error: askRes.exitCode !== 0 ? { message: askRes.stderr || askRes.stdout || 'opencli execution failed' } : null,
+  };
+  console.log(JSON.stringify(output, null, 2));
+  process.exit(output.ok ? 0 : 1);
+}
+
 function cmdStatus(args) {
-  const prof = resolveProfile(args.agent || args._[1]);
+  const prof = resolveProfile(args.agent || args.channel || args._[1]);
   if (!prof) {
-    console.error(JSON.stringify({ ok: false, error: `Unknown agent: ${args.agent || args._[1]}` }));
+    console.error(JSON.stringify({ ok: false, error: `Unknown agent: ${args.agent || args.channel || args._[1]}` }));
     process.exit(1);
   }
   const card = readHostCardMeta(prof.hostCard) || {};
@@ -779,9 +833,10 @@ function ensureSharedDaemon() {
 }
 
 function cmdRun(args) {
-  const prof = resolveProfile(args.agent);
+  const targetAgent = args.agent || args.channel;
+  const prof = resolveProfile(targetAgent);
   if (!prof) {
-    console.error(JSON.stringify({ ok: false, error: `Unknown agent: ${args.agent}` }));
+    console.error(JSON.stringify({ ok: false, error: `Unknown agent: ${targetAgent}` }));
     process.exit(1);
   }
   const gate = preflightCheck(prof, args);
@@ -871,6 +926,10 @@ function cmdRun(args) {
   // Fallback Path: Direct standalone execution when :8899 daemon is offline
   if (prof.driver === 'agy-agentapi') {
     return runAntigravityAgentApi(prof, gate, args, promptText);
+  }
+
+  if (prof.driver === 'opencli-cdp') {
+    return runOpencliCdp(prof, gate, args, promptText);
   }
 
   if (prof.driver !== 'acpx') {
@@ -1487,6 +1546,21 @@ function cmdGoal(args, sub) {
 // --how is the way it is done, e.g. for browser automation: 浏览器调试接口（CDP）、视觉识别（截图）、DOM 解析、无障碍树、
 // 系统级鼠标键盘、官方接口、命令行 (用户 10-19：“能力的实现路径也得说啊”).
 const FEATURE_VALUES = { exclusive: ['独家', '别家也有', '不确定'], openness: ['开源', '公开接口', '只能界面', '不开放'], evidence: ['试过', '看到', '推测'] };
+// The center is the only writer of the shared records (gateway/guard.ts appendRecords).
+function sendRecords(kind, rows) {
+  if (!ensureSharedDaemon()) {
+    console.error(JSON.stringify({ ok: false, error: '中心（8899）没在运行，也拉不起来；记录只经中心写，没有写进去' }));
+    process.exit(2);
+  }
+  const res = callSharedDaemon('/api/gateway/records', 'POST', { kind, rows }, 30);
+  if (!res || !res.appended) {
+    console.error(JSON.stringify({ ok: false, error: (res && (res.error || JSON.stringify(res.errors))) || '中心没有收下这条记录' }));
+    process.exit(1);
+  }
+  console.log(JSON.stringify(res));
+  process.exit(0);
+}
+
 function cmdFeature(args) {
   const file = path.join(ROOT_DIR, 'channels', 'probe', 'features.jsonl');
   const prof = args.agent || args.channel ? resolveProfile(args.agent || args.channel) : null;
@@ -1501,23 +1575,24 @@ function cmdFeature(args) {
   }
   const bad = [];
   if (!product) bad.push('--agent');
-  for (const k of ['name', 'what', 'entry']) if (!String(args[k] || '').trim()) bad.push('--' + k);
-  for (const [k, ok] of Object.entries(FEATURE_VALUES)) if (!ok.includes(args[k])) bad.push(`--${k} ${ok.join('|')}`);
+  for (const k of ['name', 'what']) if (!String(args[k] || '').trim()) bad.push('--' + k);
+  for (const [k, ok] of Object.entries(FEATURE_VALUES)) if (args[k] && !ok.includes(args[k])) bad.push(`--${k} ${ok.join('|')}`);
   if (bad.length) {
     console.error(JSON.stringify({ ok: false, error: '缺少或填错：' + bad.join('，') }));
     process.exit(1);
   }
   const row = { at: new Date().toISOString(), product, name: String(args.name).trim(), what: String(args.what).trim(), entry: String(args.entry).trim(), exclusive: args.exclusive, openness: args.openness, evidence: args.evidence, how: args.how ? String(args.how).trim() : undefined, note: args.note ? String(args.note).trim() : undefined, by: args.by || product };
-  fs.appendFileSync(file, JSON.stringify(row) + '\n');
-  console.log(JSON.stringify({ ok: true, registered: row }));
-  process.exit(0);
+  delete row.at; // the center stamps the time
+  sendRecords('features', [row]);
 }
 
 // bb add: the one way to write the blackboard (channels/probe/blackboard.jsonl). It only appends, stamps the time
 // itself, and needs who wrote it (AGENTS.md 铁律 1、2). 10-19 the blackboard was rewritten whole by an agent and fell
 // from ~2600 rows to 18.
-//   bb add --by <你的产品或会话名> --family <产品> --capability <单元 id> --result pass|partial|fail|unverified
-//          --route <产品>/<L0|L1a|L1b|L2|L3>/<入口> --evidence <实际调用和返回> [--cmd <可复跑的命令>] [--condition] [--note]
+//   bb add --by <你的产品或会话名> --family <产品> --capability <单元 id> --evidence <实际调用和返回>
+//          [--result pass|partial|fail|unverified（不填记未证实）] [--route <产品>/<L0|L1a|L1b|L2|L3>/<入口>]
+//          [--cmd <可复跑的命令>] [--condition] [--note]
+// It goes to the center (POST /api/gateway/records), which stamps the time and appends; nobody else writes the file.
 function cmdBlackboard(args) {
   const sub2 = args._[1];
   if (sub2 !== 'add') {
@@ -1525,8 +1600,7 @@ function cmdBlackboard(args) {
     process.exit(1);
   }
   const bad = [];
-  for (const k of ['by', 'family', 'capability', 'route', 'evidence']) if (!String(args[k] || '').trim()) bad.push('--' + k);
-  if (!['pass', 'partial', 'fail', 'unverified'].includes(args.result)) bad.push('--result pass|partial|fail|unverified');
+  for (const k of ['by', 'family', 'capability', 'evidence']) if (!String(args[k] || '').trim()) bad.push('--' + k);
   if (/^claude-lead/.test(String(args.by || '')) && !process.env.HUB_LEAD) bad.push('--by 写你自己，不用 claude-lead');
   const m = /^[\w-]+\/(L0|L1a|L1b|L2|L3)\/\S+$/.exec(String(args.route || ''));
   if (args.route && !m) bad.push('--route <产品>/<L0|L1a|L1b|L2|L3>/<入口>');
@@ -1538,18 +1612,17 @@ function cmdBlackboard(args) {
     at: new Date().toISOString(),
     by: String(args.by),
     family: String(args.family),
-    layer: m[1],
-    route: String(args.route),
+    layer: m ? m[1] : undefined,
+    route: args.route ? String(args.route) : undefined,
     capability: String(args.capability),
-    result: args.result,
+    result: args.result || 'unverified',
     condition: args.condition ? String(args.condition) : undefined,
     evidence: String(args.evidence),
     cmd: args.cmd ? String(args.cmd) : undefined,
     note: args.note ? String(args.note) : undefined,
   };
-  fs.appendFileSync(path.join(ROOT_DIR, 'channels', 'probe', 'blackboard.jsonl'), JSON.stringify(row) + '\n');
-  console.log(JSON.stringify({ ok: true, appended: row }));
-  process.exit(0);
+  delete row.at;
+  sendRecords('blackboard', [row]);
 }
 
 // note: a remark on one capability of one product — a registered unit (its id) or a feature (its name): what it costs,
@@ -1566,15 +1639,14 @@ function cmdNote(args) {
   if (!product) bad.push('--agent');
   if (!on) bad.push('--on');
   if (!args.how && !args.cost && !args.perf && !tags.length && !args.text) bad.push('--how / --cost / --perf / --tags / --text 至少一项');
-  if (!FEATURE_VALUES.evidence.includes(args.evidence)) bad.push('--evidence 试过|看到|推测');
+  if (args.evidence && !FEATURE_VALUES.evidence.includes(args.evidence)) bad.push('--evidence 试过|看到|推测');
   if (bad.length) {
     console.error(JSON.stringify({ ok: false, error: '缺少或填错：' + bad.join('，') }));
     process.exit(1);
   }
   const row = { at: new Date().toISOString(), product, on, how: args.how ? String(args.how) : undefined, cost: args.cost ? String(args.cost) : undefined, perf: args.perf ? String(args.perf) : undefined, tags: tags.length ? tags : undefined, text: args.text ? String(args.text) : undefined, evidence: args.evidence, by: args.by || product };
-  fs.appendFileSync(path.join(ROOT_DIR, 'channels', 'probe', 'annotations.jsonl'), JSON.stringify(row) + '\n');
-  console.log(JSON.stringify({ ok: true, noted: row }));
-  process.exit(0);
+  delete row.at;
+  sendRecords('annotations', [row]);
 }
 
 // recall: look back over a session's past conversation (unit recall-history, 回顾对话记录). Some products let the

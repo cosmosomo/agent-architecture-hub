@@ -550,6 +550,12 @@ export function createService(opts: ServeOptions): Server {
           return json(res, 400, { ok: false, error: e?.message || String(e) });
         }
       }
+      // Shared records (blackboard, features, annotations): the center is the only writer (gateway/guard.ts).
+      if (req.method === 'POST' && path === '/api/gateway/records') {
+        const body = await readJsonBody(req, 4 * 1024 * 1024);
+        const r = gateway.appendRecords(String(body.kind || ''), body.rows ?? body.row);
+        return json(res, r.appended || r.ok ? 200 : 400, r);
+      }
       if (req.method === 'POST' && path === '/api/gateway/goal-action') {
         const body = await readJsonBody(req);
         try {

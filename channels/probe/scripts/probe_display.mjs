@@ -334,8 +334,9 @@ for (const r of report) {
   for (const [u, x] of Object.entries(r.results || {})) console.log(`  ${x.res.padEnd(8)} ${u.padEnd(16)} ${x.ev}`);
 }
 if (WRITE && rows.length) {
-  fs.appendFileSync(BLACKBOARD, rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
-  console.log(`\n写入黑板 ${rows.length} 行`);
+  // Only the center writes the blackboard (gateway/guard.ts appendRecords); it stamps the time.
+  const res = await (await fetch(BASE + '/api/gateway/records', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'blackboard', rows: rows.map(({ at, ...r }) => r) }) })).json();
+  console.log(`\n写入黑板 ${res.appended || 0} 行${res.errors && res.errors.length ? `，${res.errors.length} 行没收下：${JSON.stringify(res.errors.slice(0, 3))}` : ''}`);
 } else {
   console.log(`\n${rows.length} 行待写（加 --write 写入黑板）`);
 }

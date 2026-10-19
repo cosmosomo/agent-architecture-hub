@@ -259,6 +259,13 @@
       "path": "/api/gateway/pick",
       "does": "中心现在会把一件活派给谁：在候选产品里排除熔断冷却中、在跑已满（产品表 maxConcurrent）、后端不能发话的，挑最空闲的，并说明理由；目标里产品写 auto 的任务就照它派",
       "cli": "pick"
+    },
+    {
+      "id": "records",
+      "method": "POST",
+      "path": "/api/gateway/records",
+      "does": "往共享记录（黑板、功能登记、注释）追加行；中心是唯一写入方，盖时间，只拦缺必填项的行",
+      "cli": "bb/feature/note"
     }
   ]
 }
