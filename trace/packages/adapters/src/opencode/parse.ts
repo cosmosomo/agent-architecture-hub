@@ -17,7 +17,7 @@ import { clean, oneLine } from '../text.ts';
 import type { Bundle, FinishOptions, LineParser, SourceFile } from '../types.ts';
 
 export const OPENCODE_KIND = 'opencode';
-export const OPENCODE_ADAPTER_VERSION = '0.1.2';
+export const OPENCODE_ADAPTER_VERSION = '0.1.3';
 
 export const OPENCODE_CAPABILITIES: AdapterCapabilities = {
   observe_only: true,

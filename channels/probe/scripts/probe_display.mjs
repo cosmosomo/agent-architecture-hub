@@ -167,7 +167,7 @@ function rawCounts(s) {
 
 /** What the page shows, counted. */
 function parsedCounts(s) {
-  const c = { tools: 0, toolWithOutput: 0, toolNoInput: 0, toolNoOutput: 0, thinking: 0, compactions: 0, notPerson: [], outputNoModel: 0, unknown: 0, unknownKinds: [] };
+  const c = { tools: 0, toolWithOutput: 0, toolNoInput: 0, toolNoOutput: 0, thinking: 0, thinkingCut: 0, thinkingCutChars: 0, compactions: 0, notPerson: [], outputNoModel: 0, unknown: 0, unknownKinds: [] };
   const turns = s.turns || [];
   turns.forEach((t, ti) => {
     const last = ti === turns.length - 1;
@@ -182,6 +182,12 @@ function parsedCounts(s) {
       } else if (x.kind === 'model') {
         model++;
         c.thinking += len(x.reasoning);
+        // Text over the display limit is cut with a note of its original length (adapters' LIMITS.text): known, shown.
+        const cutm = /…（截断，原长 (\d+) 字）\s*$/.exec(String(x.reasoning || ''));
+        if (cutm) {
+          c.thinkingCut++;
+          c.thinkingCutChars += Math.max(0, Number(cutm[1]) - String(x.reasoning).length);
+        }
       } else if (x.kind === 'event' && x.name === 'compaction') {
         c.compactions++;
       } else if (x.kind === 'message' && x.role === 'user' && NOT_PERSON.test(String(x.text || ''))) {
@@ -215,7 +221,10 @@ const list = (await get('/api/sessions?limit=2000')).sessions;
 const byFam = {};
 for (const s of list) {
   const fam = FAMILY[s.source.kind];
-  if (!fam || s.state?.status === 'working' || !(s.stats?.turns > 0)) continue;
+  // A session written to in the last five minutes would be read twice at different moments (the page's data, then
+  // the raw record) and differ by what came in between.
+  const fresh = Date.now() - Date.parse(s.updatedAt || 0) < 5 * 60_000;
+  if (!fam || fresh || s.state?.status === 'working' || !(s.stats?.turns > 0)) continue;
   (byFam[fam] ||= []).push(s);
 }
 const rows = [];
@@ -239,7 +248,7 @@ for (const fam of Object.values(FAMILY)) {
     agg.records += s.stats?.records || 0;
     fmts.add(s.source.format);
     const p = parsedCounts(s);
-    for (const k of ['tools', 'toolWithOutput', 'toolNoInput', 'toolNoOutput', 'thinking', 'compactions', 'outputNoModel', 'unknown']) agg[k] += p[k];
+    for (const k of ['tools', 'toolWithOutput', 'toolNoInput', 'toolNoOutput', 'thinking', 'thinkingCut', 'thinkingCutChars', 'compactions', 'outputNoModel', 'unknown']) agg[k] += p[k];
     agg.notPerson.push(...p.notPerson);
     agg.unknownKinds.push(...p.unknownKinds);
     const raw = rawCounts(s);
@@ -303,7 +312,13 @@ for (const fam of Object.values(FAMILY)) {
   }
   // ui-thinking
   if (raw && raw.thinking) {
-    results['ui-thinking'] = { res: grade(ratio(raw.parsedThinking, raw.thinking), 0.95, 0.5), raw: true, ev: `原始思考 ${raw.thinking} 字，解析出 ${raw.parsedThinking} 字` };
+    // What is missing beyond the cuts the page itself notes is what counts.
+    const shown = raw.parsedThinking + agg.thinkingCutChars;
+    results['ui-thinking'] = {
+      res: grade(ratio(Math.min(shown, raw.thinking), raw.thinking), 0.99, 0.5),
+      raw: true,
+      ev: `原始思考 ${raw.thinking} 字，解析出 ${raw.parsedThinking} 字${agg.thinkingCut ? `；${agg.thinkingCut} 段超过显示上限、按原长注明截断（约 ${agg.thinkingCutChars} 字）` : ''}`,
+    };
   }
   report.push({ fam, cond, results, contractOnly: !raw });
   for (const [unit, r] of Object.entries(results)) {

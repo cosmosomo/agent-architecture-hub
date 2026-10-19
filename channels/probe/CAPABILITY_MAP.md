@@ -1,12 +1,12 @@
 # 功能矩阵：每个单元在各家、各位置上的理论上限与现状（由黑板、integration-map 和完整性检查生成，勿手改）
 
-生成时间：2026-10-19T05:56:31.800Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
+生成时间：2026-10-19T06:11:44.884Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
 
 标记：✓ 有行为证据（后面是实现路径）；◐ 部分；? 未验证；✗ 不通；✗假 界面有、实际是别的办法模拟；有（截图/代码） 桌面端界面这一列靠截图或代码分析得出、不是行为实测（这批来自调研，未逐格核）；· 没有记录。
 
 ## 现在还缺什么（外层：按 README“立体认知”的轴把现在的差摆出来）
 
-README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-19T05:56:31.806Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
+README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-19T06:11:44.889Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
 
 **每一层：理论极限、我们的目标、现状、依据记在哪**（一格 = 一个能力单元在一个产品）
 
@@ -165,11 +165,11 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 已到前端 | 自己做（上限已证实，没接进来） | 派出去研究（上限不清或要找别的路） |
 |---|---|---|---|
 | antigravity | 35 | 49 | 43 |
-| codex | 30 | 55 | 42 |
+| codex | 31 | 54 | 42 |
 | claude | 34 | 61 | 32 |
 | zcode | 37 | 50 | 40 |
 | workbuddy | 30 | 45 | 52 |
-| opencode | 30 | 63 | 34 |
+| opencode | 31 | 62 | 34 |
 | hermes | 31 | 66 | 30 |
 | gemini | 24 | 2 | 20 |
 | droid | 24 | 2 | 6 |
@@ -179,7 +179,6 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 **自己做的清单（按单元，后面是哪几家）**：
 - 接管原生会话（resume-native）：antigravity、codex、claude、zcode、opencode、hermes
 - 观察·实时（observe-live）：antigravity、codex、opencode、hermes、workbuddy
-- 观察·历史（observe-history）：codex、opencode
 - 状态识别（state）：codex、claude、zcode、opencode、hermes、workbuddy
 - 打断（cancel）：codex、claude、zcode、opencode、hermes、workbuddy
 - 关闭会话（close）：codex、claude、opencode、hermes、workbuddy
@@ -343,11 +342,11 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ channels/probe/scripts/antigravity/run_agentapi.mj | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
-| codex | · | ✓ app-server RPC thread/read + thread/turns/list | ◐ 未识别 4 条（response_item:addition | ◐ 未识别 4 条（response_item:addition | 自己做：接进适配器 |
+| codex | · | ✓ app-server RPC thread/read + thread/turns/list | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | claude | · | ✓ node 读 C:/Users/COLORFIRE/.claude/projects/C--User | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | zcode | · | ✓ 见 probe/results/agy-pro-subagent-entries-20261018. | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | workbuddy | · | ✓ 见 probe/results/agy-pro-subagent-entries-20261018. | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
-| opencode | · | ✓ opencode export ses_eb4b8cbb8ffeD0GgHgHHuDe9ji | ◐ 未识别 10 条（assistant-without-par | ◐ 未识别 10 条（assistant-without-par | 自己做：接进适配器 |
+| opencode | · | ✓ opencode export ses_eb4b8cbb8ffeD0GgHgHHuDe9ji | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | hermes | · | ✓ sqlite3 "file:%LOCALAPPDATA%/hermes/state.db?mode= | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | gemini | · | ✗ gemini --list-sessions | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | droid | · | · | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |

@@ -31,7 +31,7 @@ import { basename, titleFallback, TurnBuilder } from '../turns.ts';
 import { detectState } from '../state.ts';
 
 export const CODEX_KIND = 'codex';
-export const CODEX_ADAPTER_VERSION = '0.2.1';
+export const CODEX_ADAPTER_VERSION = '0.2.2';
 
 export const CODEX_CAPABILITIES: AdapterCapabilities = {
   observe_only: true,
@@ -376,6 +376,9 @@ export function createCodexParser(file: SourceFile): LineParser {
       case 'compaction':
       case 'compaction_summary':
         addCompaction(at);
+        return;
+      case 'additional_tools':
+        // The tool list sent to the model as a developer message: context, not conversation (10-19).
         return;
       default:
         B.note('response_item:' + String(p.type));

@@ -231,6 +231,8 @@ function opencodeSessionFromRows(
         }
       } else if (p.type === 'step-start' || p.type === 'timeline' || p.type === 'patch') {
         // structural markers
+      } else if ((p.type === 'text' || p.type === 'reasoning') && !String(p.text || '').trim()) {
+        // an empty text or reasoning part (the stream opened one and wrote nothing): nothing to show
       } else if (p.type) {
         skipped++;
         B.note('part:' + p.type);
@@ -247,7 +249,14 @@ function opencodeSessionFromRows(
     if (m.finish === 'stop' && B.cur) B.closeTurn(B.cur, endAt, 'completed');
     else if (m.finish === 'error' && B.cur) B.closeTurn(B.cur, endAt, 'failed', '模型以 error 结束');
     if (Number.isFinite(+m.cost) && +m.cost > 0) costUsd = (costUsd || 0) + +m.cost;
-    if (!parts.length) B.note('assistant-without-parts');
+    // A reply that failed before writing anything carries only its error (401, a used-up quota, an abort): show it
+    // as an error or abort in the turn instead of dropping it (10-19, display regression).
+    if (!parts.length && m.error && typeof m.error === 'object') {
+      const msg = String(m.error.data?.message || m.error.name || 'error').slice(0, 400);
+      const aborted = m.error.name === 'MessageAbortedError';
+      B.addEvent(aborted ? 'aborted' : 'error', endAt, aborted ? msg : `${m.error.name || 'Error'}：${msg}`);
+      if (B.cur) B.closeTurn(B.cur, endAt, aborted ? 'aborted' : 'failed', aborted ? undefined : msg);
+    } else if (!parts.length) B.note('assistant-without-parts');
   }
 
   if (!usageSum) {
