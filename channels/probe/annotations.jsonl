@@ -6,3 +6,4 @@
 {"at":"2026-10-19T07:20:32.669Z","product":"opencode","on":"model-new","tags":["自带免费模型不可用"],"text":"10-18 起 OpenCode 自带的免费模型（opencode/big-pickle 等）按本机出口 IP 拦截，默认改走智谱 glm-5.3-flash","evidence":"试过","by":"claude-lead"}
 {"at":"2026-10-19T07:21:07.417Z","product":"claude","on":"内置浏览器面板","how":"独立浏览器面板；读页面靠无障碍树和页面文本，操作靠坐标点按或无障碍树元素编号，另有截图（视觉）和执行页面脚本（DOM）","text":"从它的工具清单看到：read_page（无障碍树）、get_page_text、computer（截图、点击）、javascript_tool","evidence":"看到","by":"claude-lead"}
 {"at":"2026-10-19T07:21:07.480Z","product":"claude","on":"发布页面（Artifact）","how":"页面文件上传到 claude.ai 托管，私有链接；同一文件路径重发更新同一链接","evidence":"试过","by":"claude-lead"}
+{"at":"2026-10-19T07:25:26.935Z","product":"workbuddy","on":"model-new","cost":"官方模型按倍率扣积分（快速 0.21x、均衡 0.65x、极致 1.20x，Hy3、Step-5-Preview 现为 0.00x）；自定义模型走自己的额度","tags":["官方积分无头不可用"],"text":"无头模式用官方模型报“需要登录鉴权”，桌面端凭证加密存放（档案卡第 51 行）","evidence":"看到","by":"claude-lead"}
