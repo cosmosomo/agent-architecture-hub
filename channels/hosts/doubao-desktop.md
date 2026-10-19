@@ -3,7 +3,7 @@ channel_id: doubao-desktop
 name: 豆包 Desktop (Doubao & DoubaoWork)
 category: host
 maintainer: S5
-status: 🟢 healthy
+status: 🔴 blocked_down（10-20 02:35 负责人暂停：后台实例和前台共用 sdk_storage、sandbox_runtime 等目录，前台沙箱在后台实例开着时出过“Sandbox could not be provisioned”；研究员证实两实例互不干扰后再改回 healthy）
 upgrade_status: 🔍 watch_external_sessions
 verified_version: "2.32.6 (CDP:9225)"
 detected_version: "2.32.6 (CDP:9225)"
@@ -26,7 +26,7 @@ capabilities:
   - **无窗口后台隔离 CDP 守护（端口 `127.0.0.1:9225`，零打扰前台）**：
     - 启动命令（已内置于 `agent_gateway.js` 的 `ensureDoubaoDesktopDaemon` 自动拉起）：
       ```powershell
-      "C:\Users\COLORFIRE\AppData\Local\Doubao\Application\Doubao.exe" --user-data-dir="C:\Users\COLORFIRE\AppData\Local\Temp\doubao_cdp_test" --no-startup-window --keep-alive-for-test --remote-debugging-port=9225 --remote-allow-origins=*
+      "C:\Users\COLORFIRE\AppData\Local\Doubao\Application\Doubao.exe" --user-data-dir="C:\Users\COLORFIRE\.agent-hub\doubao-daemon" --no-startup-window --keep-alive-for-test --remote-debugging-port=9225
       ```
     - 命令行交互：
       - 中心网关统一调用：`node hub/tools/agent_gateway.js status --channel doubao-desktop` / `node hub/tools/agent_gateway.js run --channel doubao-desktop --prompt "..."`
@@ -47,13 +47,18 @@ capabilities:
 | **内置并行搜索** | 创建多智能体并行联网搜索 | ✅ 原生强项 | 客户端内置多智能体并行搜索能力（观察台记为 `native` 专属能力） | `2.32.6` `〔用户核定〕` |
 
 ## 三、当前状态、安全参数与防呆红线
-- **当前状态**：🟢 健康就绪（独立无窗口后台守护运行于 `127.0.0.1:9225`，与用户前台 `Doubao.exe` 完全隔离，互不干扰）
+- **当前状态**：🟢 健康就绪（独立无窗口后台守护运行于 `127.0.0.1:9225`，Profile 位于 `~/.agent-hub/doubao-daemon`，与用户前台 `Doubao.exe` 完全隔离，互不干扰）
 - **绝对红线**：
-  1. **严禁重启、杀进程或改动用户前台在用的 `Doubao.exe` / `DoubaoWork.exe` 进程**；所有自动化调用一律走 `--user-data-dir="%LOCALAPPDATA%\Temp\doubao_cdp_test" --no-startup-window --keep-alive-for-test --remote-debugging-port=9225` 独立后台实例；
-  2. **派活前可按需指定交付文件路径**，或直接通过 `agent_gateway.js run --channel doubao-desktop --prompt "..."` 同步收回结构化 JSON 回复。
+  1. **严禁重启、杀进程或改动用户前台在用的 `Doubao.exe` / `DoubaoWork.exe` 进程**；所有自动化调用一律走 `--user-data-dir="%USERPROFILE%\.agent-hub\doubao-daemon" --no-startup-window --keep-alive-for-test --remote-debugging-port=9225` 独立后台实例；
+  2. **绝对禁止开启 `--remote-allow-origins=*`**；仅允许本地原生无 Origin 客户端建连，彻底杜绝本地恶意网页跨域攻入 9225 CDP；
+  3. **派活前可按需指定交付文件路径**，或直接通过 `agent_gateway.js run --channel doubao-desktop --prompt "..."` 同步收回结构化 JSON 回复。
 
 ## 四、渠道升级与功能演进日志
-- **2026-10-19 · 🟢 重大突破：逆向解锁 `Doubao.dll` 后台无头 CDP `9225` + 零锁克隆登录态 + 打通 `opencli doubao-app` 与「工作（本地电脑）」模式**：
+- **2026-10-19 20:30 · 🟢 生产级长期化与安全收紧**：
+  - **移除 `--remote-allow-origins=*` 攻防隐患**：查实并实测 Chromium DevTools 机制，完全移除通配符后，本机浏览器内的恶意网页（携带 `Origin: https://...`）建连 WebSocket 被 403 Forbidden 彻底阻断，而本地 opencli（无 Origin 头）正常握手通过；
+  - **Profile 迁移至持久目录 `~/.agent-hub/doubao-daemon`**：远离 `%TEMP%` 易被系统磁盘清理和权限暴露的风险；
+  - **网关层增加登录态失效检测与 `--reauth` 凭据重新同步**：自动识别登录过期并在 `agent_gateway.js run` 中输出明确指引。
+- **2026-10-19 18:30 · 🟢 重大突破：逆向解锁 `Doubao.dll` 后台无头 CDP `9225` + 零锁克隆登录态 + 打通 `opencli doubao-app` 与「工作（本地电脑）」模式**：
   - **二进制逆向破解 CDP 门禁（`Doubao.dll`）**：反汇编 `content::DevToolsManager::DevToolsManager()`（`RVA 0x00af56a0..0x00af5825`）与 `BrowserProcessImpl::CreateDevToolsProtocolHandler()`（`RVA 0x0271e8a0`），查明字节定制门禁：必须同时传入 `(--no-startup-window || --headless)` 与 `(--remote-debugging-port || --remote-debugging-pipe)`，且使用非默认 `--user-data-dir`（`RVA 0x0229e8e0`）并在 `Local State` 开启 `devtools.remote_debugging.allowed: true`。加齐参数后 0.5 秒开启 `127.0.0.1:9225`，全程 0 窗口、0 焦点抢占；
   - **零锁内核页缓存克隆 Cookie**：通过 `NtQueryObject` + `DuplicateHandle` + `CreateFileMappingW` + `MapViewOfFile` 直接从 `NetworkService` 进程句柄对应的内核页缓存提取 `Default\Network\Cookies`（122,880 字节），免杀进程完美复刻用户登录态；
   - **修复 OpenCLI `doubao-app` 适配器并接入 `agent_gateway.js`**：适配豆包 v2.32.6 的 `contenteditable="true"` 富文本输入框、流式结束判定与 `scoreCDPTarget` 评分，并在 `agent_gateway.js` 实现后台守护自动拉起与 JSON 结果提取；
@@ -62,7 +67,7 @@ capabilities:
   - `check_channels.js` 每次巡检自动扫描 `%LOCALAPPDATA%\Doubao` 与 `%APPDATA%\Doubao` 下是否出现新增的 `*.sqlite`、`*.db`、`sessions/`、`transcripts/`、`export/` 目录或新增本地 CLI/HTTP 端口。
 
 ## 五、状态变化与故障/攻防时间线
-- **2026-10-19 · 🟢 晋升 `🟢 healthy`**：通过 `--no-startup-window --keep-alive-for-test --remote-debugging-port=9225` 独立后台 Profile 彻底解决前台进程占用与弹窗抢焦点问题。
+- **2026-10-19 · 🟢 晋升 `🟢 healthy` 并实现安全长期化**：通过独立后台 Profile `~/.agent-hub/doubao-daemon` + 移除 `--remote-allow-origins=*` 彻底解决前台占用、弹窗抢焦与跨域安全问题。
 - **2026-10-01 · 🟡 核清 LevelDB 存储锁与 CDP 9225 边界**：早期版本直接启动会弹窗或合并至前台进程，现已由 `--no-startup-window --keep-alive-for-test` 方案攻克。
 
 ## 六、维护者（S5）挂账与待办

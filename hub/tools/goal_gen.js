@@ -6,7 +6,7 @@
 //
 //   goal-gen test --agents doubao,zcode --units open,resume     test these units on these products
 //   goal-gen gaps --kind untested [--agents ..] [--limit 5]       cells nobody has tested yet, that have a question
-//   goal-gen gaps --kind build [--units ..] [--limit 3]           built at one layer, not the next: build it, then test
+//   goal-gen gaps --kind build [--layer L2|L3] [--units ..] [--limit 3]   built at one layer, not the next: build, then test
 //   goal-gen gaps --kind research                                  each researcher's boundary list
 // Options: --tester zcode --tester-model glm-5.3-flash --dev codex --verify claude --go (submit; else print)
 const fs = require('fs');
@@ -122,7 +122,8 @@ function goalForGaps(args) {
   if (kind === 'build') {
     // Proven at one layer, missing at the next: native → our backend (L2), or backend → the page (L3). One dev task per
     // unit, then a tester task per product that runs the unit's question at that layer: the test is the acceptance.
-    const todo = cells().filter((x) => pick(x) && /^自己做：(接进适配器|做到前端)/.test(x.c.gap || '') && T[x.unit.id]);
+    const layerOf = (x) => (/前端/.test(x.c.gap) ? 'L3' : 'L2');
+    const todo = cells().filter((x) => pick(x) && /^自己做：(接进适配器|做到前端)/.test(x.c.gap || '') && T[x.unit.id] && (!args.layer || layerOf(x) === args.layer));
     const by = {};
     for (const x of todo) (by[x.unit.id] ||= { unit: x.unit, layer: /前端/.test(x.c.gap) ? 'L3' : 'L2', products: [] }).products.push(x.product);
     const chosen = Object.values(by).sort((a, b) => b.products.length - a.products.length).slice(0, o.limit);
@@ -135,7 +136,8 @@ function goalForGaps(args) {
         key: `build-${g.unit.id}`,
         title: `开发：${g.unit.name}（${g.unit.id}）接到${g.layer === 'L3' ? '网页' : '中心'}，${g.products.join('、')}`,
         channel: o.dev,
-        session: `dev-${g.unit.id}`,
+        // One developer per layer: tasks on the same files (m/index.html) wait for each other, and keep one context.
+        session: g.layer === 'L3' ? 'dev-web' : 'dev-center',
         verifyBy: 'auto',
         goal: [
           `能力单元「${g.unit.name}」（${g.unit.id}）：${g.unit.definition}；怎样算做到：${g.unit.judge}。`,
