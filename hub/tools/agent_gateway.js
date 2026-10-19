@@ -1482,8 +1482,10 @@ function cmdGoal(args, sub) {
 // feature: a product registers what it has, especially what only it has (用户 10-19：“问对方有什么独家生态，然后写到
 // 面板里或者自己主动注册功能……独家功能和闭源程度”). Appends to channels/probe/features.jsonl; the matrix page shows it.
 //   feature --agent X --name <功能名> --what <做什么> --entry <入口> --exclusive 独家|别家也有|不确定
-//           --openness 开源|公开接口|只能界面|不开放 --evidence 试过|看到|推测 [--note <说明>]
+//           --openness 开源|公开接口|只能界面|不开放 --evidence 试过|看到|推测 [--how <实现路径>] [--note <说明>]
 //   feature --list [--agent X]
+// --how is the way it is done, e.g. for browser automation: 浏览器调试接口（CDP）、视觉识别（截图）、DOM 解析、无障碍树、
+// 系统级鼠标键盘、官方接口、命令行 (用户 10-19：“能力的实现路径也得说啊”).
 const FEATURE_VALUES = { exclusive: ['独家', '别家也有', '不确定'], openness: ['开源', '公开接口', '只能界面', '不开放'], evidence: ['试过', '看到', '推测'] };
 function cmdFeature(args) {
   const file = path.join(ROOT_DIR, 'channels', 'probe', 'features.jsonl');
@@ -1505,9 +1507,34 @@ function cmdFeature(args) {
     console.error(JSON.stringify({ ok: false, error: '缺少或填错：' + bad.join('，') }));
     process.exit(1);
   }
-  const row = { at: new Date().toISOString(), product, name: String(args.name).trim(), what: String(args.what).trim(), entry: String(args.entry).trim(), exclusive: args.exclusive, openness: args.openness, evidence: args.evidence, note: args.note ? String(args.note).trim() : undefined, by: args.by || product };
+  const row = { at: new Date().toISOString(), product, name: String(args.name).trim(), what: String(args.what).trim(), entry: String(args.entry).trim(), exclusive: args.exclusive, openness: args.openness, evidence: args.evidence, how: args.how ? String(args.how).trim() : undefined, note: args.note ? String(args.note).trim() : undefined, by: args.by || product };
   fs.appendFileSync(file, JSON.stringify(row) + '\n');
   console.log(JSON.stringify({ ok: true, registered: row }));
+  process.exit(0);
+}
+
+// note: a remark on one capability of one product — a registered unit (its id) or a feature (its name): what it costs,
+// how fast or steady it is, and free tags (用户 10-19：“各项能力都可以加注释，比如成本评估，性能评估，特征标记什么的”).
+// Appends to channels/probe/annotations.jsonl; the matrix page shows the latest remark per product and capability.
+//   note --agent X --on <单元 id 或功能名> [--how <实现路径>] [--cost <成本>] [--perf <性能>] [--tags 词,词] [--text <说明>]
+//        --evidence 试过|看到|推测
+function cmdNote(args) {
+  const prof = args.agent || args.channel ? resolveProfile(args.agent || args.channel) : null;
+  const product = prof ? prof.id : args.agent || args.channel;
+  const on = String(args.on || '').trim();
+  const tags = String(args.tags || '').split(/[,，、]/).map((t) => t.trim()).filter(Boolean);
+  const bad = [];
+  if (!product) bad.push('--agent');
+  if (!on) bad.push('--on');
+  if (!args.how && !args.cost && !args.perf && !tags.length && !args.text) bad.push('--how / --cost / --perf / --tags / --text 至少一项');
+  if (!FEATURE_VALUES.evidence.includes(args.evidence)) bad.push('--evidence 试过|看到|推测');
+  if (bad.length) {
+    console.error(JSON.stringify({ ok: false, error: '缺少或填错：' + bad.join('，') }));
+    process.exit(1);
+  }
+  const row = { at: new Date().toISOString(), product, on, how: args.how ? String(args.how) : undefined, cost: args.cost ? String(args.cost) : undefined, perf: args.perf ? String(args.perf) : undefined, tags: tags.length ? tags : undefined, text: args.text ? String(args.text) : undefined, evidence: args.evidence, by: args.by || product };
+  fs.appendFileSync(path.join(ROOT_DIR, 'channels', 'probe', 'annotations.jsonl'), JSON.stringify(row) + '\n');
+  console.log(JSON.stringify({ ok: true, noted: row }));
   process.exit(0);
 }
 
@@ -1679,6 +1706,7 @@ function main() {
   if (sub === 'goals' || sub === 'goal' || sub === 'goal-action' || sub === 'task-action') return cmdGoal(args, sub);
   if (sub === 'recall') return cmdRecall(args);
   if (sub === 'feature') return cmdFeature(args);
+  if (sub === 'note') return cmdNote(args);
   if (['sessions', 'session', 'search', 'state', 'pick', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
   if (sub === 'deliver') return cmdCollabEvent(args, 'deliver');
   if (sub === 'report') return cmdCollabEvent(args, 'report');

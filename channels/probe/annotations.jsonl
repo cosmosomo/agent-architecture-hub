@@ -1,0 +1,8 @@
+{"at":"2026-10-19T07:20:32.223Z","product":"zcode","on":"open","cost":"走智谱 Coding Plan，四家共用一个额度","tags":["共用额度","5小时上限"],"text":"10-19 两次撞上限，四家一起停到重置时刻（中心按账号熔断）","evidence":"试过","by":"claude-lead"}
+{"at":"2026-10-19T07:20:32.304Z","product":"workbuddy","on":"open","cost":"走智谱 Coding Plan，四家共用一个额度","tags":["共用额度","5小时上限"],"text":"10-19 两次撞上限，四家一起停到重置时刻（中心按账号熔断）","evidence":"试过","by":"claude-lead"}
+{"at":"2026-10-19T07:20:32.398Z","product":"opencode","on":"open","cost":"走智谱 Coding Plan，四家共用一个额度","tags":["共用额度","5小时上限"],"text":"10-19 两次撞上限，四家一起停到重置时刻（中心按账号熔断）","evidence":"试过","by":"claude-lead"}
+{"at":"2026-10-19T07:20:32.478Z","product":"hermes","on":"open","cost":"走智谱 Coding Plan，四家共用一个额度","tags":["共用额度","5小时上限"],"text":"10-19 两次撞上限，四家一起停到重置时刻（中心按账号熔断）","evidence":"试过","by":"claude-lead"}
+{"at":"2026-10-19T07:20:32.576Z","product":"workbuddy","on":"model-new","cost":"官方 Credits 按次扣（例如 glm-5.3 每次 0.79，hy3、deepseek-v4.1-flash 免费）；本地自定义供应商走智谱额度、不扣 Credits","tags":["两套计费"],"text":"见 channels/README.md WorkBuddy 一节","evidence":"看到","by":"claude-lead"}
+{"at":"2026-10-19T07:20:32.669Z","product":"opencode","on":"model-new","tags":["自带免费模型不可用"],"text":"10-18 起 OpenCode 自带的免费模型（opencode/big-pickle 等）按本机出口 IP 拦截，默认改走智谱 glm-5.3-flash","evidence":"试过","by":"claude-lead"}
+{"at":"2026-10-19T07:21:07.417Z","product":"claude","on":"内置浏览器面板","how":"独立浏览器面板；读页面靠无障碍树和页面文本，操作靠坐标点按或无障碍树元素编号，另有截图（视觉）和执行页面脚本（DOM）","text":"从它的工具清单看到：read_page（无障碍树）、get_page_text、computer（截图、点击）、javascript_tool","evidence":"看到","by":"claude-lead"}
+{"at":"2026-10-19T07:21:07.480Z","product":"claude","on":"发布页面（Artifact）","how":"页面文件上传到 claude.ai 托管，私有链接；同一文件路径重发更新同一链接","evidence":"试过","by":"claude-lead"}

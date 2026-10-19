@@ -534,6 +534,31 @@ try {
   }
   matrix.features = [...latest.values()];
 } catch {}
+// Remarks on a capability of a product (agent_gateway.js note → channels/probe/annotations.jsonl): cost, performance,
+// tags. Each field keeps its latest value, so a later remark on cost does not erase an earlier one on performance.
+try {
+  const notes = new Map();
+  for (const l of fs.readFileSync(path.join(DIR, 'annotations.jsonl'), 'utf8').split(/\r?\n/)) {
+    if (!l.trim()) continue;
+    try {
+      const r = JSON.parse(l);
+      const k = r.product + '|' + r.on;
+      const cur = notes.get(k) || {};
+      for (const f of ['how', 'cost', 'perf', 'tags', 'text']) if (r[f] !== undefined) cur[f] = r[f];
+      cur.evidence = r.evidence;
+      cur.at = r.at;
+      notes.set(k, cur);
+    } catch {}
+  }
+  for (const u of matrix.units) for (const p of PROD7) {
+    const n = notes.get(p + '|' + u.id);
+    if (n) u.cells[p].note = n;
+  }
+  for (const f of matrix.features) {
+    const n = notes.get(f.product + '|' + f.name);
+    if (n) f.remark = n;
+  }
+} catch {}
 fs.writeFileSync(path.join(DIR, 'capability-matrix.json'), JSON.stringify(matrix) + '\n', 'utf8');
 // The matrix page, ready to publish: scripts/matrix_page.html with these cells inside (generated, not tracked).
 try {

@@ -177,6 +177,8 @@ const count = (units, place) => {
   for (const u of units) for (const p of P) c[st(u.cells[p][place])]++;
   return c;
 };
+// A remark on a capability (agent_gateway.js note): cost, performance, tags, free text.
+const remark = (n) => (!n ? '' : [n.how && '实现：' + n.how, n.cost && '成本：' + n.cost, n.perf && '性能：' + n.perf, n.tags && n.tags.length && '标记：' + n.tags.join('、'), n.text].filter(Boolean).join('；'));
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 document.getElementById('gen').textContent = '生成于 ' + M.generatedAt.slice(0, 16).replace('T', ' ') + ' UTC';
 
@@ -247,9 +249,9 @@ document.getElementById('gen').textContent = '生成于 ' + M.generatedAt.slice(
     h += `<tr><td>${LABEL[p]}</td><td class="r num">${n(mine.length)}</td><td class="r num">${n(mine.filter((f) => f.exclusive === '独家').length)}</td>${OPEN.map((o) => `<td class="r num">${n(mine.filter((f) => f.openness === o).length)}</td>`).join('')}</tr>`;
   }
   document.getElementById('open-sum').innerHTML = h;
-  let d = '<tr><th>产品</th><th>功能</th><th>做什么</th><th>独家</th><th>开放程度</th><th>依据</th><th>入口</th></tr>';
+  let d = '<tr><th>产品</th><th>功能</th><th>做什么</th><th>独家</th><th>开放程度</th><th>依据</th><th>实现路径</th><th>成本、性能、标记</th><th>入口</th></tr>';
   for (const f of [...F].sort((a, b) => P.indexOf(a.product) - P.indexOf(b.product))) {
-    d += `<tr><td>${esc(LABEL[f.product] || f.product)}</td><td>${esc(f.name)}</td><td style="white-space:normal;min-width:16em">${esc(f.what)}${f.note ? `<br><small class="muted">${esc(f.note)}</small>` : ''}</td><td>${esc(f.exclusive)}</td><td>${esc(f.openness)}</td><td>${esc(f.evidence)}</td><td style="white-space:normal;min-width:10em"><small>${esc(f.entry)}</small></td></tr>`;
+    d += `<tr><td>${esc(LABEL[f.product] || f.product)}</td><td>${esc(f.name)}</td><td style="white-space:normal;min-width:16em">${esc(f.what)}${f.note ? `<br><small class="muted">${esc(f.note)}</small>` : ''}</td><td>${esc(f.exclusive)}</td><td>${esc(f.openness)}</td><td>${esc(f.evidence)}</td><td style="white-space:normal;min-width:10em"><small>${esc(f.how || (f.remark && f.remark.how) || '—')}</small></td><td style="white-space:normal;min-width:12em"><small>${esc(remark(f.remark && { ...f.remark, how: undefined })) || '—'}</small></td><td style="white-space:normal;min-width:10em"><small>${esc(f.entry)}</small></td></tr>`;
   }
   document.getElementById('features').innerHTML = F.length ? d : '<tr><td>还没有登记</td></tr>';
 }
@@ -264,7 +266,7 @@ document.getElementById('gen').textContent = '生成于 ' + M.generatedAt.slice(
   for (const u of us) {
     h += `<tr><td>${esc(u.name)}<small class="muted num"> ${esc(u.id)}</small></td>${P.map((p) => {
       const c = u.cells[p], b = best(c);
-      return `<td title="${esc(c.how || '')}" style="white-space:normal;min-width:7em"><span class="sw s-${b}"></span> ${word[b] || '没有记录'}${c.strength ? `<br><small>${esc(c.strength)}</small>` : ''}</td>`;
+      return `<td title="${esc(c.how || '')}" style="white-space:normal;min-width:7em"><span class="sw s-${b}"></span> ${word[b] || '没有记录'}${c.strength ? `<br><small>${esc(c.strength)}</small>` : ''}${c.note ? `<br><small class="muted">${esc(remark(c.note))}</small>` : ''}</td>`;
     }).join('')}</tr>`;
   }
   document.getElementById('advanced').innerHTML = us.length ? h : '<tr><td>还没有登记高阶能力单元</td></tr>';
@@ -346,10 +348,10 @@ function renderMatrix() {
       h += `<tr class="urow" tabindex="0" data-id="${esc(u.id)}"><td class="uname">${esc(u.name)}${u.candidate ? '<span class="tag">候选</span>' : ''}<small>${esc(u.id)}${u.theory ? '' : ' · 理论上限未推'}</small></td>`;
       for (const p of P) {
         const c = u.cells[p];
-        const tip = `${LABEL[p]} · ${u.name}\n${['app', 'api', 'adapter', 'front'].map((L) => `${PLACE[L]}：${c[L] || '没有记录'}`).join('\n')}\n下一步：${c.gap}`;
+        const tip = `${LABEL[p]} · ${u.name}\n${['app', 'api', 'adapter', 'front'].map((L) => `${PLACE[L]}：${c[L] || '没有记录'}`).join('\n')}\n下一步：${c.gap}${c.note ? '\n' + remark(c.note) : ''}`;
         h += `<td class="cell" title="${esc(tip)}"><span class="q">${['app', 'api', 'adapter', 'front'].map((L) => `<i class="${c[L] || ''}"></i>`).join('')}</span></td>`;
       }
-      h += `</tr><tr class="detail" data-for="${esc(u.id)}" hidden><td colspan="${P.length + 1}"><ul>${P.map((p) => `<li><b>${LABEL[p]}</b>：${esc(u.cells[p].gap)}${u.cells[p].how ? ` <span class="muted">— ${esc(u.cells[p].how)}</span>` : ''}</li>`).join('')}</ul></td></tr>`;
+      h += `</tr><tr class="detail" data-for="${esc(u.id)}" hidden><td colspan="${P.length + 1}"><ul>${P.map((p) => `<li><b>${LABEL[p]}</b>：${esc(u.cells[p].gap)}${u.cells[p].how ? ` <span class="muted">— ${esc(u.cells[p].how)}</span>` : ''}${u.cells[p].note ? `<br><small>${esc(remark(u.cells[p].note))}</small>` : ''}</li>`).join('')}</ul></td></tr>`;
     }
   }
   h += '</tbody>';
