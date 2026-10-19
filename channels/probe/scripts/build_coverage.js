@@ -148,6 +148,14 @@ for (const v of latest4.values()) {
   const cur = fact.get(k);
   if (!cur || RANK[v.res] > RANK[cur.res]) fact.set(k, { res: v.res, r: v.r });
 }
+// A web verdict probe_display.mjs carried over from a failed backend check (the page shows what the backend reads)
+// lapses once a later run of the same check on the backend is newer: the reason for it is gone.
+for (const [k, v] of fact) {
+  const [fam, unit, L] = k.split('|');
+  if (L !== 'front' || v.r.by !== 'probe_display.mjs') continue;
+  const back = latest4.get(`${fam}|${fam}/L2/server-api|${unit}|adapter`);
+  if (back && back.r.by === 'probe_display.mjs' && String(back.r.at) > String(v.r.at)) fact.delete(k);
+}
 // built: implemented, not yet tested; fill: done one level up (README “立体认知”: 理论极限).
 const INTEG = { real: 'pass', partial: 'partial', fill: 'partial', built: 'unverified', todo: 'unverified', fake: 'fail' };
 function integCell(side, unit, fam) {
@@ -156,11 +164,19 @@ function integCell(side, unit, fam) {
   return best ? { res: INTEG[best.status] || 'unverified', how: best.how || best.path || `${best.page}：${best.control}`, fake: best.status === 'fake' } : null;
 }
 function cellOf(fam, unit, L) {
+  // On the backend, what the page uses is the service's own route: its latest test is the one that can pull a
+  // declaration down, not the best result over every route.
+  const served = L === 'adapter' && latest4.get(`${fam}|${fam}/L2/server-api|${unit}|adapter`);
+  const f = served || fact.get(`${fam}|${unit}|${L}`);
   if (L === 'adapter' || L === 'front') {
     const i = integCell(L === 'adapter' ? 'backend' : 'frontend', unit, fam);
+    // A test beats a declaration when it says less (10-19: Antigravity's reading was declared real, a regression
+    // against the raw records failed it) or when it confirms something only declared built.
+    if (i && f && (RANK[f.res] < RANK[i.res] || (i.res === 'unverified' && f.res === 'pass'))) {
+      return { res: f.res, how: f.r.evidence || i.how };
+    }
     if (i) return i;
   }
-  const f = fact.get(`${fam}|${unit}|${L}`);
   if (!f) return null;
   const how = f.r.cmd && String(f.r.cmd).trim().length > 3 ? f.r.cmd : f.r.evidence;
   return { res: f.res, how, desktopSays: f.r.note === 'desktop-has' };

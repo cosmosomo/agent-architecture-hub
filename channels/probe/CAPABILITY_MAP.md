@@ -1,12 +1,12 @@
 # 功能矩阵：每个单元在各家、各位置上的理论上限与现状（由黑板、integration-map 和完整性检查生成，勿手改）
 
-生成时间：2026-10-19T05:28:48.942Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
+生成时间：2026-10-19T05:40:33.444Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
 
 标记：✓ 有行为证据（后面是实现路径）；◐ 部分；? 未验证；✗ 不通；✗假 界面有、实际是别的办法模拟；有（截图/代码） 桌面端界面这一列靠截图或代码分析得出、不是行为实测（这批来自调研，未逐格核）；· 没有记录。
 
 ## 现在还缺什么（外层：按 README“立体认知”的轴把现在的差摆出来）
 
-README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-19T05:28:48.948Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
+README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-19T05:40:33.449Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
 
 **每一层：理论极限、我们的目标、现状、依据记在哪**（一格 = 一个能力单元在一个产品）
 
@@ -163,11 +163,11 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 已到前端 | 自己做（上限已证实，没接进来） | 派出去研究（上限不清或要找别的路） |
 |---|---|---|---|
 | antigravity | 35 | 49 | 42 |
-| codex | 31 | 54 | 41 |
-| claude | 33 | 62 | 31 |
+| codex | 30 | 55 | 41 |
+| claude | 34 | 61 | 31 |
 | zcode | 37 | 50 | 39 |
-| workbuddy | 30 | 47 | 49 |
-| opencode | 31 | 62 | 33 |
+| workbuddy | 30 | 45 | 51 |
+| opencode | 30 | 63 | 33 |
 | hermes | 31 | 66 | 29 |
 | gemini | 24 | 2 | 20 |
 | droid | 24 | 2 | 6 |
@@ -175,81 +175,82 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 理论上限：控制与观察类 76 / 76 个已推（完整性检查 4.2）；人机交互类 50 个的上限取决于它依赖的单元在原生接口和我们的后端能否拿到数据。没推的单元，“派研究”的第一步是负责人先推理论上限。
 
 **自己做的清单（按单元，后面是哪几家）**：
-- 接管原生会话（resume-native）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 观察·实时（observe-live）：antigravity、codex、claude、workbuddy、opencode、hermes
-- 状态识别（state）：codex、claude、zcode、workbuddy、opencode、hermes
-- 打断（cancel）：codex、claude、zcode、workbuddy、opencode、hermes
-- 关闭会话（close）：codex、claude、workbuddy、opencode、hermes
+- 接管原生会话（resume-native）：antigravity、codex、claude、zcode、opencode、hermes
+- 观察·实时（observe-live）：antigravity、codex、opencode、hermes、workbuddy
+- 观察·历史（observe-history）：codex、opencode
+- 状态识别（state）：codex、claude、zcode、opencode、hermes、workbuddy
+- 打断（cancel）：codex、claude、zcode、opencode、hermes、workbuddy
+- 关闭会话（close）：codex、claude、opencode、hermes、workbuddy
 - 插话（注入）（steer）：codex、opencode、hermes
 - 注入·下一轮（inject-next）：opencode、hermes
 - 注入·工具结果捎带（inject-tool）：claude
 - 注入·收件箱（inject-inbox）：claude、zcode、workbuddy
 - 注入·只入上下文（inject-silent）：claude
 - 目标与预算（goal）：claude、zcode
-- 答复审批（permission）：codex、claude、workbuddy、opencode、hermes
-- 分叉（fork）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
+- 答复审批（permission）：codex、claude、opencode、hermes
+- 分叉（fork）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 压缩上下文（compact）：codex、claude
-- 列模型（model-list）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 新建时选模型（model-new）：claude、zcode、workbuddy、opencode、hermes
-- 中途切模型（model-switch）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 切模式（mode-switch）：codex、claude、zcode、workbuddy、opencode、hermes
+- 列模型（model-list）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 新建时选模型（model-new）：claude、zcode、opencode、hermes、workbuddy
+- 中途切模型（model-switch）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 切模式（mode-switch）：codex、claude、zcode、opencode、hermes、workbuddy
 - 查额度（quota）：antigravity、claude、zcode、workbuddy
 - 按调用选渠道（channel-route）：claude、opencode、hermes
-- 渠道健康与熔断（channel-health）：antigravity、codex、claude、zcode、workbuddy、hermes
+- 渠道健康与熔断（channel-health）：antigravity、codex、claude、zcode、hermes、workbuddy
 - 守卫（guard）：claude
-- 交付（act-deliver）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 请求（act-request）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 让出（act-yield）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 上报（act-report）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 等待可见（wait-visible）：antigravity、codex、workbuddy、hermes
-- 后台任务唤醒（wake-bg）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
+- 交付（act-deliver）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 请求（act-request）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 让出（act-yield）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 上报（act-report）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 等待可见（wait-visible）：antigravity、codex、hermes、workbuddy
+- 后台任务唤醒（wake-bg）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 定时唤醒（wake-timer）：antigravity、zcode、hermes
-- 消息唤醒（wake-msg）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 卡住可发现（wake-stall）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 唤醒撑过重启（wake-persist）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 派子智能体（spawn-subagent）：antigravity、codex、claude、workbuddy、opencode、hermes
+- 消息唤醒（wake-msg）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 卡住可发现（wake-stall）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 唤醒撑过重启（wake-persist）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 派子智能体（spawn-subagent）：antigravity、codex、claude、opencode、hermes、workbuddy
 - 智能体间发消息（peer-message）：zcode、opencode
 - 交接（handoff）：opencode
 - 共享任务板（task-board）：opencode
-- 向人提问（ask-user）：antigravity、codex、claude、zcode、workbuddy、opencode
+- 向人提问（ask-user）：antigravity、codex、claude、zcode、opencode、workbuddy
 - 人中途插话（human-steer）：antigravity、codex、claude、opencode、hermes
-- 产出物发布（artifact）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes、gemini、droid
+- 产出物发布（artifact）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy、gemini、droid
 - 浏览器（browser）：antigravity、codex、hermes
 - 终端（terminal）：antigravity、codex、claude、zcode、opencode、hermes
 - 开发预览（dev-preview）：antigravity
 - 挂接工具（mount-tools）：claude、zcode、opencode、hermes
-- 设定角色说明（instructions）：codex、claude、zcode、workbuddy、opencode、hermes
-- 指定工作目录（workspace）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
+- 设定角色说明（instructions）：codex、claude、zcode、opencode、hermes、workbuddy
+- 指定工作目录（workspace）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 产出约定（output-contract）：claude
-- 只建不跑（open-idle）：antigravity、codex、claude、zcode、workbuddy、opencode
-- 命名与标注（label）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 所有权识别（ownership）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes、gemini、droid
-- 探测本机（probe-host）：antigravity、codex、zcode、workbuddy、opencode、hermes
+- 只建不跑（open-idle）：antigravity、codex、claude、zcode、opencode、workbuddy
+- 命名与标注（label）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 所有权识别（ownership）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy、gemini、droid
+- 探测本机（probe-host）：antigravity、codex、zcode、opencode、hermes、workbuddy
 - 回退到某一步（rewind）：codex、zcode
 - 归档与取回（archive）：codex、hermes
 - 删除会话（delete）：antigravity、codex、claude、opencode、hermes
-- 回收（reclaim）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 可用命令清单（cmd-list）：antigravity、codex、zcode、workbuddy、opencode、hermes
+- 回收（reclaim）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 可用命令清单（cmd-list）：antigravity、codex、zcode、opencode、hermes、workbuddy
 - 记忆开关（memory-mode）：antigravity、codex、claude、opencode、hermes
 - 宿主排空（host-drain）：hermes
 - 权限作用域（permission-scope）：zcode、opencode
-- 读原生会话元数据（native-meta）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 全文检索（content-search）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
+- 读原生会话元数据（native-meta）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 全文检索（content-search）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 上下文占用（context-usage）：antigravity、hermes
 - 推理力度（reasoning-effort）：antigravity、codex、zcode
-- 列项目（list-projects）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
+- 列项目（list-projects）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 列工作区文件（workspace-files）：antigravity
 - 写回原生元数据（native-meta-write）：antigravity
-- 用量显示（ui-usage）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 引用文件或会话（ui-mention）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 命令菜单（ui-command-menu）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 模型与推理力度选择（ui-model-picker）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 权限模式选择（ui-mode-picker）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 审批卡片（ui-approval）：antigravity、codex、claude、workbuddy、opencode、hermes
-- 回答智能体提问（ui-question）：codex、zcode、workbuddy、opencode、hermes
-- 重试与编辑重发（ui-retry-edit）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 复制与导出（ui-copy-export）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
-- 通知（ui-notify）：antigravity、codex、claude、zcode、workbuddy、opencode、hermes
+- 用量显示（ui-usage）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 引用文件或会话（ui-mention）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 命令菜单（ui-command-menu）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 模型与推理力度选择（ui-model-picker）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 权限模式选择（ui-mode-picker）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 审批卡片（ui-approval）：antigravity、codex、claude、opencode、hermes、workbuddy
+- 回答智能体提问（ui-question）：codex、zcode、opencode、hermes、workbuddy
+- 重试与编辑重发（ui-retry-edit）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 复制与导出（ui-copy-export）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 通知（ui-notify）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 活动标记（ui-activity-ring）：claude、opencode、hermes
 - 项目分栏（ui-project-tabs）：claude、opencode、hermes
 - 终端镜像预览（ui-terminal-preview）：hermes
@@ -271,14 +272,14 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ channels/probe/scripts/antigravity/run_agentapi.mj | ✓ POST /api/gateway/send → startAntigravityRun：langu | ✓ /m/ v2（10-18 负责人重写）：新建后“正在拉起”等待层，每 1.5 秒查 /api/gat | 已到前端 |
-| codex | · | ✓ codex exec --json --skip-git-repo-check -m gpt-5.6 | ✓ POST /api/gateway/send（新会话名）→ gateway.sendPrompt → | ✓ /m/ v2（10-18 负责人重写）：新建后“正在拉起”等待层，每 1.5 秒查 /api/gat | 已到前端 |
+| codex | · | ✓ codex exec --json --skip-git-repo-check -m gpt-5.6 | ✗ 模型轮次超时：当前混池供应商对 gpt-6-luna 返回  | ✓ /m/ v2（10-18 负责人重写）：新建后“正在拉起”等待层，每 1.5 秒查 /api/gat | 已到前端 |
 | claude | · | ✓ claude -p "记住暗号 PROBE_L0_KAPPA_921，回复 ACK" --sessi | ✓ POST /api/gateway/send（新会话名）→ gateway.sendPrompt → | ✓ /m/ v2（10-18 负责人重写）：新建后“正在拉起”等待层，每 1.5 秒查 /api/gat | 已到前端 |
 | zcode | · | ✓ node E:\zcode\resources\glm\zcode.cjs -p '回复OK' -- | ✓ 命令行 hub/tools/agent_gateway.js run --agent <家> --s | ✓ /m/ v2（10-18 负责人重写）：新建后“正在拉起”等待层，每 1.5 秒查 /api/gat | 已到前端 |
-| workbuddy | · | ✓ codebuddy -p "请记住这个暗号：WB-SECRET-51692。只回复已记住。" --s | ✓ 命令行 hub/tools/agent_gateway.js run --agent <家> --s | ✓ /m/ v2（10-18 负责人重写）：新建后“正在拉起”等待层，每 1.5 秒查 /api/gat | 已到前端 |
+| workbuddy | · | ✓ codebuddy -p "请记住这个暗号：WB-SECRET-51692。只回复已记住。" --s | ◐ {"ok":false,"status":"failed", | ✓ /m/ v2（10-18 负责人重写）：新建后“正在拉起”等待层，每 1.5 秒查 /api/gat | 已到前端 |
 | opencode | · | ✓ POST http://127.0.0.1:44203/session && POST /promp | ✓ 命令行 hub/tools/agent_gateway.js run --agent <家> --s | ✓ /m/ v2（10-18 负责人重写）：新建后“正在拉起”等待层，每 1.5 秒查 /api/gat | 已到前端 |
 | hermes | · | ✓ hermes chat -q "记住暗号 MARMOT-8347。只回复两个字:收到" --ones | ✓ 命令行 hub/tools/agent_gateway.js run --agent <家> --s | ✓ /m/ v2（10-18 负责人重写）：新建后“正在拉起”等待层，每 1.5 秒查 /api/gat | 已到前端 |
-| gemini | · | ✗ echo n / timeout 90 gemini -m  | ? 命令行 hub/tools/agent_gateway.js | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| droid | · | · | ? 命令行 hub/tools/agent_gateway.js | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| gemini | · | ✗ echo n / timeout 90 gemini -m  | ✗ acpx gemini sessions new --nam | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| droid | · | · | ✗ 实测调用：acpx --format json droid  | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 恢复会话（resume）
 
@@ -309,9 +310,9 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ✓ codex exec resume --json --skip-git-repo-check -m  | ✓ 会话身份统一为 <产品>:<原生编号>（gateway.canonicalSessionId，ZCo | · | 自己做：做到前端 |
 | claude | · | ✓ claude -p "刚才暗号是什么？只回复暗号本身" --resume 3a8c395c-287f | ✓ 会话身份统一为 <产品>:<原生编号>（gateway.canonicalSessionId，ZCo | · | 自己做：做到前端 |
 | zcode | ✗ node E:\zcode\resources\glm\zc | ◐ node E:\zcode\resources\glm\zc | ✓ 会话身份统一为 <产品>:<原生编号>（gateway.canonicalSessionId，ZCo | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ gateway.startRunInternal：traceSessionId 是这一家自己的会话时 | · | 自己做：做到前端 |
-| opencode | · | ✓ opencode run "之前告诉你的暗号是什么？请只完整复述暗号本身" -s ses_eb68e | ✗ acpx --format json opencode -s | · | 自己做：接进适配器 |
-| hermes | · | ✓ acpx hermes -s probe-hermes-x1 "记住暗号 PINE-2277…" → | ✗ acpx hermes sessions --help; a | · | 自己做：接进适配器 |
+| workbuddy | · | · | ✗ sessionName 降级为 hub-workbuddy， | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | ✓ opencode run "之前告诉你的暗号是什么？请只完整复述暗号本身" -s ses_eb68e | ✗ channels/probe/scripts/L2/test | · | 自己做：接进适配器 |
+| hermes | · | ✓ acpx hermes -s probe-hermes-x1 "记住暗号 PINE-2277…" → | ✗ channels/probe/scripts/L2/test | · | 自己做：接进适配器 |
 | gemini | · | ✗ echo n / gemini -m gemini-2.5- | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 观察·实时（observe-live）
@@ -324,7 +325,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 |---|---|---|---|---|---|
 | antigravity | · | ✓ channels/probe/scripts/antigravity/watch.mjs <cid> | ◐ GET /api/gateway/stream（SSE，ru | ? /m/（10-18 晚负责人接手）：同上 | 自己做：接进适配器 |
 | codex | · | ✓ codex exec --json --skip-git-repo-check -m gpt-5.6 | ◐ GET /api/gateway/stream（SSE，ru | ? /m/（10-18 晚负责人接手）：同上 | 自己做：接进适配器 |
-| claude | · | ✓ claude -p ... --output-format stream-json --verbos | ◐ GET /api/gateway/stream（SSE，ru | ? /m/（10-18 晚负责人接手）：同上 | 自己做：接进适配器 |
+| claude | · | ✓ claude -p ... --output-format stream-json --verbos | ◐ GET /api/gateway/stream（SSE，ru | ✓ probe-m-claude-haiku 运行期间 run_start / run_update 实 | 已到前端 |
 | zcode | · | ✓ node channels/probe/scripts/suite_zcode_l1a.mjs | ◐ GET /api/gateway/stream（SSE，ru | ✓ /m/（10-18 晚负责人接手）：会话详情经 SSE（/api/gateway/stream）逐段 | 已到前端 |
 | workbuddy | · | ✓ codebuddy -p "从1数到5" --model custom-local:glm-5.3  | ◐ GET /api/gateway/stream（SSE，ru | ? /m/（10-18 晚负责人接手）：同上 | 自己做：接进适配器 |
 | opencode | · | ✓ opencode run "请记住暗号：PROBE_SECRET_7203，并回复已记住" -m z | ◐ GET /api/gateway/stream（SSE，ru | ? /m/（10-18 晚负责人接手）：同上 | 自己做：接进适配器 |
@@ -340,11 +341,11 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ channels/probe/scripts/antigravity/run_agentapi.mj | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
-| codex | · | ✓ app-server RPC thread/read + thread/turns/list | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
+| codex | · | ✓ app-server RPC thread/read + thread/turns/list | ◐ 未识别 4 条（response_item:addition | ◐ 未识别 4 条（response_item:addition | 自己做：接进适配器 |
 | claude | · | ✓ node 读 C:/Users/COLORFIRE/.claude/projects/C--User | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | zcode | · | ✓ 见 probe/results/agy-pro-subagent-entries-20261018. | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | workbuddy | · | ✓ 见 probe/results/agy-pro-subagent-entries-20261018. | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
-| opencode | · | ✓ opencode export ses_eb4b8cbb8ffeD0GgHgHHuDe9ji | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
+| opencode | · | ✓ opencode export ses_eb4b8cbb8ffeD0GgHgHHuDe9ji | ◐ 未识别 10 条（assistant-without-par | ◐ 未识别 10 条（assistant-without-par | 自己做：接进适配器 |
 | hermes | · | ✓ sqlite3 "file:%LOCALAPPDATA%/hermes/state.db?mode= | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | gemini | · | ✗ gemini --list-sessions | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
 | droid | · | · | ✓ GET /api/sessions/<编号>?tail=N&compact=1（只读旁路读各家会话记 | ✓ /m/ v2（10-18 负责人重写）：详情：每轮全部步骤，加载更早 | 已到前端 |
@@ -357,7 +358,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ sqlite3 conversation_summaries.db "select status,n | ✓ GET /api/m/agy：读 Antigravity 会话索引 conversation_sum | ✓ /m/：列表卡片状态标签与筛选 | 已到前端 |
+| antigravity | · | ✓ sqlite3 conversation_summaries.db "select status,n | ◐ 所有 7 渠道 status 恒等于 idle (activ | ✓ /m/：列表卡片状态标签与筛选 | 已到前端 |
 | codex | · | ✓ app-server ServerNotification thread/status/change | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | · | 自己做：做到前端 |
 | claude | · | ✓ claude --bg "从 1 数到 500..." --model haiku -> 循环 cl | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | · | 自己做：做到前端 |
 | zcode | · | ✓ node channels/probe/scripts/suite_zcode_l1a.mjs | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | · | 自己做：做到前端 |
@@ -409,11 +410,11 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ channels/probe/scripts/antigravity/run_agentapi.mj | ✓ gateway.steerAntigravity：会话在跑时 agentapi send-messa | ✓ /m/：干活时在详情页发话（插进当前这一轮） | 已到前端 |
-| codex | · | ✓ driver.steerTurn("01a14e64-55f6-7422-83b6-d2305f79 | ✓ gateway.steerCodexRun：会话在跑时经 codex app-server 发送 t | ✗假 /console/：中断并插队 | 自己做：做到前端 |
-| claude | · | ✗ channels/probe/scripts/retest/ | ◐ acpx claude --no-wait -s probe | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| zcode | · | ✗ 非交互 -p 模式不监听 mid-turn stdin | ◐ acpx zcode -s probe-l1b-full - | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | ? 见 probe/results/agy-pro-subage | ◐ acpx workbuddy -s probe-workbu | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| opencode | · | ✓ node channels/probe/scripts/opencode/probe_native_ | ◐ acpx opencode -s probe-opencod | ✗假 /console/：中断并插队 | 自己做：接进适配器 |
+| codex | · | ✓ driver.steerTurn("01a14e64-55f6-7422-83b6-d2305f79 | ◐ 返回 200 {"ok":true,"writtenFile | ✗假 /console/：中断并插队 | 自己做：接进适配器 |
+| claude | · | ✗ channels/probe/scripts/retest/ | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| zcode | · | ✗ 非交互 -p 模式不监听 mid-turn stdin | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ? 见 probe/results/agy-pro-subage | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | ✓ node channels/probe/scripts/opencode/probe_native_ | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 自己做：接进适配器 |
 | hermes | · | ✓ acp_probe3.py redirect：主轮 terminal background ping | ◐ fetch('http://127.0.0.1:8932/a | ✗假 /console/：中断并插队 | 自己做：接进适配器 |
 | gemini | · | ✗ timeout 90 node channels/probe | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -428,8 +429,8 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | antigravity | · | ? 见 probe/results/native-antigra | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | codex | · | ? audit-inspection | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | claude | · | ✓ session.submit("补充指令：...") | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | ✓ POST /api/gateway/send | 已到前端 |
-| zcode | · | ◐ node channels/probe/scripts/na | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | · | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| zcode | · | ◐ node channels/probe/scripts/na | ? acpx 提供 --no-wait 选项，在一轮运行中可将新 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | · | ? acpx 提供 --no-wait 模式，指令进入 acpx | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | ✓ node channels/probe/scripts/opencode/probe_native_ | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | · | 自己做：接进适配器 |
 | hermes | · | ✓ 读 acp_adapter/server.py:705-712 + L1b 佐证 | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | · | 自己做：接进适配器 |
 
@@ -505,13 +506,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✗ channels/probe/scripts/antigra | ✗ acpx --format json antigravity | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| antigravity | · | ✗ channels/probe/scripts/antigra | ✗ fetch('http://127.0.0.1:8932/a | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | codex | · | ✓ driver.startTurn({ threadId, input: "请在终端执行此命令..." | ✓ POST /api/gateway/approve → gateway.resolveApprova | · | 自己做：做到前端 |
 | claude | · | ✓ channels/probe/scripts/retest/test_claude_l1a_perm | ✓ POST /api/gateway/approve → gateway.resolveApprova | · | 自己做：做到前端 |
-| zcode | · | ✓ node channels/probe/scripts/suite_zcode_l1a.mjs | ✓ POST /api/gateway/approve → gateway.resolveApprova | ✓ /m/（10-18 晚负责人接手）：待处理里的审批卡片：同意放行、驳回；如实标“补齐·会话级重跑” | 已到前端 |
-| workbuddy | · | ✗ codebuddy -p "请在 channels/prob | ✓ POST /api/gateway/approve → gateway.resolveApprova | · | 自己做：做到前端 |
-| opencode | · | ✓ driver.onApprovalRequest(req) -> reply selected | ? OpenCode 的 ACP 不报模式、写文件不来请求权限（ | · | 自己做：接进适配器 |
-| hermes | · | ✓ acp_probe2.py perm | ✓ POST /api/gateway/approve → gateway.resolveApprova | · | 自己做：做到前端 |
+| zcode | · | ✓ node channels/probe/scripts/suite_zcode_l1a.mjs | ✗ gateway.ts:3960-3987 待审批项是在进程已 | ✓ /m/（10-18 晚负责人接手）：待处理里的审批卡片：同意放行、驳回；如实标“补齐·会话级重跑” | 已到前端 |
+| workbuddy | · | ✗ codebuddy -p "请在 channels/prob | ✗ gateway.ts:3960-3987 待审批项是在进程已 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | ✓ driver.onApprovalRequest(req) -> reply selected | ✗ gateway.ts:3960-3987 待审批项是在进程已 | · | 自己做：接进适配器 |
+| hermes | · | ✓ acp_probe2.py perm | ✗ gateway.ts:3960-3987 待审批项是在进程已 | · | 自己做：接进适配器 |
 | gemini | · | ✗ gemini --help（--approval-mode  | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 分叉（fork）
@@ -522,12 +523,12 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ sqlite3 conversations/fb159766-*.db "SELECT idx, d | ✗ acpx --format json antigravity | · | 自己做：接进适配器 |
-| codex | · | ✓ copy rollout-*.jsonl -> sed thread_id -> codex exe | ✓ session-control op=fork：Codex thread/fork，登记成新会话 n | ? /m/（10-18 深夜负责人）：会话页“更多 → 分叉”， | 自己做：做到前端 |
+| antigravity | · | ✓ sqlite3 conversations/fb159766-*.db "SELECT idx, d | ✗ fetch('http://127.0.0.1:8932/a | · | 自己做：接进适配器 |
+| codex | · | ✓ copy rollout-*.jsonl -> sed thread_id -> codex exe | ✗ gateway.ts:3292-3330 提取源会话最近 3 | ? /m/（10-18 深夜负责人）：会话页“更多 → 分叉”， | 自己做：接进适配器 |
 | claude | ✓ rg -n sessionId ~/.claude/projects/*3f9b57d6*.json | ✓ claude --resume b0000000-0000-4000-8000-0000000000 | ✗ fetch('http://127.0.0.1:8932/a | · | 自己做：接进适配器 |
-| zcode | · | ✓ node channels/probe/scripts/test_l1a_fork_check.mj | ✓ acpx copy session record & stream.ndjson -> acpx z | · | 自己做：做到前端 |
-| workbuddy | · | ✓ codebuddy -r probe-wb-l0-fork-parent-1792233738517 | ✓ acpx copy session record & stream.ndjson -> acpx w | · | 自己做：做到前端 |
-| opencode | · | ✓ opencode run "..." -s <origId> --fork; sqlite3 ope | ✗ acpx opencode sessions fork -s | · | 自己做：接进适配器 |
+| zcode | · | ✓ node channels/probe/scripts/test_l1a_fork_check.mj | ✗ channels/probe/scripts/L2/test | · | 自己做：接进适配器 |
+| workbuddy | · | ✓ codebuddy -r probe-wb-l0-fork-parent-1792233738517 | ✗ fetch('http://127.0.0.1:8932/a | · | 自己做：接进适配器 |
+| opencode | · | ✓ opencode run "..." -s <origId> --fork; sqlite3 ope | ✗ fetch('http://127.0.0.1:8932/a | · | 自己做：接进适配器 |
 | hermes | · | ✓ connection.unstable_forkSession({sessionId,cwd}) | ✗ fetch('http://127.0.0.1:8932/a | · | 自己做：接进适配器 |
 | gemini | · | ✗ timeout 90 node channels/probe | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -541,10 +542,10 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 |---|---|---|---|---|---|
 | antigravity | · | ✗ node channels/probe/scripts/an | ✗ acpx --format json antigravity | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | codex | · | ✓ driver.compactThread("01a14e64-55f6-7422-83b6-d230 | ✓ session-control op=compact：Codex thread/compact/st | ? /m/（10-18 深夜负责人）：会话页“更多 → 压缩上下 | 自己做：做到前端 |
-| claude | · | ✓ MSYS_NO_PATHCONV=1 claude -p "/compact" --resume 3 | ? session-control op=compact：发 / | ? /m/（10-18 深夜负责人）：会话页“更多 → 压缩上下 | 自己做：接进适配器 |
+| claude | · | ✓ MSYS_NO_PATHCONV=1 claude -p "/compact" --resume 3 | ✓ d1 轮 _meta.quota.model_usage 累计 61197 tok（end_turn | ? /m/（10-18 深夜负责人）：会话页“更多 → 压缩上下 | 自己做：做到前端 |
 | zcode | · | ✓ connection.request('session/compact', { sessionId  | ✓ session-control op=compact：Codex thread/compact/st | ✓ /m/（10-18 深夜负责人）：会话页“更多 → 压缩上下文” | 已到前端 |
-| workbuddy | · | ✗ codebuddy -p "测试整理" --autocomp | ? session-control op=compact：发 / | ? /m/（10-18 深夜负责人）：会话页“更多 → 压缩上下 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| opencode | · | ✗ POST http://127.0.0.1:44230/ap | ? session-control op=compact：发 / | ? /m/（10-18 深夜负责人）：会话页“更多 → 压缩上下 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ✗ codebuddy -p "测试整理" --autocomp | ✗ {"code":null,"stdout":"{\"json | ? /m/（10-18 深夜负责人）：会话页“更多 → 压缩上下 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| opencode | · | ✗ POST http://127.0.0.1:44230/ap | ✗ ⚠ No acpx session found (searc | ? /m/（10-18 深夜负责人）：会话页“更多 → 压缩上下 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ◐ acp_probe2.py compress / acp_p | ? session-control op=compact：发 / | ? /m/（10-18 深夜负责人）：会话页“更多 → 压缩上下 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 列模型（model-list）
@@ -589,12 +590,12 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ opencli antigravity model | ✗ acpx --format json antigravity | ◐ /m/ v2（10-18 负责人重写）：详情页“换模型”：下 | 自己做：接进适配器 |
-| codex | · | ✓ codex exec resume --json -m gpt-5.6-sol 01a1493c-8 | ✓ POST /api/gateway/model 记下选择 → 下一句 acpx prompt --m | ◐ /m/ v2（10-18 负责人重写）：详情页“换模型”：下 | 自己做：做到前端 |
-| claude | · | ✓ claude -p "回复 SWITCH_ACK" --resume 3a8c395c-287f-4 | ✓ POST /api/gateway/model → claude 调 stream-json set | ◐ /m/ v2（10-18 负责人重写）：详情页“换模型”：下 | 自己做：做到前端 |
+| antigravity | · | ✓ opencli antigravity model | ✗ channels/probe/scripts/L2/test | ◐ /m/ v2（10-18 负责人重写）：详情页“换模型”：下 | 自己做：接进适配器 |
+| codex | · | ✓ codex exec resume --json -m gpt-5.6-sol 01a1493c-8 | ✓ POST /api/gateway/model 记下选择 → 下一句 acpx prompt --m | ✗ 下层 codex/L1b model-switch 实测 ✅ | 自己做：做到前端 |
+| claude | · | ✓ claude -p "回复 SWITCH_ACK" --resume 3a8c395c-287f-4 | ✗ 接口返回 200 {"ok":true,"channel": | ◐ /m/ v2（10-18 负责人重写）：详情页“换模型”：下 | 自己做：接进适配器 |
 | zcode | · | ✓ ZCODE_MODEL='builtin:bigmodel-coding-plan\GLM-5.3' | ✓ 常驻 ACP 桥：会话热着立即 session/set_model（不认就 session/set_ | ◐ /m/ v2（10-18 负责人重写）：详情页“换模型”：下 | 自己做：做到前端 |
 | workbuddy | · | ✓ codebuddy -r probe-wb-l0-model-1792233760844 -p "请 | ✓ 常驻 ACP 桥：会话热着立即 session/set_model（不认就 session/set_ | ◐ /m/ v2（10-18 负责人重写）：详情页“换模型”：下 | 自己做：做到前端 |
-| opencode | · | ✓ node channels/probe/scripts/opencode/probe_native_ | ✓ 常驻 ACP 桥：会话热着立即 session/set_model（不认就 session/set_ | ◐ /m/ v2（10-18 负责人重写）：详情页“换模型”：下 | 自己做：做到前端 |
+| opencode | · | ✓ node channels/probe/scripts/opencode/probe_native_ | ✓ 常驻 ACP 桥：会话热着立即 session/set_model（不认就 session/set_ | ✗ 下层 opencode：L0 续接传 -m 不改实际模型（M | 自己做：做到前端 |
 | hermes | · | ✓ hermes chat --resume 20261017_180048_62652a -q "你现 | ✓ 常驻 ACP 桥：会话热着立即 session/set_model（不认就 session/set_ | ◐ /m/ v2（10-18 负责人重写）：详情页“换模型”：下 | 自己做：做到前端 |
 | gemini | · | ✗ echo n / gemini -m gemini-2.5- | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
@@ -607,12 +608,12 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✗ channels/probe/scripts/antigra | ◐ fetch('http://127.0.0.1:8932/a | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| codex | · | ✓ codex exec resume --json -s read-only 01a1493c-816 | ✓ session-control op=mode：Codex 的协作模式 plan / default | ? /m/（10-18 深夜负责人）：会话页“更多 → 切模式” | 自己做：做到前端 |
+| codex | · | ✓ codex exec resume --json -s read-only 01a1493c-816 | ◐ 有效路径返回 200 {"ok":true,"cwd":"E | ? /m/（10-18 深夜负责人）：会话页“更多 → 切模式” | 自己做：接进适配器 |
 | claude | · | ✓ claude -p "用 Write 工具创建 plan_a.txt..." --session-i | ◐ 请求里的 permissions：reads / all / | ? /m/（10-18 深夜负责人）：会话页“更多 → 切模式” | 自己做：接进适配器 |
-| zcode | · | ✓ node E:\zcode\resources\glm\zcode.cjs --resume ... | ✓ session-control op=mode：常驻 ACP 桥 session/set_mode， | ? /m/（10-18 深夜负责人）：会话页“更多 → 切模式” | 自己做：做到前端 |
+| zcode | · | ✓ node E:\zcode\resources\glm\zcode.cjs --resume ... | ◐ 有效路径返回 200 {"ok":true,"cwd":"E | ? /m/（10-18 深夜负责人）：会话页“更多 → 切模式” | 自己做：接进适配器 |
 | workbuddy | · | ✓ codebuddy -r probe-workbuddy-l0-mnew-1792230101409 | ◐ 请求里的 permissions：reads / all / | · | 自己做：接进适配器 |
 | opencode | · | ✓ POST http://127.0.0.1:44230/api/session/ses_eb6269 | ◐ 请求里的 permissions：reads / all / | · | 自己做：接进适配器 |
-| hermes | · | ✓ session.setMode("accept_edits") | ✓ session-control op=mode：常驻 ACP 桥 session/set_mode， | ? /m/（10-18 深夜负责人）：会话页“更多 → 切模式” | 自己做：做到前端 |
+| hermes | · | ✓ session.setMode("accept_edits") | ◐ 有效路径返回 200 {"ok":true,"cwd":"E | ? /m/（10-18 深夜负责人）：会话页“更多 → 切模式” | 自己做：接进适配器 |
 | gemini | · | ✗ timeout 90 node channels/probe | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 查额度（quota）
@@ -916,9 +917,9 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | codex | · | ✓ App-server 原生支持 item/commandExecution/requestAppro | ✓ 智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/stat | · | 自己做：做到前端 |
 | claude | · | ✓ CLI 与 TUI 原生支持交互式向人提问（AskFollowupQuestion 动作），回车确认 | ✓ 智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/stat | · | 自己做：做到前端 |
 | zcode | · | ✓ ACP 桥与 CLI 暴露 ask_user 工具，桌面端与 TUI 拦截调用向人提问并阻塞 | ✓ 智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/stat | · | 自己做：做到前端 |
-| workbuddy | · | ✓ 内核 @tencent-ai/codebuddy-code 明确提供 ask_user 内置工具交互 | ? 经 ACP 问不到：WorkBuddy 的 headless | · | 自己做：接进适配器 |
-| opencode | · | ✓ 内置 question 工具 (questions=[{question, options}])，在 | ? 经 ACP 问不到：WorkBuddy 的 headless | · | 自己做：接进适配器 |
-| hermes | ✓ 内置 clarify-tool 与 ask_user，桌面端 apps/desktop/src/co | ✗ channels/probe/results/ask-use | ? 经 ACP 问不到：WorkBuddy 的 headless | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ✓ 内核 @tencent-ai/codebuddy-code 明确提供 ask_user 内置工具交互 | ✗ 智能体通过 DeferExecuteTool 抛出 sess | · | 自己做：接进适配器 |
+| opencode | · | ✓ 内置 question 工具 (questions=[{question, options}])，在 | ✗ ACP 桥未向模型注入 question 工具，模型回复“我 | · | 自己做：接进适配器 |
+| hermes | ✓ 内置 clarify-tool 与 ask_user，桌面端 apps/desktop/src/co | ✗ channels/probe/results/ask-use | ✗ ACP 适配器未注入 clarify_callback（为  | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 通知人（notify-user）
 
