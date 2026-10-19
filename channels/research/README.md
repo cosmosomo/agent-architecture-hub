@@ -10,9 +10,9 @@
 |---|---|---|---|---|---|---|
 | ACP 常驻桥 | [acp.md](acp.md) | ZCode、WorkBuddy、OpenCode、Hermes 经 ACP 能做到哪一步，断在哪 | ZCode · research-acp | acp-runtime-20261018、ask-user-acp-20261019、native-zcode/opencode/hermes-20261019 | | WorkBuddy、OpenCode、Hermes 提问断在 ACP 这一层：查有没有别的入口 |
 | Codex app-server | [codex.md](codex.md) | app-server 协议能给到的上限 | Codex · research-codex | codex-app-driver-20261018 | | 原生 thread/goal、计划模式提问 |
-| Claude stream-json | [claude.md](claude.md) | stream-json 能给到的上限 | Claude（haiku）· research-claude | claude-stream-driver-20261018 | | 合成报错、压缩、子智能体在流里怎么出现 |
+| Claude stream-json | [claude-stream.md](claude-stream.md) | stream-json 能给到的上限 | Claude（haiku）· research-claude | claude-stream-driver-20261018 | | 合成报错、压缩、子智能体在流里怎么出现 |
 | Antigravity agentapi / Connect-RPC | [agy.md](agy.md) | 332 个方法里哪些能从外部真正用起来 | Antigravity · research-agy | agy-fact-antigravity-20261018、native-antigravity-20261019（核验后只有 7 格有证据） | 23 格补行为证据 | 等交回 |
-| 界面路线：OpenCLI / CDP | [ui-route.md](ui-route.md) | 只能操作界面的产品怎么接，豆包怎么接 | Antigravity · research-ui-route | opencli-route-20261018 | 豆包接入（优先 opencli） | 等交回 |
+| 界面路线：OpenCLI / CDP | [ui-route.md](ui-route.md) | 只能操作界面的产品怎么接，豆包怎么接 | Antigravity · research-ui-route | opencli-route-20261018 | 豆包两条免打扰路线已完成（明文会话直读 + PiP 影子会话机制） | 编写本地会话发现模块提给中心，探查 PiP 家庭版环境边界 |
 | 通用 GUI 适配器 | [gui.md](gui.md) | 不占用用户屏幕地看、用任意桌面应用，技术路线有哪些，哪条能通用 | Codex · research-gui | | 不占屏幕读各家面板（Antigravity flash） | 开源与社区路线调研（见任务书 gui-adapter-20261019） |
 | 微信适配器 | [wechat.md](wechat.md) | 攻防最激烈的接入：各种路线怎么做、怎么被封、哪些技术能借到别家 | 未定 | | | 还没派 |
 | 打破能力单元边界 | [frontier.md](frontier.md) | 原生做不到的单元，适配器能补到哪一级 | Argon（Antigravity pro）· research-frontier | adapter-frontier-20261018、theory-limits-20261018 | | 按矩阵“派研究”的 192 格排队 |
