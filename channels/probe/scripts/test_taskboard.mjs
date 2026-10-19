@@ -185,6 +185,23 @@ const taskOf = (g, key) => board.tasksOf(board.getGoal(g.id)).find((t) => t.key 
   check('任务带 session 就派到那个固定会话', taskOf(g, 'a').sessionName === 'research-codex' && last().toSessionName === 'research-codex', `${taskOf(g, 'a').sessionName} ${last().toSessionName}`);
 }
 
+// 6f. a named task's session is reused by the next goal on the same line, one piece of work at a time
+{
+  const g1 = board.createGoal({ title: '同一条线一', objective: 'x', channel: 'opencode', verifyBy: 'auto', tasks: [{ key: 'line-x', title: '第一件' }] });
+  await tick();
+  const d1 = last();
+  const g2 = board.createGoal({ title: '同一条线二', objective: 'x', channel: 'opencode', verifyBy: 'auto', tasks: [{ key: 'line-x', title: '第二件' }] });
+  await tick();
+  const t2 = taskOf(g2, 'line-x');
+  check('有名字的任务跨目标复用会话', taskOf(g1, 'line-x').sessionName === 'line-x' && t2.sessionName === 'line-x', `${taskOf(g1, 'line-x').sessionName} ${t2.sessionName}`);
+  check('会话正忙时后来的任务等着、写原因', last() === d1 && t2.status === 'queued' && /正在做任务/.test(t2.waitingWhy || ''), `${t2.status} ${t2.waitingWhy}`);
+  await deliver(d1, '第一件做完');
+  await board.step();
+  check('前一件交回后派到同一个会话', last() !== d1 && last().toSessionName === 'line-x' && t2.status === 'dispatched' && !t2.waitingWhy, `${t2.status} ${last().toSessionName}`);
+  const g3 = board.createGoal({ title: '没名字', objective: 'x', channel: 'opencode', tasks: [{ title: '无 key' }] });
+  check('没起名字的任务还是目标自己的会话', taskOf(g3, 't1').sessionName === `goal-${g3.id.slice(5)}-t1`, taskOf(g3, 't1').sessionName);
+}
+
 // 7. the view: graph and trajectory
 {
   const g = board.listGoals().find((x) => x.title === '两步');

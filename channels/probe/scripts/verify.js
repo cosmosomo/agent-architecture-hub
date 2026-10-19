@@ -99,7 +99,7 @@ const RECIPES = {
   },
   async 'spawn-subagent'(p) {
     const tok = `VERIFY_DSP_${p.id.toUpperCase()}_${stamp}`;
-    const j = await http('POST', '/api/gateway/dispatch', { toChannel: p.id, toSessionName: `verify-dsp-${p.id}-${stamp}`, toModel: MODELS[p.id] ? MODELS[p.id][0] : undefined, task: `不要调用任何工具，只回复一行 ${tok}，并按派活单的要求交回。` });
+    const j = await http('POST', '/api/gateway/dispatch', { toChannel: p.id, toSessionName: `verify-dsp-${p.id}`, toModel: MODELS[p.id] ? MODELS[p.id][0] : undefined, task: `不要调用任何工具，只回复一行 ${tok}，并按派活单的要求交回。` });
     const id = (j.dispatch || {}).id;
     let d = {};
     let slow = 0;

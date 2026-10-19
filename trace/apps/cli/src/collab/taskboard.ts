@@ -45,7 +45,10 @@ export interface TaskRecord {
   waitingWhy?: string;
   model?: string;
   verifyBy: VerifyBy;
-  /** The session this task runs on; kept across rework so the worker keeps its context. */
+  /** The session this task runs on; kept across rework so the worker keeps its context. Named after the task's line
+   *  of work (its `session`, else the key its author gave it), not the goal, so the next goal on the same line reuses the session and its
+   *  context; one goal per session was 200 sessions for 250 dispatches by 10-19. A task with no key of its own
+   *  (t1, t2…) still gets a session of its goal: those keys say nothing about the work. */
   sessionName: string;
   /** Raised on every dispatch; a hand-back from an older dispatch is ignored. */
   epoch: number;
@@ -140,6 +143,8 @@ export interface TaskBoardDeps {
   pickChannel?: (candidates?: string[], exclude?: string[]) => { channel: string | null; why: string };
   /** Why a product cannot take work right now, when that will pass by itself (quota cooldown, breaker, full); else null. */
   holdFor?: (channel: string) => string | null;
+  /** A turn is running in this session now (anyone's: a page, another agent). */
+  sessionBusy?: (channel: string, sessionName: string) => boolean;
 }
 
 const DEFAULT_BUDGET: GoalBudget = { maxDispatches: 20, maxParallel: 2, maxRework: 2, maxStall: 6, maxWallClockMs: 4 * 3600_000 };
@@ -169,6 +174,8 @@ export class TaskBoard {
   private readonly goals = new Map<string, GoalRecord>();
   private readonly tasks = new Map<string, TaskRecord>();
   private stepping = false;
+  /** Tasks whose check is being dispatched right now (startVerify awaits the dispatch). */
+  private readonly verifyStarting = new Set<string>();
   private readonly deps: TaskBoardDeps;
 
   constructor(deps: TaskBoardDeps, dataDir = process.env.HUB_DATA_DIR || join(homedir(), '.agent-hub')) {
@@ -290,7 +297,7 @@ export class TaskBoard {
         ...(ch === 'auto' ? { auto: { candidates: t.candidates || p.candidates || [], excluded: [] } } : {}),
         model: t.model || p.model,
         verifyBy: t.verifyBy || p.verifyBy || 'human',
-        sessionName: (t.session || `goal-${id.slice(5, 11)}-${keys[i]}`).replace(/[^a-zA-Z0-9._-]/g, '_'),
+        sessionName: (t.session || (t.key ? keys[i] : `goal-${id.slice(5)}-${keys[i]}`)).replace(/[^a-zA-Z0-9._-]/g, '_'),
         epoch: 0,
         activeDispatchId: null,
         verifierDispatchId: null,
@@ -408,6 +415,11 @@ export class TaskBoard {
           continue;
         }
         let running = tasks.filter((t) => t.status === 'dispatched' || (t.status === 'verifying' && t.verifierDispatchId)).length;
+        // Checks that waited for a busy checker session.
+        for (const t of tasks.filter((x) => x.status === 'verifying' && !x.verifierDispatchId && x.waitingWhy)) {
+          if (running >= g.budget.maxParallel) break;
+          if (await this.startVerify(t)) running++;
+        }
         for (const t of tasks.filter((x) => x.status === 'queued')) {
           if (running >= g.budget.maxParallel) break;
           if (g.usage.dispatches >= g.budget.maxDispatches) {
@@ -422,6 +434,21 @@ export class TaskBoard {
     }
   }
 
+  /** Why this session cannot take a new piece of work now (another task's dispatch or check is out to it, or a turn
+   *  is running there), else null. */
+  private sessionTaken(channel: string, sessionName: string, self: string): string | null {
+    for (const o of this.tasks.values()) {
+      if (o.id === self) continue;
+      if (o.status === 'dispatched' && o.channel === channel && o.sessionName === sessionName) {
+        return `会话 ${channel}/${sessionName} 正在做任务「${o.title}」，等它交回再派`;
+      }
+      if (o.status === 'verifying' && o.verifierDispatchId && o.verifyBy === `agent:${channel}` && `${o.sessionName}-verify` === sessionName) {
+        return `会话 ${channel}/${sessionName} 正在验收任务「${o.title}」，等它验完再派`;
+      }
+    }
+    return this.deps.sessionBusy?.(channel, sessionName) ? `会话 ${channel}/${sessionName} 有一轮正在跑，等它结束再派` : null;
+  }
+
   /** Dispatch the task to its product (picking one first for an "auto" task). False when nothing went out. */
   private async dispatchWorker(g: GoalRecord, t: TaskRecord): Promise<boolean> {
     if (t.auto && !t.channel && !this.pick(t)) return false;
@@ -431,6 +458,16 @@ export class TaskBoard {
       if (t.waitingWhy !== hold) {
         t.waitingWhy = hold;
         this.log(t, 'waiting_for_channel', { why: hold });
+      }
+      return false;
+    }
+    // Sessions are shared across goals: one piece of work at a time, or a second task would be steered into the
+    // first one's turn.
+    const busy = this.sessionTaken(t.channel, t.sessionName, t.id);
+    if (busy) {
+      if (t.waitingWhy !== busy) {
+        t.waitingWhy = busy;
+        this.log(t, 'waiting_for_session', { why: busy });
       }
       return false;
     }
@@ -517,16 +554,27 @@ export class TaskBoard {
     void this.step();
   }
 
-  private async startVerify(t: TaskRecord) {
+  private async startVerify(t: TaskRecord): Promise<boolean> {
     const text = (t.delivery?.reply || t.delivery?.summary || '').trim();
     if (t.verifyBy === 'auto') {
       this.verdict(t, Boolean(text), text ? '自动：有交回' : '自动：交回是空的', 'auto', text ? undefined : '没有交回任何内容，请按任务要求完成后交回');
-      return;
+      return false;
     }
-    if (!t.verifyBy.startsWith('agent:')) return; // 'human': wait for a person
+    if (!t.verifyBy.startsWith('agent:') || t.verifierDispatchId || this.verifyStarting.has(t.id)) return false; // 'human': wait for a person
     const g = this.mustGoal(t.goalId);
-    if (g.usage.dispatches >= g.budget.maxDispatches) return; // leave it for a person
+    if (g.usage.dispatches >= g.budget.maxDispatches) return false; // leave it for a person
     const channel = t.verifyBy.slice('agent:'.length);
+    // The checker's session is shared too; step() tries again once it is free.
+    const busy = this.sessionTaken(channel, `${t.sessionName}-verify`, t.id);
+    if (busy) {
+      if (t.waitingWhy !== busy) {
+        t.waitingWhy = busy;
+        this.log(t, 'waiting_for_session', { why: busy });
+      }
+      return false;
+    }
+    t.waitingWhy = undefined;
+    this.verifyStarting.add(t.id);
     const task = [
       `请独立验收另一个智能体交回的工作。不要替它重做，只判断。`,
       `目标：${g.objective}`,
@@ -545,8 +593,12 @@ export class TaskBoard {
       this.saveTask(t);
       this.log(t, 'verify_dispatched', { dispatchId: d.id, by: channel });
       if (['completed', 'failed', 'stalled', 'cancelled'].includes(d.status)) this.verifierDispatchChanged(t, d);
+      return true;
     } catch (e: any) {
       this.log(t, 'verify_dispatch_failed', { reason: String(e?.message || e) });
+      return false;
+    } finally {
+      this.verifyStarting.delete(t.id);
     }
   }
 

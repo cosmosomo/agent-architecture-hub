@@ -59,6 +59,7 @@ export class AgentGatewayHub {
     dispatch: async (p) => (await this.dispatchTask({ kind: 'spawn-subagent', ...p })).dispatch as DispatchView,
     pickChannel: (candidates, exclude) => this.pickChannel(candidates, exclude),
     holdFor: (channel) => this.holdFor(channel),
+    sessionBusy: (channel, sessionName) => this.activeRuns.get(this.slotKey(channel, sessionName))?.status === 'running',
     changed: (g) => this.broadcast('goal_update', { id: g.id, status: g.status, reason: g.reason }),
   });
   readonly eventsFile: string;
