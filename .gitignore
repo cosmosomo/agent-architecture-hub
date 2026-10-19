@@ -49,3 +49,6 @@ channels/probe/scripts/**/*_raw.json
 # The service's own event log carries the first words of every prompt sent through it (promptPreview).
 channels/events.jsonl
 channels/probe/scripts/**/*_result.json
+
+# Generated matrix page (channels/probe/scripts/build_coverage.js), published as an artifact
+channels/probe/capability-matrix.html

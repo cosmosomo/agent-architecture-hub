@@ -1090,7 +1090,7 @@
         "action": [
           "pick"
         ],
-        "how": "中心自己数：每家在跑几轮（activeRuns）对上限（products.json 的 maxConcurrent，默认 3）；GET /api/gateway/pick（agent_gateway.js pick）连同熔断一起给出 loads（trace/apps/cli/src/gateway/capacity.ts）",
+        "how": "中心自己数：每家在跑几轮（自己发的 activeRuns，加上会话库里中心以外正在干活、30 分钟内有写入的主会话，比如桌面端）对上限（products.json 的 maxConcurrent，默认 3）；GET /api/gateway/pick（agent_gateway.js pick）连同熔断一起给出 loads（trace/apps/cli/src/gateway/capacity.ts）",
         "channels": [
           "claude",
           "zcode",
@@ -1102,7 +1102,7 @@
         ],
         "status": "fill",
         "fillLevel": "一群会话",
-        "note": "只数这一个中心发出的轮次，看不到产品自己桌面端或另一个中心占的；各家原生的并发上限没读到，上限是表里写的"
+        "note": "10-19 起把中心以外的也算进去（Antigravity 桌面端跑长活时曾被当成空闲选中）；状态判定会把早已停下的会话留在“在干活”，所以只计 30 分钟内有写入的。各家原生的并发上限没读到，上限是表里写的"
       }
     ],
     "channel-health": [

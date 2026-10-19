@@ -19,6 +19,10 @@ const MAX_RESET_MS = 7 * 24 * 3600_000;
 
 export type QuotaCooldown = { until: number; reason: string; from: string; at: string };
 
+/** Sessions working outside the center (a desktop app, a terminal), per product, recounted at most this often. */
+const EXTERNAL_TTL_MS = 30_000;
+let externalCache: { at: number; byKind: Map<string, number> } = { at: 0, byKind: new Map() };
+
 /**
  * When the provider says the quota comes back, as epoch ms, or null when the text does not say. Understands a date
  * and time next to "重置 / reset / 恢复" (in `tz` when it has no offset: Zhipu writes Beijing time, e.g. "您的限额将在
@@ -110,10 +114,39 @@ export const capacityMethods = {
     } catch {}
   },
 
-  /** One product as the pick sees it: turns running now, its limit, its breaker, its account's cooldown. */
+  /**
+   * Main sessions of each product that are working but not on a turn of ours: the person on the desktop app, or a
+   * terminal. They use the same product and account, so the pick counts them (10-19: Antigravity was picked as idle
+   * while the person ran a long PPT job on its desktop app).
+   */
+  externalBusy(this: AgentGatewayHub, kind: string): number {
+    if (Date.now() - externalCache.at > EXTERNAL_TTL_MS) {
+      const ours = new Set([...this.activeRuns.values()].map((r) => r.traceSessionId).filter(Boolean));
+      const base = this.store.index().sessions;
+      const all = [...base, ...this.getExtraSummaries(new Set(base.map((x) => x.id)))];
+      const byKind = new Map<string, number>();
+      for (const x of all) {
+        const st = x.state?.status;
+        if ((st !== 'working' && st !== 'waiting') || x.agent?.role === 'subagent' || ours.has(x.id)) continue;
+        // A session still marked working with nothing written for half an hour is not using the product now
+        // (10-19: Claude sessions from 10-11 and 10-13 still read "working" and filled the limit).
+        if (Date.now() - Date.parse(x.updatedAt || x.startedAt || '') > 30 * 60_000) continue;
+        byKind.set(x.source.kind, (byKind.get(x.source.kind) || 0) + 1);
+      }
+      externalCache = { at: Date.now(), byKind };
+    }
+    return externalCache.byKind.get(kind) || 0;
+  },
+
+  /** One product as the pick sees it: turns running now (ours and outside ones), its limit, its breaker, its account's cooldown. */
   channelLoad(this: AgentGatewayHub, id: string) {
     const prof = CHANNEL_PROFILES[id as ChannelId];
-    const running = [...this.activeRuns.values()].filter((r) => r.channel === id && r.status === 'running').length;
+    const ours = [...this.activeRuns.values()].filter((r) => r.channel === id && r.status === 'running').length;
+    let outside = 0;
+    try {
+      outside = prof ? this.externalBusy(prof.traceKind) : 0;
+    } catch {}
+    const running = ours + outside;
     const h = this.channelFailures.get(id as ChannelId);
     const cooling = Boolean(h && h.state === 'open' && h.openedAt && Date.now() - Date.parse(h.openedAt) < COOLDOWN_MS);
     const account = prof?.quotaAccount;
@@ -125,6 +158,7 @@ export const capacityMethods = {
       driven: Boolean(prof),
       canSend: Boolean(prof?.capabilities.canSendPrompt),
       running,
+      outside,
       cap: prof?.maxConcurrent || 3,
       health: (h?.state || 'closed') as 'closed' | 'open' | 'probing',
       cooling,
@@ -175,6 +209,7 @@ export const capacityMethods = {
     ok.sort((a, b) => a.running / a.cap - b.running / b.cap || pool.indexOf(a.id) - pool.indexOf(b.id));
     const p = ok[0];
     const state = p.health === 'closed' ? '健康' : '熔断后试探一轮';
-    return { channel: p.id as string | null, why: `${p.label}：${state}，在跑 ${p.running}/${p.cap}${left.length ? `；没选：${left.join('；')}` : ''}`, loads };
+    const busy = `在跑 ${p.running}/${p.cap}${p.outside ? `（其中 ${p.outside} 个在中心以外，比如桌面端）` : ''}`;
+    return { channel: p.id as string | null, why: `${p.label}：${state}，${busy}${left.length ? `；没选：${left.join('；')}` : ''}`, loads };
   },
 };

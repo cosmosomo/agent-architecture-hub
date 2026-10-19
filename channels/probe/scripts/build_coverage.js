@@ -516,3 +516,8 @@ const matrix = {
   })),
 };
 fs.writeFileSync(path.join(DIR, 'capability-matrix.json'), JSON.stringify(matrix) + '\n', 'utf8');
+// The matrix page, ready to publish: scripts/matrix_page.html with these cells inside (generated, not tracked).
+try {
+  const page = fs.readFileSync(path.join(__dirname, 'matrix_page.html'), 'utf8');
+  fs.writeFileSync(path.join(DIR, 'capability-matrix.html'), page.replace('__DATA__', () => JSON.stringify(matrix).replace(/<\//g, '<\\/')), 'utf8');
+} catch {}
