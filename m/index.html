@@ -240,7 +240,7 @@ function modelLabel(fam, m) {
 function findSessionApproval(meta) {
   const apprs = (S.gw && S.gw.pendingApprovals) || [];
   const cName = controlName(meta);
-  return apprs.find((a) => a.traceSessionId === meta.id || a.sessionName === meta.name || a.sessionName === cName) || null;
+  return apprs.find((a) => a.channel === meta.channel && (a.traceSessionId === meta.id || a.sessionName === meta.name || a.sessionName === cName)) || null;
 }
 
 function findInteractiveQuestion(turns) {
@@ -825,12 +825,32 @@ function endLink(end) {
   const text = `${esc(FAM[end.channel] || end.channel)} · ${esc(end.sessionName || '')}`;
   return id ? `<a href="#/s/${encodeURIComponent(id)}">${text}</a>` : text;
 }
+function dispatchDelivery(d) {
+  const delivery = d.delivery;
+  if (!delivery) return '';
+  // returned 也可能是轮末收回；只有 CLI deliver 且成功结束才是主动交付。
+  const active = delivery.via === 'cli' && d.status === 'completed';
+  const source = active ? '主动交回（deliver 命令）' : ({
+    cli: '命令回执（未完成交付）',
+    'structured-output': '结构化尾注（轮末解析，待核验主动交付）',
+    'turn-end': '轮末收回（部分做到，非主动交付）',
+    recovered: '恢复时收回（部分做到，非主动交付）',
+  }[delivery.via] || '交回来源未确认');
+  const files = (delivery.files || []).map((file) => `<li><code>${esc(file)}</code></li>`).join('');
+  return `<details class="delivery" data-unit="act-deliver" style="margin-top:8px;overflow-wrap:anywhere">
+    <summary style="min-height:44px;cursor:pointer">↩ ${esc(source)} · ${esc(clock(delivery.at))}</summary>
+    <div style="white-space:pre-wrap">${esc(delivery.summary || '')}</div>
+    <details><summary style="min-height:44px;cursor:pointer">完整交回正文</summary><div style="white-space:pre-wrap">${esc(delivery.reply || '')}</div></details>
+    ${files ? `<div class="sec">产出文件（路径）</div><ul>${files}</ul>` : '<div class="sub">未登记产出文件</div>'}
+    <details><summary style="min-height:44px;cursor:pointer">结构化交回记录</summary><pre style="white-space:pre-wrap">${esc(JSON.stringify({ id: d.id, status: d.status, receipts: d.receipts, delivery }, null, 2))}</pre></details>
+  </details>`;
+}
 function dispatchCard(d) {
   const rc = d.receipts || {};
   const steps = RECEIPTS.map(([k, label]) => `<span class="tag ${rc[k] ? 'st-idle' : ''}" title="${esc(rc[k] || '还没到这一步')}">${label}${rc[k] ? ' ' + clock(rc[k]) : ''}</span>`).join(' → ');
   const st = d.status === 'completed' ? '交回了' : d.status === 'failed' ? '失败' : d.status === 'yielded' ? '让出等待' : '进行中';
   const reports = (d.progressReports || []).map((r) => `<div class="sub">↗ 上报 ${clock(r.at)}：${esc(String(r.text || r.summary || '').slice(0, 120))}</div>`).join('');
-  const back = d.delivery ? `<div class="sub">↩ 交回 ${clock(d.delivery.at)}（${esc(d.delivery.via || '')}）：${esc(String(d.delivery.summary || d.delivery.reply || '').slice(0, 160))}</div>` : '';
+  const back = dispatchDelivery(d);
   const WAKE = { woken: '已叫醒', waiting: '等交回后叫醒', none: '不叫醒', 'auto-resume': '交回后自动叫醒' };
   const wk = d.wake && (d.wake.state || d.wake.mode);
   const wake = wk ? `<div class="sub">⏰ 派活方：${esc(WAKE[wk] || wk)}${d.wake.wokenAt ? ' ' + clock(d.wake.wokenAt) : ''}</div>` : '';
@@ -1264,7 +1284,7 @@ function renderApprovalBanner(meta) {
   // In-turn: the turn is paused and continues on a yes. Otherwise the turn already ended and a yes reruns it with full access.
   const inTurn = Boolean(match.inTurn);
   bannerEl.innerHTML = `
-    <div class="approval-card">
+    <div class="approval-card" data-unit="act-request">
       <div class="row">
         <span style="font-size:18px">⚠️</span>
         <b class="grow" style="color:var(--warn)">${inTurn ? '这一轮停着等你批' : '权限审批请求'}</b>
@@ -1272,7 +1292,7 @@ function renderApprovalBanner(meta) {
       </div>
       <div class="sub" style="margin:4px 0 2px">智能体请求执行受限操作：</div>
       <div style="font-weight:600;font-size:14px">${esc(match.toolName || '工具操作')}</div>
-      ${match.toolInput ? `<pre class="approval-pre">${esc(pretty(match.toolInput).slice(0, 1000))}</pre>` : ''}
+      ${match.toolInput ? `<pre class="approval-pre">${esc(pretty(match.toolInput))}</pre>` : ''}
       <div class="sub" style="margin-top:4px;color:var(--mute)"><b>拦截原因：</b>${esc(match.reason || '当前权限门禁拦截')}</div>
       <div class="row" style="margin-top:10px;justify-content:flex-end;gap:8px">
         <button class="btn ghost btn-touch" data-appr-act="reject" data-appr-id="${esc(match.id)}">驳回</button>
@@ -1284,7 +1304,7 @@ function renderApprovalBanner(meta) {
 function findSessionQuestion(meta) {
   const qs = (S.gw && S.gw.pendingQuestions) || [];
   const cName = controlName(meta);
-  return qs.find((q) => q.traceSessionId === meta.id || q.sessionName === meta.name || q.sessionName === cName) || null;
+  return qs.find((q) => q.channel === meta.channel && (q.traceSessionId === meta.id || q.sessionName === meta.name || q.sessionName === cName)) || null;
 }
 
 // A question the agent is waiting on right now (pendingQuestions): answered here, the answer goes back into the same
@@ -1298,7 +1318,7 @@ function renderQuestionBanner(meta, session) {
     if (qb.dataset.live === live.id) return; // keep what the person has picked or typed
     qb.dataset.live = live.id;
     qb.hidden = false;
-    qb.innerHTML = `<div class="question-box" data-qid="${esc(live.id)}">
+    qb.innerHTML = `<div class="question-box" data-unit="act-request" data-qid="${esc(live.id)}">
       <div class="q-title"><span>❓</span> 智能体在等你回答（这一轮停着）</div>
       ${live.questions.map((q) => `<div class="q-item" data-q="${esc(q.id)}" data-multi="${q.multiSelect ? 1 : ''}">
         ${q.header ? `<div class="sub">${esc(q.header)}</div>` : ''}
@@ -1507,8 +1527,8 @@ async function viewSession(id) {
     const act = b.dataset.apprAct;
     b.disabled = true;
     try {
-      await api('/api/gateway/approve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ id: appId, decision: act }) });
-      toast(act === 'approve' ? '已同意放行，智能体正在全权限重跑' : '已驳回请求');
+      const result = await api('/api/gateway/approve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ id: appId, decision: act }) });
+      toast(act === 'approve' ? (result.inTurn ? '已批准，这一轮继续' : '已同意放行，智能体正在全权限重跑') : '已驳回请求');
       S.gw = await api('/api/gateway/state').catch(() => S.gw);
       renderApprovalBanner(meta);
     } catch (err) { toast('审批操作失败：' + err.message); b.disabled = false; }
@@ -1519,7 +1539,7 @@ async function viewSession(id) {
     const pick = e.target.closest('[data-pick]');
     if (pick) {
       const item = pick.closest('.q-item');
-      if (!item.dataset.multi) item.querySelectorAll('[data-pick]').forEach((x) => x !== pick && x.classList.remove('on'));
+      if (item.dataset.multi !== '1') item.querySelectorAll('[data-pick]').forEach((x) => x !== pick && x.classList.remove('on'));
       pick.classList.toggle('on');
       return;
     }
