@@ -28,6 +28,48 @@
       "fail": "第二轮开了新会话、答不出暗号；答出来但是因为提示词里带了暗号。",
       "auto": "node channels/probe/scripts/verify.js --product {agent} --unit resume"
     },
+    "resume-native": {
+      "do": "接管一个在原生桌面应用或终端里打开过的会话，从中心接着发话。",
+      "center": [
+        "node hub/tools/agent_gateway.js sessions --agent {agent} --limit 10  （找到原生会话的编号或 traceSessionId）",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --trace <traceSessionId> --prompt \"接管会话，只回复：接管成功 {token}\""
+      ],
+      "web": "在 /m/ 会话列表中找到带原生标识的会话，点开继续发话。",
+      "native": "在 {agent} 桌面端或原生 CLI 中先建立一个带暗号的会话，查其原生会话标识。",
+      "pass": "回复中包含“接管成功 {token}”；session --id 查该会话能看到此前在原生端产生的全部历史对话。",
+      "fail": "把原生历史清空了；或者重新开了一个新会话，丢失原有上下文。"
+    },
+    "observe-live": {
+      "do": "在一轮运行进行中观察其实时事件流（文本增量、工具调用、状态流转）。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"从 1 慢慢数到 30，每数一个数换行并停顿 1 秒。\" --async",
+        "curl.exe -N -s http://127.0.0.1:8899/api/gateway/stream  （监听实时 SSE 流式事件推送）"
+      ],
+      "web": "在 /m/ 打开正在运行的会话，观察字符打字机效果与实时步骤推进卡片。",
+      "pass": "在整轮结束前，stream 持续收到 SSE 推送包，包含逐字增量文本或工具调用 step 事件。",
+      "fail": "整轮完全跑完后才一次性吐出全部结果；或者流式连接断开后无法重连恢复。"
+    },
+    "observe-history": {
+      "do": "读回会话的完整历史记录，包括非中心开的会话，校验全部轮次与步骤细节。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <会话编号>"
+      ],
+      "web": "在 /m/ 打开该会话，向上翻阅全部历史轮次。",
+      "native": "直接读取各家原生会话存储文件（~/.codex/sessions、Claude 的 jsonl、ZCode 的 sqlite 等）对照轮次。",
+      "pass": "返回的 turns 数组包含全部历史轮次，每一轮的 input、output 及 steps 完整，丢弃率为零。",
+      "fail": "只读出最近几轮；把系统通知当作用户输入；或者工具调用的入参和结果被截断丢失。",
+      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit observe-history"
+    },
+    "state": {
+      "do": "查询智能体与会话的实时微观状态，区分工作中、等待中、待命与出错。",
+      "center": [
+        "node hub/tools/agent_gateway.js state",
+        "node hub/tools/agent_gateway.js status --agent {agent} --session {session}"
+      ],
+      "web": "在 /m/ 会话列表和详情顶部查看状态胶囊（工作中 / 等待审批 / 待命 / 出错）。",
+      "pass": "state 输出中的 activeRuns、pendingApprovals 和 status 与实际运行阶段严格相符，有明确可靠的判定依据。",
+      "fail": "智能体还在干活却显示为 idle；或者进程退出了依然显示 running（挂起假状态）。"
+    },
     "cancel": {
       "do": "让它做一件要跑一会儿的事，中途打断，再让它接着答一句。",
       "center": [
@@ -39,6 +81,16 @@
       "fail": "打断后第一轮其实数完了；打断后会话坏了、只能开新会话。",
       "auto": "node channels/probe/scripts/verify.js --product {agent} --unit cancel"
     },
+    "close": {
+      "do": "关闭一个会话，使其结束并停止接收后续普通输入。",
+      "center": [
+        "node hub/tools/agent_gateway.js session-control --agent {agent} --session {session} --op close"
+      ],
+      "web": "在 /m/ 会话栏的更多操作菜单中点击“关闭会话”。",
+      "native": "在原生端关闭窗口、输入 /exit 或调用 ACP 的 session 关闭接口。",
+      "pass": "接口返回 ok: true；sessions 列表中该会话状态标为 closed；向已关闭会话发话会提示会话已结束或拒绝。",
+      "fail": "关闭后向该会话继续发话依然可以无感知正常运行，没有关闭或阻断提示。"
+    },
     "steer": {
       "do": "它正在干活时插一句话，看它在这一轮里照做。",
       "center": [
@@ -47,6 +99,305 @@
       ],
       "pass": "同一轮的回复末尾有 {token}，没有多出一个新的一轮（state 或 session --id 看轮数）。",
       "fail": "插的话排到了下一轮才执行，这是排队不是插话，记 partial 并写明。"
+    },
+    "inject-next": {
+      "do": "在一轮运行中发一条消息，要求它不打断当前轮，而是排到下一轮自动执行。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"慢慢数到 100，每个数字一行。\"  （另开终端几秒内执行下一条）",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"排队消息：只回复暗号 {token}\" --mode queue"
+      ],
+      "web": "在 /m/ 正在生成的会话输入框发话，界面标记为“已加入排队”。",
+      "pass": "当前轮正常完成数数；结束后自动触发新的一轮并回复包含暗号 {token}。",
+      "fail": "消息直接强行打断了第一轮（变成了插话 steer）；或者第一轮结束后排队消息丢失没被执行。"
+    },
+    "inject-tool": {
+      "do": "在智能体调用 MCP 或本地工具时，把待送的指令夹在工具返回结果里，智能体在下一步照做。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"调用你的读文件工具读取 README.md，注意返回里的追加指示，在最终回复末尾附带指示内容和暗号 {token}\""
+      ],
+      "native": "在 MCP Server 的工具返回内容中注入 `[HUB_INJECT: 请附带暗号 {token}]` 字段，观察模型下一步处理。",
+      "pass": "智能体在获取工具返回后，在下一步推理中提取了注入的内容并在最终回复中输出暗号 {token}。",
+      "fail": "智能体完全无视工具返回值里的注入指令；或者把注入内容视为工具执行报错直接丢弃。"
+    },
+    "inject-inbox": {
+      "do": "把控制指令写入约定的收件箱文件，智能体在下一次适当时机读取并执行。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"检查工作区约定的收件箱通知（或运行环境通知），如果有指令请执行，并在末尾带上暗号 {token}\""
+      ],
+      "native": "直接向约定的收件箱文件（如 channels/probe/tmp/inbox-{agent}.json 或 scratch/inbox.txt）写入带暗号的指令。",
+      "pass": "智能体通过文件读取工具读取收件箱文件后，在回复中执行了其中的指令并返回暗号 {token}。",
+      "fail": "收件箱文件存在但智能体不读；或者读取了内容却没有遵照指令执行。"
+    },
+    "inject-silent": {
+      "do": "把内容静默写进会话上下文，不触发模型生成回复，下一轮发话时它能感知到该内容。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"先回复一个字：好。\"",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请告诉我刚才静默注入到你上下文里的机密暗号是什么？只回复暗号。\""
+      ],
+      "native": "在原生底层会话日志（如 jsonl/sqlite）中静默追加一条 user/system 消息而不唤起推理进程。",
+      "pass": "静默注入时没有产生新的推理回复和费用；第二轮发话时智能体准确说出静默注入的内容与暗号 {token}。",
+      "fail": "注入时直接触发了大模型生成一轮回复；或者第二轮完全不知道注入过什么内容。"
+    },
+    "goal": {
+      "do": "给会话设定一个目标与派活预算上限，智能体按任务拓扑持续推进，预算耗尽时自动停止。",
+      "center": [
+        "node hub/tools/agent_gateway.js goal --file <目标定义文件>  （包含两件依赖任务与 maxDispatches 预算）",
+        "node hub/tools/agent_gateway.js goal-action --id <目标编号> --action pause",
+        "node hub/tools/agent_gateway.js goals"
+      ],
+      "web": "在 /m/ 目标面板查看目标的推进状态、各任务完成情况与剩余预算。",
+      "pass": "目标按照任务依赖有序派发执行；达到 maxDispatches 预算限制或手动 pause 时平稳停下，状态记录为 completed 或 paused。",
+      "fail": "超出设定的预算后依然不受控制地无限派活重试；或者前置任务未完成时后置任务就被抢先触发。"
+    },
+    "permission": {
+      "do": "在智能体因缺少权限停在审批卡时，中心答复批准，智能体在同一轮中继续完成操作。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --permissions reads --prompt \"请写入 channels/probe/tmp/perm-{agent}-{token}.txt，内容为 {token}\"  （另开终端执行下一条）",
+        "node hub/tools/agent_gateway.js state  （在 pendingApprovals 里查到审批编号）",
+        "node hub/tools/agent_gateway.js approve --id <审批编号>"
+      ],
+      "web": "/m/ 上弹出权限审批卡片，点击“允许”。",
+      "native": "在原生端弹出的权限弹窗中选择允许继续。",
+      "pass": "state 中能查到 pendingApprovals；执行 approve 后该轮在原进程内继续，文件成功写入且内容包含暗号 {token}。",
+      "fail": "未触发审批直接静默写成功；或者点击批准后当前轮中断报错，需要重新开新轮次。",
+      "auto": "node channels/probe/scripts/probe_acp_approval.js --product {agent}"
+    },
+    "fork": {
+      "do": "从已有会话复制出一个全新的独立分支会话，原会话历史不受影响，新会话继承前序记忆。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"记住暗号：{token}\"",
+        "node hub/tools/agent_gateway.js session-control --agent {agent} --session {session} --op fork --new-session {session}-fork",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session}-fork --prompt \"我们上一轮记住的暗号是什么？只回复暗号。\""
+      ],
+      "web": "在 /m/ 会话栏中点击“分叉”图标，在生成的新会话中继续提问。",
+      "native": "在原生客户端点击 Fork 按钮或调用底层 thread/fork 协议命令。",
+      "pass": "新会话独立建立且能准确回答出原会话的暗号 {token}；原会话的历史与后续对话互不干扰。",
+      "fail": "分叉后把原会话的内容清空或覆盖了；或者新会话是空白会话，丢失了分叉前的历史记忆。",
+      "auto": "node channels/probe/scripts/probe_session_control.js"
+    },
+    "compact": {
+      "do": "压缩当前会话的长历史，腾出上下文窗口空间，并验证压缩后记忆保留与用量下降。",
+      "center": [
+        "node hub/tools/agent_gateway.js session-control --agent {agent} --session {session} --op compact",
+        "node hub/tools/agent_gateway.js session --id <会话编号> --tail 1  （对比压缩前后的 contextUsage）"
+      ],
+      "web": "在 /m/ 会话操作栏的“更多”菜单中点击“压缩上下文”。",
+      "native": "在原生终端中输入 /compact 或触发 ACP 上下文压缩命令。",
+      "pass": "压缩命令执行成功；会话记录中的 contextUsage 字节数或 tokens 明显降低；后续发话仍能正常响应。",
+      "fail": "压缩把所有上下文彻底清空等同于新建空白会话；或者执行后用量统计数值毫无变化。",
+      "auto": "node channels/probe/scripts/probe_session_control.js"
+    },
+    "model-list": {
+      "do": "获取该产品真实可调用的模型列表，核对模型 ID 与可用性。",
+      "center": [
+        "node hub/tools/agent_gateway.js targets --json",
+        "node hub/tools/agent_gateway.js quota"
+      ],
+      "web": "在 /m/ 新建会话或会话顶部下拉列表中查看模型清单。",
+      "native": "在原生 CLI 执行 --list-models 或读取配置文件中声明的模型列表。",
+      "pass": "返回的模型清单包含该产品可用的模型标识列表，且列出的模型均能正常建立连接与发起推理。",
+      "fail": "返回写死的假数据列表，包含大量实际无权访问或已被废弃的模型 ID。"
+    },
+    "model-new": {
+      "do": "新建会话时指定特定模型，验证第一轮实际使用的模型就是所选模型。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session test-model-{agent}-{token} --model <模型名> --prompt \"只回复一行：{token}。不要调用任何工具。\"",
+        "node hub/tools/agent_gateway.js session --id <上述会话编号> --tail 1"
+      ],
+      "web": "在 /m/ 点击新建，在模型选择器中挑选非默认模型，发送第一句话。",
+      "pass": "run 命令的输出及 session 记录中明确标明 model 字段等于所指定的模型名，回复包含暗号 {token}。",
+      "fail": "命令虽然成功执行，但实际使用的模型回退到了系统默认模型，忽略了指定参数。"
+    },
+    "model-switch": {
+      "do": "在已有会话的后续轮次中切换大模型，验证下一轮实际切换生效且上下文连续。",
+      "center": [
+        "node hub/tools/agent_gateway.js model --agent {agent} --session {session} --model <新模型名>",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"回复一个字：好。\""
+      ],
+      "web": "在 /m/ 会话详情顶部的模型选择框切换为新模型后继续发话。",
+      "native": "在原生客户端输入 /model <新模型名> 进行中途切换。",
+      "pass": "切换指令执行成功；下一轮发话完成后，run.model 与 session 记录中的模型均显示为新模型名，且继承了上一轮对话。",
+      "fail": "切换模型导致会话被重置清空；或者表面显示切换成功，实际跑的依然是旧模型。",
+      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit model-switch"
+    },
+    "mode-switch": {
+      "do": "切换智能体的工作或权限模式（如只读模式、计划模式、全放行模式），验证行为随之改变。",
+      "center": [
+        "node hub/tools/agent_gateway.js session-control --agent {agent} --session {session} --op mode --value plan",
+        "node hub/tools/agent_gateway.js session-control --agent {agent} --session {session} --op mode --value act"
+      ],
+      "web": "在 /m/ 会话栏的“更多”菜单中点击“切模式”，选择计划或执行模式。",
+      "native": "在原生端通过快捷键、命令或配置切换 permissionMode（如 Claude 的 plan mode、Codex 的 read-only）。",
+      "pass": "session-control 返回 ok: true；切到计划/只读模式后智能体不修改文件，切到 act 模式后可执行写操作。",
+      "fail": "模式切换指令报错未被支持；或者切换后智能体在只读模式下仍然随意修改了代码文件。",
+      "auto": "node channels/probe/scripts/probe_session_control.js"
+    },
+    "quota": {
+      "do": "查这家（或它的额度账号）还剩多少、什么时候刷新。",
+      "center": [
+        "node hub/tools/agent_gateway.js quota  （各家额度卡）",
+        "node hub/tools/agent_gateway.js state  （中心记下的额度冷却和恢复时刻）"
+      ],
+      "pass": "给出剩余量或“用完、几点恢复”，和这家自己的面板或报错对得上。",
+      "fail": "只给了产品表里写死的说明，没有这一刻的数。"
+    },
+    "channel-route": {
+      "do": "仅给当前单次调用指定中转地址、自定义代理或独立 API Key，而不篡改系统的全局配置。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --model <特定渠道模型> --prompt \"只回复一行：{token}\""
+      ],
+      "native": "在启动单次命令时通过命令行环境变量注入（如 ANTHROPIC_BASE_URL=...）隔离全局配置。",
+      "pass": "请求确实经由指定的中转渠道完成，网关调用记录中的 route 匹配该渠道，全局配置文件未受任何改动。",
+      "fail": "为单次调用改动了系统的全局配置文件；或者指定了渠道参数却依然走了默认硬编码渠道。"
+    },
+    "channel-health": {
+      "do": "读取渠道的实时健康状态、最近错误类型及熔断标志，确认故障渠道能被主动标记并停止分派。",
+      "center": [
+        "node hub/tools/agent_gateway.js targets",
+        "node hub/tools/agent_gateway.js state  （核对各渠道的 status 灯、熔断标志与冷却倒计时）",
+        "node hub/tools/agent_gateway.js pick --candidates {agent}  （看故障渠道是否被正确排除）"
+      ],
+      "pass": "targets 与 state 中能读到 🟢/🟡/🔴/🔒 状态灯及失败原因；被熔断的渠道在 pick 选派时被自动排除不再接收新活。",
+      "fail": "某渠道频繁报错 429 或鉴权失效，但中心依然无脑往该渠道派发请求导致堆积超时。"
+    },
+    "guard": {
+      "do": "配置会话的前置守卫策略（如权限安全网拦截、敏感目录保护），验证违规动作在触发前被自动拦下。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --permissions deny --prompt \"在 channels/probe/tmp/guard-test.txt 写入 {token}\""
+      ],
+      "pass": "在执行工具写操作之前，守卫规则触发拦截，任务未产生实际文件改动，明确提示权限被拒绝或触发审批卡。",
+      "fail": "设置了守卫规则，智能体依然无阻碍地直接执行了危险写入动作。"
+    },
+    "act-deliver": {
+      "do": "派一件小活给它，它用交回命令交回，派活方拿到结构化结果。",
+      "center": [
+        "node hub/tools/agent_gateway.js dispatch --to {agent} --to-session {session} --task \"写一句话介绍你自己，结尾带 {token}，然后按派活单的要求交回。\"",
+        "node hub/tools/agent_gateway.js dispatches  （看这张单的状态和回执）"
+      ],
+      "pass": "单子走完 issued→delivered→seen→returned，交回内容有 {token}，交回方式是它主动交回（不是中心在轮末替它收）。",
+      "fail": "单子显示交回但内容是中心在轮末抓的最后一段话：记 partial 并写明是轮末收回。"
+    },
+    "act-request": {
+      "do": "智能体在一轮运行中主动发起请求（如申请权限、申请计算资源、向人提问），中心能接收并答复。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请通过你的提问或请求机制向中心申请批准创建临时文件，等待回复后再行动\"",
+        "node hub/tools/agent_gateway.js state  （查看是否有 pendingQuestions 或 pendingApprovals）"
+      ],
+      "pass": "state 输出中登记了智能体发出的请求原文，会话处于 waiting 等待状态，直到中心给出答复后才继续推进。",
+      "fail": "智能体未经请求直接自行写入；或者仅在回复文本里写了“我想要权限”后直接退出该轮。"
+    },
+    "act-yield": {
+      "do": "智能体结束当前执行阶段并主动让出执行权，清楚写明自己在等待什么条件或外部事件。",
+      "center": [
+        "node hub/tools/agent_gateway.js yield --id <派活单号> --waiting-for \"等待外部输入暗号 {token}\"",
+        "node hub/tools/agent_gateway.js dispatches  （查看该单的 waitingFor 字段与状态）"
+      ],
+      "pass": "派活单状态变为 yielded/waiting，waitingFor 字段明确记录“等待外部输入暗号 {token}”，中心不再盲目轮询。",
+      "fail": "让出动作导致中心将该任务判定为失败；或者让出时没有保存等待原因变成无头悬挂。"
+    },
+    "act-report": {
+      "do": "智能体在长任务中途上报阶段性进展或关键指标，中心记录其进度且当前执行轮次不被中断。",
+      "center": [
+        "node hub/tools/agent_gateway.js report --id <派活单号> --text \"已完成前置处理，进度 50%，暗号 {token}\"",
+        "node hub/tools/agent_gateway.js dispatches  （查看该单的进展日志）"
+      ],
+      "pass": "dispatches 输出中包含了上报的文本与暗号 {token}，正在运行的子任务没有被中断，状态继续保持 running。",
+      "fail": "上报动作导致当前轮次被意外打断终止；或者上报信息未被中心接收记录。"
+    },
+    "wait-visible": {
+      "do": "检查会话在待命或等待状态时的两个核心属性（怎么进来的、在等什么）是否能被外部直接读到。",
+      "center": [
+        "node hub/tools/agent_gateway.js dispatches",
+        "node hub/tools/agent_gateway.js state"
+      ],
+      "web": "在 /m/ 的待处理流或运行状态条中查看该会话的等待状态标签与原因说明。",
+      "pass": "通过 dispatches 或 state 接口能明确读取到进入待命的原因以及 waitingFor 字段的具体描述。",
+      "fail": "界面或接口只简单显示 waiting，但外部完全不知道它在等什么，形成了黑盒挂起。"
+    },
+    "wake-bg": {
+      "do": "将耗时较长的事交到后台执行、当前会话先让出，后台任务完成后被自动唤醒并带着结果恢复继续。",
+      "center": [
+        "node hub/tools/agent_gateway.js dispatch --to {agent} --task \"在后台执行耗时任务并先让出，完成后通知中心唤醒，附带暗号 {token}\" --async",
+        "node hub/tools/agent_gateway.js dispatch-wait --id <上一条返回的派活单号> --timeout 120"
+      ],
+      "pass": "任务后台完成后，中心自动收到完成事件并唤醒相关等待流，派活单回执转为 delivered，附带暗号 {token}。",
+      "fail": "必须依赖外部脚本进行死循环 sleep 轮询才能发现完成；或者后台任务完成后会话永久卡在等待态。"
+    },
+    "wake-timer": {
+      "do": "设定定时唤醒条件，在约定时间或周期到达时被系统自动叫醒并恢复会话执行。",
+      "center": [
+        "中心还没有独立定时器命令，通过原生入口或外部定时唤醒：",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请设置 10 秒后提醒我，或者说明你当前的原生定时器机制\""
+      ],
+      "native": "在原生环境调用 schedule 工具或配置系统 cron/定时器，到点检查会话自动触发的动作。",
+      "pass": "约定的定时时间到达后，会话无需人工发话便自动恢复执行，并在输出中产生到点提醒消息。",
+      "fail": "设定的时间到达后没有任何事件发生，必须人再次发话才继续。"
+    },
+    "wake-msg": {
+      "do": "通过外部消息唤醒处于待命或让出等待中的会话，使其立刻恢复执行状态。",
+      "center": [
+        "node hub/tools/agent_gateway.js yield --id <派活单号> --waiting-for \"等待外部数据\"",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"外部事件到达：回复暗号 {token}\""
+      ],
+      "pass": "外部消息送达后，原本处于 yielded/waiting 状态的会话立刻被唤醒并进入执行状态，回复中确认收到消息并包含暗号 {token}。",
+      "fail": "消息送达后会话无动于衷，依然卡在 waiting 状态未恢复运行。"
+    },
+    "wake-stall": {
+      "do": "验证长时间未收到等待条件的会话能被系统及时标记为超时或卡住，不会无声无息地永远挂起。",
+      "center": [
+        "node hub/tools/agent_gateway.js dispatches",
+        "node hub/tools/agent_gateway.js state  （核对超时的等待单是否有 stalled 或 timeout 警告）"
+      ],
+      "web": "在 /m/ 待处理流中查看无响应超时的会话卡片是否被高亮标记为黄色“卡住/已超时”。",
+      "pass": "当会话等待超过预设时限时，state 或 dispatches 明确给出 stalled/timeout 标记，供巡检或人快速介入处置。",
+      "fail": "任务卡死数小时，中心状态依然显示为正常 running，无法通过状态识别出异常挂起。"
+    },
+    "wake-persist": {
+      "do": "验证保管等待的一方（如中心守护进程）在经历重启或中断后，原先约定的唤醒与等待边依然得以保留。",
+      "center": [
+        "node hub/tools/agent_gateway.js dispatches  （查看等待边 waitingEdges 是否已持久化在磁盘）"
+      ],
+      "pass": "中心重启（杀掉 8899 守护进程后重新拉起）后，执行 dispatches 仍能读取到重启前未完成的派活单与等待边，没有丢失任何待唤醒记录。",
+      "fail": "进程重启后内存被完全洗掉，原先等待唤醒的派活单全部变成无主孤儿或丢失。"
+    },
+    "spawn-subagent": {
+      "do": "由父智能体开出一个独立的子智能体会话，子会话过程可见且结果结构化交回给父会话。",
+      "center": [
+        "node hub/tools/agent_gateway.js dispatch --to {agent} --to-session test-sub-{agent}-{token} --task \"只回复一行：{token}，按要求交回\""
+      ],
+      "web": "在 /m/ 会话栏点击“派给别人”，分派任务给子智能体并跟踪进度。",
+      "native": "在原生端调用 invoke_subagent 或 spawn_agent，由父会话管理子会话。",
+      "pass": "dispatches 输出该单处于 completed，sessions 列表中能看到该子会话记录，且交回内容包含暗号 {token}。",
+      "fail": "子智能体在后台变成了不可控的黑盒；或者子任务跑完后父会话根本拿不到交回结果。",
+      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit spawn-subagent"
+    },
+    "peer-message": {
+      "do": "两个独立的智能体会话之间进行点对点发消息通信，目标会话能完整接收并作出响应。",
+      "center": [
+        "node hub/tools/agent_gateway.js dispatch --from {agent} --from-session {session} --to {agent} --to-session {session}-peer --kind peer-message --task \"发送点对点暗号：{token}\""
+      ],
+      "pass": "目标会话接收到该条消息并触发一轮处理，在目标会话的历史记录中能看到该条消息以及暗号 {token}。",
+      "fail": "消息发出后目标会话没有任何动静；或者消息被发送到了错误的无关会话。"
+    },
+    "handoff": {
+      "do": "把当前会话的任务目标与历史上下文交接给另一个会话继续执行，责任随之平稳转移。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"第一棒：请记住交接暗号 {token}，准备交接。\"",
+        "node hub/tools/agent_gateway.js handoff --from {agent} --from-session {session} --to {agent} --to-session {session}-next --prompt \"请接手上一棒的任务，回复交接暗号\""
+      ],
+      "web": "在 /m/ 会话操作栏点击交接按钮，指定接手的智能体产品。",
+      "pass": "接手的新会话成功拉起，回复中能复述上一棒传递的上下文与暗号 {token}，会话关系链条在中心记录中可见。",
+      "fail": "接手方完全不知道上一棒的任何上下文，从头开始；或者旧会话还在继续抢着做未完成的任务。"
+    },
+    "task-board": {
+      "do": "建一个两步的目标，第二步依赖第一步，指定另一家验收。",
+      "center": [
+        "node hub/tools/agent_gateway.js goal --file <目标文件>  （两个任务：a 回复 {token}-A；b 依赖 a，回复 a 的结果加 -B；verifyBy agent:claude）",
+        "node hub/tools/agent_gateway.js goals"
+      ],
+      "pass": "a 先派、过验收后 b 才派，b 的说明里带着 a 的交回，目标最后 completed。",
+      "fail": "b 和 a 同时派了；验收是中心自动过的而不是另一家判的。",
+      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit task-board"
     },
     "ask-user": {
       "do": "让它在一轮中途向人提问，人答完它在同一轮里用上答案。",
@@ -59,13 +410,276 @@
       "pass": "state 里出现待答问题；答完同一轮回复里有“香蕉”和 {token}。",
       "fail": "它没调提问工具，只在回复里写了问题就结束（那是普通回复，不是提问）；答案到了下一轮。"
     },
-    "recall-history": {
-      "do": "让它翻回很早的对话取回原话。",
+    "notify-user": {
+      "do": "在任务完成、需要审批或出错时，将通知推送到人看得见的地方（桌面通知弹窗或手机推送）。",
       "center": [
-        "node hub/tools/agent_gateway.js recall --agent {agent} --session {session} --grep {token} --who user"
+        "中心还没有独立推送命令，通过网页或原生桌面通知测试：",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请触发你的系统通知功能，通知标题为测试暗号 {token}\""
       ],
-      "pass": "取回的原话和会话记录里一致，带轮次；在被压缩过的会话里也能取回压缩前的原话。",
-      "fail": "取回的是摘要不是原话；只在没压缩的会话里测过就记 pass（要写明条件）。"
+      "web": "在 /m/ 网页开启浏览器通知权限，在后台运行时等待事件触发桌面 Notification 弹窗。",
+      "native": "在原生桌面端开启通知偏好设置，触发通知事件后观察系统右下角弹出的通知横幅。",
+      "pass": "操作系统的桌面通知中心或移动端弹出通知卡片，包含当前事件摘要与暗号 {token}。",
+      "fail": "只在日志文本里打印了一句“已通知”，系统通知中心未收到任何真实消息。"
+    },
+    "human-steer": {
+      "do": "在智能体自己的桌面界面中，在一轮生成进行中由人强行插话，智能体在当轮内感知并转向。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"慢慢列出 30 种动物，每个换行\"  （另开终端执行下一条）",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --mode interrupt --prompt \"插话：停下并回复暗号 {token}\""
+      ],
+      "native": "在产品原生客户端（如 Claude Desktop、Cursor）生成过程中直接在输入框打字回车插话。",
+      "pass": "智能体在当前轮生成中立刻感知到插话内容，停止原有的列举并按照插话指令回复暗号 {token}。",
+      "fail": "插话被无视直到列完所有动物；或者插话被推迟到了下一轮独立会话才回复。"
+    },
+    "artifact": {
+      "do": "让智能体生成可供人类独立打开浏览的实体产出物（HTML/Markdown/图片/文档）并发布到指定路径。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请生成一个包含暗号 {token} 的 HTML 产出物文件，保存在 channels/probe/tmp/artifact-{token}.html\"",
+        "node hub/tools/agent_gateway.js session --id <会话编号>  （核对 session-files 记录）"
+      ],
+      "web": "在 /m/ 会话详情点击产出物卡片，在侧边预览栏中直接打开渲染该网页。",
+      "pass": "产出物文件真实存在于磁盘；中心接口 session-files 记录了该产物；网页端能正常预览打开。",
+      "fail": "只在聊天气泡里输出了代码块，没有保存为可供外部打开查看的实体产物文件。"
+    },
+    "browser": {
+      "do": "操作浏览器打开指定 URL 读取网页内容，并提取页面上的关键要素。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请使用你的浏览器能力打开 http://127.0.0.1:8899/api/health，读取并告诉我 status 字段的值，带上暗号 {token}\""
+      ],
+      "native": "在原生客户端让智能体调用内置的 browser/puppeteer/playwright 工具。",
+      "pass": "智能体调用了浏览器工具，成功获取网页内容并在回复中准确说出 health 接口的 status 字段与暗号 {token}。",
+      "fail": "没有调用浏览器工具，而是用 curl 或假想直接编造结果；或者打开浏览器后无法取回页面文本。"
+    },
+    "terminal": {
+      "do": "在智能体宿主环境中执行一条终端命令，并完整取回标准输出与标准错误结果。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"在终端执行 node -e \\\"console.log('TERM_TOKEN_{token}')\\\" 并取回输出\""
+      ],
+      "pass": "智能体调用了 terminal/bash/exec 工具，回复中完整包含了命令的原样输出 TERM_TOKEN_{token}。",
+      "fail": "仅打印了命令行操作建议但没有实际执行取回输出；或者命令报错没有捕获 stderr。"
+    },
+    "dev-preview": {
+      "do": "在本地启动一个开发 HTTP 服务，并通过预览通道或端口成功访问验证页面内容。",
+      "center": [
+        "中心还没有独立预览代理命令，通过会话命令结合端口访问测试：",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请启动一个临时本地 HTTP 服务（如端口 18999），返回包含 {token} 的页面\"",
+        "curl.exe -s http://127.0.0.1:18999"
+      ],
+      "native": "在原生 IDE（如 Cursor、VS Code 插件）中由智能体启动 dev server 并呼出内置 webview 预览。",
+      "pass": "端口成功监听，HTTP GET 请求返回 HTTP 200 且内容包含暗号 {token}。",
+      "fail": "智能体阻塞在起服务那一步导致会话无法结束；或者服务退出无法访问。"
+    },
+    "mount-tools": {
+      "do": "给会话挂接指定的扩展工具或外部 MCP 服务，会话里能调用挂上的工具，没挂的调不到。",
+      "center": [
+        "中心还没有在 run 中动态增减工具的命令行参数，通过原生配置或列出工具验证：",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"列出你当前可以调用的所有工具名称，并在结尾写上 {token}\""
+      ],
+      "native": "在配置文件（如 claude_desktop_config.json 或 acpx tools 配置）中挂上特定 MCP 服务后验证可用性。",
+      "pass": "智能体输出的工具清单中包含新挂上的 MCP 工具名称，且尝试调用时能成功返回结果。",
+      "fail": "声明挂接成功但调用时提示工具未定义；或者未挂接的敏感工具依然能被随意调用。"
+    },
+    "instructions": {
+      "do": "在新建会话时设定角色人设与行为准则（系统提示词），验证智能体通篇回复遵守此约束。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session test-inst-{agent}-{token} --prompt \"系统设定：你是一个只会用古文说话的隐士。用户问：今天天气如何？请回复并带暗号 {token}。\""
+      ],
+      "native": "在原生 API 中传入 system 提示词字段，或在产品设置中填写 system instructions。",
+      "pass": "智能体的回复通篇完全符合所设定的角色风格与约束，同时包含暗号 {token}。",
+      "fail": "回复完全无视角色约束，使用普通现代助手口吻；或者系统提示词泄露。"
+    },
+    "workspace": {
+      "do": "指定会话的工作目录（cwd），验证智能体所有的相对路径文件读写均严格落在指定目录下。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --cwd \"channels/probe/tmp\" --prompt \"在当前目录下创建一个名为 ws-{token}.txt 的文件，内容写 {token}\"",
+        "Get-Item channels/probe/tmp/ws-{token}.txt"
+      ],
+      "pass": "文件准确创建在指定的 channels/probe/tmp/ws-{token}.txt 中，而不是在根目录或用户主目录。",
+      "fail": "文件被写到了执行命令的当前目录，忽略了指定的 --cwd 参数。"
+    },
+    "output-contract": {
+      "do": "给当前轮次设定强制的产出契约格式（如严格的单行 JSON），不满足时能被识别或拦下。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"必须严格按 JSON 格式输出：{\\\"token\\\": \\\"{token}\\\", \\\"result\\\": \\\"ok\\\"}，绝对不要输出任何其他文本或标记\""
+      ],
+      "pass": "输出是严格合规的单行 JSON 字符串，能被 JSON.parse 成功解析，token 字段对得上。",
+      "fail": "夹带了开头的说明文字或 Markdown 围栏符号；或者字段名缺失导致 JSON 解析崩溃。"
+    },
+    "open-idle": {
+      "do": "新建一个会话并取得会话编号，但不立即发送第一轮提示词，不触发任何大模型生成消费。",
+      "center": [
+        "中心后端接口 POST /api/gateway/session/new 支持只建不跑；命令行尚无独立子命令，通过 API 调用：",
+        "curl.exe -s -X POST http://127.0.0.1:8899/api/gateway/session/new -H \"Content-Type: application/json\" -d \"{\\\"channel\\\":\\\"{agent}\\\",\\\"sessionName\\\":\\\"test-idle-{agent}-{token}\\\"}\"",
+        "node hub/tools/agent_gateway.js sessions --agent {agent} --q test-idle-{agent}-{token}"
+      ],
+      "web": "在 /m/ 点击新建会话，进入会话页面但不输入任何文本发话。",
+      "pass": "sessions 列表中能查到该新建的会话 ID；session 详情中 turns 数量为 0，没有产生任何推理消耗。",
+      "fail": "创建会话的同时自动发了一句默认打招呼的话并触发了模型计费；或者列表中查不到该会话。"
+    },
+    "label": {
+      "do": "给会话赋予自定义名称或标签，并能通过该名称/标签在会话列表中精确搜索召回。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session my-label-{token} --prompt \"回复：已命名 {token}\"",
+        "node hub/tools/agent_gateway.js sessions --agent {agent} --q my-label-{token}"
+      ],
+      "native": "在原生客户端通过重命名对话或设置标签进行标记。",
+      "web": "在 /m/ 对指定会话双击重命名或修改标签。",
+      "pass": "sessions 列表中该会话的标题或名称被正确显示，通过 --q 关键词能精确搜索召回。",
+      "fail": "会话名被强制重置为默认生成的 UUID；或者重命名后刷新网页丢失。"
+    },
+    "ownership": {
+      "do": "识别会话的所有权归属（属于我们、原生应用、人正在终端使用、已放手还是未知）。",
+      "center": [
+        "node hub/tools/agent_gateway.js targets",
+        "node hub/tools/agent_gateway.js status --agent {agent}"
+      ],
+      "pass": "返回结果中 holder 明确标明持有者（如 shared / claude-lead / open / lock），若被人占用则禁止外部并发写入。",
+      "fail": "所有会话都粗暴标为自由可用，导致多人/多进程同时写入同一会话相互踩踏覆盖。"
+    },
+    "discover-sessions": {
+      "do": "列出本机该产品现有的所有会话，包括原生端打开的、别人开的以及派生的子会话。",
+      "center": [
+        "node hub/tools/agent_gateway.js sessions --agent {agent} --limit 20"
+      ],
+      "pass": "输出列出真实的会话编号、渠道、更新时间及标题，且与原生端最近历史一致，包含子会话。",
+      "fail": "只能列出中心通过 gateway 建的会话，漏掉了原生端自己打开的会话或派生的子会话。",
+      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit discover-sessions"
+    },
+    "probe-host": {
+      "do": "探测本机装了哪几家产品、驱动版本、登录状态、CDP 端口以及握手协议声明。",
+      "center": [
+        "node hub/tools/agent_gateway.js targets",
+        "node hub/tools/agent_gateway.js status --agent {agent}"
+      ],
+      "pass": "输出完整展示该产品在本机的驱动类型、状态灯（🟢/🟡/🔴）、已验证版本号与环境注入键。",
+      "fail": "报告本机已安装可用，但实际该产品的可执行文件或 CDP 端口根本不存在；或者版本号留空。"
+    },
+    "capacity": {
+      "do": "查询该渠道的并发容量上限以及此刻正在跑的任务数，防止超载请求打崩渠道。",
+      "center": [
+        "node hub/tools/agent_gateway.js targets",
+        "node hub/tools/agent_gateway.js state  （核对 runningCounts 与当前并发）",
+        "node hub/tools/agent_gateway.js pick  （查看当前谁空闲、谁已满）"
+      ],
+      "pass": "state 中明确给出各产品的最大允许并发（maxConcurrent）与当前占用数（running），数值与实际运行进程数一致。",
+      "fail": "永远返回 0 或无限大，导致超载引发渠道风暴限流。"
+    },
+    "rewind": {
+      "do": "让会话就地回退到之前的某一步，后续对话在该步的基础上重新分叉延伸，遗忘被回退的步骤。",
+      "center": [
+        "中心还没有通用 rewind 命令行，通过原生入口或 RPC 操作：",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"第一步：暗号是 {token}-A\"",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"第二步：暗号是 {token}-B\""
+      ],
+      "native": "在客户端界面点击某一步的“回退到此步”或调用 RPC 回退命令。",
+      "pass": "回退到第一步后，智能体不再记得第二步的暗号 B，后续发话在第一步的基础上重新展开。",
+      "fail": "界面显示回退，但会话上下文里依然保留着被回退步骤的记忆。"
+    },
+    "archive": {
+      "do": "将已完成的会话从活动主列表中归档隐藏，需要时能完整取回并恢复正常对话。",
+      "center": [
+        "中心还没有独立 archive 命令，通过原生入口或 session-control 操作：",
+        "node hub/tools/agent_gateway.js sessions --agent {agent} --limit 10"
+      ],
+      "native": "在原生桌面端点击会话的 Archive（归档）按钮，查看该会话从主列表移入归档列表；再点击 Unarchive 取回。",
+      "web": "在 /m/ 会话栏操作归档，主列表不再显示该会话；在已归档视图中可找到并点击恢复。",
+      "pass": "归档后常规 sessions 列表不再列出该会话；执行取回后会话重新恢复在活动列表且全部历史未受损。",
+      "fail": "归档直接把会话文件物理删除了，无法取回。"
+    },
+    "delete": {
+      "do": "永久删除一个会话及其所有历史记录，需经过明确的人工确认。",
+      "center": [
+        "中心命令行未提供静默删除命令，测试原生删除：",
+        "node hub/tools/agent_gateway.js sessions --agent {agent} --q test-del-{token}"
+      ],
+      "native": "在各家原生应用界面或 CLI 中右键点击“Delete Session”并确认删除。",
+      "pass": "删除后，在原生界面及 sessions 接口中完全查不到该会话记录，本地存储对应的 jsonl/sqlite 行已被物理移除。",
+      "fail": "界面上删除了但数据库或磁盘日志仍完整保留；或者未经人确认就自动静默删除了重要会话。"
+    },
+    "handover-human": {
+      "do": "把由程序自动推进的会话在它自己的桌面应用中唤起打开，由人类在界面上接着继续发话操作。",
+      "center": [
+        "中心还没有一键拉起桌面应用聚焦的命令，测试原生接手操作：",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"写到一半：准备交给人接手，暗号 {token}\""
+      ],
+      "native": "打开该产品的桌面客户端（如 Claude Desktop 或 Antigravity IDE），找到刚刚中心跑的会话，直接在输入框继续打字。",
+      "pass": "人在桌面端打开该会话能看到此前机器运行的每一步和暗号 {token}，并且人发话后智能体能自然顺畅地继续回复。",
+      "fail": "原生端打不开该会话（报格式错误或会话损坏）；或者人发话后提示会话已被锁定无法发话。"
+    },
+    "reclaim": {
+      "do": "停止指定会话或智能体实例、释放占用的资源锁，将派发出去的任务安全回收回可派状态。",
+      "center": [
+        "node hub/tools/agent_gateway.js reclaim --id <派活单号>",
+        "node hub/tools/agent_gateway.js dispatches  （查看该单状态）",
+        "node hub/tools/agent_gateway.js state  （查看会话锁是否已释放）"
+      ],
+      "pass": "派活单被重置或标记为 cancelled/reclaimed，持有的锁被释放，该会话回到闲置可分配状态。",
+      "fail": "回收后后台进程依然在继续执行和消耗 token；或者单子卡死在中间状态无法改派。"
+    },
+    "cmd-list": {
+      "do": "读取智能体当前环境下真实可用的斜杠命令清单（包含命令名、说明与参数定义）。",
+      "center": [
+        "node hub/tools/agent_gateway.js session-control --agent {agent} --session {session} --op cmd-list"
+      ],
+      "native": "在原生命令行或应用中输入 / 查看弹出的斜杠命令自动补全列表。",
+      "web": "在 /m/ 输入框键入 / 调出支持的命令清单。",
+      "pass": "返回真实有效的命令定义列表（如 /compact, /review, /init），与该产品原生环境完全一致。",
+      "fail": "返回空数组；或者列出了当前产品根本不支持的伪造命令。"
+    },
+    "sampling": {
+      "do": "当工具本身缺乏模型渠道时，向宿主发起借道采样请求，由宿主代为调用大模型并统一计费记账。",
+      "center": [
+        "中心在 MCP 代理层提供了采样代理验证脚本：",
+        "node channels/probe/scripts/test_sampling_proxy.js"
+      ],
+      "native": "MCP 服务发送 JSON-RPC sampling/createMessage 请求，由宿主客户端代调并回传生成内容。",
+      "pass": "脚本输出显示 MCP 工具成功取得由宿主渠道生成的采样回复，请求被正确计入宿主账本。",
+      "fail": "宿主客户端报方法未实现或直接拒绝 sampling 请求，导致依赖模型的 MCP 工具异常崩溃。"
+    },
+    "memory-mode": {
+      "do": "控制跨会话的长期记忆读写开关，验证关闭写入后不会将敏感信息持久化到全局记忆中。",
+      "center": [
+        "中心还没有独立 memory-mode 命令行参数，通过提示词及检查长期记忆目录测试：",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请记住我的秘密代号是 {token}，注意不要写入长期记忆文件\""
+      ],
+      "native": "在原生客户端设置中关闭 Memory 开关，观察 ~/.claude/memories 等长期记忆文件在会话后是否有变动。",
+      "pass": "关闭写入后，会话结束时磁盘上的长期记忆文件未发生任何新增；在全新会话中询问该秘密代号无法回答。",
+      "fail": "关闭状态下智能体依然擅自将信息追加到了跨会话全局记忆中。"
+    },
+    "loop-guard": {
+      "do": "当智能体陷入死循环（反复执行相同的失败动作）时，守护机制自动介入警告或打断当前轮次。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请反复读取一个不存在的文件，报错后立即重试，重复 10 次不准停\"",
+        "node hub/tools/agent_gateway.js state"
+      ],
+      "pass": "智能体在重复相同失败操作达到阈值（如 3-5 次）后被守卫打断，状态被记录为 loop_detected 并优雅停下。",
+      "fail": "智能体无休止地发起几十次重复调用，直至超时或 token 彻底烧尽。"
+    },
+    "channel-lease": {
+      "do": "在调用有并发上限的渠道前获取租约，超出并发上限的请求有序平稳排队，避免触发渠道限流。",
+      "center": [
+        "node hub/tools/agent_gateway.js pick --candidates {agent}",
+        "node hub/tools/agent_gateway.js state  （并发多路派发观察队列）"
+      ],
+      "pass": "当并发请求量超过通道 maxConcurrent 时，超出部分在中心队列中按序等待，依次放行，未触发 429 报错。",
+      "fail": "并发请求全部瞬间涌向渠道导致被官方封禁或频频报限流错误；持有进程崩溃后租约永久无法释放。"
+    },
+    "host-drain": {
+      "do": "让网关或守护进程进入排空状态，停止接收外部新任务，等待当前所有在跑轮次正常做完后再平稳退出。",
+      "center": [
+        "中心还没有排空入口（server.ts 里没有 /api/gateway/drain，2026-10-20 核对）。现在能测的只有现状：node hub/tools/agent_gateway.js state 看在跑的轮次；中心重启时在跑的轮次会断。这道题等中心做了排空再测，测前先确认入口存在。"
+      ],
+      "pass": "守护进程进入 draining 状态，正在执行的轮次正常完成交回，新发来的活被暂存或排队，无数据损坏丢弃。",
+      "fail": "直接强制 kill 杀死子进程，导致执行中的长任务产物半途破坏丢失。"
+    },
+    "permission-scope": {
+      "do": "按目录级别限制智能体权限：智能体自身数据目录放行，工作目录按权限模式，跨目录敏感操作必须审批。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --permissions reads --prompt \"尝试向项目工作区外（如系统根目录）写入包含 {token} 的文件\"",
+        "node hub/tools/agent_gateway.js state  （查看是否有 pendingApprovals）"
+      ],
+      "pass": "对工作目录以外敏感路径的写入被权限范围拦截并进入审批队列，未直接越权写成功。",
+      "fail": "处于受限模式的智能体轻松越过目录边界篡改了系统根目录或用户敏感配置。"
     },
     "native-meta": {
       "do": "不发话，读这家会话的元数据：标题、工作目录、模型、更新时间、状态。",
@@ -76,41 +690,238 @@
       "pass": "五项都有，和这家自己的界面或存储（见宿主卡）对得上。",
       "fail": "字段是中心自己编的默认值（比如模型写成产品默认模型而会话实际用的不是）。"
     },
-    "act-deliver": {
-      "do": "派一件小活给它，它用交回命令交回，派活方拿到结构化结果。",
+    "content-search": {
+      "do": "跨所有历史会话执行正文全文检索，按关键词准确定位到包含该词的会话、轮次和上下文高亮片段。",
       "center": [
-        "node hub/tools/agent_gateway.js dispatch --to {agent} --to-session {session} --task \"写一句话介绍你自己，结尾带 {token}，然后按派活单的要求交回。\"",
-        "node hub/tools/agent_gateway.js dispatches  （看这张单的状态和回执）"
+        "node hub/tools/agent_gateway.js search --q {token}"
       ],
-      "pass": "单子走完 issued→delivered→seen→returned，交回内容有 {token}，交回方式是它主动交回（不是中心在轮末替它收）。",
-      "fail": "单子显示交回但内容是中心在轮末抓的最后一段话：记 partial 并写明是轮末收回。"
+      "web": "在 /m/ 顶栏全局搜索框中输入暗号 {token} 进行全文搜索。",
+      "pass": "搜索结果准确列出包含该暗号的会话 ID、对应的轮次编号以及匹配的代码或文本片段。",
+      "fail": "只能按会话标题搜，搜索不到历史正文或工具调用里的关键词。"
     },
-    "task-board": {
-      "do": "建一个两步的目标，第二步依赖第一步，指定另一家验收。",
+    "context-usage": {
+      "do": "实时读取当前会话消耗的上下文窗口 token 数量与占用比例，核对统计真实性。",
       "center": [
-        "node hub/tools/agent_gateway.js goal --file <目标文件>  （两个任务：a 回复 {token}-A；b 依赖 a，回复 a 的结果加 -B；verifyBy agent:claude）",
-        "node hub/tools/agent_gateway.js goals"
+        "node hub/tools/agent_gateway.js session --id <会话编号> --tail 1"
       ],
-      "pass": "a 先派、过验收后 b 才派，b 的说明里带着 a 的交回，目标最后 completed。",
-      "fail": "b 和 a 同时派了；验收是中心自动过的而不是另一家判的。",
-      "auto": "node channels/probe/scripts/verify.js --product {agent} --unit task-board"
+      "web": "在 /m/ 会话详情页底部或侧栏查看用量指示器（如 xx k / xx k tokens）。",
+      "pass": "接口返回数据中的 tokens / contextUsage 与原生应用界面展示的数值在合理刷新误差内一致。",
+      "fail": "数字始终显示为 0、NaN 或完全没有该统计项。"
     },
-    "quota": {
-      "do": "查这家（或它的额度账号）还剩多少、什么时候刷新。",
+    "reasoning-effort": {
+      "do": "调整大模型的推理力度（思维链思考深度），验证参数设定后实际生成的思考过程发生相应变化。",
       "center": [
-        "node hub/tools/agent_gateway.js quota  （各家额度卡）",
-        "node hub/tools/agent_gateway.js state  （中心记下的额度冷却和恢复时刻）"
+        "node hub/tools/agent_gateway.js session-control --agent {agent} --session {session} --op effort --value high"
       ],
-      "pass": "给出剩余量或“用完、几点恢复”，和这家自己的面板或报错对得上。",
-      "fail": "只给了产品表里写死的说明，没有这一刻的数。"
+      "web": "在 /m/ 模型配置中调整思考力度（low / medium / high）。",
+      "pass": "session-control 返回 ok: true；设为 high 后下一轮生成的 thoughts 思考字数明显增加，记录中标记对应档位。",
+      "fail": "设定参数后模型思考深度毫无变化；或者不支持该设置项却静默失败。",
+      "auto": "node channels/probe/scripts/probe_session_control.js"
     },
-    "computer-use": {
-      "do": "让它在一个桌面应用里做一件别人能核对的事，不占用用户的屏幕和鼠标。",
+    "list-projects": {
+      "do": "列出当前产品或环境登记的所有项目/工作区列表，核对工作目录路径的一致性。",
       "center": [
-        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"在后台打开记事本（或你能操作的任一应用），写入 {token}，保存到 channels/probe/tmp/cu-{agent}-{token}.txt，然后告诉我文件路径。\""
+        "node hub/tools/agent_gateway.js sessions --agent {agent} --limit 50  （检查返回的不同项目工作目录路径）"
       ],
-      "pass": "文件存在、内容是 {token}；测试期间用户的鼠标和前台窗口没被动过。",
-      "fail": "它用写文件工具直接写了文件，没有操作应用：这测的是写文件，不是操作电脑。"
+      "native": "在原生客户端（如 Claude Desktop 或 Cursor）侧边栏查看所有工作区/项目清单。",
+      "web": "在 /m/ 的项目切换视图中查看所有已登记的工作区。",
+      "pass": "返回的项目列表与本机磁盘上的真实工程目录一致，支持正确路径展开。",
+      "fail": "漏掉多工作区；或者把不存在的无效路径列为有效项目。"
+    },
+    "workspace-files": {
+      "do": "列出当前会话工作区目录下的文件清单，供智能体或用户在对话中引用。",
+      "center": [
+        "中心后端接口 GET /api/sessions/<id>/files 支持读取文件清单；通过 API 查阅：",
+        "curl.exe -s http://127.0.0.1:8899/api/sessions/<会话编号>/files"
+      ],
+      "web": "在 /m/ 输入框键入 @ 查看弹出的项目文件清单。",
+      "pass": "返回的文件列表与该会话工作目录（cwd）下的真实文件结构吻合，支持过滤隐藏文件。",
+      "fail": "列出的文件脱离了实际目录；或者未过滤 git 目录导致卡死。"
+    },
+    "native-meta-write": {
+      "do": "修改会话的元数据（如重命名、置顶、分组、归档）后，写回该产品原生自己的存储文件中。",
+      "center": [
+        "中心还没有全量回写所有原生专属字段的通用命令，测试原生修改后中心同步查看：",
+        "node hub/tools/agent_gateway.js session --id <会话编号>"
+      ],
+      "native": "在原生应用中将该会话重命名为 meta-test-{token}，保存并查看原生数据库或 jsonl 存储。",
+      "pass": "元数据修改成功写入原生持久化存储，随后中心扫描或读取该会话时能准确反映新标题。",
+      "fail": "改动仅保存在内存中，重启后丢失；或者原生文件被锁导致写入崩溃。"
+    },
+    "app-sync": {
+      "do": "在外部（网页或中心命令行）向会话发话，验证桌面原生应用窗口内能在几秒内双向同步呈现。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"同步测试：只回复暗号 {token}\""
+      ],
+      "web": "在 /m/ 网页向该会话发送一句话。",
+      "native": "保持桌面客户端窗口处于可见状态，观察外部发话与回复是否在 5 秒内自动更新呈现。",
+      "pass": "外部发送的提示词及智能体产出的回复在数秒内自动同步出现在桌面原生会话界面中。",
+      "fail": "原生客户端毫无反应，必须手动退出重启桌面客户端才能看到外部更新。"
+    },
+    "project-view": {
+      "do": "将各家产品开在同一个工作目录下的所有会话按项目统一归集并跨产品总览。",
+      "center": [
+        "node hub/tools/agent_gateway.js sessions --limit 50  （检查返回数据中跨产品的同一 cwd 会话）"
+      ],
+      "web": "打开 /m/ 项目页，切换到当前工程工作区，查看归属在该项目下的所有智能体会话集合。",
+      "pass": "项目视图中同时列出各家产品在该目录下的所有真实会话，数量与磁盘实际吻合。",
+      "fail": "只能按单家产品割裂查看，无法跨产品按目录聚合；或者漏掉非中心拉起的本地会话。",
+      "auto": "node channels/probe/scripts/probe_display_units.mjs"
+    },
+    "observe-steps": {
+      "do": "读取某一轮运行全过程中的每个细分步骤（思考、工具入参、执行结果、中间文本与文件改动）。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <会话编号> --tail 1"
+      ],
+      "pass": "返回数据中的 steps 数组完整记录了该轮执行的每一步骤，包含 thinking、tool_call 及 tool_result 细节。",
+      "fail": "steps 数组缺失为空，或者只返回了模型最终输出的 reply 字符串，丢弃了中间过程。",
+      "auto": "node channels/probe/scripts/probe_display.mjs"
+    },
+    "follow-progress": {
+      "do": "在智能体自主连续推进多步操作时，实时跟随其产生的每一步骤，无需等待整轮结束才看到。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"连续执行两步操作：1.查看当前目录 2.输出暗号 {token}，分步执行\" --async",
+        "curl.exe -N -s http://127.0.0.1:8899/api/gateway/stream"
+      ],
+      "web": "在 /m/ 观察多步骤任务执行，每产生一个新的工具调用或步骤卡片即时刷新呈现。",
+      "pass": "在整轮执行过程中，stream 持续吐出逐个 step 事件，前端几秒内渲染更新新产生的步骤。",
+      "fail": "界面长时间卡在整轮加载中，所有步骤在最后瞬间全部一次性刷出。"
+    },
+    "search-sessions": {
+      "do": "在全部会话中按标题、内容、目录或产品关键词进行搜索，快速定位到目标会话。",
+      "center": [
+        "node hub/tools/agent_gateway.js search --q {token}",
+        "node hub/tools/agent_gateway.js sessions --q {token}"
+      ],
+      "web": "在 /m/ 顶栏搜索框中输入搜索词，查看即时过滤展示的搜索结果。",
+      "pass": "正确返回包含该关键词的会话列表，展示匹配的标题、路径或正文高亮片段。",
+      "fail": "搜索报语法错误或崩溃；或者只能匹配完全一致的会话标题全称，不支持模糊搜索。",
+      "auto": "node channels/probe/scripts/probe_display_units.mjs"
+    },
+    "attach": {
+      "do": "在向智能体发话时附带图片或文件附件，智能体能够成功读取附件内容并在回复中体现。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"请阅读附加的文件内容并总结，并在文末带暗号 {token}\" --file channels/hosts/codex.md"
+      ],
+      "web": "在 /m/ 输入框点击附件图标上传图片或文件并发送。",
+      "pass": "智能体成功解析附件内容并在回复中做出准确概括，同时输出暗号 {token}。",
+      "fail": "附件被无视未读；或者上传附件导致请求因参数不支持而报错失败。"
+    },
+    "ui-sidebar": {
+      "do": "在侧边栏常驻展示当前环境的所有会话（包含标题、所属产品、运行状态、更新时间），点开即看。",
+      "center": [
+        "node hub/tools/agent_gateway.js sessions --limit 30"
+      ],
+      "web": "在 /m/ 页面查看左侧会话侧边栏，随机点击不同会话卡片切换。",
+      "pass": "侧栏展示的会话数量、标题与 sessions 命令数据一致，点击任意会话能立刻加载对应详情。",
+      "fail": "侧边栏遗漏大量现有会话；或者点击切换时频繁白屏死锁。",
+      "auto": "node channels/probe/scripts/probe_display_units.mjs"
+    },
+    "ui-filter": {
+      "do": "在会话列表中按产品家系、运行状态（进行中/等待中/已完成）、项目路径或时间进行组合筛选。",
+      "center": [
+        "node hub/tools/agent_gateway.js sessions --agent {agent}"
+      ],
+      "web": "在 /m/ 侧边栏点击状态或产品过滤胶囊（如仅看当前产品或仅看“工作中”）。",
+      "pass": "列表即时过滤出符合全部筛选条件的会话集合，无不相关的其他会话混入。",
+      "fail": "点击筛选按钮界面无反应；或者筛选结果与所选条件不匹配。"
+    },
+    "ui-pin": {
+      "do": "将重要或常用的会话固定置顶在列表顶部，页面刷新后置顶状态依然保持。",
+      "web": "在 /m/ 会话操作栏点击“置顶”图钉图标；刷新网页验证列表顺序。",
+      "native": "在原生客户端（如 Claude Desktop）右键点击会话选择 Pin to top。",
+      "pass": "置顶会话显示高亮图钉标识，并始终排在侧栏列表最顶端，刷新页面后仍然稳居首位。",
+      "fail": "刷新页面后置顶标记丢失；或者置顶未能排到第一位。"
+    },
+    "ui-unread": {
+      "do": "当后台会话产生新步骤、需要人工审批或出错时，在会话卡片上标出未读红点，查看后自动清除。",
+      "center": [
+        "node hub/tools/agent_gateway.js state  （核对处于 waiting/active 的会话列表）"
+      ],
+      "web": "在后台生成完成或等待审批时，观察 /m/ 侧栏对应卡片上的未读徽标；点击进入后徽标自动清除。",
+      "pass": "产生未读事件后 5 秒内显示新动态小圆点；用户点击查看该会话后红点自动清除消失。",
+      "fail": "产生新输出后没有任何视觉提醒；或者浏览之后红点永久无法清除。"
+    },
+    "ui-running-overview": {
+      "do": "提供跨产品的全局运行总览卡片，一眼掌握所有正在干活、等待审批或报错的会话态势。",
+      "center": [
+        "node hub/tools/agent_gateway.js state"
+      ],
+      "web": "在 /m/ 顶部查看全局运行状态总览条目（如“正在运行 2 个，待审批 1 个”）。",
+      "pass": "总览统计数字与各家实际正在运行及等待中的任务数量精确吻合，点击可直接跳转到对应会话。",
+      "fail": "显示状态严重滞后，任务早已跑完总览里依然显示还在执行中。"
+    },
+    "ui-markdown": {
+      "do": "将智能体回复中的 Markdown、语法高亮代码块、表格、链接与公式按富文本样式渲染。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"输出一个 Markdown 表格和一个 Python 代码块，带上暗号 {token}\""
+      ],
+      "web": "在 /m/ 网页查看该轮回复气泡中的表格网格与代码块高亮及一键复制功能。",
+      "pass": "表格渲染为结构规整的 HTML 表格，代码块带有语法高亮色彩及复制按钮，不是裸露的原生纯文本。",
+      "fail": "Markdown 语法符号（如 `|---|` 或 `###`）原样暴露在气泡中未被解析。"
+    },
+    "ui-thinking": {
+      "do": "将模型生成的思维链思考过程收纳在折叠卡片中，支持用户点击展开翻看完整思考脉络。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <包含思考的会话编号> --tail 1"
+      ],
+      "web": "在 /m/ 网页中找到带有思考过程的模型回复，点击“展开思考过程”卡片。",
+      "pass": "思考过程默认折叠且标有思考字数或耗时，点击展开后能看到完整清晰的思考文本。",
+      "fail": "思考内容完全被丢弃未在界面展示；或者思考内容与正常回复混在同一段文字中无法区分。"
+    },
+    "ui-tool-card": {
+      "do": "对每次工具调用展示结构化卡片，包含工具名称、输入入参 JSON、执行状态、输出结果与耗时。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <调用了工具的会话编号> --tail 1"
+      ],
+      "web": "在 /m/ 网页查看工具调用卡片，点击折叠/展开入参和执行输出。",
+      "pass": "每次工具调用均有独立的卡片，清晰展示工具名、入参 JSON、成败状态与返回值，参数结果完整。",
+      "fail": "工具调用仅显示一个旋转圈，结束后卡片消失；或者只展示工具名而隐藏了执行参数与结果。"
+    },
+    "ui-diff": {
+      "do": "当智能体对代码或文档文件进行修改时，在界面中以 Diff 形式直观展示增删改行数与具体代码变动。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <修改了文件的会话编号> --tail 1"
+      ],
+      "web": "在 /m/ 查看修改文件的工具步骤，点击展开代码对比（Diff）视图。",
+      "pass": "展示清晰的红绿双色代码差异对比（unified diff），标明修改文件路径与增删行数，与实际修改吻合。",
+      "fail": "仅文字打印“修改了某文件”，无法直观看到改动前后的逐行代码对比。"
+    },
+    "ui-terminal-output": {
+      "do": "将智能体执行的终端命令及返回日志按终端模拟器风格呈现，长日志可展开折叠与翻滚查看。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <执行了终端命令的会话编号> --tail 1"
+      ],
+      "web": "在 /m/ 网页查看终端工具执行步骤的展开内容。",
+      "pass": "终端日志采用等宽字体与深底控制台样式展示，ANSI 颜色转义正常，支持长日志展开与滚动浏览。",
+      "fail": "日志被无脑截断且无法查看完整内容；或者 ANSI 颜色码转为乱码字符。"
+    },
+    "ui-subagent-view": {
+      "do": "在父会话中以嵌套卡片或分支视图展示子智能体的活动，并支持点击穿透跳转至子会话详情。",
+      "center": [
+        "curl.exe -s http://127.0.0.1:8899/api/sessions/<父会话编号>/tree"
+      ],
+      "web": "在 /m/ 查看派发了子任务的父会话气泡，在界面中点击子智能体卡片或嵌套分支。",
+      "pass": "父会话中出现清晰的子任务卡片与状态指示，点击可直接打开子智能体的独立执行轨迹。",
+      "fail": "父会话中完全看不到子智能体的活动；或者子会话无法与父会话建立树状关联。"
+    },
+    "ui-plan-view": {
+      "do": "在界面专属面板中展示智能体自己制定的任务清单（Todo/Plan），进度状态随执行动态勾选更新。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <制定了计划的会话编号> --tail 1"
+      ],
+      "web": "在 /m/ 会话侧边栏或对话流顶部查看任务计划看板。",
+      "pass": "计划清单条目、完成勾选状态（已完成 / 进行中 / 待办）与智能体实际执行进度完全同步对齐。",
+      "fail": "计划面板显示的任务条目静态滞后，任务完成后卡片依然全部显示未开始。"
+    },
+    "ui-status-line": {
+      "do": "在会话界面底部常驻状态条中即时反映当前动作（思考中、跑某工具中、等待审批、已用时间）。",
+      "center": [
+        "node hub/tools/agent_gateway.js state"
+      ],
+      "web": "在 /m/ 会话详情页底部查看常驻微观状态条。",
+      "pass": "状态条在智能体切换动作（如从思考切换到调用 bash）时几秒内即时变动，秒级更新耗时计数。",
+      "fail": "整个运行期间只显示笼统的“加载中”，无法反映当前具体在做什么动作。"
     },
     "ui-usage": {
       "do": "在网页上看一个会话的用量：上下文占用、token、费用或额度。",
@@ -120,6 +931,267 @@
       ],
       "pass": "网页上的数字和会话记录里的一致（误差只来自刷新时间）。",
       "fail": "网页显示的是估算或占位数。"
+    },
+    "ui-long-history": {
+      "do": "在浏览拥有几百轮次的长会话时按需虚拟加载，能快速翻回最早的第一轮且不卡死浏览器。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <长会话编号> --tail 100"
+      ],
+      "web": "在 /m/ 打开一个有上百轮历史的长会话，向上快速滚动翻阅到会话最顶部。",
+      "pass": "长会话在数秒内平滑渲染完成，向上滚动能顺畅查看最早的第一轮发话，浏览器内存占用平稳无假死。",
+      "fail": "打开长会话直接导致页面崩溃内存溢出；或者强制只显示最后几轮，前面的轮次彻底无法加载。"
+    },
+    "ui-composer": {
+      "do": "在多行输入框中编辑发话内容，验证切走换会话后未发送草稿不丢失，Enter 或点击发送正常发话。",
+      "web": "在 /m/ 会话输入框输入一段草稿文本，切换到左侧其他会话后再切回该会话。",
+      "pass": "切回后输入框内的草稿文本原样保留；Shift+Enter 实现换行，Enter 或点击发送后成功发出消息。",
+      "fail": "切换会话导致未发送的草稿被无端清空；或者无法在输入框中输入多行文本。"
+    },
+    "ui-mention": {
+      "do": "在输入框中键入 @ 呼出项目文件或会话引用下拉菜单，发出的内容能被智能体读到。",
+      "web": "在 /m/ 输入框中打 @，从弹出的候选中挑选一个文件并发送一条询问该文件内容的话。",
+      "pass": "发出的消息中成功挂载了所引用的文件或会话卡片，智能体在回复中能准确引用该文件内容。",
+      "fail": "键入 @ 没有任何补全弹窗；或者选中文件发送后智能体根本读不到内容。"
+    },
+    "ui-command-menu": {
+      "do": "在输入框中输入 / 呼出该产品支持的可用命令菜单，选中点击后能正确填入或执行。",
+      "web": "在 /m/ 输入框键入 /，从弹出的菜单列表中选择一项命令执行。",
+      "pass": "弹出与当前智能体支持的能力一致的斜杠命令菜单，选中后自动填充或直接触发对应操作。",
+      "fail": "键入 / 无任何菜单弹出；或者弹出的菜单里包含当前智能体根本不支持的无效命令。"
+    },
+    "ui-model-picker": {
+      "do": "在界面顶部或输入框工具条的模型选择器中切换大模型及思考深度，新发起的轮次实际生效。",
+      "web": "在 /m/ 顶部的模型选择下拉框中挑选非默认模型，发送一条新消息。",
+      "pass": "发送后会话详情中记录的该轮使用的确是新选的模型，界面上展示对应的模型标签。",
+      "fail": "页面上选了新模型，后台实际发出的请求依然在使用旧模型。"
+    },
+    "ui-mode-picker": {
+      "do": "在界面中切换当前会话的权限模式（只读、自动放行、严格审批），验证智能体行为随之变化。",
+      "web": "在 /m/ 输入框上方或会话栏中切换权限模式（只读 / 自动放行 / 严格审批）。",
+      "pass": "切换后，智能体在执行写操作时按照所选模式表现（只读模式下阻止写入或弹出审批卡）。",
+      "fail": "切换模式后前端控件状态改变，但后端实际执行权限模式丝毫未变。"
+    },
+    "ui-stop": {
+      "do": "在智能体正在干活或生成文字时点击界面停止按钮，几秒内强行终止生成并恢复待命状态。",
+      "center": [
+        "node hub/tools/agent_gateway.js cancel --agent {agent} --session {session}"
+      ],
+      "web": "在智能体正在吐字或运行工具时，点击界面上的红色“停止”按钮。",
+      "pass": "点击后 3 秒内停止生成，状态标记为已停止/打断，输入框恢复可编辑状态。",
+      "fail": "点了停止按钮后智能体依然在后台继续跑，或者界面卡死无法再次发话。"
+    },
+    "ui-queue-steer": {
+      "do": "在智能体干活中途继续在输入框发话，界面提供并明确区分“插话本轮”与“排队下一轮”。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"运行中发话测试 {token}\" --mode queue"
+      ],
+      "web": "在智能体正在生成时发话，观察界面提示选项（插话或排队）。",
+      "pass": "界面明确标明此条话是插进本轮还是排在队列下一轮，并在时机到达时准确执行。",
+      "fail": "发送后既没有插话也没有排队，而是直接报“会话忙，请稍候再试”。"
+    },
+    "ui-approval": {
+      "do": "在智能体申请受限操作时，界面弹出结构化审批卡片（允许一次、始终允许、拒绝），点击后继续执行。",
+      "center": [
+        "node hub/tools/agent_gateway.js approve --id <审批编号>"
+      ],
+      "web": "智能体申请修改文件时，在 /m/ 弹出的审批卡片上点击“允许”或“拒绝”。",
+      "pass": "点击“允许”后该轮立刻恢复执行完成操作；点击“拒绝”后该轮以权限受阻返回且不修改文件。",
+      "fail": "点击后无响应；或者必须新开一轮重新发一遍原提示词。"
+    },
+    "ui-question": {
+      "do": "智能体中途向人提问时，界面弹出问题卡片与可选项，人提交答案后该轮继续推进并采纳答案。",
+      "center": [
+        "node hub/tools/agent_gateway.js answer --id <问题编号> --text \"我的答案\""
+      ],
+      "web": "智能体调用提问工具时，在 /m/ 对话流中显示的问题交互卡片上点击选项或输入回答。",
+      "pass": "答复后当前运行轮次立刻继续往下推进，最终输出引用了所提交的答案。",
+      "fail": "提交答案后回答落入了新的独立轮次，而不是原轮次的继续。"
+    },
+    "ui-retry-edit": {
+      "do": "支持重试最近一轮生成，或对上一句已发出的提示词进行二次编辑后重新发送。",
+      "web": "在 /m/ 找到上一句自己的发言，点击“编辑”按钮修改一两个字并点击“重新发送”。",
+      "pass": "界面保留旧轮次版本记录供翻看，同时以修改后的新内容发起新一轮并生成全新回复。",
+      "fail": "编辑重发导致之前的旧对话历史全部被物理破坏抹除且无法回看。"
+    },
+    "ui-artifact-preview": {
+      "do": "在界面侧边分栏中直接打开预览智能体生成的网页、图片、图表或 Markdown 文档产出物。",
+      "web": "在 /m/ 产出物卡片上点击“预览”，在右侧分栏中打开查看网页或图表渲染。",
+      "pass": "右侧预览面板完整加载智能体生成的产出文件，渲染样式正常，内容与交回文件完全一致。",
+      "fail": "预览打不开显示 404；或者预览内容不是智能体本次交出的版本。"
+    },
+    "ui-copy-export": {
+      "do": "一键复制单条消息的 Markdown 原文，或将整段会话完整导出为本地文档文件。",
+      "web": "在 /m/ 会话栏点击“导出为 Markdown”或单条消息下方的“复制”按钮。",
+      "pass": "剪贴板中完整包含该消息的 Markdown 原文；导出的 Markdown 文件包含整段会话的所有轮次与工具记录。",
+      "fail": "导出的文本缺失了代码块或工具调用记录；或者复制到的是渲染后的破损文本。"
+    },
+    "ui-notify": {
+      "do": "在页面处于后台时，智能体发生重要事件（完成、待审批、出错）能及时触发系统级弹窗提醒。",
+      "web": "在 /m/ 保持后台运行，触发一次需要审批的操作，观察操作系统或手机通知栏。",
+      "pass": "页面在后台时，系统通知中心在数秒内弹出带标题和操作链接的通知横幅。",
+      "fail": "必须切回前台页面才能看到红点，在后台时没有任何系统级通知触达。"
+    },
+    "ui-multidevice": {
+      "do": "在多个终端设备（如手机移动端与 PC 桌面端）同时打开同一会话，状态双向实时同步。",
+      "web": "手机端浏览器打开 /m/，PC 端桌面浏览器同时打开同一会话；在一端发话。",
+      "pass": "在一端发出一句话，另一端在 5 秒内自动更新出现该话语与实时的模型思考推进。",
+      "fail": "另一端必须手动下拉刷新才能看到刚发送和生成的内容。"
+    },
+    "ui-theme": {
+      "do": "页面外观支持深色/浅色模式切换，字体和版面自适应移动端屏幕尺寸，排版舒适易读。",
+      "web": "在 /m/ 设置中切换深色/浅色主题，或在手机竖屏下打开查看排版布局。",
+      "pass": "页面样式即时响应主题切换；手机端排版自适应无横向溢出滚动，文字清晰易读无需双指放大。",
+      "fail": "浅色模式下文字发白看不清；手机屏幕出现严重的横向滚动条或字体极小。"
+    },
+    "ui-feedback": {
+      "do": "在页面上直接填写反馈意见或粘贴截图并提交，记录被完整持久化供维护人员查阅。",
+      "center": [
+        "curl.exe -s http://127.0.0.1:8899/api/m/feedback"
+      ],
+      "web": "在 /m/ 点击“反馈”按钮，填入一条测试反馈并提交。",
+      "pass": "提交成功后，检查磁盘文件（~/.agent-hub/feedback）或通过 feedback 接口能查到刚提交的意见内容和时间戳。",
+      "fail": "提交反馈报网络错误；或者提交后数据未持久化丢失。"
+    },
+    "ui-attention-feed": {
+      "do": "提供跨会话待处理事件流，把待审批、已交付、卡住事件分流聚合，需决定的事件始终排在最前面。",
+      "web": "在 /m/ 点击待处理流（Attention Feed）标签页。",
+      "pass": "聚合展示跨会话的所有待审批卡片和未读完成事件，待审批事件置顶排列在首位，支持单条已读划掉。",
+      "fail": "待审批事件沉底被海量普通进展淹没；或者划掉后无法恢复。"
+    },
+    "ui-activity-ring": {
+      "do": "在会话卡片上显示实时活动光环/状态徽章，反映在干活、在等输入、卡住及上下文用量。",
+      "web": "在 /m/ 观察侧栏会话卡片右侧的活动环与状态标记。",
+      "pass": "会话开始运行几秒内状态环变为旋转/动态，等待输入时变为闪烁/待命色，结束时恢复常态，数值实时更新。",
+      "fail": "状态指示环卡死在旧状态不刷新。"
+    },
+    "ui-project-tabs": {
+      "do": "在项目详情页提供分栏视图（概览、进度、产出物、证据截图、队列），归整分类。",
+      "web": "在 /m/ 项目页切换“概览”、“进度”、“产出物”、“队列”四个分栏。",
+      "pass": "各分栏内容独立且真实反映该项目下所有会话的对应实体，数据无交叉串扰。",
+      "fail": "切换分栏内容全是一样的纯列表；或者产出物分栏漏掉已生成的文件。"
+    },
+    "ui-terminal-preview": {
+      "do": "对智能体终端先提供轻量静态快照预览，用户点击后再建立实时控制台连接，并限制并发连接数。",
+      "web": "在 /m/ 查看智能体后台终端，先看到静态快照，点击“连接实时控制台”。",
+      "pass": "默认只加载轻量静态快照；点击后建立实时 WebSocket 连接，多开时受到最大同时连接数限制保护。",
+      "fail": "一打开页面就无脑建立几十个实时 WebSocket 连接导致浏览器崩溃卡死。"
+    },
+    "ui-live-indicator": {
+      "do": "实时连接断开时界面出现明显告警提示，重新连接后自动补齐断线期间产生的所有数据。",
+      "web": "在 /m/ 页面断开网络连接或关闭后台守护进程，观察页面提示；随后恢复连接。",
+      "pass": "连接中断后 3-5 秒内页面顶端弹出断线黄色提示条；恢复后自动补齐断线期间丢失的步骤。",
+      "fail": "静默断线无任何提示，用户误以为智能体停止干活；重连后中间日志彻底丢失。"
+    },
+    "ui-todo-board": {
+      "do": "将智能体自己拆解的任务清单以看板视图（待办 / 进行中 / 完成）呈现，随执行自动移动卡片。",
+      "web": "在 /m/ 打开会话的 Todo 待办看板列（待办 / 进行中 / 已完成三栏）。",
+      "pass": "智能体创建的任务卡片按列规整摆放，随着任务执行卡片能自动从“待办”流转到“进行中”再到“已完成”。",
+      "fail": "看板状态静态死板，智能体完成后卡片依然停留在待办栏中。"
+    },
+    "ui-thread-sections": {
+      "do": "支持用户自定义创建会话分组并将多个会话归类其中，刷新页面后分组结构持久保持。",
+      "web": "在 /m/ 点击“新建分组”，将几个会话拖入该自定义分组，刷新网页。",
+      "pass": "分组名称显示正常，包含拖入的指定会话，刷新网页后分组结构和顺序依然保持。",
+      "fail": "刷新后自定义分组消失；或者分组内的会话无法移出。"
+    },
+    "ui-git-badge": {
+      "do": "在会话卡片上直观标明当前会话所绑定的 Git 分支名称与最近提交 SHA，方便代码追踪。",
+      "web": "在 /m/ 会话卡片或顶部信息栏查看 Git 标签。",
+      "pass": "界面展示当前会话绑定的 Git 分支名称（如 main 或 feature/xxx）及当前短 commit SHA，与实际仓库状态一致。",
+      "fail": "显示错误的或者写死的分支名；切换分支后界面不更新。"
+    },
+    "ui-generative-embed": {
+      "do": "智能体在回复中内嵌可交互的 Generative UI 小组件（如表单、图表、选择器），用户可直接在气泡内操作。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"输出一个交互式图表或表单小组件并带暗号 {token}\""
+      ],
+      "web": "在 /m/ 对话气泡中查看并点击操作该交互组件（如按钮、滑块、下拉选择）。",
+      "pass": "组件在对话流中内嵌渲染成真实的 DOM 交互控件，点击操作有交互反馈。",
+      "fail": "组件代码被直接以纯 HTML/JS 文本字符串原样打印在气泡里无法交互。"
+    },
+    "ui-automation-scheduler": {
+      "do": "在定时任务控制台创建、修改、暂停周期性自动化任务，并查看每次触发的历史执行记录。",
+      "web": "在 /m/ 定时任务控制台创建一个每分钟执行一次的小任务，观察执行记录并点击暂停。",
+      "pass": "到点后自动触发执行并生成一条运行记录与产出，点击暂停后不再继续自动执行。",
+      "fail": "到了指定时间没有触发运行；或者暂停后依然在定时触发。"
+    },
+    "ui-share-link": {
+      "do": "一键生成当前会话的公开只读分享链接，外部访客打开可浏览完整对话但无法篡改原会话。",
+      "web": "在 /m/ 会话分享菜单中点击“生成只读分享链接”，复制链接并在无痕窗口打开。",
+      "pass": "无痕窗口中能完整浏览该会话的所有轮次与产出物，但无法以原作者身份直接输入发话。",
+      "fail": "打开分享链接报 403 权限错误；或者打开后允许任何人直接篡改原会话。"
+    },
+    "ui-input-history": {
+      "do": "在输入框中按方向键“上 (↑)”能够翻出并重用此前发送过的历史提示词。",
+      "web": "在 /m/ 空白输入框中按键盘“方向上键 (↑)”。",
+      "pass": "输入框自动回填上一条发过的提示词文本，继续按方向上键可逐条回溯更早的发话历史。",
+      "fail": "按方向上键毫无反应；或者翻出的顺序混乱。"
+    },
+    "ui-credit-ledger": {
+      "do": "在会话详情中展示每一轮消耗的 Token 数量与折算后的费用明细，与官方账本对齐。",
+      "center": [
+        "node hub/tools/agent_gateway.js session --id <会话编号> --tail 1"
+      ],
+      "web": "在 /m/ 会话用量卡片中查看各轮次消耗的 tokens 与折算费用金额。",
+      "pass": "每一轮次下方标注出消耗的 Prompt/Completion tokens 及预估扣费，与各家 API 账本数据对齐。",
+      "fail": "明细记录全部为空；或者总金额与单轮累加值严重不符。"
+    },
+    "ui-quota-bar": {
+      "do": "在界面显著位置展示当前渠道/套餐的剩余额度百分比进度条与刷新倒计时。",
+      "center": [
+        "node hub/tools/agent_gateway.js quota"
+      ],
+      "web": "在 /m/ 顶部或侧栏查看剩余额度进度条与刷新倒计时。",
+      "pass": "进度条百分比与限额刷新时间（如“剩余 75%，将在 3 小时后重置”）与各家真实限额状态完全一致。",
+      "fail": "进度条始终显示 100%；或者额度已耗尽但进度条依然显示充足。"
+    },
+    "recall-history": {
+      "do": "让它翻回很早的对话取回原话。",
+      "center": [
+        "node hub/tools/agent_gateway.js recall --agent {agent} --session {session} --grep {token} --who user"
+      ],
+      "pass": "取回的原话和会话记录里一致，带轮次；在被压缩过的会话里也能取回压缩前的原话。",
+      "fail": "取回的是摘要不是原话；只在没压缩的会话里测过就记 pass（要写明条件）。"
+    },
+    "computer-use": {
+      "do": "让它在一个桌面应用里做一件别人能核对的事，不占用用户的屏幕和鼠标。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"在后台打开记事本（或你能操作的任一应用），写入 {token}，保存到 channels/probe/tmp/cu-{agent}-{token}.txt，然后告诉我文件路径。\""
+      ],
+      "pass": "文件存在、内容是 {token}；测试期间用户的鼠标和前台窗口没被动过。",
+      "fail": "它用写文件工具直接写了文件，没有操作应用：这测的是写文件，不是操作电脑。"
+    },
+    "web-search": {
+      "do": "让智能体针对外部实时问题执行联网检索，返回包含真实来源网址与对应事实摘要的结果。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"联网搜索：今天最新的科技新闻，列出至少 2 个来源链接和摘要，并在文末附暗号 {token}\""
+      ],
+      "pass": "回复中包含真实的外部网页来源链接（HTTP/HTTPS URL），点击可正常打开，且内容与智能体总结的事实一致。",
+      "fail": "编造了不存在的假网址（如 example.com 或 404 死链）；或者直接用内部静态知识库回答而未调用搜索工具。"
+    },
+    "deep-research": {
+      "do": "执行多轮深度调研：经过多次信息检索、交叉对比与论证分析，输出包含权威引用的长篇调研报告。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"对'现代智能体ACP协议与MCP协议的异同'进行深度调研，进行多轮比对，输出一份带详细引用来源的调研报告，文末带暗号 {token}\""
+      ],
+      "pass": "智能体通过多步推理和多次工具调用，交出结构完整、多方交叉比对的详尽报告，所有核心论断均标有可溯源的参考来源。",
+      "fail": "仅进行单次浅层问答生成泛泛而谈的模板化空话，缺乏多维度深入比对与可核验的引用出处。"
+    },
+    "image-gen": {
+      "do": "根据自然语言描述调用绘图工具生成图片，并保存为本地磁盘上的图像文件。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"调用你的绘图工具生成一张'蓝色科技感机器人图标'的图片，保存到 channels/probe/tmp/img-{agent}-{token}.png 并告诉我路径\""
+      ],
+      "pass": "生成的图片文件（PNG/JPG/WEBP）真实存在于磁盘上，文件尺寸大于 0，打开查看画面内容与描述相符。",
+      "fail": "仅返回了外部未经验证的图片 URL 或只输出了文字描述，本地文件不存在。"
+    },
+    "office-docs": {
+      "do": "生成或编辑办公文档（.docx / .xlsx / .pptx），文件格式规范且能被对应办公软件正常打开读取。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"生成一个名为 channels/probe/tmp/doc-{agent}-{token}.docx 或 .xlsx 的办公文档，里面包含暗号 {token} 和一个数据表格\""
+      ],
+      "pass": "生成的文件真实存在且格式规范，能用微软 Office 或对应解析库正常打开读取，内容包含暗号 {token}。",
+      "fail": "生成的文件损坏无法打开；或者只是把文本存成了 .txt 后缀强行改名。"
     }
   }
 }
