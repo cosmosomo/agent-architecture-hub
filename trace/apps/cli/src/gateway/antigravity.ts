@@ -247,6 +247,22 @@ foreach ($p in $procs) {
                   argsObj = JSON.parse(tc.args);
                 } catch {}
               }
+              // Each argument value is itself JSON ("\"E:\\\\program\\\\…\""): unwrap it once, or the folder comes out
+              // quoted with doubled backslashes and the session lands in a project of its own (10-19).
+              if (argsObj) {
+                const plain: Record<string, any> = {};
+                for (const [k, v] of Object.entries(argsObj)) {
+                  let x = v;
+                  if (typeof v === 'string' && /^(".*"|\[.*\]|\{.*\}|true|false|-?\d+(\.\d+)?)$/s.test(v)) {
+                    try {
+                      x = JSON.parse(v);
+                    } catch {}
+                  }
+                  plain[k] = x;
+                }
+                argsObj = plain;
+                inStr = JSON.stringify(plain, null, 2);
+              }
               if (argsObj?.Cwd && typeof argsObj.Cwd === 'string') {
                 detectedCwd = argsObj.Cwd;
               }
