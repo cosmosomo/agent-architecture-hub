@@ -7,6 +7,8 @@
 > “其实有些生态他们的那个 Computer Use 会做的很好，豆包的 Computer Use 就做的很好。”
 >
 > “我们现在缺少对于原生桌面 GUI 的功能分析，没有打通这个闭环……如果 AI 可以像我一样打开页面，然后用一些功能，或者至少看一下面板，你就知道很多认知现在的认知是局限的。”
+>
+> “如果你要写豆包接入的任务书，你就直接发给反重力，让他优先用 opencli”
 
 ## 这是我的理解
 
@@ -24,6 +26,8 @@
 - 档案卡：`channels/hosts/doubao-desktop.md`。现在只能经 CDP（豆包用 `--remote-debugging-port=9225` 启动）配合 `opencli doubao-app status / ask / send / read / new / screenshot / dump` 操作界面；会话记录存在 LevelDB 里，读不了。产品表 `hub/data/products.json` 里有一行 `doubao-desktop`，route 是 `opencli`，`backend: false`，也就是中心还不驱动它。
 - 本机同时装了普通版豆包和办公版 DoubaoWork。
 - 中心接一家产品的样子，参考产品表里别家的行、`trace/apps/cli/src/gateway/` 下的各路线文件，以及 `channels/README.md` 的“管线”一节。
+
+- 用户要求优先用 opencli。本机全局装了 `@jackwener/opencli`（v1.8.6 以上），有现成的 `doubao-app` 适配器。用法和注意事项见技能 `opencli-poweruser`（`~/.claude/skills/opencli-poweruser/`）。opencli 走不通的地方再换别的办法，并写明为什么换。
 
 ## 还不知道
 
