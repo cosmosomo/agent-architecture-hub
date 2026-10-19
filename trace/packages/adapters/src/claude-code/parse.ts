@@ -32,7 +32,7 @@ import { basename, titleFallback, TurnBuilder } from '../turns.ts';
 import { detectState } from '../state.ts';
 
 export const CLAUDE_KIND = 'claude-code';
-export const CLAUDE_ADAPTER_VERSION = '0.2.4';
+export const CLAUDE_ADAPTER_VERSION = '0.2.5';
 
 export const CLAUDE_CAPABILITIES: AdapterCapabilities = {
   observe_only: true,
@@ -52,10 +52,14 @@ const PLAN_TOOLS = new Set(['TodoWrite', 'ExitPlanMode', 'EnterWorktree', 'ExitW
 /** Client-injected wrappers, not words the user typed: shown as context, not as turn input. */
 const CONTEXT_PREFIX = /^\s*<(command-name|command-message|command-args|local-command|task-notification|system-reminder|bash-input|bash-stdout)/;
 /** Records that carry metadata only; counted so the parser stays honest without flooding notes. */
-const KNOWN_META = new Set(['system', 'progress', 'queue-operation', 'file-history-snapshot', 'file-history-delta', 'last-prompt', 'atis-latch', 'mode', 'permission-mode', 'relocated', 'bridge-session', 'isolation-latch', 'summary']);
+const KNOWN_META = new Set(['system', 'progress', 'queue-operation', 'file-history-snapshot', 'file-history-delta', 'last-prompt', 'atis-latch', 'mode', 'permission-mode', 'relocated', 'bridge-session', 'isolation-latch', 'summary',
+  // Session links and watches the desktop app records (10-19): a pull request, a frame, an artifact being watched.
+  'pr-link', 'frame-link', 'artifact-comment-monitor']);
 /** Attachments the client injects around a turn (environment, snapshots, listings); context, not conversation.
  *  The full list comes from a census of a real ~/.claude/projects (2026-10). */
-const KNOWN_ATTACHMENTS = new Set(['session_context', 'date', 'date_change', 'environment', 'prompt_snapshot', 'instructions', 'model', 'skill_listing', 'agent_listing_delta', 'total_tokens_reminder', 'remote_session_change', 'mcp_instructions_delta', 'auto_mode', 'deferred_tools_record', 'deferred_tools_delta', 'silent_turn_reminder', 'output_style', 'edited_text_file', 'hook_success', 'hook_additional_context', 'file', 'directory', 'compact_file_reference', 'task_reminder', 'task_status', 'thinking_drop', 'credential_org', 'read_truncation_notice', 'command_permissions', 'plan_mode', 'plan_mode_exit', 'budget_usd', 'nested_memory', 'thinking_stripped', 'output_style_instructions', 'diagnostics']);
+const KNOWN_ATTACHMENTS = new Set(['session_context', 'date', 'date_change', 'environment', 'prompt_snapshot', 'instructions', 'model', 'skill_listing', 'agent_listing_delta', 'total_tokens_reminder', 'remote_session_change', 'mcp_instructions_delta', 'auto_mode', 'deferred_tools_record', 'deferred_tools_delta', 'silent_turn_reminder', 'output_style', 'edited_text_file', 'hook_success', 'hook_additional_context', 'file', 'directory', 'compact_file_reference', 'task_reminder', 'task_status', 'thinking_drop', 'credential_org', 'read_truncation_notice', 'command_permissions', 'plan_mode', 'plan_mode_exit', 'budget_usd', 'nested_memory', 'thinking_stripped', 'output_style_instructions', 'diagnostics',
+  // Skill text re-injected after a compaction, and the reminder added when a message names a skill (10-19).
+  'invoked_skills', 'skill_mention']);
 
 export function toolFamily(name: string): ToolFamily {
   if (PATCH_TOOLS.has(name)) return 'patch';

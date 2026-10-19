@@ -17,7 +17,7 @@ import { clean, oneLine } from '../text.ts';
 import type { Bundle, FinishOptions, LineParser, SourceFile } from '../types.ts';
 
 export const OPENCODE_KIND = 'opencode';
-export const OPENCODE_ADAPTER_VERSION = '0.1.1';
+export const OPENCODE_ADAPTER_VERSION = '0.1.2';
 
 export const OPENCODE_CAPABILITIES: AdapterCapabilities = {
   observe_only: true,
@@ -170,6 +170,8 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
           B.addToolOutput({ callId: p.callID, name: p.tool, output, at: iso(p.time?.end) || iso(m.time?.completed) || at, isError: status === 'error' });
           if (status === 'error') tool.status = 'error';
         }
+      } else if ((p.type === 'text' || p.type === 'reasoning') && !String(p.text || '').trim()) {
+        // An empty text or reasoning part (the stream opened one and wrote nothing): nothing to show.
       } else if (p.type === 'step-start') {
         sawStep = true;
       } else if (p.type === 'step-finish') {
@@ -193,7 +195,14 @@ export function parseOpencodeBundle(file: SourceFile, bundle: Bundle, opts: Fini
     if (m.finish === 'stop' && B.cur) B.closeTurn(B.cur, endAt, 'completed');
     else if (m.finish === 'error' && B.cur) B.closeTurn(B.cur, endAt, 'failed', '模型以 error 结束');
     if (Number.isFinite(+m.cost) && +m.cost > 0) costUsd = (costUsd || 0) + +m.cost;
-    if (!sawStep && !parts.length) B.note('assistant-without-parts');
+    // A reply that failed before writing anything carries only its error (401, a used-up quota, an abort): show it
+    // as an error or abort in the turn instead of dropping it (10-19, display regression).
+    if (m.error && typeof m.error === 'object') {
+      const msg = String(m.error.data?.message || m.error.name || 'error').slice(0, 400);
+      const aborted = m.error.name === 'MessageAbortedError';
+      B.addEvent(aborted ? 'aborted' : 'error', endAt, aborted ? msg : `${m.error.name || 'Error'}：${msg}`);
+      if (B.cur && !parts.length) B.closeTurn(B.cur, endAt, aborted ? 'aborted' : 'failed', aborted ? undefined : msg);
+    } else if (!sawStep && !parts.length) B.note('assistant-without-parts');
   }
 
   B.finishPending();

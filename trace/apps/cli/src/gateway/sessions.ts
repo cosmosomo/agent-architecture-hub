@@ -481,7 +481,10 @@ export const sessionMethods = {
               if (contentStr.startsWith('{')) {
                 try {
                   const p = JSON.parse(contentStr);
-                  if (typeof p.output === 'string') outText = p.output;
+                  // The output field when it says something; a failed command often leaves it empty and puts
+                  // the reason in error, which then is the result (10-19, display regression: 7 results shown empty).
+                  if (typeof p.output === 'string' && p.output.trim()) outText = p.output;
+                  else if (p.error) outText = typeof p.error === 'string' ? p.error : JSON.stringify(p.error);
                   if (p.error || (typeof p.exit_code === 'number' && p.exit_code !== 0)) isErr = true;
                 } catch {}
               }
