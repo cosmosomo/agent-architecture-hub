@@ -222,6 +222,10 @@ export const codexRunMethods = {
     },
   ): ActiveRun {
     const { sessionName, cwd, prompt, model } = opts;
+    // Full permissions (the user's rule since 10-18, permissions 'all') include the network inside the workspace
+    // sandbox: a developer agent has to reach the local service it builds against (10-20, dev-web yielded for want
+    // of it). Reads and deny keep the sandbox closed.
+    const netConfig = run.permissions === 'all' ? { config: { 'sandbox_workspace_write.network_access': true } } : {};
     (async () => {
       let threadId = '';
       try {
@@ -245,6 +249,7 @@ export const codexRunMethods = {
               model,
               sandbox: 'workspace-write',
               approvalPolicy: 'untrusted',
+              ...netConfig,
             });
           } catch {
             threadId = '';
@@ -256,6 +261,7 @@ export const codexRunMethods = {
             model,
             sandbox: 'workspace-write',
             approvalPolicy: 'untrusted',
+            ...netConfig,
             name: sessionName,
           });
           threadId = started.threadId;
