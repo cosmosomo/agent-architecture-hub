@@ -1242,18 +1242,13 @@
         "note": ""
       },
       {
-        "page": "/console/",
-        "control": "中断并插队",
+        "page": "/m/",
+        "control": "干活时在详情页发话（插进当前这一轮）",
         "channels": [
-          "claude",
-          "zcode",
-          "opencode",
-          "hermes",
-          "workbuddy",
           "codex"
         ],
-        "status": "fake",
-        "note": "实际是打断后重发"
+        "status": "built",
+        "note": "中心对 Codex 在跑的会话发话走 app-server turn/steer（steerCodexRun）；网页这一路还没人测（10-20 登记，待测试员照 steer 题测）"
       }
     ],
     "cancel": [
@@ -1265,6 +1260,20 @@
         ],
         "status": "real",
         "note": ""
+      },
+      {
+        "page": "/console/",
+        "control": "中止当前运行并立即发送",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex"
+        ],
+        "status": "built",
+        "note": "打断这一轮再发一句新话：是打断加新一轮，不是插话（10-20 负责人从 steer 挪到 cancel；待测试员照 cancel 题测）"
       }
     ],
     "state": [
@@ -1371,8 +1380,8 @@
           "codex",
           "antigravity"
         ],
-        "status": "fake",
-        "note": "只带走几轮文字摘要"
+        "status": "fill",
+        "note": "只带走几轮文字摘要，发给另一家的新会话：正是理论上限里原生做不到时的补齐办法（身份变了、原生记忆只剩摘要），算补齐不算假（10-20 负责人改判）"
       }
     ],
     "project-view": [
