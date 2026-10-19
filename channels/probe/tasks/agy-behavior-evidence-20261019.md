@@ -29,6 +29,12 @@
 - 哪些方法能从外部直接调、要什么参数、有没有副作用。
 - 桌面端是否会同步显示外部做的改动（app-sync、handover-human 需要桌面端实际的观察证据）。
 
+## 先查网上
+
+用户 10-19 原话：“一定要记得，所有原生的生态的研究都要辅助网络调研来研究，不能闭门造车。因为很有可能开源的项目就已经做了这个功能了。也很有可能有社区讨论这个东西这些原生的生态，各家的产品都是很多很多人用的，所以一定有人研究。”
+
+动手摸本机之前，先查：开源项目（GitHub 上有没有人做过同样的接入、自动化、逆向）、官方文档和更新日志、社区讨论（issue、论坛、博客、视频）。报告里带链接，写清借鉴了什么、哪些和本机实测对不上。搜索工具：`node hub/tools/search_hub.js search "<词>" --max 5`（可加 `--domains github.com`），正文提取：`node hub/tools/search_hub.js extract "<链接>"`；你自己的搜索工具也可以用。
+
 ## 怎样算做成
 
 - 每查清一格，就往 `channels/probe/blackboard.jsonl` 追加一行：family antigravity，route `antigravity/L0/<入口>`，capability 为单元 id，result 填 pass / partial / fail，evidence 写实际调用和返回（或观察到的现象），cmd 写可复跑的命令。边查边写，不要等到最后。
