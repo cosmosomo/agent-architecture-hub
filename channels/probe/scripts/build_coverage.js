@@ -520,6 +520,20 @@ const matrix = {
     ),
   })),
 };
+// What each product says it has, especially what only it has, as registered with agent_gateway.js feature
+// (channels/probe/features.jsonl, append-only): the latest row per product and name.
+matrix.features = [];
+try {
+  const latest = new Map();
+  for (const l of fs.readFileSync(path.join(DIR, 'features.jsonl'), 'utf8').split(/\r?\n/)) {
+    if (!l.trim()) continue;
+    try {
+      const r = JSON.parse(l);
+      latest.set(r.product + '|' + r.name, r);
+    } catch {}
+  }
+  matrix.features = [...latest.values()];
+} catch {}
 fs.writeFileSync(path.join(DIR, 'capability-matrix.json'), JSON.stringify(matrix) + '\n', 'utf8');
 // The matrix page, ready to publish: scripts/matrix_page.html with these cells inside (generated, not tracked).
 try {

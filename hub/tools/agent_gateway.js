@@ -1479,6 +1479,38 @@ function cmdGoal(args, sub) {
   process.exit(0);
 }
 
+// feature: a product registers what it has, especially what only it has (用户 10-19：“问对方有什么独家生态，然后写到
+// 面板里或者自己主动注册功能……独家功能和闭源程度”). Appends to channels/probe/features.jsonl; the matrix page shows it.
+//   feature --agent X --name <功能名> --what <做什么> --entry <入口> --exclusive 独家|别家也有|不确定
+//           --openness 开源|公开接口|只能界面|不开放 --evidence 试过|看到|推测 [--note <说明>]
+//   feature --list [--agent X]
+const FEATURE_VALUES = { exclusive: ['独家', '别家也有', '不确定'], openness: ['开源', '公开接口', '只能界面', '不开放'], evidence: ['试过', '看到', '推测'] };
+function cmdFeature(args) {
+  const file = path.join(ROOT_DIR, 'channels', 'probe', 'features.jsonl');
+  const prof = args.agent || args.channel ? resolveProfile(args.agent || args.channel) : null;
+  const product = prof ? prof.id : args.agent || args.channel;
+  if (args.list) {
+    let rows = [];
+    try {
+      rows = fs.readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l));
+    } catch {}
+    for (const r of rows.filter((r) => !product || r.product === product)) console.log(`${r.product}\t${r.name}\t${r.exclusive}\t${r.openness}\t${r.evidence}\t${r.what}`);
+    process.exit(0);
+  }
+  const bad = [];
+  if (!product) bad.push('--agent');
+  for (const k of ['name', 'what', 'entry']) if (!String(args[k] || '').trim()) bad.push('--' + k);
+  for (const [k, ok] of Object.entries(FEATURE_VALUES)) if (!ok.includes(args[k])) bad.push(`--${k} ${ok.join('|')}`);
+  if (bad.length) {
+    console.error(JSON.stringify({ ok: false, error: '缺少或填错：' + bad.join('，') }));
+    process.exit(1);
+  }
+  const row = { at: new Date().toISOString(), product, name: String(args.name).trim(), what: String(args.what).trim(), entry: String(args.entry).trim(), exclusive: args.exclusive, openness: args.openness, evidence: args.evidence, note: args.note ? String(args.note).trim() : undefined, by: args.by || product };
+  fs.appendFileSync(file, JSON.stringify(row) + '\n');
+  console.log(JSON.stringify({ ok: true, registered: row }));
+  process.exit(0);
+}
+
 // recall: look back over a session's past conversation (unit recall-history, 回顾对话记录). Some products let the
 // agent read its own long history (Claude desktop); for the rest the center offers it from the record it already
 // reads in full (probe_display.mjs checks that reading against the raw records).
@@ -1646,6 +1678,7 @@ function main() {
   if (sub === 'dispatch-wait') return cmdDispatches(args, true);
   if (sub === 'goals' || sub === 'goal' || sub === 'goal-action' || sub === 'task-action') return cmdGoal(args, sub);
   if (sub === 'recall') return cmdRecall(args);
+  if (sub === 'feature') return cmdFeature(args);
   if (['sessions', 'session', 'search', 'state', 'pick', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
   if (sub === 'deliver') return cmdCollabEvent(args, 'deliver');
   if (sub === 'report') return cmdCollabEvent(args, 'report');

@@ -129,6 +129,13 @@ table { border-collapse: collapse; font-size: 14px; }
   </section>
 
   <section>
+    <h2>各家独家功能</h2>
+    <p class="muted">各家智能体自己登记的本家功能：做什么、入口、是不是只有这一家有、开放到什么程度。登记命令：agent_gateway.js feature。依据分试过、看到、推测三档，“推测”只算线索。</p>
+    <div class="tbl-wrap"><table class="tbl" id="open-sum"></table></div>
+    <div class="tbl-wrap"><table class="tbl" id="features"></table></div>
+  </section>
+
+  <section>
     <h2>高阶能力渠道</h2>
     <p class="muted">各家生态自带、别人可以派活借用的能力：操作电脑、浏览器、联网搜索、深度调研、生成图片、生成办公文档。格里是这家在任一位置上的最好状态，有核验过的优势说明就一并列出。来源：各家自报（线索）加照判据核验（证据），流程见 channels/probe/SOP_对话探查生态功能.md。</p>
     <div class="tbl-wrap"><table class="tbl" id="advanced"></table></div>
@@ -227,6 +234,24 @@ document.getElementById('gen').textContent = '生成于 ' + M.generatedAt.slice(
     h += `<tr><td>${name}<small class="muted num"> ${id}</small></td>${P.map((p) => `<td title="${esc(u.cells[p].how)}">${dot(u.cells[p].adapter)}<br>${dot(u.cells[p].front)}</td>`).join('')}</tr>`;
   }
   document.getElementById('display').innerHTML = h;
+}
+
+// features each product registered, and how open each product is
+{
+  const F = M.features || [];
+  const OPEN = ['开源', '公开接口', '只能界面', '不开放'];
+  let h = `<tr><th>产品</th><th class="r">登记</th><th class="r">独家</th>${OPEN.map((o) => `<th class="r">${o}</th>`).join('')}</tr>`;
+  for (const p of P) {
+    const mine = F.filter((f) => f.product === p);
+    const n = (v) => v || '—';
+    h += `<tr><td>${LABEL[p]}</td><td class="r num">${n(mine.length)}</td><td class="r num">${n(mine.filter((f) => f.exclusive === '独家').length)}</td>${OPEN.map((o) => `<td class="r num">${n(mine.filter((f) => f.openness === o).length)}</td>`).join('')}</tr>`;
+  }
+  document.getElementById('open-sum').innerHTML = h;
+  let d = '<tr><th>产品</th><th>功能</th><th>做什么</th><th>独家</th><th>开放程度</th><th>依据</th><th>入口</th></tr>';
+  for (const f of [...F].sort((a, b) => P.indexOf(a.product) - P.indexOf(b.product))) {
+    d += `<tr><td>${esc(LABEL[f.product] || f.product)}</td><td>${esc(f.name)}</td><td style="white-space:normal;min-width:16em">${esc(f.what)}${f.note ? `<br><small class="muted">${esc(f.note)}</small>` : ''}</td><td>${esc(f.exclusive)}</td><td>${esc(f.openness)}</td><td>${esc(f.evidence)}</td><td style="white-space:normal;min-width:10em"><small>${esc(f.entry)}</small></td></tr>`;
+  }
+  document.getElementById('features').innerHTML = F.length ? d : '<tr><td>还没有登记</td></tr>';
 }
 
 // advanced capabilities: best state anywhere, plus what each family is good at

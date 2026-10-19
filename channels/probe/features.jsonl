@@ -1,0 +1,2 @@
+{"at":"2026-10-19T07:16:00.617Z","product":"claude","name":"发布页面（Artifact）","what":"把 HTML 页面发布成 claude.ai 上的私有链接，可在手机和网页打开，同一路径重发会更新同一个链接","entry":"Claude 桌面端 Code 页的 Artifact 工具","exclusive":"独家","openness":"只能界面","evidence":"试过","note":"10-19 能力矩阵页就是这样发布的","by":"claude-lead"}
+{"at":"2026-10-19T07:16:00.682Z","product":"claude","name":"内置浏览器面板","what":"在桌面应用里开浏览器标签页，读页面文本、点按、截图、执行脚本，用来检查本机服务的网页","entry":"Claude 桌面端 Code 页的 Claude_Browser 工具","exclusive":"不确定","openness":"只能界面","evidence":"试过","note":"10-19 用它检查过督工台页面；别家是否也有同类面板没查","by":"claude-lead"}
