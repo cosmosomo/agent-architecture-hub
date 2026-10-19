@@ -20,7 +20,7 @@ const MAX_RESET_MS = 7 * 24 * 3600_000;
 export type QuotaCooldown = { until: number; reason: string; from: string; at: string };
 
 /** Sessions working outside the center (a desktop app, a terminal), per product, recounted at most this often. */
-const EXTERNAL_TTL_MS = 30_000;
+const EXTERNAL_TTL_MS = 60_000;
 let externalCache: { at: number; byKind: Map<string, number> } = { at: 0, byKind: new Map() };
 
 /**
@@ -123,7 +123,16 @@ export const capacityMethods = {
     if (Date.now() - externalCache.at > EXTERNAL_TTL_MS) {
       const ours = new Set([...this.activeRuns.values()].map((r) => r.traceSessionId).filter(Boolean));
       const base = this.store.index().sessions;
-      const all = [...base, ...this.getExtraSummaries(new Set(base.map((x) => x.id)))];
+      // Only sessions written in the last half hour can count, so only those are parsed. Parsing every session the
+      // center ever made (getExtraSummaries) took longer than the cache lived, and the task board asks once per
+      // queued task: 10-20 08:00 the service stopped answering for minutes with ~20 tester tasks queued.
+      const recentlyWritten = (t?: string) => Date.now() - Date.parse(t || '') <= 30 * 60_000;
+      const known = new Set(base.map((x) => x.id));
+      const extras = this.listAcpxSessions()
+        .filter((i) => !known.has(i.traceSessionId) && recentlyWritten(i.updatedAt))
+        .map((i) => this.getAcpxSessionAsContract(i.traceSessionId) || this.getAcpxSessionAsContract(i.acpxRecordId))
+        .filter((s): s is NonNullable<typeof s> => Boolean(s));
+      const all = [...base, ...extras];
       const byKind = new Map<string, number>();
       for (const x of all) {
         const st = x.state?.status;
