@@ -1,17 +1,18 @@
 // Keys are borrowed from the center, not read from the skill. The vault stays channels/_private/sites.local.json
-// (gitignored); hub/data/key-policy.json says, per key, what happens when one is borrowed — the approval node; and
-// every borrow is written to ~/.agent-hub/key-audit.jsonl (who, which key, why, what was decided).
-// User 10-20: “做第 1、2 层，密钥从技能里拿走”“秘钥可以拿，但是后续可以在这里加审批节点”.
+// (gitignored). Whether a borrow is lent is decided by the center's one rule table, hub/data/security-policy.json
+// (action key.borrow; default allow), and every borrow goes into ~/.agent-hub/key-audit.jsonl (who, which key, why,
+// the decision and the rule). User 10-20: “密钥从技能里拿走”“秘钥可以拿，但是后续可以在这里加审批节点”“中心一道闸门、
+// 一个审批队列、一本账……默认仍放行”.
 //
-//   key list                                   providers, what each holds, endpoints, policy — never a value
-//   key get <provider>[/<name>] --by <who> --why <what for>   the value on stdout, after the policy says yes
+//   key list                                   providers, what each holds, endpoints, any rule on it — never a value
+//   key get <provider>[/<name>] --by <who> --why <what for>   the value on stdout, when the rule allows
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const VAULT = path.join(ROOT, 'channels', '_private', 'sites.local.json');
-const POLICY = path.join(ROOT, 'hub', 'data', 'key-policy.json');
+const POLICY = path.join(ROOT, 'hub', 'data', 'security-policy.json');
 const AUDIT = path.join(process.env.HUB_DATA_DIR || path.join(os.homedir(), '.agent-hub'), 'key-audit.jsonl');
 
 /** Field names that hold a secret; everything else (urls, names, quotas) is safe to show. */
@@ -22,7 +23,7 @@ const policy = () => {
   try {
     return JSON.parse(fs.readFileSync(POLICY, 'utf8'));
   } catch {
-    return { default: 'auto', keys: {} };
+    return { default: 'allow', rules: [] };
   }
 };
 
@@ -55,56 +56,57 @@ function entries(provider, p) {
   return out;
 }
 
-function list() {
-  const v = vault();
+/**
+ * The first key.borrow rule whose target and who match, else the table's default. Target: '*', '<provider>/*' or
+ * '<provider>/<name>'; who: { product, session, task }, product matched against --by.
+ */
+function ruleFor(pol, args, key) {
+  const prov = key.split('/')[0];
+  const whoOk = (r) => !r.who || ['product', 'session', 'task'].every((k) => !r.who[k] || r.who[k] === args[k === 'product' ? 'by' : k]);
+  const r = (pol.rules || []).find((x) => x.action === 'key.borrow' && whoOk(x) && (!x.target || x.target === '*' || x.target === key || x.target === `${prov}/*`));
+  return { decision: r ? r.decision : pol.default || 'allow', rule: r ? (pol.rules || []).indexOf(r) : null };
+}
+
+function list(args = {}) {
   const pol = policy();
-  const lines = [`密钥（值不显示；借用：key get <供应商>[/<名字>] --by <你> --why <用途>）`];
-  for (const [prov, p] of Object.entries(v)) {
+  const WORD = { allow: '放行', ask: '要批', deny: '不借' };
+  const lines = [`密钥（值不显示；借用：key get <供应商>[/<名字>] --by <你> --why <用途>；规则在 hub/data/security-policy.json，默认放行）`];
+  for (const [prov, p] of Object.entries(vault())) {
     if (!p || typeof p !== 'object') continue;
     const es = entries(prov, p);
     if (!es.length) continue;
     const urls = Object.entries(p).filter(([k, x]) => typeof x === 'string' && /url|endpoint/i.test(k)).map(([k, x]) => `${k}=${x}`).join(' ');
-    const mode = (pol.keys || {})[prov] || pol.default || 'auto';
-    const fieldNote = es.filter((e) => (pol.fields || {})[e.name]).map((e) => `${e.name}:${(pol.fields || {})[e.name]}`).join(' ');
-    lines.push(`- ${prov}（${mode === 'auto' ? '自动放行' : mode === 'ask' ? '要人批' : '不外借'}）：${es.map((e) => e.name + (e.usage ? `(${e.usage})` : '')).join('、')}${fieldNote ? `（按字段：${fieldNote}）` : ''}${urls ? `\n    ${urls}` : ''}`);
+    const names = es.map((e) => {
+      const d = ruleFor(pol, args, `${prov}/${e.name}`).decision;
+      return e.name + (e.usage ? `(${e.usage})` : '') + (d !== (pol.default || 'allow') ? `[${WORD[d] || d}]` : '');
+    });
+    lines.push(`- ${prov}：${names.join('、')}${urls ? `\n    ${urls}` : ''}`);
   }
   return lines.join('\n');
-}
-
-/**
- * The approval node. 'auto' lends at once; 'ask' and 'deny' do not lend yet — 'ask' will hand the request to the
- * center's approvals (the same pending-approval card on /m/ the tools use) once that is wired.
- */
-function decide(prov, args, field) {
-  const pol = policy();
-  // A field rule (account passwords, login tokens) wins over the provider rule.
-  const mode = (pol.fields || {})[field] || (pol.keys || {})[prov] || pol.default || 'auto';
-  if (mode === 'auto') return { ok: true, decision: 'auto' };
-  if (mode === 'ask') return { ok: false, decision: 'ask', why: `${prov} 要人批：审批节点还没接到中心的审批卡，现在不外借（改 hub/data/key-policy.json 或找用户）` };
-  return { ok: false, decision: 'deny', why: `${prov} 不外借（hub/data/key-policy.json）` };
 }
 
 function get(spec, args) {
   const [prov, name] = String(spec || '').split('/');
   if (!prov) throw new Error('key get <供应商>[/<名字>] --by <你> --why <用途>（key list 看有哪些）');
-  if (!args.by || !args.why) throw new Error('借密钥要写 --by <你的产品或会话名> 和 --why <用途>，会记进审计');
+  if (!args.by || !args.why) throw new Error('借密钥要写 --by <你的产品或会话名> 和 --why <用途>，会记进账本');
   const p = vault()[prov];
   if (!p) throw new Error(`没有 ${prov}（key list 看有哪些）`);
   const es = entries(prov, p);
   const e = name ? es.find((x) => x.name === name) : es[0];
   if (!e) throw new Error(`${prov} 下没有 ${name}；有：${es.map((x) => x.name).join('、')}`);
-  const d = decide(prov, args, e.name);
+  const key = `${prov}/${e.name}`;
+  const { decision, rule } = ruleFor(policy(), args, key);
   fs.mkdirSync(path.dirname(AUDIT), { recursive: true });
-  fs.appendFileSync(AUDIT, JSON.stringify({ at: new Date().toISOString(), by: String(args.by), key: `${prov}/${e.name}`, why: String(args.why), decision: d.decision, lent: d.ok }) + '\n');
-  if (!d.ok) throw new Error(d.why);
+  fs.appendFileSync(AUDIT, JSON.stringify({ at: new Date().toISOString(), by: String(args.by), key, why: String(args.why), decision, rule, lent: decision === 'allow' }) + '\n');
+  if (decision === 'ask') throw new Error(`${key} 要人批：要接到中心的审批队列（/m/ 审批卡）后才生效，现在先不借（规则 ${rule}，hub/data/security-policy.json）`);
+  if (decision !== 'allow') throw new Error(`${key} 不借（规则 ${rule}，hub/data/security-policy.json）`);
   return e.value;
 }
 
 /** A copy of a text with every vault secret (and anything key-shaped) replaced by how to borrow it. */
 function mask(text) {
   let s = text;
-  const v = vault();
-  for (const [prov, p] of Object.entries(v)) {
+  for (const [prov, p] of Object.entries(vault())) {
     if (!p || typeof p !== 'object') continue;
     for (const e of entries(prov, p)) if (e.value && e.value.length >= 8) s = s.split(e.value).join(`<借用：key get ${prov}/${e.name}>`);
   }
@@ -112,4 +114,4 @@ function mask(text) {
   return s.replace(/\b(sk-|tvly-)[A-Za-z0-9_-]{16,}/g, '<借用：key get>').replace(/\bAIza[0-9A-Za-z_-]{20,}/g, '<借用：key get>');
 }
 
-module.exports = { list, get, mask, allSecrets };
+module.exports = { list, get, mask, allSecrets, ruleFor };

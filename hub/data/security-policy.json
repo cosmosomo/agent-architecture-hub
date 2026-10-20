@@ -1,11 +1,15 @@
 {
-  "about": "限制模式和敏感目录（安全边界第 2 层）。派活、发话、任务板任务都可以带 mode；中心把它翻译成各家自己的开关（Codex 沙箱、Claude 权限规则、ZCode guarded、ACP 系由中心按规则答复审批），做不到的产品在限制模式下不派活，并如实标出来。不含任何密钥值。用户 10-20：“面向安全边界，秘密泄露之类，我们系统可以加一层吗？比如启动限制模式，每个智能体开启各家的目录限制，这样信息就可以不泄露了。然后做一些权限管理什么的”；“默认仍是满权限，需要时开限制模式；敏感目录按你建议的”。",
-  "defaultMode": "full",
-  "modes": {
-    "full": "满权限：现在的行为（用户 10-18 定的默认）。",
-    "workspace": "只在工作目录：只能写派活的工作目录（cwd）里的文件；敏感目录不能读也不能写；工作目录外可以读（看代码、查资料），不能写。",
-    "readonly": "只读：哪里都不能写，敏感目录不能读。"
+  "about": "安全的唯一规则表（中心一道闸门按它判断；一个审批队列；一本账）。规则只有一种写法：动作 × 谁 × 对象 → allow 放行 / ask 要批 / deny 拒绝；按顺序第一条匹配的生效，都不匹配按 default。默认放行：这是能力不减、多一层可选的边界，收紧什么由用户加规则。模式只是一组规则的名字，派活时带 mode 才生效。不含任何密钥值。用户 10-20：“这样做：中心一道闸门、一个审批队列、一本账，每家做审批适配，矩阵标出每家能拦到哪一级，测试题加越权尝试；默认仍放行。”",
+  "default": "allow",
+  "actions": {
+    "key.borrow": "到中心借密钥（agent_gateway.js key get），对象写 <供应商>/<名字>、<供应商>/* 或 *",
+    "file.read": "读文件，对象写路径或 sensitive（下面的敏感目录）",
+    "file.write": "写文件，对象写路径、sensitive，或 outside-cwd（派活工作目录以外）",
+    "shell.run": "跑命令行，对象写命令里出现的路径或 sensitive；命令行能绕开工具级审批，各家能不能拦到要实测",
+    "net": "联网",
+    "mode.switch": "切换会话的权限模式"
   },
+  "who": "可选：{ product, session, task } 任意组合；不写就是所有人",
   "sensitive": [
     "~/.ssh",
     "~/.agent-hub/secrets",
@@ -20,5 +24,21 @@
     "%LOCALAPPDATA%/DoubaoWork/User Data",
     "~/.agent-hub/doubao-daemon",
     "%LOCALAPPDATA%/Temp/doubao_cdp_test"
-  ]
+  ],
+  "rules": [],
+  "modes": {
+    "full": [],
+    "workspace": [
+      { "action": "file.read", "target": "sensitive", "decision": "deny" },
+      { "action": "shell.run", "target": "sensitive", "decision": "deny" },
+      { "action": "file.write", "target": "sensitive", "decision": "deny" },
+      { "action": "file.write", "target": "outside-cwd", "decision": "deny" }
+    ],
+    "readonly": [
+      { "action": "file.read", "target": "sensitive", "decision": "deny" },
+      { "action": "shell.run", "target": "sensitive", "decision": "deny" },
+      { "action": "file.write", "target": "*", "decision": "deny" }
+    ]
+  },
+  "defaultMode": "full"
 }

@@ -2104,7 +2104,7 @@ function main() {
     const kv = require('./key_vault.js');
     try {
       if (args._[1] === 'get') process.stdout.write(kv.get(args._[2], args) + '\n');
-      else console.log(kv.list());
+      else console.log(kv.list(args));
       process.exit(0);
     } catch (e) {
       console.error(JSON.stringify({ ok: false, error: e.message }));

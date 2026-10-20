@@ -242,7 +242,7 @@ function main() {
       // “密钥从技能里拿走”). Without the vault module nothing is copied rather than the plaintext.
       try {
         const { mask } = require(path.join(HUB_ROOT, 'hub', 'tools', 'key_vault.js'));
-        const head = '> **密钥不在这份文档里了（10-20）**：`node e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\hub\\tools\\agent_gateway.js key list` 看有哪些，`key get <供应商>[/<名字>] --by <你> --why <用途>` 借用；每次借用记审计；默认全部放行，以后要收紧哪一把由用户在 hub/data/key-policy.json 里设。下文 `<借用：…>` 处原来是密钥。';
+        const head = '> **密钥不在这份文档里了（10-20）**：`node e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\hub\\tools\\agent_gateway.js key list` 看有哪些，`key get <供应商>[/<名字>] --by <你> --why <用途>` 借用；每次借用记审计；默认全部放行，以后要收紧哪一把由用户在 hub/data/security-policy.json 里设。下文 `<借用：…>` 处原来是密钥。';
         const text = mask(fs.readFileSync(keysSrc, 'utf8')).replace(/^# .*$/m, (h) => `${h}\n\n${head}`);
         fs.writeFileSync(keysDest, text, 'utf8');
       } catch (e) {
