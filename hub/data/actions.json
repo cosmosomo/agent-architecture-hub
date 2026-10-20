@@ -271,8 +271,8 @@
       "id": "models",
       "method": "GET",
       "path": "/api/gateway/models",
-      "does": "一家产品此刻真实可用的模型清单（?channel=claude|antigravity，向这家实际查来，不是产品表里写死的推荐列表；unit model-list）",
-      "cli": "quota、targets 里带出"
+      "does": "一家产品此刻真实可用的模型清单（?channel=claude|antigravity，向这家实际查来，不是产品表里写死的推荐列表；unit model-list）；targets 也带出",
+      "cli": "quota"
     }
   ]
 }
