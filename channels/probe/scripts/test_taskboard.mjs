@@ -220,6 +220,21 @@ const taskOf = (g, key) => board.tasksOf(board.getGoal(g.id)).find((t) => t.key 
   check('第二次还没结论：停下等人，不再自动派', last() === c2 && t.status === 'verifying' && t.verifyRetries === 2, `${last() === c2} ${t.status} ${t.verifyRetries}`);
 }
 
+// 6i. a checker that opens in Chinese is understood
+{
+  const g = board.createGoal({ title: '中文验收', objective: 'x', channel: 'zcode', verifyBy: 'agent:claude', tasks: [{ key: 'zhp', title: '中文过' }, { key: 'zhf', title: '中文不过' }] });
+  await tick();
+  const [wp, wf] = sent.slice(-2);
+  for (const w of [wp, wf]) board.onDispatch({ id: w.id, status: 'completed', delivery: { at: new Date().toISOString(), summary: '做完了', reply: '做完了', files: [], via: 'cli' } });
+  await tick();
+  const checks = sent.slice(-2);
+  const byTask = (k) => checks.find((c) => c.toSessionName === `${taskOf(g, k).sessionName}-verify`);
+  board.onDispatch({ id: byTask('zhp').id, status: 'completed', delivery: { at: new Date().toISOString(), summary: '', reply: '**验收通过**：黑板 5 行都对得上', files: [] } });
+  board.onDispatch({ id: byTask('zhf').id, status: 'completed', delivery: { at: new Date().toISOString(), summary: '', reply: '验收不通过：只记了 3 行，交回说 5 行', files: [] } });
+  await tick();
+  check('中文“验收通过”算过、“验收不通过”算返工', taskOf(g, 'zhp').status === 'completed' && taskOf(g, 'zhf').reworkCount === 1, `${taskOf(g, 'zhp').status} ${taskOf(g, 'zhf').status} ${taskOf(g, 'zhf').reworkCount}`);
+}
+
 // 6f. a named task's session is reused by the next goal on the same line, one piece of work at a time
 {
   const g1 = board.createGoal({ title: '同一条线一', objective: 'x', channel: 'opencode', verifyBy: 'auto', tasks: [{ key: 'line-x', title: '第一件' }] });

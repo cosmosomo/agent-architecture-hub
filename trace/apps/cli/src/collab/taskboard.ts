@@ -634,7 +634,12 @@ export class TaskBoard {
     t.verifierDispatchId = null;
     const reply = String(d.delivery?.reply || d.delivery?.summary || '');
     const m = reply.match(/^\s*\**\s*(PASS|FAIL)\b[\s:：*]*(.*)$/im);
-    if (d.status !== 'completed' || !m) {
+    // Haiku checkers often open in Chinese (“验收通过：…”) instead of the PASS/FAIL line; 10-20 three checks that had
+    // verified everything sat waiting for a person because of it. Only the first line counts, not phrases inside.
+    const first = (reply.split(/\r?\n/).map((l) => l.replace(/^[\s*#>`-]+/, '')).find((l) => l.trim()) || '').trim();
+    const zh = m ? null : /^(验收)?(不通过|未通过|通过)/.exec(first);
+    const word = m ? m[1].toUpperCase() : zh ? (/[不未]/.test(zh[2]) ? 'FAIL' : 'PASS') : '';
+    if (d.status !== 'completed' || !word) {
       // One more check before a person is needed: a checker that died with a restart, or answered without the
       // PASS/FAIL line, left tasks waiting for nobody (10-20: three tasks sat in verifying overnight).
       t.verifyRetries = (t.verifyRetries || 0) + 1;
@@ -643,8 +648,8 @@ export class TaskBoard {
       if (t.verifyRetries <= 1) void this.startVerify(t);
       return; // after that, a person decides
     }
-    const rest = (m[2] + '\n' + reply.slice(reply.indexOf(m[0]) + m[0].length)).trim();
-    this.verdict(t, m[1].toUpperCase() === 'PASS', rest.slice(0, 1000), t.verifyBy, m[1].toUpperCase() === 'FAIL' ? rest.slice(0, 1500) : undefined);
+    const rest = m ? (m[2] + '\n' + reply.slice(reply.indexOf(m[0]) + m[0].length)).trim() : reply.trim();
+    this.verdict(t, word === 'PASS', rest.slice(0, 1000), t.verifyBy, word === 'FAIL' ? rest.slice(0, 1500) : undefined);
   }
 
   /** The verdict decides: pass → completed (downstream unblocks); fail → rework, unless a limit stops it. */
