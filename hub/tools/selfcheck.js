@@ -158,8 +158,17 @@ async function board(state) {
     for (const t of v.tasks || []) {
       if (t.status === 'running' && t.runId && !runIds.has(t.runId) && Date.now() - Date.parse(t.updatedAt || t.startedAt || 0) > 10 * 60_000)
         add(L, `任务 ${t.id}`, 'warn', `「${(t.title || '').slice(0, 40)}」标着在跑，但它的轮次 ${t.runId} 已不在中心手上（${ago(Date.now() - Date.parse(t.updatedAt || 0))}没动）`, `node hub/tools/agent_gateway.js read --session ${t.sessionName || t.session || '<会话>'} 看它停在哪；必要时 task-action 重派`);
+      // Waiting on a session another task holds (10-20: three tasks waited 11 hours behind a paused goal's yields).
+      const w = (t.history || []).filter((h) => h.action === 'waiting_for_session').pop();
+      if (t.status === 'queued' && w && Date.now() - Date.parse(w.at) > 60 * 60_000)
+        add(L, `任务 ${t.id}`, 'warn', `「${(t.title || '').slice(0, 40)}」等会话已 ${ago(Date.now() - Date.parse(w.at))}：${w.detail?.why || ''}`, '看占着会话的那个任务还在不在做；它的派活单挂着就 reclaim');
     }
   }
+  // A yielded dispatch nobody wakes keeps its session taken.
+  // waitingEdges covers every open dispatch; the dispatches list itself is only the newest 60.
+  const ds = (await get(`${BASE}/api/gateway/dispatches`)).body;
+  for (const d of (Array.isArray(ds?.waitingEdges) ? ds.waitingEdges : []).filter((d) => d.status === 'yielded' && Date.now() - Date.parse(d.updatedAt || 0) > 2 * 3600_000))
+    add(L, `让出 ${d.dispatchId}`, 'warn', `${d.toChannel}/${d.toSession} 让出 ${ago(Date.now() - Date.parse(d.updatedAt))}没人唤醒（在等：${String(d.waitingFor || '').slice(0, 60)}），会话被它占着`, `该收回就：node hub/tools/agent_gateway.js reclaim --id ${d.dispatchId} --summary "<原因>"`);
   for (const r of active) {
     const age = Date.now() - Date.parse(r.startedAt || 0);
     if (r.status === 'running' && age > 60 * 60_000) add(L, `轮次 ${r.runId}`, 'warn', `${r.channel}/${r.sessionName} 已跑 ${ago(age)}`, `node hub/tools/agent_gateway.js read --agent ${r.channel} --session ${r.sessionName}`);

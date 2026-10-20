@@ -792,7 +792,13 @@ export const collabMethods = {
       return { ok: true, dispatch: d };
     }
     const base = this.getDispatchesSummary();
-    let list = base.dispatches;
+    // Filter all of them, then cut: filtering only the newest 60 hid older matches (10-20: 8 yielded, status=yielded gave 0).
+    const filtering = Boolean(params?.channel || params?.sessionName || params?.status);
+    let list = filtering
+      ? Array.from(this.dispatches.values())
+          .sort((a, b) => String(b.updatedAt || b.receipts.issuedAt).localeCompare(String(a.updatedAt || a.receipts.issuedAt)))
+          .map((d) => ({ ...d, timing: computeReceiptTiming(d.receipts) }))
+      : base.dispatches;
     if (params?.channel) {
       const ch = resolveChannel(params.channel)?.id || params.channel;
       list = list.filter((d) => d.to.channel === ch || d.from.channel === ch);
@@ -808,7 +814,7 @@ export const collabMethods = {
       ok: true,
       summary: base.summary,
       waitingEdges: base.waitingEdges,
-      dispatches: list,
+      dispatches: list.slice(0, 60),
     };
   },
 
