@@ -139,7 +139,8 @@ function options(args) {
     tester: testers[0],
     testerModel: args['tester-model'] || TESTER_MODEL[testers[0]],
     dev: args.dev || 'codex',
-    verify: args.verify || 'claude',
+    // Claude verifies unless its quota is short (10-20 night its relay wallet was empty and every check failed).
+    verify: args.verify || (short.has('claude') ? testers[0] : 'claude'),
     limit: Number(args.limit || 5),
   };
 }
