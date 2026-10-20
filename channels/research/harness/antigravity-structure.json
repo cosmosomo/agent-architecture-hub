@@ -3,214 +3,521 @@
   "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
   "cells": {
     "ctx-system": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "系统提示词由 language_server.exe 语言服务内部模板合成并在底层 Connect-RPC / Gemini API 请求的 system_instruction 中传递，转录 transcript.jsonl 中不单独落盘 system 记录；装配包含 <identity>、<artifacts>、<communication_style>、<user_rules> 等结构化 XML 标签体系。",
+      "evidence": [
+        "channels/research/harness/antigravity-会话考古.md:177-180",
+        "~/.gemini/antigravity/brain/<cid>/.system_generated/logs/transcript.jsonl (首步直接为 USER_INPUT，无独立 system 行)",
+        "当前会话上下文内联装配的 XML 规则标签"
+      ],
+      "level": "看到"
     },
     "ctx-instructions": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "多层级指令发现与加载机制：全局指令位于 ~/.gemini/antigravity/rules/ 与 ~/.gemini/config/plugins/<name>/rules/；工作区指令包含 .gemini/config/rules/ 与项目根目录 AGENTS.md；按全局优先级拼装为 <user_rules> 标签直接注入上下文。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: recordTypeCounts",
+        "当前上下文已装配 <RULE[user_global]> 与 C:\\Users\\COLORFIRE\\.gemini\\config\\plugins\\science\\rules\\AGENTS.md",
+        "channels/research/harness/antigravity-会话考古.md:39-45"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "ctx-capability-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "工具与技能双轨声明机制：内置执行工具（run_command, view_file, manage_task 等）通过 Connect-RPC API 声明；外部扩展技能（skills）与 MCP 服务在上下文 <skills> 及 <mcp_servers> 标签中列出名称、SKILL.md 路径、触发描述及 Lazy/Eager 标志。",
+      "evidence": [
+        "当前会话上下文中的 <skills>（40+ 项）与 <mcp_servers> 声明",
+        "trace/apps/cli/src/gateway/antigravity.ts:70-74",
+        "channels/research/harness/antigravity-会话考古.md:120-141"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "工具调用在转录里看得到（看到）；技能和 MCP 的声明清单是自述，只当线索"
+      }
     },
     "ctx-environment": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "环境信息通过静态上下文 <user_information> 块显式注入，包含操作系统平台（windows）、活动工作区（Active Workspaces）、命令执行根目录（Command Working Directory）、应用数据目录（App Data Directory）、会话唯一 ID 及 Artifact 产物路径。",
+      "evidence": [
+        "当前上下文 <user_information> 块完整声明（OS: windows, Active Workspaces, Conversation ID: 318b2a2f-84d4-4dd5-899c-30ce59e5f3d8）",
+        "channels/research/harness/antigravity-会话考古.md:198-200"
+      ],
+      "level": "推测",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "证据只有它自己上下文里的内容（自述），我们看不到也没核实，只当线索"
+      }
     },
     "ctx-memory-recall": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "跨会话记忆召回：在新会话初始化的第 1 步，由 Harness 从 conversation_summaries.db 提取最近相关会话的用户目标、结论摘要与决策链，作为 type: CONVERSATION_HISTORY 结构化注入转录首步；普查见 3 次记录。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: recordTypeCounts.CONVERSATION_HISTORY=3",
+        "channels/research/harness/antigravity-会话考古.md:73-84 (完整样本剖析)",
+        "~/.gemini/antigravity/conversation_summaries.db"
+      ],
+      "level": "看到"
     },
     "ctx-history": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "对话历史在 transcript.jsonl 中增量逐行落盘（USER_INPUT 与 PLANNER_RESPONSE + GENERIC 工具结果严格对应）；发生上下文压缩时，旧历史被单条 CHECKPOINT 摘要替换，同时生成指针告知模型完整原文保留在 transcript_full.jsonl 中。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: totalTranscriptLines=79675",
+        "trace/apps/cli/src/gateway/antigravity.ts:35-105",
+        "channels/research/harness/antigravity-会话考古.md:38-53"
+      ],
+      "level": "看到"
     },
     "ctx-injection": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "临时注入由 SYSTEM_MESSAGE 承载（全机 4,196 次），标准格式为 [Message] timestamp=... sender=... priority=... content=...。涵盖后台任务完成回报（sender=<cid>/task-N）、子智能体终止、定时器到期事件及外部 agentapi send-message 注入。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: recordTypeCounts.SYSTEM_MESSAGE=4196",
+        "trace/apps/cli/src/gateway/antigravity.ts:55-68",
+        "channels/probe/blackboard.jsonl:1984"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验；引的黑板 1984 测的是 Automations 调度器，和注入无关"
+      }
     },
     "ctx-output-style": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "输出风格通过上下文 <communication_style> 标签强约束（要求回复精炼简洁、采用 GitHub Flavored Markdown 语法、所有文件与代码符号必须使用 file:// 格式超链接，Windows 路径必须转为正斜杠 /）。",
+      "evidence": [
+        "当前会话上下文内联装配的 <communication_style> 标签",
+        "channels/research/harness/antigravity-会话考古.md:39-45"
+      ],
+      "level": "看到"
     },
     "ctx-cache": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "Prefix Caching 缓存机制：每次 PLANNER_RESPONSE 均记录 cache_read_tokens 字段（普查样本可见单步 18,298 tokens 缓存读取）；静态 System Instruction、Rules 标签及前序会话前缀在 Gemini API 端实现透明复用与延迟节省。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: sample PLANNER_RESPONSE.cache_read_tokens",
+        "trace/apps/cli/src/gateway/antigravity.ts:81",
+        "当前会话多轮转录中的 cache_read_tokens 真实上报"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "budget-accounting": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "细粒度 Token 记账：每步 PLANNER_RESPONSE 记录 input_tokens、output_tokens 与 cache_read_tokens；单会话 SQLite 数据库 conversations/<cid>.db 的 gen_metadata 表中记录每次生成的 Token 分布及执行延迟（ms）；转录中无显式货币扣费显示。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: totalTokenCount.inputTokens=13936087, outputTokens=4802115",
+        "conversations/<cid>.db :: 表 gen_metadata",
+        "trace/apps/cli/src/gateway/antigravity.ts:73-83"
+      ],
+      "level": "看到"
     },
     "compact-trigger": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "当多轮交互累计上下文接近模型窗口水位（约 150k~200k tokens）或用户下达 /compact 斜杠指令时自动触发 Compaction。全量普查中累计发生 394 次 CHECKPOINT 压缩事件。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: recordTypeCounts.CHECKPOINT=394",
+        "当前上下文 <slash_commands> 中 /compact 触发说明",
+        "channels/research/harness/antigravity-会话考古.md:46"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "note": "“约 150k~200k tokens”是推测，转录里没有触发时的用量；它自述也说上下文里看不到剩余预算"
+      }
     },
     "compact-strategy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "结构化再生压缩策略：触发 Compaction 时，Harness 在转录中写入 CHECKPOINT 记录，清空前序细节，回填包含：① User Requests 完整历次列表（防止任务目标漂移）；② Previous Session Summary（六段式：任务、进展、关键发现、活跃上下文、后续步骤、承诺约束）；③ Artifacts 快照列表；④ transcript_full.jsonl 索引行指针。",
+      "evidence": [
+        "channels/research/harness/antigravity-会话考古.md:58-72 (完整 CHECKPOINT 样本剖析)",
+        "当前会话上下文首部包含完整的 <CONTEXT_SUMMARY> 与 # User Requests、# Previous Session Summary",
+        "channels/probe/blackboard.jsonl:2383"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "compact-identity": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "压缩原地发生，会话保持原有 conversation_id 不变；物理目录与 conversation_summaries.db 中的记录持续更新（step_count 与时间戳递增），不新开独立会话容器。",
+      "evidence": [
+        "conversation_summaries.db 中 341 个会话与 brain 目录 1:1 严格映射",
+        "channels/research/harness/antigravity-census.json",
+        "当前会话 ID 318b2a2f-84d4-4dd5-899c-30ce59e5f3d8 经历截断后保持连续工作"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "compact-recovery": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "双转录兜底机制：采用 transcript.jsonl（紧凑版）与 transcript_full.jsonl（全量版）双文件设计；当 compact 丢失细节时，系统提示词指示模型通过 read_file 按行读取 transcript_full.jsonl 召回特定步骤的完整原文；网关亦提供 recall 工具兜底拉取。",
+      "evidence": [
+        "转录头部规范：Start with transcript.jsonl (compact). When truncated_fields is present, read only the specific corresponding line in transcript_full.jsonl",
+        "hub/tools/agent_gateway.js :: cmdRecall",
+        "channels/research/harness/antigravity-会话考古.md:164-166"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "note": "和自述一致：转录有紧凑版和 transcript_full.jsonl 两份，truncated_fields 指向全量版"
+      }
     },
     "result-offload": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "大结果外溢隔离机制：当工具执行输出（命令 stdout/stderr 或文件内容）超过内联阈值（~32KB）时，转录中打标 truncated_fields: ['content']，并将完整输出落地保存至 .system_generated/steps/<step>/output.txt。全机普查共发现 21,538 份溢出文件。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: stepOutputFilesCount=21538",
+        "channels/research/harness/antigravity-会话考古.md:25",
+        "本轮步骤 1220 的输出被落地保存至 steps/1220/output.txt"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "tool-registry": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "工具从四类来源统一注册：① Cortex 核心内置本地工具（run_command, read_file, write_file, edit_file, manage_task, schedule, ask_question）；② 子智能体管理（invoke_subagent, manage_subagents, define_subagent）；③ MCP 协议动态工具（call_mcp_tool）；④ 技能系统指令与脚本。",
+      "evidence": [
+        "上下文 native tool declarations 与 <mcp_servers> 声明",
+        "channels/research/harness/antigravity-census.json :: toolCallCounts Top 15",
+        "channels/research/harness/antigravity-会话考古.md:120-141"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "tool-loading": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "混合加载策略：核心本地工具与高频 MCP 工具作为 Eager 工具随请求全量携带完整 JSON Schema 参数声明；庞大外接 MCP 工具（如 biomolecular_structure_viewer_mcp）采用 Lazy 懒加载，上下文仅展示名称与调用说明，模型通过 call_mcp_tool 按需读取 schema 并触发。",
+      "evidence": [
+        "上下文 <mcp_servers> 明确区分 Eager 与 Lazy 工具清单",
+        "channels/research/harness/antigravity-会话考古.md:120-141"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "tool-execution": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "调度与后台控制：由 language_server.exe 本地子进程执行调度；run_command 支持 WaitMsBeforeAsync 参数控制前台同步等待还是转为后台运行（生成 task-N 并分配 PID）；后台任务日志持久化在 tasks/task-<id>.log（全机 3,461 份）；通过 manage_task 实施查询与交互。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: taskLogFilesCount=3461",
+        "trace/apps/cli/src/gateway/antigravity.ts:62-63, 84-90",
+        "本轮实测 task-1209 后台转入并由 manage_task 成功读取"
+      ],
+      "level": "试过",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "note": "它在会话里自己做过（task-1209 转后台、manage_task 读回），没有记黑板行，行号待补"
+      }
     },
     "tool-permission": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "权限与交互模式：非危险操作在工作区内默认自动放行；需要人机决策时触发 ask_question 模态挂起等待；conversations/<cid>.db 中 steps 表记录 permissions 字段；无头 AgentAPI 调用若未注册交互监听则返回 500 报错。",
+      "evidence": [
+        "conversations/<cid>.db :: 表 steps.permissions 字段",
+        "channels/research/harness/antigravity-会话考古.md:181-183 (ask_question 500 分析)",
+        "channels/probe/blackboard.jsonl:2273"
+      ],
+      "level": "看到"
     },
     "tool-sandbox": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "宿主本地原生执行，无容器或虚拟化沙箱；命令在当前操作系统用户权限下直接以 pwsh 运行；受提示词工作区协议约束（Active Workspaces 与 Command Working Directory 限制），物理上具备完整宿主系统调用能力。",
+      "evidence": [
+        "上下文 <user_information> 中指定 Command Working Directory: e:\\program\\GIT\\Agent\\multi",
+        "trace/apps/cli/src/gateway/antigravity.ts:578-583",
+        "channels/research/harness/antigravity-会话考古.md:126-127"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "命令以当前用户在本机直接执行，从文件效果看得到；“没有沙箱”的细节是自述"
+      }
     },
     "tool-result": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "工具执行结果以 type: GENERIC, source: MODEL 记录写入 transcript.jsonl，紧随发起的 PLANNER_RESPONSE 之后，严格按 FIFO 顺序与 tool_calls 1:1 配对；状态标为 DONE、ERROR 或 RUNNING（后台任务）；包含 output 或 error 文本。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: recordTypeCounts.GENERIC=38236",
+        "trace/apps/cli/src/gateway/antigravity.ts:84-90",
+        "channels/research/harness/antigravity-会话考古.md:42"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "hooks": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "钩子体现在 Language Server 内部生命周期事件：步骤完成钩子、Compaction 自动触发钩子、以及通过 agentapi 暴露的客户端连接/断开事件监听器；用户自定义文件级前/后置脚本 hook 机制未在会话物理文件中体现。",
+      "evidence": [
+        "channels/research/harness/antigravity-会话考古.md:170-172",
+        "trace/apps/cli/src/gateway/antigravity.ts:733-741"
+      ],
+      "level": "看到"
     },
     "loop-stop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "循环步进与停止判定：模型在单步 PLANNER_RESPONSE 中发出 tool_calls 时由 Harness 继续驱动下一轮；当模型输出纯文本且 status=DONE 时主动收束；统一网关通过校验最后一步为文本且 conversation_summaries.db 中 not_fully_idle=0 判定整轮结束。",
+      "evidence": [
+        "trace/apps/cli/src/gateway/antigravity.ts:720-745 (isAgyTurnDone)",
+        "channels/research/harness/antigravity-会话考古.md:167-171",
+        "channels/probe/blackboard.jsonl:2390"
+      ],
+      "level": "试过",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "note": "10-20 三次探针的回合结束都按“最后一步 PLANNER_RESPONSE 为 DONE 且没有工具调用，会话空闲”判定，和自述一致"
+      }
     },
     "turn-interrupt": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "执行中打断与插话机制：通过 agentapi send-message <cid> <stampedPrompt> 向运行中会话注入消息；消息作为带时间戳的 SYSTEM_MESSAGE 排入当前队列；模型在当前步骤工具执行结束后于下一步立即感知该插话。",
+      "evidence": [
+        "trace/apps/cli/src/gateway/antigravity.ts:570-591 (steerAntigravity 实测实现)",
+        "channels/probe/blackboard.jsonl:2287"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的黑板 2287 是 Claude 的 act-request 测试，和 Antigravity 插话无关；中心的 steerAntigravity 在用，但没找到对应的实测行"
+      }
     },
     "modes": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "多模式运行与配置：支持通过 /goal, /plan, /browser, /schedule, /boost 等快捷指令切换运行模式；子智能体派生支持通过 TypeName（self, research, image-generator）与 Workspace（inherit, branch, share）控制行为与目录隔离模式。",
+      "evidence": [
+        "当前上下文 <slash_commands> 与 <subagents> 规范声明",
+        "channels/research/harness/antigravity-census.json :: subagentTypeCounts: self=68, research=44"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "plan-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "任务规划与清单管理：通过结构化 Markdown 产物（brain/<cid>/*.md）与提示词内 RequestFeedback 交互驱动；无独立的专用 TODO 数据库表，但在 Compaction 生成的摘要中包含结构化的 ### 5. Next Steps 清单供自驱推进。",
+      "evidence": [
+        "上下文 <artifacts> 规范与 <CONTEXT_SUMMARY> 中的 ### 5. Next Steps",
+        "channels/research/harness/antigravity-会话考古.md:68"
+      ],
+      "level": "看到"
     },
     "subagents": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "子智能体派生与生命周期管理：通过 invoke_subagent 原语派生，在 .system_generated/subagents/<cid>.json 记录原子状态（typeName, role, state: SUBAGENT_STATE_ALIVE/KILLED）；全机普查共 113 个子智能体；子智能体拥有独立会话 ID 与脑区目录，支持 manage_subagents 批量回收。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: subagentsFilesCount=113",
+        "channels/research/harness/antigravity-会话考古.md:86-100 (样本与拓扑剖析)",
+        "channels/probe/blackboard.jsonl:2383"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "multi-agent-messaging": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "智能体间消息信封系统：调用 send_message 工具向目标会话投递消息，Harness 在 .system_generated/messages/<mid>.json 生成消息信封（记录 recipient, sender, priority, timestamp, content）；全机普查共 5,081 份消息信封；消息由 EventBus 分发为接收方的 SYSTEM_MESSAGE。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: messageFilesCount=5081",
+        "channels/research/harness/antigravity-会话考古.md:101-117",
+        "trace/apps/cli/src/gateway/antigravity.ts:55-68"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "handoff": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "任务转交机制：支持外部统一网关通过 agent_gateway.js handoff 实现跨宿主会话转交与接管；在原生内部主要体现为父子智能体协作（子智能体结束时向父会话发送完成通知信封并交付产物）。",
+      "evidence": [
+        "hub/tools/agent_gateway.js:2167",
+        "channels/research/harness/antigravity-会话考古.md:116",
+        "trace/apps/cli/src/gateway/antigravity.ts:64"
+      ],
+      "level": "看到"
     },
     "background-wake": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "反应式事件唤醒驱动：通过 schedule 注册定时器或 run_command（WaitMsBeforeAsync）启动后台任务后，模型自动结束本轮并让出 CPU（0-Token/0-CPU 挂起）；底层后台任务终止或定时器到期时，Language Server EventBus 生成高优先级消息唤醒会话，模型自动恢复执行，无需轮询。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: toolCallCounts.schedule=405, manage_task=2442",
+        "上下文 <messaging> 明确说明“Reactive Wakeup (No Polling Needed)”",
+        "channels/probe/blackboard.jsonl:1984"
+      ],
+      "level": "试过",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "note": "黑板 1984（schedule 注册）对得上"
+      }
     },
     "goal-loop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "目标导向自治循环：支持通过 /goal 指令开启持续自治循环，模型在多轮迭代中持续跟踪上下文摘要中的 ### 5. Next Steps 与待办清单，自主调用工具探索与验证，直至所有目标完成或人工打断。",
+      "evidence": [
+        "上下文 <slash_commands> 中 /goal 说明",
+        "channels/research/harness/antigravity-会话考古.md:68",
+        "当前会话多轮推进实测"
+      ],
+      "level": "看到"
     },
     "ownership-lease": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "会话互斥持有锁：双层防冲突机制：① 物理文件排他锁 ~/.gemini/antigravity/brain/<cid>/presence/<cid>.lock 防止多个 LS 进程同时写入；② 全局数据库 conversation_summaries.db 中的 not_fully_idle 标志位（1=正忙/有活跃后台任务，0=完全空闲）。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: presenceLocksCount",
+        "conversation_summaries.db :: select status, not_fully_idle from conversation_summaries",
+        "trace/apps/cli/src/gateway/antigravity.ts:747-759",
+        "channels/probe/blackboard.jsonl:2273"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验；引的黑板 2273 测的是中心派活单落盘，不是 Antigravity 的会话锁"
+      }
     },
     "session-store": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "三层混合存储架构：① 增量交互层：brain/<cid>/.system_generated/logs/transcript.jsonl（79,675 行）与 transcript_full.jsonl；② 单会话私有 SQLite 数据库：conversations/<cid>.db（347 个，包含 steps, gen_metadata 表）；③ 全局索引数据库：conversation_summaries.db（341 行）。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json",
+        "channels/research/harness/antigravity-会话考古.md:14-30, 144-160",
+        "trace/apps/cli/src/gateway/antigravity.ts:228-255"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "resume": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "进程重启后，Language Server 从 brain/ 和 conversation_summaries.db 认得旧会话（get-conversation-metadata 读得到）。回合正常结束的会话，send-message 进来的消息会被执行；回合中途被切断的会话（最后一步是工具结果而不是回复），消息被收下但不执行。原写法“透明断点续接”只对前一种成立。",
+      "evidence": [
+        "trace/apps/cli/src/gateway/antigravity.ts:626-634 (hasExistingBrain 断点续接判断)",
+        "conversation_summaries.db 全量 341 行持久化索引",
+        "channels/research/harness/antigravity-会话考古.md:68",
+        "channels/probe/blackboard.jsonl:2387 ; channels/probe/blackboard.jsonl:2390"
+      ],
+      "level": "试过",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "note": "10-20 中心实测改写：重启后，回合正常结束的旧会话照样能接着发（research-frontier 10-19 建、10-20 重启后继续）；但关机时在回合中途被切断的会话（最后一步是失败的命令），send-message 返回成功却永远不执行，转录不增长。“透明断点续接”只对前一种成立"
+      }
     },
     "checkpoints": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "检查点机制分两层：① 上下文 Compaction 检查点（CHECKPOINT 记录，全机 394 次），持久化历史任务与摘要；② 工作区文件修改通过 edit_file 和 write_file 保存修改前后的补丁与 Artifact 快照；未见独立的 git-like workspace 文件级版本快照分支。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: recordTypeCounts.CHECKPOINT=394",
+        "上下文 <artifacts> 规范",
+        "channels/research/harness/antigravity-会话考古.md:58-72"
+      ],
+      "level": "看到"
     },
     "long-term-memory": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "跨会话长期记忆闭环：由 conversation_summaries.db 与 CONVERSATION_HISTORY 协同构建：会话结束时后台提炼目标与结论存入全局数据库，新会话启动时首步自动召回前序经验；同时支持通过全局与用户 rules 规则文件固化偏好与行为协议。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: recordTypeCounts.CONVERSATION_HISTORY=3",
+        "conversation_summaries.db :: conversations_fts 全文索引虚表",
+        "channels/research/harness/antigravity-会话考古.md:73-84"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "note": "全机 79,675 行里 CONVERSATION_HISTORY 只有 3 条；它自述说当前上下文里没有历史会话摘要。机制是否存在、何时触发，待查"
+      }
     },
     "session-index": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "关系型数据库 + 全文索引：conversation_summaries.db 维护全局 341 个会话的元数据（title, status, not_fully_idle, nesting_depth, parent_conversation_id, step_count）；附带 conversations_fts FTS5 全文搜索虚表（868 行分块索引），支持关键词与语义检索。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: sqliteTables",
+        "channels/research/harness/antigravity-会话考古.md:148-150",
+        "trace/apps/cli/src/gateway/antigravity.ts:749-756"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "model-select": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "多层模型调度与切换：新建会话时通过 agentapi new-conversation --model=<model>（pro, flash, flash_lite）指定；派发子智能体时通过 invoke_subagent 的 Model: 'inherit'|'pro'|'flash'|'flash_lite' 参数指定；PLANNER_RESPONSE 中显式记录实际调用的模型名称。",
+      "evidence": [
+        "上下文 <subagents> 工具声明中 Model 参数枚举",
+        "trace/apps/cli/src/gateway/products.ts 与 antigravity.ts:630",
+        "channels/probe/blackboard.jsonl:2383"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验；新建会话传 --model 是中心代码，没有切换前后对比的实测"
+      }
     },
     "provider-credential": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "Google 账号体系与 CSRF 本地授权：通过 Google 官方账号凭据或内部认证服务鉴权；Language Server 监听本地端口时由进程启动参数 --csrf_token <token> 进行受控访问；外部适配器抓取 CSRF Token 接入，本地会话文件不泄露任何明文 API 密钥。",
+      "evidence": [
+        "trace/apps/cli/src/gateway/antigravity.ts:174-185 (CIM 扫描 language_server --csrf_token 参数)",
+        "channels/research/harness/antigravity-会话考古.md:19",
+        "channels/probe/blackboard.jsonl:2388"
+      ],
+      "level": "试过",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "note": "10-20 中心实测：不带 CSRF 调 agentapi 返回 Unauthenticated: missing CSRF token；从 language_server 进程命令行取到 --csrf_token 后调用成功"
+      }
     },
     "retry-policy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "底层通信指数退避重试：遇到网络抖动或底层流中断时，转录中记录 type: ERROR_MESSAGE（全机 1,695 条），带 API error (attempt 1...6) 描述，最多自动重试 6 次；适配器层将多条连续重试事件折叠为单一错误展示。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: recordTypeCounts.ERROR_MESSAGE=1695",
+        "trace/apps/cli/src/gateway/antigravity.ts:95-99 (const retry = /^API error \\(attempt/)",
+        "channels/research/harness/antigravity-会话考古.md:44"
+      ],
+      "level": "看到"
     },
     "events-usage": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "结构化用量与事件广播：PLANNER_RESPONSE 逐步暴露 input_tokens, output_tokens, cache_read_tokens；单会话 SQLite 库 conversations/<cid>.db 的 gen_metadata 表持久化网络延迟与精确 Token；外部网关通过增量读取 transcript 广播 run_update 事件流。",
+      "evidence": [
+        "channels/research/harness/antigravity-census.json :: totalTokenCount",
+        "trace/apps/cli/src/gateway/antigravity.ts:81-83, 761-780",
+        "channels/probe/blackboard.jsonl:2383"
+      ],
+      "level": "看到",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "from": "试过",
+        "note": "引的是普查计数或记录样本（黑板 2383 是只读普查本身），够“看到”，不是实验"
+      }
     },
     "external-protocol": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "双协议对外接入标准：Language Server 同时监听 HTTPS (gRPC) 端口与 HTTP (Connect-RPC) 端口（提供 /healthz 健康探针及 agentapi CLI 子命令集）；统一网关通过发现端口与 CSRF Token 直接驱动，支持 new-conversation 与 send-message 命令。",
+      "evidence": [
+        "trace/apps/cli/src/gateway/antigravity.ts:198-222 (Connect-RPC 与 healthz 探测)",
+        "channels/probe/blackboard.jsonl:2383",
+        "channels/research/harness/antigravity-会话考古.md:189-203",
+        "channels/probe/blackboard.jsonl:2389"
+      ],
+      "level": "试过",
+      "review": {
+        "by": "hub-leader (Claude) 核对 2026-10-20",
+        "note": "10-20 中心实测：agentapi 只有三个子命令 get-conversation-metadata、new-conversation、send-message；Connect-RPC 端口答 /healthz，gRPC 端口答 “HTTP request to an HTTPS server”"
+      }
     }
-  }
+  },
+  "reviewedAt": "2026-10-20",
+  "reviewRule": "试过要有命令和结果（设计目录《harness构造_理论框架》第 4 节）；智能体讲自己（自述）只当线索，记推测，核实后再升"
 }

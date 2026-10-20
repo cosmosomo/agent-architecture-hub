@@ -2,215 +2,47 @@
   "product": "hermes",
   "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
   "cells": {
-    "ctx-system": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-instructions": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-capability-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-environment": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-memory-recall": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-history": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-injection": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-output-style": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-cache": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "budget-accounting": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-trigger": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-strategy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-identity": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-recovery": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "result-offload": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-registry": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-loading": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-execution": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-permission": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-sandbox": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-result": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "hooks": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "loop-stop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "turn-interrupt": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "modes": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "plan-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "subagents": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "multi-agent-messaging": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "handoff": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "background-wake": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "goal-loop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ownership-lease": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "session-store": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "resume": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "checkpoints": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "long-term-memory": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "session-index": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "model-select": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "provider-credential": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "retry-policy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "events-usage": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "external-protocol": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    }
+    "ctx-system": { "how": "装配后的系统提示词整篇落盘：system_prompts 表 68 行（四家唯一）。", "evidence": ["census：system_prompts 68 行（hermes-census.json）", "源码仓 NousResearch/hermes-agent（本机安装 0.21.x 同源）"], "level": "看到" },
+    "ctx-instructions": { "how": "SOUL.md（人格）+ AGENTS.md/--ignore-rules 工作区说明 + skills 预载（ephemeral_system_prompt=skills_prompt），构造点在 run_agent（oneshot 可见参数）。", "evidence": ["源码：hermes_cli/oneshot.py（ephemeral_system_prompt、skills_prompt）", "native-hermes-20261019.md：instructions 单元 pass"], "level": "看到" },
+    "ctx-capability-list": { "how": "toolsets 59 集合可选（-t）+ tool_search 延迟加载：激活日志 “tier 1: 15 core/visible tools kept, 3 deferred (~1476 tokens), listing full (budget ~4000)”——按 token 预算裁清单。", "evidence": ["实测 stderr 日志：tool_search activated（本轮 acp 会话）", "源码：tools/tool_search.py"], "level": "看到" },
+    "ctx-environment": { "how": "环境进系统提示词；git 元数据单独落库（sessions.git_branch/git_repo_root/git_metadata_generation）。", "evidence": ["census：sessions 表 git 三列"], "level": "看到" },
+    "ctx-memory-recall": { "how": "memories/MEMORY.md + USER.md（各带 .lock 写锁）；memory_notifications 配置 off/on/verbose；记忆提供方可注入工具（inject_memory_provider_tools）。", "evidence": ["census artifacts：memories/ + .lock", "源码：agent/memory_manager.py inject_memory_provider_tools"], "level": "看到" },
+    "ctx-history": { "how": "messages 表 1,359 行（assistant 618/tool 524/user 217）+ messages_fts trigram 全文索引；跨进程恢复时整段回放（4 消息恢复实测）。", "evidence": ["census：messages 行数与 roleCounts", "实测：session/load 后 Restored from DB (4 messages)（acp.md 10-19 晚节）"], "level": "试过" },
+    "ctx-injection": { "how": "未见独立提醒类型；插话 redirect 是一等通路（agent.redirect 把纠正追加为真实 user 消息后重试）。", "evidence": ["实测：黑板 10-19 hermes steer redirect（SKATE-88）"], "level": "看到" },
+    "ctx-output-style": { "how": "output_schema 仅在子代理委派层（delegate_task 验证 schema）；主轮无风格契约。", "evidence": ["native-hermes-20261019.md：act-deliver/output-contract 行"], "level": "看到" },
+    "ctx-cache": { "how": "缓存按请求记账：API 日志 “cache=14528/14570 (100%)” + sessions.cache_read_tokens/cache_write_tokens 列。", "evidence": ["实测 stderr：agent.conversation_loop cache 行", "census：sessions 缓存列"], "level": "看到" },
+    "budget-accounting": { "how": "两层：sessions 行级（input/output/reasoning/cache tokens、api_call_count、estimated/actual_cost_usd、cost_source、pricing_version）+ session_model_usage 181 行按模型记账。", "evidence": ["census：sessions 列清单 + session_model_usage 181"], "level": "看到" },
+    "compact-trigger": { "how": "启发式阈值 ~500K（50% 窗口）自动压缩；/compress 命令手动触发；ACP 面 /compress 命令注册。", "evidence": ["native-hermes-20261019.md：/context 显示阈值 ~500,000", "acp_adapter/commands.py _COMMANDS 含 /compress"], "level": "看到" },
+    "compact-strategy": { "how": "压缩摘要作为消息回填（“Context compressed: 4 -> 4 ~15,846 -> ~15,846”——小会话判无需压缩）；50K 会话压了等于没压。", "evidence": ["native-hermes-20261019.md：compact 两档实测数据"], "level": "看到" },
+    "compact-identity": { "how": "压缩可能轮换内部会话头（ACP provenance 记 currentHermesSessionId 旋转），外部 ACP id 不变。", "evidence": ["实测：load 响应 _meta.hermes.sessionProvenance 字段", "源码：acp_adapter/provenance.py session_provenance_meta"], "level": "看到" },
+    "compact-recovery": { "how": "压缩失败有专门状态机：sessions 列 compression_failure_cooldown_until / compression_failure_error / compression_fallback_streak / compression_ineffective_count / compression_recovery_deadline。", "evidence": ["census：sessions 列清单（hermes-census.json）"], "level": "看到" },
+    "result-offload": { "how": "read_extract/view_file 工具读大文件（截断策略）；未见过载引用表。", "evidence": ["黑板 agy-fact-opencode-hermes-audit：read_extract"], "level": "推测" },
+    "tool-registry": { "how": "registry.get_tools(approval_cb) 统一注册 + toolsets 59 集合 + MCP 动态注册（0.21.x ACP 会话可挂 mcpServers，load 必带该参数）。", "evidence": ["源码：tools/registry.py、acp_adapter/server.py _register_session_mcp_servers", "实测：load 缺 mcpServers 报 Invalid params（本轮）"], "level": "看到" },
+    "tool-loading": { "how": "tool_search 分层延迟：tier 1 保 15 个核心工具可见、3 个延迟、清单预算 ~4000 tokens（stderr 日志原文）。", "evidence": ["实测 stderr：tools.tool_search 日志（本轮）"], "level": "看到" },
+    "tool-execution": { "how": "同步工具在 agent 线程；后台任务 terminal(background=true) 返回 session_id 让出，notify=true 完成时宿主回推（不靠轮询）。", "evidence": ["native-hermes-20261019.md：wake-bg pass 实测"], "level": "看到" },
+    "tool-permission": { "how": "approval_cb 三层：hardline 黑名单（rm -rf / 永拒 exit 3）→ command_allowlist → 模式（--yolo/--safe-mode）；编辑走 edit_approval（default 模式 ask，accept_edits 免批——本轮行为级实测）。", "evidence": ["实测：黑板 2362（mode-switch 行为级）", "源码：tools/approval_context.py、acp_adapter/permissions.py"], "level": "试过" },
+    "tool-sandbox": { "how": "sandboxes 目录在案（~/AppData/Local/hermes/sandboxes）；隔离级别细节未见记录。", "evidence": ["目录在案（census artifacts 旁证）"], "level": "推测" },
+    "tool-result": { "how": "messages 表 tool 行 524 条回填（role=tool）。", "evidence": ["census：messages roleCounts"], "level": "看到" },
+    "hooks": { "how": "config hooks（shell 钩子，hermes hooks 管理）+ 审批三层（approvals suggest 从历史挖 allowlist）；HERMES_ACCEPT_HOOKS=1 才接受。", "evidence": ["黑板 hermes 证据行：approvals/hooks", "源码：hermes_cli/hooks"], "level": "看到" },
+    "loop-stop": { "how": "无语义循环检测；硬停止件齐全：max_turns（默认 500）、run_budget（80% 提示收尾+截断 provider 超时）、hardline 永拒。", "evidence": ["native-hermes-20261019.md：loop-guard=部分（件列全）"], "level": "看到" },
+    "turn-interrupt": { "how": "最强的一家：cancel_event + request_hard_interrupt；轮中插话 redirect（模型请求期取消当次请求、把纠正作为真实 user 消息重试）或 steer 追加到最后一个工具结果——本轮实测 redirect 生效。", "evidence": ["实测：黑板 hermes steer pass + cancel（10-18 acp-runtime 660ms cancelled）", "源码：acp_adapter/server.py _claim_turn_or_queue"], "level": "试过" },
+    "modes": { "how": "default/accept_edits/dont_ask 三模式（ACP set_mode）；行为级实测：default 编辑审批 1 帧 → accept_edits 0 帧直接落盘。", "evidence": ["实测：黑板 2362（本轮 behaviorChanged=true）"], "level": "试过" },
+    "plan-list": { "how": "todo 工具（结果里重发 plan update，_build_plan_update_from_todo_result）。", "evidence": ["源码：acp_adapter/events.py _build_plan_update_from_todo_result"], "level": "看到" },
+    "subagents": { "how": "delegate_task 工具：父子并行、结果 schema 验证回父轮、异步批次落 async_delegations 表（本轮 1 行）；并发上限 _DEFAULT_MAX_CONCURRENT_CHILDREN=10 / async 3。", "evidence": ["census：async_delegations 1", "native-hermes-20261019.md：delegate_task 全套", "源码：delegate_tool_config.py:17"], "level": "看到" },
+    "multi-agent-messaging": { "how": "hosted_room_* 18 张表（房间/策略/水位线/转写/远程运行）+ peer add/dm/run——状态机完整但本机全 0 行未用。", "evidence": ["census：hosted_room_* 表清单（全 0）", "黑板 hermes 证据行：hermes peer 命令族"], "level": "看到" },
+    "handoff": { "how": "sessions 列 handoff_state/handoff_platform/handoff_error + /handoff 命令（交给消息平台）。", "evidence": ["census：sessions 三列", "native-hermes-20261019.md：handoff=部分"], "level": "看到" },
+    "background-wake": { "how": "terminal(background=true, notify=true) 退出回推 + cron（cron/jobs.json + gateway ticker，重启后 heartbeat 3s ago 实测）+ delivery_obligations 表（投递义务）。", "evidence": ["native-hermes-20261019.md：wake-persist/wake-bg pass", "census：delivery_obligations 表"], "level": "看到" },
+    "goal-loop": { "how": "预算硬停有（max_turns/run_budget），目标判定无原语——中心循环补齐。", "evidence": ["native-hermes-20261019.md：goal=部分"], "level": "看到" },
+    "ownership-lease": { "how": "session_turn_leases 表：holder=pid:turn:platform + acquired/expires（8 分钟到期）——轮级租约的一等实现（本轮 1 行在案）。", "evidence": ["census：session_turn_leases 1", "native-hermes-20261019.md：wait-visible 证据"], "level": "看到" },
+    "session-store": { "how": "SQLite：state.db 40 表（messages/sessions/system_prompts/租约/世代/网关路由）+ sessions/ 失败请求转储 + projects.db/kanban.db/shared-state.db 旁库。", "evidence": ["census：表清单与行数（hermes-census.json）"], "level": "看到" },
+    "resume": { "how": "ACP 会话跨进程恢复实测（session/load 后 4 消息回放、复述上一进程经过）；CLI 原生会话 id（20261019_* 格式）load 后 history=0——resume-native 断在键空间。", "evidence": ["实测：acp.md 10-19 晚节（正反两例）"], "level": "试过" },
+    "checkpoints": { "how": "sessions.rewind_count 列 + ACP unstable_forkSession（session/fork 实测新会话）+ state-snapshots/ 目录 + /undo（TUI）。", "evidence": ["census：rewind_count 列、state-snapshots/", "实测：fork pass（黑板 10-19 晚）"], "level": "看到" },
+    "long-term-memory": { "how": "memories/ 双文件（MEMORY/USER）+ 写锁（.lock，中心写入权标记）+ 记忆提供方可挂载为工具；memory-mode 开关未证实（--ignore-rules/--safe-mode 是近亲）。", "evidence": ["census artifacts：memories/ 带 .lock", "黑板 hermes：memory-mode 未证实"], "level": "看到" },
+    "session-index": { "how": "sessions 表（title/title_source/pinned/hidden/last_read_at）+ messages_fts trigram 全文索引 + hermes sessions list/archive/prune CLI。", "evidence": ["census：sessions 列、messages_fts 表族"], "level": "看到" },
+    "model-select": { "how": "switch_model 校验链（provider 目录/别名/凭证三验，失败抛 ModelRejected）；/model 命令 ACP 可用；fallback 链 get_fallback_chain。", "evidence": ["源码：acp_adapter/server.py _switch_model、hermes_cli/model_switch.py", "实测：fork 响应 availableModels 列表（本轮）"], "level": "看到" },
+    "provider-credential": { "how": "credential_pool 凭证池（子代理租 key + 心跳防超时）+ auth.json + copilot token 交换降级告警 + .env；billing_provider/base_url/mode 落 sessions 表。", "evidence": ["census：sessions billing 三列", "实测 stderr：credential_pool Copilot RAW 降级告警", "源码：agent/credential_pool.py"], "level": "看到" },
+    "retry-policy": { "how": "失败请求整包转储：sessions/request_dump_*.json 22 个 {timestamp,session_id,reason,request{method,url,headers,body},error}，reason=max_retries_exhausted 14 / non_retryable_client_error 8——重试放弃后留全尸（headers 含凭证，引用必须脱敏）。", "evidence": ["census：sessions/ 22 文件 reason 统计（本轮直查）"], "level": "看到" },
+    "events-usage": { "how": "gateway_heartbeats 心跳表 + session_model_usage 按模型记账 + kanban heartbeat（任务心跳）+ last_activity_description/provenance 会话活动描述。", "evidence": ["census：gateway_heartbeats/session_model_usage 表", "native-hermes-20261019.md：act-report 证据"], "level": "看到" },
+    "external-protocol": { "how": "ACP 适配层（approval/edit_approval 双回调，clarify 未接——同轮问答断点在桥）+ gateway 多平台（Telegram/Feishu/WeCom…，本机 platforms:{}）+ peer API + Dashboard :9119；ACP 9 个无头斜杠命令。", "evidence": ["实测：acp.md 10-19 早节（ACP 断点）+ native-hermes-20261019.md（9 命令）", "census：gateway_state.json platforms:{}"], "level": "试过" }
   }
 }

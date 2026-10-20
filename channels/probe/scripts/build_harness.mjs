@@ -53,6 +53,23 @@ const MARK = { 3: '■ 试过', 2: '◧ 看到', 1: '□ 推测', 0: '·' };
 const data = Object.fromEntries(PRODUCTS.map((p) => {
   try { return [p, JSON.parse(fs.readFileSync(path.join(DIR, `${p}-structure.json`), 'utf8')).cells || {}]; } catch { return [p, {}]; }
 }));
+// 试过 means a command and its result, so a 试过 cell must cite a blackboard row of this product (10-20: of
+// Antigravity's 27, most cited only census counts, two cited rows about something else). Those that do not are
+// marked ■? and counted, so overclaiming shows for every product without anyone re-reading the files.
+const BB = path.join(ROOT, 'channels', 'probe', 'blackboard.jsonl');
+const bbRows = fs.existsSync(BB) ? fs.readFileSync(BB, 'utf8').split('\n') : [];
+const FAMILY = { 'claude-code': 'claude' };
+const backed = (p, c) =>
+  (c.evidence || []).some((e) => {
+    for (const m of String(e).matchAll(/blackboard\.jsonl:(\d+)/g)) {
+      try {
+        if (JSON.parse(bbRows[Number(m[1]) - 1]).family === (FAMILY[p] || p)) return true;
+      } catch {}
+    }
+    return false;
+  });
+const unbacked = Object.fromEntries(PRODUCTS.map((p) => [p, 0]));
+const tried = Object.fromEntries(PRODUCTS.map((p) => [p, 0]));
 const lines = [
   '# harness 结构总表（生成）',
   '',
@@ -71,10 +88,18 @@ for (const x of parts) {
     const c = data[p][x.id];
     const lv = c ? LEVELS[c.level] ?? 0 : 0;
     if (lv >= 2) count[p]++;
+    if (lv === 3) {
+      tried[p]++;
+      if (!backed(p, c)) {
+        unbacked[p]++;
+        return '■? 试过（没有对得上的实测行）';
+      }
+    }
     return MARK[lv];
   });
   lines.push(`| ${x.id} | ${row.join(' | ')} |`);
 }
 lines.push('', `看到及以上的格数：${PRODUCTS.map((p) => `${p} ${count[p]}/${parts.length}`).join('；')}`);
+lines.push('', `标“试过”的格里，没有引到这家黑板实测行的（■?，要么补实测、要么降到看到）：${PRODUCTS.map((p) => `${p} ${unbacked[p]}/${tried[p]}`).join('；')}`);
 fs.writeFileSync(path.join(DIR, 'HARNESS_MAP.md'), lines.join('\n') + '\n');
 console.log('HARNESS_MAP.md:', PRODUCTS.map((p) => `${p} ${count[p]}`).join(' '));

@@ -3,214 +3,214 @@
   "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
   "cells": {
     "ctx-system": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 ctx-system 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "ctx-instructions": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "instructions附件留指令片段；文件发现层级由CLAUDE.md/规则机制提供。会话不能还原优先级全序，也不能把本机AGENTS包装误认为产品默认规则。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts.instructions=929; https://code.claude.com/docs/en/memory"],
+      "level": "看到"
     },
     "ctx-capability-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "skill_listing、agent_listing_delta、mcp_instructions_delta 分开注入技能、智能体与MCP说明；不是一份永远固定的大工具表。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts: skill_listing=889, agent_listing_delta=677, mcp_instructions_delta=716"],
+      "level": "看到"
     },
     "ctx-environment": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "environment、date、model附件保留环境及日期模型信息；具体请求内位置与重复抑制策略尚不明。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts: environment=3525, date=804, model=779"],
+      "level": "看到"
     },
     "ctx-memory-recall": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "nested_memory附件提供记忆引用，项目memory目录是外部来源；存在读入痕迹，具体选择算法不能从计数推出。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts.nested_memory=46; https://code.claude.com/docs/en/memory"],
+      "level": "看到"
     },
     "ctx-history": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "user/assistant转录保存消息块和父子链；压缩边界与文件引用另记。解析器指出fork可能复制历史且isSidechain需分开解释。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts: user=64080, assistant=119248; trace/packages/adapters/src/claude-code/parse.ts:1"],
+      "level": "看到"
     },
     "ctx-injection": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "附件是临时材料主入口，含tokens提醒、排队命令、文件变化及hook上下文；附件可见不证明每条原样进入请求。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts.attachment=74018; attachmentTypeCounts: queued_command=2233, edited_text_file=1806, hook_additional_context=461"],
+      "level": "看到"
     },
     "ctx-output-style": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "output_style、output_style_instructions及structured_output分别留风格与结构格式约束；最终序列化顺序待请求证据。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts: output_style=1607, output_style_instructions=2, structured_output=1"],
+      "level": "看到"
     },
     "ctx-cache": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 ctx-cache 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "budget-accounting": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "assistant.message.usage记录输入、输出和缓存用量，cost-state留会话累计成本；tokens提醒是附件，出现频繁不能据此认定只在快满时才注入。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts.cost-state=405; attachmentTypeCounts.total_tokens_reminder=45101; trace/packages/adapters/src/claude-code/parse.ts:75"],
+      "level": "看到"
     },
     "compact-trigger": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 compact-trigger 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "compact-strategy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "system.compact_boundary与compact_file_reference分别留压缩边界及保留文件引用，thinking_drop/stripped留思考剥离痕迹；完整压缩后请求仍不可见。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].systemSubtypeCounts.compact_boundary=151; attachmentTypeCounts: compact_file_reference=225, thinking_drop=111, thinking_stripped=1"],
+      "level": "看到"
     },
     "compact-identity": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 compact-identity 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "compact-recovery": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 compact-recovery 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "result-offload": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "read_truncation_notice是读取结果截断的直接痕迹；只确认截断提示，不认定所有长输出都被外存，也未确定阈值。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts.read_truncation_notice=45"],
+      "level": "看到"
     },
     "tool-registry": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "assistant的tool_use块携name/id/input，user的tool_result回传结果；mcp__名称及能力listing区分来源，完整内置Schema不在转录中。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts.assistant=119248, user=64080; trace/packages/adapters/src/claude-code/parse.ts:1"],
+      "level": "看到"
     },
     "tool-loading": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "deferred_tools_record与delta分开记录延迟工具集及增量；看见分批暴露痕迹，具体搜索和缓存策略需bundle/请求核对。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts: deferred_tools_record=5659, deferred_tools_delta=972"],
+      "level": "看到"
     },
     "tool-execution": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "tool_use/tool_result用id关联工具请求和完成结果；Bash、Edit、MCP等由解析器分族。仅转录不能断言调度并发度、进程布局和超时。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].trace/packages/adapters/src/claude-code/parse.ts:1; typeCounts: assistant=119248,user=64080"],
+      "level": "看到"
     },
     "tool-permission": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "permission-mode及command_permissions留模式和命令权限材料，审批选择过程不是同一类记录；不能将模式当逐调用批准。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts.permission-mode=323; attachmentTypeCounts.command_permissions=66"],
+      "level": "看到"
     },
     "tool-sandbox": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 tool-sandbox 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "tool-result": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "工具结果嵌在user.message.content的tool_result，带tool_use_id/content/is_error；没有独立顶层tool_result类型。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].trace/packages/adapters/src/claude-code/parse.ts:1; typeCounts.user=64080"],
+      "level": "看到"
     },
     "hooks": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "hook_additional_context/hook_success与stop_hook_summary留补充材料、成功及轮末摘要；官方区分生命周期事件，完整stdin/stdout不能由摘要复原。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts: hook_additional_context=461, hook_success=393; systemSubtypeCounts.stop_hook_summary=2666; https://code.claude.com/docs/en/hooks"],
+      "level": "看到"
     },
     "loop-stop": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 loop-stop 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "turn-interrupt": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "queue-operation记录排队操作，queued_command把待处理命令注入材料；本机中心测试曾晚于前轮结束，不能据此验证运行中自动排队。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts.queue-operation=9980; attachmentTypeCounts.queued_command=2233; channels/probe/reports/dsp_002706_j357.md"],
+      "level": "看到"
     },
     "modes": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "mode和permission-mode分开保存模式切换与权限模式；plan_mode/exit附件提供进入退出痕迹，不能混同权限和协作模式。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts: mode=11444, permission-mode=323; attachmentTypeCounts: plan_mode=18, plan_mode_exit=19"],
+      "level": "看到"
     },
     "plan-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "task_status、task_reminder留下任务状态及提醒；这些不足以还原所有任务依赖、持久化路径或共享一致性。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts: task_status=72, task_reminder=91"],
+      "level": "看到"
     },
     "subagents": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "agent-name、agent_listing_delta及独立subagents转录留智能体命名和子链；父转录不包含子智能体完整上下文。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts.agent-name=12770; attachmentTypeCounts.agent_listing_delta=677; channels/research/harness/claude-code-会话考古.md"],
+      "level": "看到"
     },
     "multi-agent-messaging": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 multi-agent-messaging 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "handoff": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 handoff 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "background-wake": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 background-wake 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "goal-loop": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 goal-loop 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "ownership-lease": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 ownership-lease 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "session-store": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "projects/<编码路径>目录下JSONL保存消息与元数据；不同sessionId和sidechain可共存，文件数不能直接当独立会话总数。",
+      "evidence": ["stores[0]: files=581, lines=351304; trace/packages/adapters/src/claude-code/parse.ts:1"],
+      "level": "看到"
     },
     "resume": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "last-prompt留末次输入，历史消息及会话ID提供恢复材料；这里只确认落盘来源，未验证崩溃中工具是否恢复或重复执行。",
+      "evidence": ["typeCounts.last-prompt=15316; trace/packages/adapters/src/claude-code/parse.ts:1"],
+      "level": "看到"
     },
     "checkpoints": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "file-history-snapshot与delta留文件历史快照及增量；存在检查点材料，不等于已验证所有文件和外部副作用可撤销。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts: file-history-snapshot=2606, file-history-delta=3094"],
+      "level": "看到"
     },
     "long-term-memory": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "项目memory目录存跨会话记忆，nested_memory留引用；官方区分指令与自动记忆。模型写入策略及本机所有目录的一致性未实测。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts.nested_memory=46; channels/research/harness/claude-code-会话考古.md; https://code.claude.com/docs/en/memory"],
+      "level": "看到"
     },
     "session-index": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "custom-title和ai-title留人工及自动标题，last-prompt用于列表/恢复；这些记录并不证明存在全文索引。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts: custom-title=14104, ai-title=218, last-prompt=15316"],
+      "level": "看到"
     },
     "model-select": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "assistant.message.model与model附件显示实际响应和上下文告知的模型；模型别名解析与轮中切换细则尚未确定。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts.model=779; typeCounts.assistant=119248"],
+      "level": "看到"
     },
     "provider-credential": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "credential_org留凭据组织的上下文信息；settings/供应商配置在转录外。只记位置与字段，未读取或复制凭据值。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].attachmentTypeCounts.credential_org=334; channels/research/harness/claude-code-会话考古.md"],
+      "level": "看到"
     },
     "retry-policy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "system.api_error有retryInMs/retryAttempt/maxRetries，能观察失败重试计划；不证明各错误都使用同一策略或最大次数固定。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].systemSubtypeCounts.api_error=2907"],
+      "level": "看到"
     },
     "events-usage": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "消息usage、cost-state与system.api_error/turn_duration分开留用量、成本、错误及耗时，解析器将其映射统一轨迹。",
+      "evidence": ["channels/research/harness/claude-code-census.json :: stores[0].typeCounts.cost-state=405; systemSubtypeCounts: api_error=2907,turn_duration=144; trace/packages/adapters/src/claude-code/parse.ts:1"],
+      "level": "看到"
     },
     "external-protocol": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "中心以stream-json常驻驱动，user/assistant工具块和result事件构成通信；落盘会话不是原始网络API请求镜像。",
+      "evidence": ["channels/research/claude-stream.md; trace/apps/cli/src/drivers/claude_stream.ts"],
+      "level": "看到"
     }
   }
 }

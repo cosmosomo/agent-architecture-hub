@@ -2,215 +2,47 @@
   "product": "opencode",
   "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
   "cells": {
-    "ctx-system": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-instructions": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-capability-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-environment": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-memory-recall": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-history": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-injection": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-output-style": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-cache": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "budget-accounting": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-trigger": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-strategy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-identity": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-recovery": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "result-offload": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-registry": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-loading": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-execution": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-permission": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-sandbox": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-result": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "hooks": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "loop-stop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "turn-interrupt": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "modes": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "plan-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "subagents": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "multi-agent-messaging": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "handoff": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "background-wake": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "goal-loop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ownership-lease": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "session-store": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "resume": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "checkpoints": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "long-term-memory": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "session-index": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "model-select": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "provider-credential": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "retry-policy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "events-usage": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "external-protocol": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    }
+    "ctx-system": { "how": "系统提示词不落盘；新旧两代存储（storage/ JSON → opencode.db）均无 system 类记录。", "evidence": ["census：db 22 表与 storage JSON 类型均无 system（opencode-census.json）"], "level": "看到" },
+    "ctx-instructions": { "how": "AGENTS.md 体系：项目/全局说明文件由运行时读入；agent 定义支持 md 文件（.opencode/agent/*.md，7 个自定义 agent 在案）。", "evidence": ["实测：opencode agent list 显示自定义 agent", "开源仓 sst/opencode：packages/opencode/src/session/instructions"], "level": "看到" },
+    "ctx-capability-list": { "how": "工具清单按 agent 权限过滤后进上下文：agent list 输出每个 agent 的 tools/permission（build agent tools 含 question，权限 wholly-denied 的工具从函数目录剔除）。", "evidence": ["实测：opencode agent list 输出（10-19 本轮）", "zread/源码：ToolRegistry materialize 权限过滤"], "level": "看到" },
+    "ctx-environment": { "how": "环境块以 <env>Working directory… 开头，压缩后作为 baseline 整块重注入（session_context_epoch.baseline 原文可读）。", "evidence": ["census 样本：session_context_epoch 第 1 行 baseline 前缀（opencode-census.json）"], "level": "看到" },
+    "ctx-memory-recall": { "how": "无跨会话长期记忆落盘（无 memories 目录/表）。", "evidence": ["census：无相关表/文件"], "level": "未知" },
+    "ctx-history": { "how": "两代并存：旧文件制 storage/message+part（130/542 文件）→ 新库 message 1,264 / part 4,142（data JSON）；migration/data_migration 表记录搬迁。", "evidence": ["census：两代行数与文件数（opencode-census.json）"], "level": "看到" },
+    "ctx-injection": { "how": "未见独立提醒类型；steer 是一等投递（session_input.delivery=steer 5 行，带 admitted_seq/promoted_seq）。", "evidence": ["census：session_input 表", "实测：serve 上轮内插话生效（native-opencode-20261019.md）"], "level": "看到" },
+    "ctx-output-style": { "how": "未见落盘记录。", "evidence": ["census：无相关类型"], "level": "未知" },
+    "ctx-cache": { "how": "prompt 走 usage 元数据（message.updated 事件推 usage_update）；缓存列未见显式记账。", "evidence": ["census：event 表 message.updated 3,313 条"], "level": "推测" },
+    "budget-accounting": { "how": "part/message data 内含 usage（tokens）；event 流推 usage_update；无独立预算表。", "evidence": ["census：part 4,142 行（usage 内嵌 data）", "实测：fork 响应与 usage_update 帧"], "level": "看到" },
+    "compact-trigger": { "how": "压缩落两条 compaction part + 一个 context_epoch；触发条件不落盘（summarize 端点存在：POST /session/{sid}/summarize）。", "evidence": ["census：part type compaction 2", "实测：10-19 native probe summarize 200"], "level": "看到" },
+    "compact-strategy": { "how": "压缩世代制：context_epoch {baseline, snapshot, baseline_seq}——baseline=env 环境块整篇重注入，snapshot 为快照。", "evidence": ["census 样本：session_context_epoch 第 1 行（baseline 以 <env> 开头，原文在 census.json）"], "level": "看到" },
+    "compact-identity": { "how": "epoch 挂在同一 session_id 下，会话不变。", "evidence": ["census：epoch 表结构"], "level": "看到" },
+    "compact-recovery": { "how": "未见压缩失败记录。", "evidence": ["census：无相关类型"], "level": "未知" },
+    "result-offload": { "how": "tool part 的 output 有截断；外置文件目录 ~/.local/share/opencode/tool-output/（external_directory 白名单里有它的踪迹）。", "evidence": ["黑板 opencode 证据行：agent list external_directory 含 tool-output/*"], "level": "看到" },
+    "tool-registry": { "how": "内置工具（bash/read/edit/question…）+ MCP + 插件/文件系统工具（{tool,tools}/*.ts）经 ToolRegistry 两级注册；权限 wholly-denied 的工具从模型目录剔除。", "evidence": ["实测：opencode agent list 权限与工具", "源码：packages/core/src/tool/registry.ts（zread 摘要）"], "level": "看到" },
+    "tool-loading": { "how": "materialize 时按权限过滤（不是用到再加载的延迟模式）；tool part 里 tool 大类 810 条。", "evidence": ["census：part type 分布", "源码：materialization 过滤（zread 摘要）"], "level": "看到" },
+    "tool-execution": { "how": "step-start/step-finish（913/905）划定步进；patch 66 条为补丁部件。执行进程细节不落盘。", "evidence": ["census：part type 分布"], "level": "看到" },
+    "tool-permission": { "how": "三层：agent 权限规则（allow/ask/deny，last-match-wins）+ 运行时 request_permission（越界写触发 external_directory ask，带 locations 原文）+ permission 表（0 行，规则不落库）。", "evidence": ["实测：黑板 2360（external_directory ask→allow→落盘）", "实测：opencode agent list 权限矩阵"], "level": "试过" },
+    "tool-sandbox": { "how": "未见沙箱级落盘。", "evidence": ["census：无相关类型"], "level": "未知" },
+    "tool-result": { "how": "tool part 回填（db 810 + 旧文件 160）。", "evidence": ["census：part type 分布"], "level": "看到" },
+    "hooks": { "how": "未见钩子体系记录。", "evidence": ["census：无相关类型；开源仓检索无 hooks 目录命中"], "level": "未知" },
+    "loop-stop": { "how": "doom_loop 权限 ask 内建在每个 agent（agent list 可见 {permission:doom_loop, action:ask}）；无计数参数。", "evidence": ["实测：opencode agent list", "黑板 agy-fact-opencode-hermes-audit 证据行"], "level": "看到" },
+    "turn-interrupt": { "how": "双语义：serve HTTP 上轮中 POST message=本轮插话（实测生效）；ACP 桥上第二 prompt 排队成新轮。session_input.delivery=steer 落库。", "evidence": ["实测：native-opencode-20261019.md（插话 40=20×2）", "实测：本轮 ACP steer 探针（排队）"], "level": "试过" },
+    "modes": { "how": "build/plan 模式（configOptions.mode），plan 禁 edit；set_mode 生效（10-18 实测）。", "evidence": ["实测：fork 响应 configOptions mode=build", "10-18 acp-runtime"], "level": "试过" },
+    "plan-list": { "how": "todo 表 5 行（session_id/content/status/priority/position）。", "evidence": ["census：todo 表"], "level": "看到" },
+    "subagents": { "how": "task 工具派子代理；DB session 有 parent_id 列（父子可查）。", "evidence": ["黑板 agy-fact 证据行：session 表 parent_id"], "level": "看到" },
+    "multi-agent-messaging": { "how": "无跨会话消息机制落盘。", "evidence": ["census：无相关表"], "level": "未知" },
+    "handoff": { "how": "export/import + fork（实测 fork 生效：新会话答出原会话暗号 FORK-UTQO）+ share。", "evidence": ["实测：本轮 fork pass（acp.md 10-19 晚节）"], "level": "试过" },
+    "background-wake": { "how": "GET /api/session/{sid}/wait 声明但 503（该版本未实现）；无 cron。", "evidence": ["实测：native-opencode-20261019.md wait 503"], "level": "看到" },
+    "goal-loop": { "how": "plan 内置 agent（--agent plan）但无目标/预算原语。", "evidence": ["native-opencode-20261019.md：goal=部分"], "level": "看到" },
+    "ownership-lease": { "how": "无租约机制；/session/status 可见 busy/idle。", "evidence": ["native-opencode-20261019.md：status 观测"], "level": "看到" },
+    "session-store": { "how": "新库 opencode.db（22 表，event/message/part/session…）+ 旧文件制 storage/（JSON 每件一条）两代并存；migration 表记录搬迁。", "evidence": ["census：16,637 行 + 680 文件（opencode-census.json）"], "level": "看到" },
+    "resume": { "how": "loadSession/resume 能力声明为真（initialize caps sessionCapabilities{close,fork,list,resume}）。", "evidence": ["实测：本轮 initialize caps"], "level": "看到" },
+    "checkpoints": { "how": "session_diff 5 文件 + session.revert 列 + revert/stage、revert/clear 端点（200）；逐回退效果未验证。", "evidence": ["census：session_diff 5", "native-opencode-20261019.md：revert 端点"], "level": "看到" },
+    "long-term-memory": { "how": "无长期记忆体系。", "evidence": ["census：无相关表/文件"], "level": "未知" },
+    "session-index": { "how": "session 表 + session_share（分享）+ 旧 storage/session/global/*.json；/doc 全 OpenAPI 可查。", "evidence": ["census：session_share 表", "native-opencode-20261019.md：/doc 路径清单"], "level": "看到" },
+    "model-select": { "how": "session/set_model 生效（实测 big-pickle→zhipuai-coding-plan/glm-5.3-flash，下一轮自报新模型 ID）；configOptions.model 列 16 个可选项。", "evidence": ["实测：黑板 2359（本轮）"], "level": "试过" },
+    "provider-credential": { "how": "account/credential/control_account 表 + opencode.json provider 配置（zhipuai-coding-plan 等）；auth 状态部分在表内。", "evidence": ["census：account/credential 表", "~/.config/opencode/opencode.json"], "level": "看到" },
+    "retry-policy": { "how": "重试策略不落盘；event 表有 step.failed 代际事件。", "evidence": ["census：event 类型 session.next.step.failed.2"], "level": "推测" },
+    "events-usage": { "how": "事件总线持久化：event 表 10,922 行（message.part.updated 6,193 / message.updated 3,313 / session.updated 1,281 / step·prompt·text·reasoning 生命周期 + v1/v2 代际后缀）——外部客户端的读法。", "evidence": ["census：event typeCounts（opencode-census.json）"], "level": "看到" },
+    "external-protocol": { "how": "ACP 桥（能力声明 close/fork/list/resume/loadSession）+ opencode serve HTTP（OpenAPI 全量 /doc，/question、/api/session/{sid}/question/{id}/reply 等端点）双协议。", "evidence": ["实测：ACP caps + serve /doc 路径清单 + question/reply 闭环（acp.md 10-19 早节）"], "level": "试过" }
   }
 }

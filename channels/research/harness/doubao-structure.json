@@ -3,214 +3,355 @@
   "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
   "cells": {
     "ctx-system": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "系统提示词在本地 trajectory.jsonl 中不作为独立 system 记录单步落盘；每个智能体创建时通过 system/assignment.md 固化角色指派、职责边界与父级委托说明；完整的底层系统提示词由云端下发或客户端程序资源动态拼装。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: agentCount=299, assignmentFilesCount=299",
+        "trace/packages/adapters/src/doubao/index.ts:28-30",
+        "channels/research/harness/doubao-会话考古.md:124-126"
+      ],
+      "level": "看到"
     },
     "ctx-instructions": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "多层文件指令体系：全局技能位于 .doubao/agent_mode/workspace/.skills/（10 个内置技能，如 computer-use-automation, browser-use）与 .user_skills/（7 个自定义技能）；智能体层通过 system/assignment.md 中的 ## [时间戳] 需求 块逐项接收父级或用户的指派指令。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: platformSkillsCount=10, userSkillsCount=7",
+        "trace/packages/adapters/src/doubao/index.ts:30 (requirements 正则提取)",
+        "channels/research/harness/doubao-会话考古.md:29-30"
+      ],
+      "level": "看到"
     },
     "ctx-capability-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "按角色静态绑定与 OpenAI 格式声明：智能体创建（create_agent）时根据 agent_type 预分配工具集（Main/Organizer 分配任务管理与通信工具，Worker 分配终端与文件操作工具）；声明格式遵循 OpenAI Tool Calling 规范（含 function.name, function.arguments）。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolCallCounts: TaskOutput=398, Write=369, PowerShell=360, create_agent=203",
+        "trace/packages/adapters/src/doubao/index.ts:63-68",
+        "channels/research/harness/doubao-会话考古.md:60-86"
+      ],
+      "level": "看到"
     },
     "ctx-environment": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "环境信息通过 assignment.md 与工作区目录隐式提供；智能体执行时限定在 .doubao/agent_mode/workspace/.sessions/<id>/ 目录下，通过读取当前目录下的文件、时间戳及 PowerShell 执行环境感知宿主系统状态。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: sessionCount=71",
+        "channels/research/harness/doubao-会话考古.md:16-30"
+      ],
+      "level": "看到"
     },
     "ctx-memory-recall": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "混合模式跨会话记忆检索：普查在 system/tool-results/search_memory_*.txt 中证实其调用 search_memory 工具，具备 mode=hybrid（关键词 + 向量）召回模式，检索 task_history 并返回前序任务经验（如 [任务记录-task_history] 共 5 条结果 (mode=hybrid)）。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: memoryFilesCount=72",
+        "channels/research/harness/doubao-会话考古.md:97-99 (tool-results/search_memory 样本)",
+        "channels/probe/blackboard.jsonl:2384"
+      ],
+      "level": "看到"
     },
     "ctx-history": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "局部历史分治记录：每个智能体拥有独立的 system/trajectory.jsonl，采用 OpenAI Chat 标准格式（role: user, assistant, tool；全机 4,651 行）；各智能体只保留自己的局部交互历史，跨智能体历史不直接堆叠，而是通过 board.md 与 TaskOutput 提炼传递。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: totalTrajectoryLines=4651",
+        "trace/packages/adapters/src/doubao/index.ts:40-78",
+        "channels/research/harness/doubao-会话考古.md:48-58"
+      ],
+      "level": "看到"
     },
     "ctx-injection": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "中途追加指令注入：通过在 assignment.md 写入新的 ## [时间戳] 需求 块，或在 trajectory.jsonl 中追加新的 role: user 消息与系统重试提示实现；支持中途动态向子智能体补充新要求。",
+      "evidence": [
+        "trace/packages/adapters/src/doubao/index.ts:30, 46-52",
+        "channels/research/harness/doubao-census.json :: roleCounts.user=700"
+      ],
+      "level": "看到"
     },
     "ctx-output-style": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "严格结构化交付：子智能体完工时强制调用 TaskOutput 工具（全量普查达 398 次，占总工具第 1 位），以标准 JSON 结构回传 content, artifacts 与 status；中间分析过程支持深度思考（reasoning_content）。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolCallCounts.TaskOutput=398",
+        "trace/packages/adapters/src/doubao/index.ts:62 (reasoning_content 提取)",
+        "channels/research/harness/doubao-会话考古.md:66"
+      ],
+      "level": "看到"
     },
     "ctx-cache": {
-      "how": "",
-      "evidence": [],
+      "how": "底层由云端 SSE 工具调用流（/alice/office/tool_local/chunk_stream）支撑；云端是否采用 Prefix Caching 在本地文件记录中无显式 cache_read_tokens 等标识字段，需进一步抓包分析云端协议。",
+      "evidence": [
+        "channels/research/harness/doubao-会话考古.md:118 (SSE 通信流端点)",
+        "trajectory.jsonl 中无 token cache 字段"
+      ],
       "level": "未知"
     },
     "budget-accounting": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "用量与计费不落盘：trajectory.jsonl 仅记录对话轮次与工具调用，不包含 Token 计数与计费金额；用量消耗在桌面端 UI 或字节云端账号层统一核算，本地无显式账本文件。",
+      "evidence": [
+        "trace/packages/adapters/src/doubao/index.ts:36-78 (无 token 字段解析)",
+        "channels/research/harness/doubao-census.json"
+      ],
+      "level": "看到"
     },
     "compact-trigger": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "架构层规避滑动压缩：豆包通过前缀多智能体拓扑将复杂任务拆解给多个 Worker，每个子智能体上下文短小（全机平均轨迹仅 15.5 行），极少发生单智能体内的超长滑动压缩；如遇任务膨胀，由 Organizer 重组 board.md 发起新轮次。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: totalTrajectoryLines=4651, agentCount=299 (平均 15.5 行/智能体)",
+        "trace/packages/adapters/src/doubao/index.ts:101 (compactions: 0)"
+      ],
+      "level": "看到"
     },
     "compact-strategy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "分治收束代替滑动压缩：子智能体完工后调用 TaskOutput 将执行过程压缩为几百字的成果摘要与产物路径交回父级；父级仅接收精炼结论，从而在多智能体拓扑层天然消除了单一上下文堆叠。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolCallCounts.TaskOutput=398",
+        "channels/research/harness/doubao-会话考古.md:66"
+      ],
+      "level": "看到"
     },
     "compact-identity": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "任务拆解与子智能体派生保留在同一会话目录 .sessions/<id>/ 下；所有派生的 agents/<agentId> 共享同一会话 ID、同一工作区与 board.md 任务板，会话全局身份保持唯一。",
+      "evidence": [
+        ".doubao/agent_mode/workspace/.sessions/<id>/board.md",
+        "trace/packages/adapters/src/doubao/index.ts:18-27"
+      ],
+      "level": "看到"
     },
     "compact-recovery": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "持久化看板与产物兜底：所有子任务状态与产物均登记在 board.md Markdown 表格中并落地为文件；若某个子智能体执行失败，Organizer 可直接根据任务板重新调用 create_agent 补派，已有成果不受影响。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: boardFilesCount=71",
+        "channels/research/harness/doubao-会话考古.md:91-95"
+      ],
+      "level": "看到"
     },
     "result-offload": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "超长工具输出外溢隔离：当工具返回数据（如爬虫抓取长网页、PowerShell 大量日志）超出内联限制时，Harness 将其全量转储至 system/tool-results/<tool>_<id>.txt，转录中仅保留引用或切片。普查共发现 61 份溢出文件。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolResultFilesCount=61",
+        "channels/research/harness/doubao-会话考古.md:26",
+        "channels/probe/blackboard.jsonl:2384"
+      ],
+      "level": "看到"
     },
     "tool-registry": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "三层工具体系注册：① 多智能体协同内置工具（TaskOutput, create_agent, wait_agent, send_message, task_create, task_update, TodoWrite）；② 基础操作系统工具（Write, Read, Edit, PowerShell, Bash, Glob, Grep）；③ 扩展技能（web.fetch, general_search, manage_preference, computer_use_tool 及 .skills/ 自动化技能）。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolCallCounts Top 20",
+        "channels/research/harness/doubao-会话考古.md:60-86"
+      ],
+      "level": "看到"
     },
     "tool-loading": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "按智能体角色预分配加载（Eager）：Main、Organizer 与 Worker 在创建（create_agent）时指定 agent_type，根据角色类型一次性静态绑定对应工具集；技能库文件在 .skills/ 目录下按需读取。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolCallCounts.create_agent=203",
+        "trace/packages/adapters/src/doubao/index.ts:63-68"
+      ],
+      "level": "看到"
     },
     "tool-execution": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "本地调度与后台监控执行：PowerShell/Bash 命令直接由宿主系统子进程执行；异步任务通过 poll-monitors/（47 个，含 scripts/ 与 states/）轮询状态；超长耗时任务通过 background_history_task（8 个会话，带 .history.lock）置入后台，输出落地 outputs/<uuid>.output。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: pollMonitorsCount=47, backgroundHistoryTaskCount=8",
+        "channels/research/harness/doubao-会话考古.md:27-28"
+      ],
+      "level": "看到"
     },
     "tool-permission": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "工作区内自动放行 + 界面交互审批：工作区目录内的常规文件与脚本执行默认放行；敏感操作或越界调用在客户端界面弹窗等待用户确认；转录轨迹中不记录审批过程，直接体现为工具调用或失败。",
+      "evidence": [
+        "channels/research/harness/doubao-会话考古.md:135",
+        "channels/hosts/doubao-desktop.md"
+      ],
+      "level": "看到"
     },
     "tool-sandbox": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "客户端沙箱环境依赖：实测证实后台无沙箱环境的实例与前台复用同账号登录态时，云端 SSE 工具调用流报错 sandbox_environment_not_ready，打崩前台工具执行；落地文件操作限定在 .doubao/agent_mode/workspace/ 内。",
+      "evidence": [
+        "网关状态报告：doubao-desktop status=blocked_down (sandbox_environment_not_ready)",
+        "channels/probe/blackboard.jsonl:2384",
+        "channels/research/harness/doubao-会话考古.md:117-118"
+      ],
+      "level": "试过"
     },
     "tool-result": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "标准 OpenAI Tool 输出回填：工具执行结果以 role: tool 记录写入 trajectory.jsonl（全机 2,269 条），附带 tool_call_id 与对应 assistant 步骤严格配对；支持多模态截图（image_link_list）回传。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: roleCounts.tool=2269",
+        "trace/packages/adapters/src/doubao/index.ts:54, 71-73"
+      ],
+      "level": "看到"
     },
     "hooks": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "任务看板与成果钩子：task_create 触发 board.md 任务项追加，TaskOutput 触发任务状态流转（completed）与父级产物校验；未见用户可自定义的文件级前/后置脚本 hook。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolCallCounts: task_create=52, task_update=43, TaskOutput=398",
+        "channels/research/harness/doubao-会话考古.md:76-78"
+      ],
+      "level": "看到"
     },
     "loop-stop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "OpenAI 规范单步循环停止判定：若 assistant 记录包含 tool_calls，则进入工具执行；若不包含 tool_calls 且直接输出文本或完成 TaskOutput，当前智能体步进入完成态，当前交互轮次结束。",
+      "evidence": [
+        "trace/packages/adapters/src/doubao/index.ts:70 (if (!row.tool_calls?.length && B.cur) B.cur.status = 'completed';)",
+        "channels/research/harness/doubao-census.json"
+      ],
+      "level": "看到"
     },
     "turn-interrupt": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "运行中打断受限：用户可在客户端界面点击停止或追加消息；但实测证实外部进程无法通过注入命令安全插话，任何外部并行动作会抢占进程或导致沙箱报错；适配器打标 steer_in_turn 为 false。",
+      "evidence": [
+        "trace/packages/adapters/src/doubao/index.ts:13 (steer_in_turn: { in_turn: false, next_turn: false, inbox_file: false })",
+        "channels/research/harness/doubao-会话考古.md:117-118",
+        "channels/probe/blackboard.jsonl:2384"
+      ],
+      "level": "试过"
     },
     "modes": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "双模式物理隔离架构：① 普通聊天模式（Chromium LevelDB 存储，用于日常问答）；② 智能体工作模式（完全由 .doubao/agent_mode/workspace/ 纯文件系统驱动，用于多智能体长程项目与代码执行）。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json",
+        "channels/research/harness/doubao-会话考古.md:103-106"
+      ],
+      "level": "看到"
     },
     "plan-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "双层计划待办体系：① 全局任务板 board.md（71 个会话全覆盖），由 task_create/task_update 维护任务 ID、标题、负责人、状态及产物链接；② 智能体个人 Checklist，由 TodoWrite 工具（70 次调用）动态维护。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: boardFilesCount=71, toolCallCounts.TodoWrite=70, task_create=52, task_update=43",
+        "channels/research/harness/doubao-会话考古.md:91-95"
+      ],
+      "level": "看到"
     },
     "subagents": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "三级树状拓扑多智能体架构：前缀编码 m_（Main, 71 个）、o_（Organizer, 35 个）、s_（Worker, 193 个）；通过 create_agent 原语派生（203 次调用），通过 wait_agent 原语同步等待（177 次调用）；各智能体拥有独立目录、配置与轨迹。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: agentPrefixCounts: m_=71, o_=35, s_=193",
+        "channels/research/harness/doubao-会话考古.md:34-46",
+        "trace/packages/adapters/src/doubao/index.ts:22-27",
+        "channels/probe/blackboard.jsonl:2384"
+      ],
+      "level": "看到"
     },
     "multi-agent-messaging": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "多智能体通信原语矩阵：① 点对点显式消息：调用 send_message（70 次调用），携带 target_agent_id 与消息文本；② 跨智能体事件通信：通过 socket/findings.jsonl 与 briefing.md；③ 共享看板：通过读写 board.md 保持步调一致。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolCallCounts.send_message=70",
+        "channels/research/harness/doubao-会话考古.md:75, 128"
+      ],
+      "level": "看到"
     },
     "handoff": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "拓扑分层转交规范：Main 将高阶任务 Hand off 给 Organizer，Organizer 拆解后 Hand off 给具体 Worker；Worker 完成后通过 TaskOutput 将成果与控制权 Hand off 回父级；跨会话转交需依赖外部网关调度。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolCallCounts: create_agent=203, TaskOutput=398",
+        "trace/packages/adapters/src/doubao/index.ts:89-90 (Assigned by)",
+        "channels/research/harness/doubao-会话考古.md:40-42"
+      ],
+      "level": "看到"
     },
     "background-wake": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "后台任务队列驱动：复杂会话配备 background_history_task（8 个会话），包含 .history.lock、index.json（记录 Invoke-WebRequest、run_mineru.ps1）与 outputs/<uuid>.output；另有 poll-monitors/（47 个）异步轮询并在任务完成时唤醒。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: backgroundHistoryTaskCount=8, pollMonitorsCount=47",
+        "channels/research/harness/doubao-会话考古.md:100-103"
+      ],
+      "level": "看到"
     },
     "goal-loop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "目标导向 Organizer 循环：Organizer 智能体根据 assignment.md 的高阶目标，持续向 board.md 派发 task_create 项并监控执行；未完成时循环派发子智能体，直到任务板全部变更为 completed 后向 Main 汇总交工。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: agentPrefixCounts.o_=35, toolCallCounts.task_update=43",
+        "channels/research/harness/doubao-会话考古.md:41"
+      ],
+      "level": "看到"
     },
     "ownership-lease": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "文件锁与连接独占：工作区整体为开放文件系统，允许多进程只读观察；后台命令目录中存在 .history.lock 锁文件保证后台命令互斥；前台桌面进程对云端 SSE 连接保持独占持有，外部第二实例启动会导致冲突。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: backgroundHistoryTaskCount=8 (含 .history.lock)",
+        "channels/research/harness/doubao-会话考古.md:102, 117-118",
+        "channels/probe/blackboard.jsonl:2384"
+      ],
+      "level": "看到"
     },
     "session-store": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "“文件系统即总线”架构：会话物理保存在 %LOCALAPPDATA%\\Doubao\\User Data\\Default\\.doubao\\agent_mode\\workspace\\.sessions/<id>/；包含全局 board.md、memory/MEMORY.md 与各智能体子目录（含 assignment.md 与 trajectory.jsonl）；无进程锁，零损耗离线可观测。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: sessionCount=71, totalTrajectoryLines=4651",
+        "trace/packages/adapters/src/doubao/index.ts:9, 93 (doubao/agent-mode-jsonl)",
+        "channels/research/harness/doubao-会话考古.md:16-30"
+      ],
+      "level": "看到"
     },
     "resume": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "全量文件重构续跑：由于任务状态存于 board.md、任务要求存于 assignment.md、执行历史存于 trajectory.jsonl，桌面客户端崩溃或重启后直接从磁盘文件系统重构智能体树与任务板，实现完全无损的断点续跑。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: boardFilesCount=71, assignmentFilesCount=299",
+        "channels/research/harness/doubao-会话考古.md:111-112"
+      ],
+      "level": "看到"
     },
     "checkpoints": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "产物落盘版本化：产物保存在会话根目录或 agents/<agentId>/artifacts/ 并在 board.md 中登记相对路径与产物链接；文件通过 Write（369 次）与 Edit（99 次）持久化修改，未见独立的 git-like workspace 回退检查点机制。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: toolCallCounts: Write=369, Edit=99, boardFilesCount=71",
+        "channels/research/harness/doubao-会话考古.md:23, 91-95"
+      ],
+      "level": "看到"
     },
     "long-term-memory": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "双轨长期记忆体系：① 会话级记忆文件 memory/MEMORY.md（普查共 72 个文件）；② 模型通过显式调用 manage_preference 工具（普查 6 次调用）向客户端写入用户偏好与长期记忆，供后续会话跨任务召回。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: memoryFilesCount=72, toolCallCounts.manage_preference=6",
+        "channels/research/harness/doubao-会话考古.md:84, 96-99"
+      ],
+      "level": "看到"
     },
     "session-index": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "分层会话索引：智能体工作区无集中的 SQLite 索引；普通聊天模式由 LevelDB（saman_shell_db_storage）维护会话列表；智能体模式下，适配器通过扫描 .sessions/<id>/agents/m_*/system/assignment.md 提取首条需求文本作为会话标题。",
+      "evidence": [
+        "trace/packages/adapters/src/doubao/index.ts:94 (title: oneLine(requirements[0]?.[2] ...))",
+        "channels/research/harness/doubao-会话考古.md:103-105"
+      ],
+      "level": "看到"
     },
     "model-select": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "云端模型调度：豆包智能体模式由字节自研 Doubao-Pro / Doubao-Seed 等大模型在云端支持；客户端提供模型选择与联网搜索开关；本地 trajectory.jsonl 中省略了 model 字段，模型调度与参数完全在云端执行。",
+      "evidence": [
+        "trace/packages/adapters/src/doubao/index.ts:40-78",
+        "channels/research/harness/doubao-会话考古.md:50-58"
+      ],
+      "level": "看到"
     },
     "provider-credential": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "桌面客户端账号体系鉴权：供应商固定为字节跳动豆包云端服务；凭据与登录态绑定在桌面客户端的账号体系中；本地工作区不存储任何 API Key 或明文凭据，工具调用与模型交互通过云端安全网关鉴权。",
+      "evidence": [
+        "channels/research/harness/doubao-会话考古.md:15-18, 117-118"
+      ],
+      "level": "看到"
     },
     "retry-policy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "对话流自适应重试：工具执行失败时（is_error: true 或异常输出），模型在下一步 assistant 中自行调整入参重新调用；底层云端 SSE 断线重连由客户端原生 C++ 网络组件自动处理。",
+      "evidence": [
+        "trace/packages/adapters/src/doubao/index.ts:72 (isError: row.is_error === true)",
+        "channels/research/harness/doubao-census.json :: roleCounts.tool=2269"
+      ],
+      "level": "看到"
     },
     "events-usage": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "可观测事件流体系：① 智能体交互轨迹 trajectory.jsonl（记录每步 tool_calls 与 reasoning_content）；② 全局任务板 board.md 状态流转；③ 异步监控器 poll-monitors/；但单步 Token 用量与网络延迟在本地转录中未记录。",
+      "evidence": [
+        "channels/research/harness/doubao-census.json :: totalTrajectoryLines=4651, boardFilesCount=71",
+        "trace/packages/adapters/src/doubao/index.ts:100",
+        "channels/probe/blackboard.jsonl:2384"
+      ],
+      "level": "看到"
     },
     "external-protocol": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "适配器只读离线驱动：外部无法启动第二后台实例（同账号导致云端 SSE 报错 sandbox_environment_not_ready 并打崩前台）；对外协议目前支持：① 纯静态本地文件系统扫描适配器（只读零损耗）；② 前台单实例 CDP Attach（开发中）；不支持无头 CLI/RPC 调度。",
+      "evidence": [
+        "网关状态报告：doubao-desktop driver=opencli-cdp status=blocked_down",
+        "trace/packages/adapters/src/doubao/index.ts:11-15 (observe_only: true)",
+        "channels/probe/blackboard.jsonl:2384"
+      ],
+      "level": "试过"
     }
   }
 }

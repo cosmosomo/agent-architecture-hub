@@ -4,6 +4,14 @@
 
 ## 关键信息
 
+### 2026-10-20 结构表回填（research-codex）
+
+- **看到**：[codex-structure.json](codex-structure.json) 已覆盖框架42构件，26格看到、16格未知；这些是机制的证据覆盖数，不是26格均已完整复现。证据以现有census快照字段为准，本轮未改会话及census。
+- **经验**：解析器是中心的解释层，不能把它标出的压缩阶段当作产品触发决策。撤回本文下方“自动压缩在pre_request触发”的确定措辞：51条压缩记录只证明压缩发生；阈值、调用条件和压缩后请求需要源码或请求证据。
+- **还没解决的**：优先读Codex压缩调用点、历史替换与工具注册源码，再补缓存前缀、原生记忆、租约/交接及失败恢复。没有源码版本固定与完整请求证据，不把未知填成推测实现。
+- **框架缺口**：同一格需要区分“已看到一种痕迹”和“完整机制已确认”；建议后续加coverage/limits与原生或中心宿主scope字段。队列实测是中心L2实现，不能混作Codex原生排队。
+- **出处**：本轮已打开 https://developers.openai.com/codex/app-server （转到 https://learn.chatgpt.com/docs/app-server）；本地解析器 `trace/packages/adapters/src/codex/parse.ts:1`；具体条数见 `codex-census.json`。未声称本轮读过上游Codex源码。
+
 存储：`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`（171 文件、49,914 行，envelope 格式 `timestamp, type, payload`）+ `~/.codex/archived_sessions/`（2 文件 96 行，同格式归档）+ `~/.codex/state_5.sqlite` + `~/.codex/goals_1.sqlite`（目标元数据跨进程持久化）+ 配置 `config.toml` / `hooks.json` / `AGENTS.md` / `skills/`。
 
 ### 转录（上下文装配 + 推理 + 工具系统）

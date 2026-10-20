@@ -76,7 +76,7 @@ function Start-Center {
   if ($r.ReturnValue -ne 0) { Log "启动失败：WMI 返回 $($r.ReturnValue)"; return $false }
   foreach ($i in 1..60) {
     Start-Sleep -Seconds 2
-    if (Healthy 3) { Log "中心已起来（cmd 进程 $($r.ProcessId)$(if ($lan) { "，EasyTier 地址 $lan" })，用时 $($i * 2) 秒"; return $true }
+    if (Healthy 3) { Log "中心已起来（cmd 进程 $($r.ProcessId)$(if ($lan) { "，EasyTier 地址 $lan" })，用时 $($i * 2) 秒）"; return $true }
   }
   Log "启动失败：两分钟内 /api/health 没有回应，看 $err"
   return $false

@@ -3,214 +3,214 @@
   "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
   "cells": {
     "ctx-system": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "session_meta 保存 base_instructions，归档样本可见 text/provenance；只证明存储了基线，不证明每次请求完整系统提示及拼装顺序。",
+      "evidence": ["stores[1].sample.payload.base_instructions"],
+      "level": "看到"
     },
     "ctx-instructions": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "message 和 world_state 可承载 AGENTS.md 与工作区说明；目录发现及冲突优先级尚未逐版本核对，不能从片段推全序。",
+      "evidence": ["stores[0].topTypes: message=803, world_state=285"],
+      "level": "看到"
     },
     "ctx-capability-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "额外工具以 response_item.additional_tools 留存，工具调用另记 function/custom 项；能看见可用能力增补，无法据此还原完整工具定义。",
+      "evidence": ["stores[0].responseItemTypes.additional_tools=4"],
+      "level": "看到"
     },
     "ctx-environment": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "turn_context 按轮记录目录、模型、力度、审批及沙箱策略；session_meta 是会话起点信息，world_state 另留环境材料。",
+      "evidence": ["stores[0].topTypes: turn_context=439, world_state=285, session_meta=141"],
+      "level": "看到"
     },
     "ctx-memory-recall": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 ctx-memory-recall 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "ctx-history": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "rollout 追加消息、推理和工具响应；compacted 与 retained_context 表示压缩后状态，但实际下一请求的完整消息序列不在 census。",
+      "evidence": ["stores[0].topTypes: response_item=20297, compacted=51, retained_context=2"],
+      "level": "看到"
     },
     "ctx-injection": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "world_state、developer message 及 agent_message 是环境/外来材料的落盘入口；来源与装配时间须结合具体轮，不能全部当用户输入。",
+      "evidence": ["stores[0].topTypes.world_state=285; responseItemTypes.agent_message=170"],
+      "level": "看到"
     },
     "ctx-output-style": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 ctx-output-style 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "ctx-cache": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 ctx-cache 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "budget-accounting": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "token_usage_record 细分调用用量，token_count 通知携累计/最近用量和额度窗口；这是记账与观察，不能推出预算停止行为。",
+      "evidence": ["stores[0].topTypes.token_usage_record=3499; eventMsgTypes.token_count=3788"],
+      "level": "看到"
     },
     "compact-trigger": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 compact-trigger 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "compact-strategy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "compacted 保留压缩产物，item_completed.ContextCompaction 留事件；另有 retained_context。摘要不等于发送给模型的完整替换历史。",
+      "evidence": ["stores[0].topTypes.compacted=51, retained_context=2; itemCompletedTypes.ContextCompaction=51"],
+      "level": "看到"
     },
     "compact-identity": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 compact-identity 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "compact-recovery": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 compact-recovery 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "result-offload": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 result-offload 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "tool-registry": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "调用记录分普通 function、自定义工具及 MCP；item_completed 区分 CommandExecution/McpToolCall/Extension。说明有多个工具来源，未穷尽注册器定义。",
+      "evidence": ["stores[0].itemCompletedTypes: McpToolCall=271, Extension=131; responseItemTypes.function_call=3601"],
+      "level": "看到"
     },
     "tool-loading": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "additional_tools 是追加工具的记录形态，存在4条；尚不能确定按需搜索策略、阈值或每次完整首批工具集。",
+      "evidence": ["stores[0].responseItemTypes.additional_tools=4"],
+      "level": "看到"
     },
     "tool-execution": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "命令完成事件留 command/cwd/exit_code/duration 等执行结果，调用与输出分开；并行调度及超时默认值未由会话确认。",
+      "evidence": ["stores[0].itemCompletedTypes.CommandExecution=3959"],
+      "level": "看到"
     },
     "tool-permission": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "turn_context.approval_policy 与 thread_settings_applied 保留策略变化；审批逐次允许/拒绝及记住批准的决策过程未被普查覆盖。",
+      "evidence": ["stores[0].topTypes.turn_context=439; eventMsgTypes.thread_settings_applied=491"],
+      "level": "看到"
     },
     "tool-sandbox": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "turn_context.sandbox_policy 和 workspace_roots 描述会话约束；是策略记录，不能据此证明内核隔离强度或逃逸防护。",
+      "evidence": ["stores[0].topTypes.turn_context=439"],
+      "level": "看到"
     },
     "tool-result": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "function_call_output/custom_tool_call_output 与调用项通过调用标识关联，命令副作用另有完成事件；输出并非顶层用户自然语言。",
+      "evidence": ["stores[0].responseItemTypes: function_call_output=3600, custom_tool_call_output=2854"],
+      "level": "看到"
     },
     "hooks": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 hooks 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "loop-stop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "task_started、task_complete、turn_aborted 标记轮生命周期，工具完成项属于轮内活动；事件说明何时终止，不完整揭示停止决策。",
+      "evidence": ["stores[0].eventMsgTypes: task_started=671, task_complete=603, turn_aborted=50"],
+      "level": "看到"
     },
     "turn-interrupt": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "原生转录有 turn_aborted；中心实测运行中queue返回queued，首轮完整1–100结束后同thread下一轮回复暗号。后者是中心宿主排队，不外推原生队列。",
+      "evidence": ["stores[0].eventMsgTypes.turn_aborted=50; channels/probe/reports/dsp_002706_j357.md; 黑板2268"],
+      "level": "看到"
     },
     "modes": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "turn_context.collaboration_mode_kind 记录模式，settings应用事件记录模型与权限变更；模式存在不证明plan必定向人提问。",
+      "evidence": ["stores[0].topTypes.turn_context=439; eventMsgTypes.thread_settings_applied=491"],
+      "level": "看到"
     },
     "plan-list": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 plan-list 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "subagents": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "SubAgentActivity、CollabAgentToolCall 和通信元数据指向子线程及接收线程；可见派生与交互痕迹，隔离上下文和回收策略还需源码。",
+      "evidence": ["stores[0].itemCompletedTypes: SubAgentActivity=151, CollabAgentToolCall=14"],
+      "level": "看到"
     },
     "multi-agent-messaging": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "inter_agent_communication_metadata 留收发线程、工具名等协调信息，agent_message 留跨智能体消息；不能把每条都算独立派生。",
+      "evidence": ["stores[0].topTypes.inter_agent_communication_metadata=170; responseItemTypes.agent_message=170"],
+      "level": "看到"
     },
     "handoff": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 handoff 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "background-wake": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 background-wake 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "goal-loop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "thread goal元数据支持objective/status/tokenBudget并跨app-server重启恢复；本机探针未启动模型轮，尚未验证预算耗尽自动停止或自治续推。",
+      "evidence": ["channels/research/codex.md; channels/probe/scripts/codex/probe_goal_persistence.mjs; 黑板1976 partial"],
+      "level": "看到"
     },
     "ownership-lease": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 ownership-lease 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "session-store": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "主存储是按日期的rollout JSONL，存在旧裸项与timestamp/type/payload信封两代；归档另目录，不能把文件数直接当唯一逻辑会话数。",
+      "evidence": ["stores[0]: files=171, lines=49914; stores[1]: files=2, lines=96; trace/packages/adapters/src/codex/parse.ts:1"],
+      "level": "看到"
     },
     "resume": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "app-server以threadId恢复；临时CODEX_HOME重启后resume并读回goal成功，仅验证该状态恢复，不代表活跃推理轮恢复。",
+      "evidence": ["channels/probe/scripts/codex/probe_goal_persistence.mjs; channels/research/codex.md"],
+      "level": "看到"
     },
     "checkpoints": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 checkpoints 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "long-term-memory": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 long-term-memory 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "session-index": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 session-index 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "model-select": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "thread_settings_applied留模型/力度/供应商与权限设置的应用记录，turn_context另记当前模型。记录存在不证明任意时机都可切换。",
+      "evidence": ["stores[0].eventMsgTypes.thread_settings_applied=491; topTypes.turn_context=439"],
+      "level": "看到"
     },
     "provider-credential": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "session_meta保留model_provider来源，额度窗口在token_count；凭据本身不应进入会话。只确认供应商选择痕迹，不还原凭据注入链。",
+      "evidence": ["stores[1].sample.payload.model_provider; stores[0].eventMsgTypes.token_count=3788"],
+      "level": "看到"
     },
     "retry-policy": {
-      "how": "",
+      "how": "现有会话普查未提供足以确认 retry-policy 的实现证据；未记录不代表没有。下一步定位原生源码或bundle中该构件的配置与决策分支，和会话事件配对；涉及实际模型输入顺序时需获授权后抓请求。",
       "evidence": [],
       "level": "未知"
     },
     "events-usage": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "event_msg承载轮、工具、用量和设置事件，独立token账本提供调用统计；解析器映射成统一时间线，原始事件不等于模型输入。",
+      "evidence": ["stores[0].topTypes.event_msg=17169, token_usage_record=3499; trace/packages/adapters/src/codex/parse.ts:1"],
+      "level": "看到"
     },
     "external-protocol": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
+      "how": "app-server以JSON-RPC创建thread、启动turn、流式事件及反向审批；本地转录是运行结果，不是协议请求全量镜像。",
+      "evidence": ["https://developers.openai.com/codex/app-server; channels/hosts/codex/app-server.md"],
+      "level": "看到"
     }
   }
 }

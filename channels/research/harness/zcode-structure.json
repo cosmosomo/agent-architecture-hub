@@ -2,215 +2,47 @@
   "product": "zcode",
   "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
   "cells": {
-    "ctx-system": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-instructions": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-capability-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-environment": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-memory-recall": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-history": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-injection": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-output-style": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ctx-cache": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "budget-accounting": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-trigger": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-strategy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-identity": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "compact-recovery": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "result-offload": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-registry": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-loading": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-execution": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-permission": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-sandbox": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "tool-result": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "hooks": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "loop-stop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "turn-interrupt": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "modes": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "plan-list": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "subagents": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "multi-agent-messaging": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "handoff": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "background-wake": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "goal-loop": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "ownership-lease": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "session-store": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "resume": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "checkpoints": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "long-term-memory": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "session-index": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "model-select": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "provider-credential": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "retry-policy": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "events-usage": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    },
-    "external-protocol": {
-      "how": "",
-      "evidence": [],
-      "level": "未知"
-    }
+    "ctx-system": { "how": "系统提示词不持久化：census 全表无 system/instructions 类记录，只存在于运行时请求里。", "evidence": ["census：db.sqlite 24 表、message/part 的 type 分布里无 system 类（zcode-census.json）"], "level": "看到" },
+    "ctx-instructions": { "how": "工作区 AGENTS.md 注入；~/.zcode/AGENTS.md 也存在。加载顺序未见记录。", "evidence": ["文件在案：~/.zcode/AGENTS.md、工作区 AGENTS.md", "census：message/part 无独立 instructions 记录"], "level": "推测" },
+    "ctx-capability-list": { "how": "工具与技能清单只在请求里，不落库；未见 skill_listing 类 part。", "evidence": ["census：part 类型仅 tool/step-start/step-finish/text/reasoning/timeline/compaction/file 八类"], "level": "未知" },
+    "ctx-environment": { "how": "环境信息（目录/日期/平台）拼进系统提示词，不单独落盘。", "evidence": ["census：无 environment 类记录"], "level": "未知" },
+    "ctx-memory-recall": { "how": "memoryEnabled 全局开关 + cli/memories/projects/<hash>/memory/*.md；不是会话级参数。", "evidence": ["文件在案：~/.zcode/cli/memories/（历史记忆 md）", "~/.zcode/v2/setting.json memoryEnabled:false（本机关着）"], "level": "看到" },
+    "ctx-history": { "how": "message（62,844：assistant 53,304/user 9,540）+ part（228,774）两层 SQLite 转录；历史整段保留，未见压缩替换原话。", "evidence": ["census：db.sqlite message/part 行数与类型分布（zcode-census.json）"], "level": "看到" },
+    "ctx-injection": { "how": "提醒内嵌在工具结果里：大文件只读部分时 tool output 带 <system-reminder>（“…limit 25000. Use Read with offset…”），不是独立记录类型。", "evidence": ["census 样本：part.tool output 内嵌 system-reminder"], "level": "看到" },
+    "ctx-output-style": { "how": "未见任何输出风格记录。", "evidence": ["census：无相关类型"], "level": "未知" },
+    "ctx-cache": { "how": "缓存按轮记账：turn_usage 有 cache_creation_input_tokens / cache_read_input_tokens 两列。", "evidence": ["census：turn_usage 2,603 行 27 列（zcode-census.json）"], "level": "看到" },
+    "budget-accounting": { "how": "每轮一行完整账本：duration/ttft/model_request_count/model_retry_count/tool_call_count/tool_error_count/五类 token/context_exceeded/error_type；另有 model_usage、tool_usage 累计表。", "evidence": ["census：turn_usage 2,603 行列清单"], "level": "看到" },
+    "compact-trigger": { "how": "pre_request 自动压缩：compaction part {trigger:'auto', phase:'pre_request', compactReason:'context_limit', preCompactTokenCount:888803, attempt/maxAttempts:3}，失败也留痕（样本有供应商内容拦截 1301 失败 3 次）。", "evidence": ["census：part.type=compaction 94 条 + SQL 样本（zcode-会话考古.md）"], "level": "看到" },
+    "compact-strategy": { "how": "compaction part 带 replace:true 与 operationId；原话不删，压缩作为新部件插入；压缩后实际请求序列不可见。", "evidence": ["census 样本：compaction part 字段"], "level": "看到" },
+    "compact-identity": { "how": "压缩发生在会话内部（part 层），session_id 不变。", "evidence": ["census：compaction part 均带原 session_id"], "level": "看到" },
+    "compact-recovery": { "how": "压缩失败重试（attempt/maxAttempts）留痕；失败后轮次是否照常发请求未见记录。", "evidence": ["样本：timelineStatus:'failed' + 供应商 1301 reason"], "level": "看到" },
+    "result-offload": { "how": "大工具结果只入部分视图并提示续读（“31802 estimated tokens, limit 25000… Use Read with offset 327”）。", "evidence": ["census 样本：part.tool output"], "level": "看到" },
+    "tool-registry": { "how": "工具清单运行时组装（内置+MCP），不落库；落库的只有调用记录。", "evidence": ["census：part.type=tool 56,645"], "level": "看到" },
+    "tool-loading": { "how": "未见延迟加载/工具搜索痕迹。", "evidence": ["census：无相关类型"], "level": "未知" },
+    "tool-execution": { "how": "step-start/step-finish（各 ~51K 条）划定每步模型请求边界，工具调用夹在步间；并行/超时策略不落库。", "evidence": ["census：part 类型分布"], "level": "看到" },
+    "tool-permission": { "how": "审批走 ACP request_permission 运行时应答，permission 表 0 行（决策不落盘）；yolo/guarded/plan 模式决定问不问。", "evidence": ["census：permission 表 0 行", "实测：10-18 acp-runtime（channels/probe/results/acp-runtime-20261018.md）"], "level": "看到" },
+    "tool-sandbox": { "how": "session_entry.runtime/bash_shell_selection 788 条——shell 可选可换；沙箱级别不落库。", "evidence": ["census：session_entry 类型分布"], "level": "看到" },
+    "tool-result": { "how": "结果在 part.tool 的 state（status/input/output）里回到上下文。", "evidence": ["census：part.tool 56,645 条带 state"], "level": "看到" },
+    "hooks": { "how": "源码定义 PreToolUse/PostToolUse/UserPromptSubmit/Stop 全生命周期、支持 additionalContext 轮中注入；ACP 默认不启用，会话记录无钩子痕迹。", "evidence": ["黑板 agy-fact-zcode-workbuddy：zcode.cjs 内核源码 yma() 函数"], "level": "看到" },
+    "loop-stop": { "how": "未见循环熔断记录或参数。", "evidence": ["census：无相关类型；边界清单该格为部分"], "level": "未知" },
+    "turn-interrupt": { "how": "三通道：session/cancel（实测 440ms 返回 cancelled）；轮中第二 prompt 抢占取消当前轮；session_input.delivery 区分 startNow 1,490 / queue 689 / guide 4（运行中真人插话），promoted→promoted_message_id 记提升路径。", "evidence": ["实测：10-18 acp-runtime cancel", "census：session_input kind/delivery/status 分布（zcode-census.json）"], "level": "试过" },
+    "modes": { "how": "yolo/guarded/plan 经 session/set_mode 热切，configOptions.currentValue 前后可验。", "evidence": ["实测：10-18 acp-runtime mode-switch"], "level": "试过" },
+    "plan-list": { "how": "todo 表 2,421 行（session_id/content/status/priority/position），计划持久化到库。", "evidence": ["census：todo 表"], "level": "看到" },
+    "subagents": { "how": "会话记录无子代理痕迹（无 parent 字段）；中心用独立会话补齐。", "evidence": ["census：session/message/part 无父子字段"], "level": "未知" },
+    "multi-agent-messaging": { "how": "无跨会话消息记录。", "evidence": ["census：无相关表"], "level": "未知" },
+    "handoff": { "how": "无原生交接；session_task_link 17 行把会话关联到桌面任务（弱关联）。", "evidence": ["census：session_task_link 17"], "level": "看到" },
+    "background-wake": { "how": "session_input.kind=backgroundNotification 183 条——后台通知作为输入投递进会话。", "evidence": ["census：session_input kind 分布"], "level": "看到" },
+    "goal-loop": { "how": "有 goal 面：sendGoalCommand 输入 1 条 + target_completion_verification 完成核验 entry 6 条；预算推进无专门记录。", "evidence": ["census：session_input kind、session_entry 类型分布"], "level": "看到" },
+    "ownership-lease": { "how": "无锁/租约表；中心靠进程登记与修改时间推断。", "evidence": ["census：无相关表"], "level": "未知" },
+    "session-store": { "how": "SQLite 制：db.sqlite（message/part/entry 三层 data JSON）+ v2/sessions/<项目hash>/*.json（仅 claude-import 导入件 20 个）+ tasks-index.sqlite。", "evidence": ["census：391,486 行表清单（zcode-census.json）"], "level": "看到" },
+    "resume": { "how": "session/load 跨进程恢复：新进程载入同 sessionId 后记忆完整（暗号 LOAD-ZC-NSHP 复述成功）；load 必须带 mcpServers:[]。", "evidence": ["实测：本轮暗号复述（channels/research/acp.md 10-19 晚节）"], "level": "试过" },
+    "checkpoints": { "how": "session_entry.runtime/workspace_checkpoint 7,937 条 + v2/checkpoints/ 目录；session/fork 无检查点时报 'No workspace checkpoint is available yet'——fork 即从检查点分叉。", "evidence": ["census：session_entry 类型分布", "实测：本轮 fork 探针报错原文（acp.md）"], "level": "试过" },
+    "long-term-memory": { "how": "memoryEnabled 全局开关 + cli/memories 按项目存 md；会话记录无记忆读写类型。", "evidence": ["文件在案：~/.zcode/cli/memories/；setting.json"], "level": "看到" },
+    "session-index": { "how": "session 表 876 行 + tasks-index.sqlite（桌面任务标题/归档/删除标记）；无全文索引。", "evidence": ["census：session 876、tasks-index 1,184 行"], "level": "看到" },
+    "model-select": { "how": "session_entry.runtime/model_selection 866 条记录每次换模型；session/set_config_option 跨供应商切换报 -32603。", "evidence": ["census：session_entry 类型分布", "黑板 channel-route 证据行"], "level": "看到" },
+    "provider-credential": { "how": "凭证在 ~/.zcode/v2/credentials.json + provider_config.json（内容未读）；渠道缓存 coding-plan-cache.json。", "evidence": ["v2 目录清单（census artifacts）"], "level": "看到" },
+    "retry-policy": { "how": "turn_usage 记 model_retry_count/retryable/error_type/error_code——重试按轮记账；请求级策略不落库。", "evidence": ["census：turn_usage 列清单"], "level": "看到" },
+    "events-usage": { "how": "无事件总线表；用量/错误集中在 turn_usage 与 model_usage。", "evidence": ["census：表清单"], "level": "看到" },
+    "external-protocol": { "how": "ACP 桥（zcode-acp-server 0.69.3）：initialize/权限/提问/cancel/load/fork（fork=工作区检查点制，对话不跟）；无 sampling 能力声明。", "evidence": ["实测：本轮 initialize caps + fork 探针（acp.md）", "channels/probe/results/acp-runtime-20261018.md"], "level": "试过" }
   }
 }

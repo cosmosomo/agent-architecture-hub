@@ -4,6 +4,14 @@
 
 ## 关键信息
 
+### 2026-10-20 结构表回填（research-codex）
+
+- **看到**：[claude-code-structure.json](claude-code-structure.json) 覆盖42构件，30格看到、12格未知。依据是现有census、中心解析器与官方文档；本轮没有bundle逆向或新行为实测。
+- **数字口径**：当前census是581文件、351304行，assistant119248、attachment74018、user64080、total_tokens_reminder45101、deferred_tools_record5659。下文较早快照少39行，不是本轮重新普查；结构表引用当前JSON，不改旧快照数字。
+- **经验与纠偏**：total_tokens_reminder的名称/计数不能证明只在“接近限制”时注入；compact_boundary只证明边界，不能证明阈值；atis-latch/isolation-latch的名称不足以证明租约协议。上述机制均需代码确认。
+- **还没解决的**：系统提示拼装、缓存前缀、压缩触发/失败恢复/身份、沙箱、停止循环、多智能体消息、交接/唤醒/目标/租约共12格仍未知。下一轮先读bundle中压缩与上下文装配分支并固定版本，必要时经授权抓请求。
+- **出处**：`claude-code-census.json`；`trace/packages/adapters/src/claude-code/parse.ts:1`；本轮已打开 https://code.claude.com/docs/en/memory 与 https://code.claude.com/docs/en/hooks 。官方说明与本机版本不是天然等价，表内保留本机机制缺口。
+
 存储：`~/.claude/projects/<编码后的工作目录>/<uuid>.jsonl`（581 文件、351,265 行）+ 子智能体 `subagents/agent-<id>.jsonl` + 记忆文件 `memory/` + 配置 `settings.json` / `settings.local.json` / `keybindings.json` + 供应商切换 `.cc-switch/`。
 
 ### 转录（上下文装配 + 推理 + 工具系统）
