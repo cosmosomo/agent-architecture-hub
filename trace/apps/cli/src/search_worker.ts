@@ -10,6 +10,7 @@ parentPort!.on('message', ({ id, method, args }) => {
       if (method === 'put') value = await index.put(args[0], args[1], async () => {});
       else if (method === 'remove') index.remove(args[0]);
       else if (method === 'analyze') index.analyze();
+      else if (method === 'checkpoint') index.checkpoint();
       else throw new Error(`Unknown search write operation ${method}`);
       parentPort!.postMessage({ id, value });
     } catch (error) {

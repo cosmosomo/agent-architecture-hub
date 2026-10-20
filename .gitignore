@@ -31,6 +31,8 @@ deploy-server.bat
 
 # probe scratch: isolated product homes with real keys, temp scripts, local backups
 channels/probe/scripts/tmp/
+# every temp file agents write while testing or researching (token files, reports, exported sessions, one-off scripts)
+channels/probe/tmp/
 *.bak
 probe_perm_test_*.txt
 

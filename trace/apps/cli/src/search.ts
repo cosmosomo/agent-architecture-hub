@@ -76,6 +76,8 @@ export class SearchIndex {
     this.db.exec(`
       PRAGMA journal_mode = WAL;
       PRAGMA synchronous = NORMAL;
+      PRAGMA busy_timeout = 5000;
+      PRAGMA journal_size_limit = 67108864;
       CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
       CREATE TABLE IF NOT EXISTS files (session TEXT PRIMARY KEY, size INTEGER, mtime REAL, adapter TEXT, cwd TEXT, role TEXT);
       CREATE INDEX IF NOT EXISTS files_cwd ON files (cwd);      CREATE TABLE IF NOT EXISTS steps (id INTEGER PRIMARY KEY, session TEXT, turn INTEGER, step TEXT, kind TEXT, facet TEXT, name TEXT, status TEXT, at TEXT);
@@ -164,11 +166,18 @@ export class SearchIndex {
       if (this.writer) await this.writer.call('analyze');
       else this.analyze();
     }
+    // Fold the write-ahead log back into the file: with readers always open it was never reset (742 MB, 10-20).
+    if (report.indexed || report.removed) {
+      if (this.writer) await this.writer.call('checkpoint');
+      else this.checkpoint();
+    }
     report.ms = Date.now() - t0;
     return report;
   }
 
   analyze() { this.db.exec('ANALYZE'); }
+
+  checkpoint() { this.db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); }
 
   remove(id: string) {
     this.db.prepare('DELETE FROM steps_fts WHERE rowid IN (SELECT id FROM steps WHERE session = ?)').run(id);

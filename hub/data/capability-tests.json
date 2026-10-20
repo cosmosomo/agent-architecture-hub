@@ -4,7 +4,8 @@
     "题里的 {agent} 换成要测的产品（codex、claude、zcode、workbuddy、opencode、hermes、antigravity、doubao），{token} 换成一个这次独有的暗号（例如 T1020A7），{session} 用 test-{agent}：同一家的测试都在这一个会话里做，不每题开新会话。",
     "一道题可以在几个位置测：center 是经中心（agent_gateway.js 或 8899 接口，记为 L2），web 是在网页 /m/ 上点（记为 L3），native 是绕过中心直接用这家自己的入口（命令行、接口、桌面端，记为 L0，入口见 channels/hosts/<产品>.md 和研究卷宗）。题里写了哪个位置就测哪个；没写的位置照同一个判据自己找入口。",
     "照 pass 判：看到的现象全对上才算 pass；部分对上记 partial，并写缺了哪条；没跑通记 fail，并写断在哪一步、原样的报错。fail 里列的是常见的假通过，遇到要当 fail。",
-    "不打扰用户：不对用户正在用的会话和窗口发话，不动鼠标键盘；要开会话就开 test- 开头的。"
+    "不打扰用户：不对用户正在用的会话和窗口发话，不动鼠标键盘；要开会话就开 test- 开头的。",
+    "临时文件（暗号文件、产出的报告和文档、导出的会话、一次性分析脚本）一律写进 channels/probe/tmp/（不进仓库），题里没写位置也一样；不要写在仓库根目录。10-20 根目录堆了 28 个这样的文件，已移到 channels/probe/tmp/root-leftovers-20261020/。"
   ],
   "record": "测完就记，一题一行：node hub/tools/agent_gateway.js bb add --by <你的产品或会话名> --family {agent} --capability <单元> --result pass|partial|fail --route {agent}/<L0|L2|L3>/<入口，例如 center-cli、m-page、acp> --condition \"<版本、模型、前提>\" --evidence \"<实际跑的命令和看到的原样结果，带暗号>\"",
   "tests": {

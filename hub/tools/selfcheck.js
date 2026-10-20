@@ -204,6 +204,20 @@ function data() {
     } catch {}
   }
   add(L, '日志大小', big.length ? 'warn' : 'ok', big.length ? `超过 200 MB：${big.join('、')}` : '~/.agent-hub 下没有超过 200 MB 的文件', '归档或截断（删除前先问用户）');
+  // The search index: its write-ahead log should fold back after each sync (10-20 it had grown to 742 MB), and
+  // an index of an older contract version is dead weight next to the live one.
+  const traceDir = process.env.HUB_TRACE_HOME || path.join(HUB_HOME, 'trace');
+  try {
+    const mb = (f) => fs.statSync(path.join(traceDir, f)).size / 1024 / 1024;
+    const files = fs.readdirSync(traceDir);
+    const live = files.filter((f) => /^search-v[\d.]+\.sqlite$/.test(f)).sort().pop();
+    const wal = live && files.includes(live + '-wal') ? mb(live + '-wal') : 0;
+    const old = files.filter((f) => /^(search|index)-v[\d.]+\.(sqlite|json)$/.test(f) && f !== live && !f.startsWith(live.replace('search-', 'index-').replace('.sqlite', '')));
+    const oldMb = old.reduce((s, f) => s + mb(f), 0);
+    const parts = [`${live} ${(mb(live) / 1024).toFixed(1)} GB`, `WAL ${wal.toFixed(0)} MB`];
+    if (old.length) parts.push(`旧版本 ${old.join('、')} 共 ${oldMb.toFixed(0)} MB`);
+    add(L, '检索库', wal > 200 || oldMb > 100 ? 'warn' : 'ok', parts.join('，'), wal > 200 ? 'WAL 没有收拢：看 search.ts 的 checkpoint 是否在跑' : `旧版本的索引不再用到，可以删（删除前先问用户）：${traceDir}`);
+  } catch {}
   const free = ps(`Get-PSDrive -PSProvider FileSystem | ? { $_.Name -in 'C','E' } | % { "$($_.Name)=$([math]::Round($_.Free/1GB,1))" }`);
   const low = free.split(/\s+/).filter((x) => Number(x.split('=')[1]) < 5);
   add(L, '磁盘', low.length ? 'warn' : 'ok', `剩余 GB：${free.replace(/\s+/g, '，')}`, '磁盘不到 5 GB：清理缓存或日志');

@@ -142,8 +142,11 @@ async function main() {
         const [cmd, args] = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url + '/']] : process.platform === 'darwin' ? ['open', [url + '/']] : ['xdg-open', [url + '/']];
         spawn(cmd, args, { detached: true, stdio: 'ignore' }).on('error', () => {}).unref();
       }
+      // A side instance (HUB_BACKGROUND=0) shares ~/.agent-hub/trace with 8899: it searches the index 8899 keeps
+      // and does not rebuild it. Two writers on one file failed with “database is locked” all day (10-20).
+      const sideInstance = process.env.HUB_BACKGROUND === '0';
       scan(store)
-        .then(() => search.sync(store.files(), (f) => store.parseSource(f)))
+        .then(() => (sideInstance ? { indexed: 0, removed: 0, ms: 0 } : search.sync(store.files(), (f) => store.parseSource(f))))
         .then((r) => { if (r.indexed || r.removed) console.log('检索索引就绪：重建 ' + r.indexed + ' 个会话，用时 ' + (r.ms / 1000).toFixed(1) + ' 秒'); })
         .catch((err) => console.error('扫描出错：' + (err instanceof Error ? err.message : err)));
       return;

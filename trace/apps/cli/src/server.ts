@@ -402,7 +402,8 @@ export function createService(opts: ServeOptions): Server {
   const refresh = async () => {
     if (store.isScanning()) return;
     await store.refresh(refreshMs);
-    if (search) {
+    // A side instance (HUB_BACKGROUND=0) reads the index 8899 keeps and never writes it (see main.ts serve).
+    if (search && process.env.HUB_BACKGROUND !== '0') {
       const files = store.files();
       const all = [...files, ...outsideFiles(new Set(files.map((f) => f.id)))];
       search
