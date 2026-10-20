@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { ClaudeStreamDriver, type ClaudeApprovalDecision, type ClaudeCanUseToolRequest, type ClaudeStreamSession } from '../drivers/claude_stream.ts';
 import type { ChannelProfile, ActiveRun, PendingApproval } from './types.ts';
 import { HOME, ACPX_TURN_TIMEOUT_SEC, classifyTool } from './common.ts';
+import { toolRequest } from './security.ts';
 
 export const claudeRunMethods = {
   hasClaudeTranscriptOnDisk(this: AgentGatewayHub, sessionId: string): boolean {
@@ -125,50 +126,9 @@ export const claudeRunMethods = {
         updatedInput: { ...req.input, answers: Object.fromEntries(qs.map((q) => [String(q.question), (answers[String(q.question)] || []).join(', ')])) },
       };
     }
-    if (run.permissions === 'all') return 'allow';
-    if (run.permissions === 'deny') return 'deny';
-
-    // Under 'reads', auto-allow purely read-only tools and intercept write/edit/shell tools in-turn
-    if (/^(Read|Glob|Grep|LS|WebFetch|WebSearch)$/i.test(req.toolName || '')) {
-      return 'allow';
-    }
-
-    const apprId = `appr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    const toolName = req.displayName || req.toolName || 'can_use_tool';
-    const toolInput = JSON.stringify(req.input || {}).slice(0, 600);
-
-    const approvalItem: PendingApproval = {
-      id: apprId,
-      runId: run.runId,
-      channel: 'claude',
-      sessionName: run.sessionName,
-      traceSessionId: run.traceSessionId,
-      cwd: run.cwd,
-      model: run.model,
-      prompt: run.prompt,
-      toolName,
-      toolInput,
-      reason: req.description || `Claude 轮内请求调用受控工具 ${toolName}（批准后当前轮继续执行）`,
-      createdAt: new Date().toISOString(),
-      status: 'pending',
-      inTurn: true,
-      mode: 'in-turn',
-    };
-
-    this.pendingApprovals.unshift(approvalItem);
-    if (this.pendingApprovals.length > 20) this.pendingApprovals.pop();
-    run.waitingApprovalId = apprId;
-    (run.warnings ||= []).push(`轮内等待审批: ${toolName}`);
-    this.broadcast('run_update', run);
-    this.broadcast('state', this.getState());
-
-    return new Promise<'allow' | 'deny'>((resolve) => {
-      this.liveApprovalResolvers.set(apprId, {
-        runId: run.runId,
-        channel: 'claude',
-        resolve: (allow: boolean) => resolve(allow ? 'allow' : 'deny'),
-      });
-    });
+    const q = toolRequest(run, req.toolName || req.displayName || 'tool', req.input || {});
+    const allow = await this.securityCheck(q, run);
+    return allow ? 'allow' : 'deny';
   },
 
   startClaudeStreamRun(this: AgentGatewayHub,

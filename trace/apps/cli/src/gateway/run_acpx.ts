@@ -17,9 +17,9 @@ export const acpxRunMethods = {
     const key = this.slotKey(prof.id, sessionName);
     const env = { ...agentBaseEnv(), ...prof.buildEnv() };
     const permFlag =
-      permissions === 'all'
+      run.securityMode === 'full' || permissions === 'all'
         ? '--approve-all'
-        : permissions === 'deny'
+        : run.securityMode === 'readonly' || permissions === 'deny'
         ? '--deny-all'
         : '--approve-reads';
 

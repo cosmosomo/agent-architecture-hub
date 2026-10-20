@@ -56,7 +56,8 @@ export function classifyFailure(run: Pick<ActiveRun, 'error' | 'stopReason' | 's
   if (run.setupFailed) return 'setup';
   if (run.stopReason === 'refusal' || /\brefusal\b|拒绝回答|OAuth/i.test(err)) return 'refusal';
   if (UPSTREAM_ERROR_REPLY.test(err) || /overloaded|model_not_found|\b50[234]\b/i.test(err)) return 'upstream';
-  if (/ECONNRESET|ETIMEDOUT|ECONNREFUSED|socket hang up|fetch failed|Connection (dropped|error)|stream was interrupted|\bEOF\b/i.test(err)) return 'network';
+  // TLS: 10-20 23:51 every ZCode turn failed MODEL_TLS_VALIDATION_FAILED for a few minutes, read as broken, and fused a goal.
+  if (/ECONNRESET|ETIMEDOUT|ECONNREFUSED|socket hang up|fetch failed|Connection (dropped|error)|stream was interrupted|\bEOF\b|\bTLS\b|certificate|CERT_/i.test(err)) return 'network';
   if (/什么都没回/.test(err) || (!String(run.text || '').trim() && !run.tools?.length && run.stopReason)) return 'empty';
   if (!run.stopReason) return 'broken';
   return 'other';

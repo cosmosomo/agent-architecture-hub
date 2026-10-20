@@ -6,6 +6,7 @@ import type { AgentGatewayHub } from '../gateway.ts';
 import { CodexAppServerDriver, type ApprovalDecision, type ServerApprovalRequest } from '../drivers/codex_app_server.ts';
 import type { ChannelProfile, ActiveRun, PendingApproval } from './types.ts';
 import { ACPX_TURN_TIMEOUT_SEC, classifyTool } from './common.ts';
+import { toolRequest } from './security.ts';
 
 export const codexRunMethods = {
   async ensureCodexDriver(this: AgentGatewayHub): Promise<CodexAppServerDriver> {
@@ -139,53 +140,17 @@ export const codexRunMethods = {
   async handleCodexApproval(this: AgentGatewayHub, req: ServerApprovalRequest): Promise<ApprovalDecision> {
     const run = this.activeCodexRunsByThread.get(req.threadId);
     if (!run) return 'decline';
-    if (run.permissions === 'all') return 'accept';
-    if (run.permissions === 'deny') return 'decline';
 
-    const apprId = `appr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    // The protocol says a string; older servers sent an argv array.
     const rawCmd: unknown = req.command;
     const cmdText = typeof rawCmd === 'string' ? rawCmd : Array.isArray(rawCmd) ? rawCmd.join(' ') : '';
-    const toolName =
-      req.method === 'item/commandExecution/requestApproval' || req.method === 'execCommandApproval'
-        ? `CommandExecution${cmdText ? ': ' + cmdText.slice(0, 80) : ''}`
-        : req.method === 'item/fileChange/requestApproval' || req.method === 'applyPatchApproval'
-        ? 'FileChange (写入/修改文件)'
-        : req.method;
-    const toolInput = JSON.stringify(req.raw || req).slice(0, 600);
+    const isCommand = req.method === 'item/commandExecution/requestApproval' || req.method === 'execCommandApproval';
+    const isFile = req.method === 'item/fileChange/requestApproval' || req.method === 'applyPatchApproval';
+    const toolName = isCommand ? 'Bash' : isFile ? 'FileChange' : req.method;
+    const input = isCommand ? { command: cmdText } : ((req as any).changes || (req as any).raw || req);
 
-    const approvalItem: PendingApproval = {
-      id: apprId,
-      runId: run.runId,
-      channel: 'codex',
-      sessionName: run.sessionName,
-      traceSessionId: run.traceSessionId,
-      cwd: run.cwd,
-      model: run.model,
-      prompt: run.prompt,
-      toolName,
-      toolInput,
-      reason: req.reason || `Codex 轮内请求执行受控操作 (${req.method})，批准后当前轮继续执行`,
-      createdAt: new Date().toISOString(),
-      status: 'pending',
-      inTurn: true,
-      mode: 'in-turn',
-    };
-
-    this.pendingApprovals.unshift(approvalItem);
-    if (this.pendingApprovals.length > 20) this.pendingApprovals.pop();
-    run.waitingApprovalId = apprId;
-    (run.warnings ||= []).push(`轮内等待审批: ${toolName}`);
-    this.broadcast('run_update', run);
-    this.broadcast('state', this.getState());
-
-    return new Promise<ApprovalDecision>((resolve) => {
-      this.liveApprovalResolvers.set(apprId, {
-        runId: run.runId,
-        channel: 'codex',
-        resolve: (allow: boolean) => resolve(allow ? 'accept' : 'decline'),
-      });
-    });
+    const q = toolRequest(run, toolName, input, req.method);
+    const allow = await this.securityCheck(q, run);
+    return allow ? 'accept' : 'decline';
   },
 
   async steerCodexRun(this: AgentGatewayHub, run: ActiveRun, prompt: string): Promise<boolean> {
@@ -225,7 +190,7 @@ export const codexRunMethods = {
     // Full permissions (the user's rule since 10-18, permissions 'all') include the network inside the workspace
     // sandbox: a developer agent has to reach the local service it builds against (10-20, dev-web yielded for want
     // of it). Reads and deny keep the sandbox closed.
-    const netConfig = run.permissions === 'all' ? { config: { 'sandbox_workspace_write.network_access': true } } : {};
+    const netConfig = run.securityMode !== 'readonly' ? { config: { 'sandbox_workspace_write.network_access': true } } : {};
     (async () => {
       let threadId = '';
       try {

@@ -465,6 +465,7 @@ export function createService(opts: ServeOptions): Server {
           model: body.model ? String(body.model) : undefined,
           // Default is full access (user, 2026-10-18); `permissionMode` is the older field name the /console/ page sent.
           permissions: parsePermissions(body.permissions ?? body.permissionMode),
+          securityMode: body.securityMode,
           mode: body.mode === 'interrupt' || body.mode === 'queue' ? body.mode : 'send',
           source: body.source === 'cli' ? 'cli' : 'web',
           wait: Boolean(body.wait),
@@ -489,9 +490,41 @@ export function createService(opts: ServeOptions): Server {
         const result = await gateway.resolveApproval({
           id: String(body.id || ''),
           decision: body.decision === 'reject' ? 'reject' : 'approve',
+          scope: body.scope ? (String(body.scope) as any) : undefined,
           customHint: body.customHint ? String(body.customHint) : undefined,
         });
         return json(res, 200, result);
+      }
+
+      if (req.method === 'POST' && path === '/api/gateway/request-approval') {
+        const body = await readJsonBody(req);
+        const q = {
+          product: String(body.product || 'cli'),
+          session: String(body.session || 'cli'),
+          task: body.task ? String(body.task) : undefined,
+          action: String(body.action || 'tool'),
+          target: String(body.target || ''),
+          cwd: String(body.cwd || repoRoot),
+          mode: body.mode ? String(body.mode) : undefined,
+          layer: body.layer ? String(body.layer) : 'L1',
+        };
+        const allowed = await gateway.securityCheck(q);
+        return json(res, 200, { ok: true, allowed });
+      }
+
+      if (req.method === 'GET' && path === '/api/gateway/audit') {
+        const file = join(homedir(), '.agent-hub', 'security-audit.jsonl');
+        const tail = Number(url.searchParams.get('tail') || '50');
+        const actionFilter = url.searchParams.get('action');
+        const productFilter = url.searchParams.get('product');
+        let lines: string[] = [];
+        if (existsSync(file)) {
+          lines = readFileSync(file, 'utf8').trim().split(/\r?\n/).filter(Boolean);
+        }
+        let records = lines.map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+        if (actionFilter) records = records.filter((r) => r.action === actionFilter);
+        if (productFilter) records = records.filter((r) => r.product === productFilter);
+        return json(res, 200, { ok: true, count: records.length, records: records.slice(-tail) });
       }
 
       if (req.method === 'POST' && path === '/api/gateway/handoff') {
@@ -859,6 +892,11 @@ export function createService(opts: ServeOptions): Server {
       }
       if (path === '/api/gateway/models') {
         return json(res, 200, await listModels(gateway, String(url.searchParams.get('channel') || '')));
+      }
+      // Each product's remaining quota (gateway/quota.ts); ?refresh=1 reads it again first.
+      if (path === '/api/gateway/quota') {
+        if (url.searchParams.get('refresh')) await gateway.refreshQuota().catch(() => {});
+        return json(res, 200, { ok: true, ...gateway.quotaSnapshot() });
       }
       if (path === '/api/gateway/goals') {
         const id = url.searchParams.get('id');

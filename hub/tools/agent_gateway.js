@@ -121,6 +121,25 @@ function agentBaseEnv() {
   return env;
 }
 
+function formatLocalStamp(ts = new Date()) {
+  const d = ts instanceof Date ? ts : new Date(ts);
+  if (Number.isNaN(d.getTime())) return String(ts ?? '');
+  const pad = (n) => String(n).padStart(2, '0');
+  const offMin = -d.getTimezoneOffset();
+  const sign = offMin >= 0 ? '+' : '-';
+  const absOff = Math.abs(offMin);
+  const offH = pad(Math.floor(absOff / 60));
+  const offM = pad(absOff % 60);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${offH}:${offM}`;
+}
+
+function ensurePromptSentStamp(promptText, sentAtIso = new Date().toISOString()) {
+  const raw = String(promptText || '');
+  if (!raw.trim()) return raw;
+  if (/sent_at\s*[:=]|发送时间\s*\(?sent_at\)?|\[sent_at=/i.test(raw)) return raw;
+  return `[sent_at=${formatLocalStamp(sentAtIso)} (${sentAtIso})]\n${raw}`;
+}
+
 // Claude Code's relay address and token live in ~/.claude/settings.json; read at launch, given to this one
 // process only, never written or logged.
 function claudeProviderEnv() {
@@ -529,6 +548,9 @@ function runAntigravityAgentApi(prof, gate, args, promptText) {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionArg);
   let targetCid = isUuid ? sessionArg : sessionMap[sessionArg] || null;
   const startedAt = Date.now();
+  const sentAtIso = new Date(startedAt).toISOString();
+  const sentAtLocal = formatLocalStamp(sentAtIso);
+  const stampedPrompt = args['no-stamp'] ? promptText : ensurePromptSentStamp(promptText, sentAtIso);
   const modelTier = ['flash_lite', 'flash', 'pro'].includes(gate.model) ? gate.model : 'flash';
 
   let beforeLines = 0;
@@ -537,7 +559,7 @@ function runAntigravityAgentApi(prof, gate, args, promptText) {
 
   if (targetCid && fs.existsSync(getTranscriptPath(targetCid))) {
     beforeLines = fs.readFileSync(getTranscriptPath(targetCid), 'utf8').trim().split(/\r?\n/).filter(Boolean).length;
-    const sendRes = spawnSync(ls.lsBin, ['agentapi', 'send-message', targetCid, promptText], {
+    const sendRes = spawnSync(ls.lsBin, ['agentapi', 'send-message', targetCid, stampedPrompt], {
       cwd: ROOT_DIR,
       env: { ...agentBaseEnv(), ...env },
       encoding: 'utf8',
@@ -554,7 +576,7 @@ function runAntigravityAgentApi(prof, gate, args, promptText) {
   if (!targetCid) {
     const newRes = spawnSync(
       ls.lsBin,
-      ['agentapi', 'new-conversation', `--model=${modelTier}`, `--title=${sessionArg}`, promptText],
+      ['agentapi', 'new-conversation', `--model=${modelTier}`, `--title=${sessionArg}`, stampedPrompt],
       {
         cwd: ROOT_DIR,
         env: { ...agentBaseEnv(), ...env },
@@ -637,6 +659,8 @@ function runAntigravityAgentApi(prof, gate, args, promptText) {
     projectId: env.ANTIGRAVITY_PROJECT_ID,
     model: modelTier,
     stopReason: replyStep ? 'end_turn' : 'timeout',
+    sentAt: sentAtLocal,
+    receivedAt: replyStep && replyStep.created_at ? formatLocalStamp(replyStep.created_at) : null,
     reply: replyStep ? replyStep.content : null,
     usage: replyStep
       ? {
@@ -1053,12 +1077,15 @@ function cmdRun(args) {
 
   const sessionName = args.session || `gw-${prof.id}`;
   const timeoutSec = Number(args.timeout || 120);
+  const securityMode = args.mode === 'workspace' || args.mode === 'readonly' || args.mode === 'full' ? args.mode : undefined;
   // The user runs every agent with full permissions (2026-10-18); reads/deny only when asked for.
-  const permMode = args.permissions === 'reads' ? 'reads' : args.permissions === 'deny' ? 'deny' : 'all';
+  const permMode = args.permissions === 'reads' ? 'reads' : args.permissions === 'deny' || securityMode === 'readonly' ? 'deny' : 'all';
 
   // Primary Path: Route through the shared :8899 AgentGatewayHub daemon so Web UI & CLI share the exact same live session & activeRuns!
   if (!args.standalone && SHARED_DAEMON_CHANNELS.has(prof.id) && ensureSharedDaemon()) {
     const startedAt = Date.now();
+    const sentAtIso = new Date(startedAt).toISOString();
+    const sentAtLocal = formatLocalStamp(sentAtIso);
     const daemonRes = callSharedDaemon(
       '/api/gateway/send',
       'POST',
@@ -1068,10 +1095,11 @@ function cmdRun(args) {
         // --trace <traceKind>:<id> takes over a session the agent wrote on its own (desktop app, its own CLI).
         traceSessionId: args.trace || undefined,
         cwd: args.cwd || ROOT_DIR,
-        prompt: promptText,
+        prompt: args['no-stamp'] ? promptText : ensurePromptSentStamp(promptText, sentAtIso),
         // Only a model asked for: otherwise the service keeps the session's own model (a default here switched it).
         model: args.model ? gate.model : undefined,
         permissions: permMode,
+        securityMode,
         mode: args.mode === 'interrupt' ? 'interrupt' : args.mode === 'queue' ? 'queue' : 'send',
         source: 'cli',
         wait: !args.async,
@@ -1099,6 +1127,8 @@ function cmdRun(args) {
         model: daemonRes.model || gate.model,
         cwd: daemonRes.cwd || args.cwd || ROOT_DIR,
         permissions: permMode,
+        sentAt: sentAtLocal,
+        completedAt: !stillRunning ? formatLocalStamp(new Date()) : undefined,
         stopReason: daemonRes.status === 'completed' ? 'end_turn' : daemonRes.status,
         reply: daemonRes.reply ?? (daemonRes.run && daemonRes.run.text) ?? null,
         thoughts: daemonRes.thoughts || undefined,
@@ -1144,8 +1174,10 @@ function cmdRun(args) {
   const permFlag =
     args.permissions === 'reads'
       ? '--approve-reads'
-      : args.permissions === 'deny'
+      : args.permissions === 'deny' || securityMode === 'readonly'
       ? '--deny-all'
+      : securityMode === 'workspace'
+      ? '--approve-reads'
       : '--approve-all';
 
   // 1. Ensure named session exists
@@ -1984,7 +2016,9 @@ function cmdRecall(args) {
     if (who !== 'agent') for (const w of said) parts.push(`人：${w}`);
     if (who !== 'user' && reply) parts.push(`智能体：${reply}`);
     if (!parts.length || (grep && !parts.some((p) => p.toLowerCase().includes(grep)))) continue;
-    out.push(`── 第 ${t.index} 轮 · ${String(t.startedAt || '').replace('T', ' ').slice(0, 16)}\n${parts.map(cut).join('\n')}`);
+    const startStamp = t.startedAt ? formatLocalStamp(t.startedAt) : String(t.startedAt || '');
+    const endStamp = t.endedAt ? ` → ${formatLocalStamp(t.endedAt)}` : '';
+    out.push(`── 第 ${t.index} 轮 · ${startStamp}${endStamp}\n${parts.map(cut).join('\n')}`);
   }
   console.log(`${s.title || id}（${id}，共 ${(s.turns || []).length} 轮）${out.length ? '' : '\n没有符合条件的记录'}`);
   if (out.length) console.log(out.join('\n\n'));
@@ -2037,7 +2071,7 @@ function cmdApi(args, sub) {
   } else if (sub === 'state') {
     res = callSharedDaemon('/api/gateway/state', 'GET', null, 30);
   } else if (sub === 'approve') {
-    res = callSharedDaemon('/api/gateway/approve', 'POST', { id: args.id || args._[1], decision: args.reject ? 'reject' : 'approve' }, 30);
+    res = callSharedDaemon('/api/gateway/approve', 'POST', { id: args.id || args._[1], decision: args.reject ? 'reject' : 'approve', scope: args.scope || 'once' }, 30);
   } else if (sub === 'answer') {
     // answer --id q_... --text "选 B"   (one answer for every question), or --answers '{"<question id>":"..."}'
     res = callSharedDaemon('/api/gateway/answer', 'POST', { id: args.id || args._[1], answer: args.text, answers: args.answers ? JSON.parse(args.answers) : undefined }, 30);
@@ -2051,6 +2085,34 @@ function cmdApi(args, sub) {
     process.exit(1);
   }
   console.log(JSON.stringify(res, null, 2));
+  process.exit(0);
+}
+
+function cmdAudit(args) {
+  const auditFile = path.join(process.env.HUB_DATA_DIR || path.join(os.homedir(), '.agent-hub'), 'security-audit.jsonl');
+  if (!fs.existsSync(auditFile)) {
+    if (args.json) console.log(JSON.stringify({ ok: true, count: 0, records: [] }, null, 2));
+    else console.log(`账本暂无记录（${auditFile}）`);
+    process.exit(0);
+  }
+  const lines = fs.readFileSync(auditFile, 'utf8').trim().split(/\r?\n/).filter(Boolean);
+  let records = lines.map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  if (args.action) records = records.filter((r) => r.action === args.action);
+  if (args.product || args.agent) records = records.filter((r) => r.product === (args.product || args.agent));
+  const tail = Number(args.tail || 20);
+  const sliced = records.slice(-tail);
+  if (args.json) {
+    console.log(JSON.stringify({ ok: true, count: sliced.length, total: records.length, records: sliced }, null, 2));
+    process.exit(0);
+  }
+  console.log(`=== 安全审计账本 (${auditFile}) 最近 ${sliced.length} 条 / 共 ${records.length} 条 ===`);
+  for (const r of sliced) {
+    const time = (r.at || '').slice(11, 19);
+    const who = (r.product || '-') + (r.session ? `/${r.session}` : '');
+    const act = (r.action || '-').padEnd(11);
+    const dec = r.decision === 'allow' ? '🟢 allow' : r.decision === 'ask' ? '🟡 ask' : '🔴 deny';
+    console.log(`  [${time}] ${dec} ${act} who=${who.padEnd(16)} rule=${(r.rule || '-').padEnd(16)} layer=${r.layer || '-'} obj=${String(r.object || '').slice(0, 50)}`);
+  }
   process.exit(0);
 }
 
@@ -2122,6 +2184,7 @@ function main() {
   if (sub === 'feature') return cmdFeature(args);
   if (sub === 'note') return cmdNote(args);
   if (sub === 'bb') return cmdBlackboard(args);
+  if (sub === 'audit') return cmdAudit(args);
   if (['sessions', 'session', 'search', 'state', 'pick', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
   if (sub === 'deliver') return cmdCollabEvent(args, 'deliver');
   if (sub === 'report') return cmdCollabEvent(args, 'report');

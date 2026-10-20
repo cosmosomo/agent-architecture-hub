@@ -205,7 +205,16 @@
         "default",
         "plan"
       ],
-      "maxConcurrent": 3
+      "maxConcurrent": 3,
+      "securityGate": {
+        "level": "L2",
+        "name": "产品沙箱",
+        "mechanisms": [
+          "app-server requestApproval",
+          "workspace-write sandbox"
+        ],
+        "rationale": "Codex 轮内工具（命令执行与文件改动）通过 app-server 的 requestApproval 协议接入中心一道闸门（L1）；自带 workspace-write 沙箱限制工作区外写入，脚本也出不去（L2）"
+      }
     },
     {
       "id": "claude",
@@ -242,7 +251,15 @@
         "bypassPermissions",
         "dontAsk"
       ],
-      "maxConcurrent": 3
+      "maxConcurrent": 3,
+      "securityGate": {
+        "level": "L1",
+        "name": "工具前审批接中心",
+        "mechanisms": [
+          "stream-json can_use_tool"
+        ],
+        "rationale": "Claude 轮内工具调用通过 stream-json 的 can_use_tool 钩子接入中心一道闸门；Windows 上无产品原生沙箱，命令行脚本能绕过文件工具，故只能拦到工具级（L1）"
+      }
     },
     {
       "id": "zcode",
@@ -271,6 +288,9 @@
       "badge": "ACP · 智谱 GLM",
       "notes": "经 zcode-acp-server 无头连接，共享 ~/.zcode/v2 会话库 常驻 ACP 下权限靠它自己的模式：yolo 全放行；guarded 在工作目录里写文件也不问（10-18 实测）；plan 拦下修改并请求“Exit plan mode”，所以“只读”映射到 plan，人批准这一个请求后它退出规划模式接着做。它的 ACP 还报了 auto（自主目标循环）、compact（压缩上下文）两个命令。",
       "acpModes": {
+        "full": "yolo",
+        "workspace": "guarded",
+        "readonly": "plan",
         "all": "yolo",
         "reads": "plan",
         "deny": "plan"
@@ -283,7 +303,13 @@
         "yolo"
       ],
       "maxConcurrent": 3,
-      "quotaAccount": "zhipu-coding-plan"
+      "quotaAccount": "zhipu-coding-plan",
+      "securityGate": {
+        "level": "拦不住",
+        "name": "ACP 桥不转发权限请求",
+        "mechanisms": [],
+        "rationale": "10-20 旁路实测（黑板 2440）：--mode workspace 落到 ZCode 的 guarded 模式，但工作目录外写、读敏感目录的诱饵、换 node -e 脚本，全部成功；中心闸门一次都没被问到（ZCode 经 ACP 不发 request_permission）。早先“guarded 拦住工作区外写”（黑板 1817）这次没复现。要拦得住，得改 ZCode 自己的权限配置，那是用户的配置，改前要问用户。"
+      }
     },
     {
       "id": "workbuddy",
@@ -316,7 +342,15 @@
       "badge": "ACP · CodeBuddy",
       "notes": "经 codebuddy --acp 原生连接，注入本地 BYOK 凭证，模型名带 custom-local: 前缀经 ~/.workbuddy/models.json 路由",
       "maxConcurrent": 3,
-      "quotaAccount": "zhipu-coding-plan"
+      "quotaAccount": "zhipu-coding-plan",
+      "securityGate": {
+        "level": "L1",
+        "name": "工具前审批接中心",
+        "mechanisms": [
+          "acp request_permission"
+        ],
+        "rationale": "通过 ACP session/request_permission 接入中心审批队列，无原生沙箱隔离，脚本能绕过（L1）"
+      }
     },
     {
       "id": "opencode",
@@ -346,7 +380,13 @@
       "badge": "ACP · OpenCode",
       "notes": "经 opencode acp 标准 stdio 连接；模型名以 opencode acp 10-18 自报为准 10-18 起 OpenCode 自带的免费模型（opencode/big-pickle 等）对本机出口 IP 拦截（“detected abusive traffic from this IP”），默认改走智谱编程套餐 glm-5.3-flash。 它的 ACP 不报模式、写文件不来请求权限（权限在它自己的 opencode.json 里），所以权限选“只读”对它不生效（10-18 实测）。",
       "maxConcurrent": 3,
-      "quotaAccount": "zhipu-coding-plan"
+      "quotaAccount": "zhipu-coding-plan",
+      "securityGate": {
+        "level": "拦不住",
+        "name": "未接审批",
+        "mechanisms": [],
+        "rationale": "10-20 旁路实测（黑板 2441、2442）：默认配置下 OpenCode 不发权限请求，写文件和跑命令都不经中心闸门；--permissions deny 下直接写和脚本写都成功。闸门只在读敏感目录时拦到了一次（它走了工具审批）。要拦得住，得在 OpenCode 配置里把 edit、bash 设成 ask，那是用户的配置，改前要问用户。"
+      }
     },
     {
       "id": "hermes",
@@ -385,7 +425,15 @@
         "dont_ask"
       ],
       "maxConcurrent": 3,
-      "quotaAccount": "zhipu-coding-plan"
+      "quotaAccount": "zhipu-coding-plan",
+      "securityGate": {
+        "level": "L1",
+        "name": "工具前审批接中心",
+        "mechanisms": [
+          "acp request_permission"
+        ],
+        "rationale": "通过 ACP 桥接中心审批答复，脚本可绕过（L1）"
+      }
     },
     {
       "id": "antigravity",
@@ -420,7 +468,15 @@
       "accent": "#EC4899",
       "badge": "LS · Antigravity",
       "notes": "agentapi 只认 pro、flash、flash_lite 三档；发给已有对话不传模型，沿用对话自己的模型",
-      "maxConcurrent": 3
+      "maxConcurrent": 3,
+      "securityGate": {
+        "level": "L1",
+        "name": "工具前审批接中心",
+        "mechanisms": [
+          "agentapi protocol"
+        ],
+        "rationale": "受 IDE 语言服务器权限控制，但无外部强制沙箱，脚本可绕过（L1）"
+      }
     },
     {
       "id": "droid",
@@ -447,7 +503,15 @@
       "env": {},
       "accent": "#64748B",
       "badge": "ACP · Factory",
-      "notes": "只经命令行网关独立路径；要 FACTORY_API_KEY 或 droid 已登录"
+      "notes": "只经命令行网关独立路径；要 FACTORY_API_KEY 或 droid 已登录",
+      "securityGate": {
+        "level": "L1",
+        "name": "工具前审批接中心",
+        "mechanisms": [
+          "acpx permissions"
+        ],
+        "rationale": "由 acpx 命令行参数控制工具权限（L1）"
+      }
     },
     {
       "id": "gemini",
@@ -471,7 +535,15 @@
       "env": {},
       "accent": "#3B82F6",
       "badge": "ACP · Gemini",
-      "notes": "只经命令行网关独立路径；非交互要 GEMINI_API_KEY 或 GOOGLE_API_KEY"
+      "notes": "只经命令行网关独立路径；非交互要 GEMINI_API_KEY 或 GOOGLE_API_KEY",
+      "securityGate": {
+        "level": "L1",
+        "name": "工具前审批接中心",
+        "mechanisms": [
+          "acpx permissions"
+        ],
+        "rationale": "由 acpx 命令行参数控制工具权限（L1）"
+      }
     },
     {
       "id": "doubao-desktop",
@@ -495,7 +567,15 @@
       "env": {},
       "accent": "#94A3B8",
       "badge": "CDP · 豆包",
-      "notes": "经 opencli 操作桌面界面；人在用时（holder=user-active）不抢"
+      "notes": "经 opencli 操作桌面界面；人在用时（holder=user-active）不抢",
+      "securityGate": {
+        "level": "拦不住",
+        "name": "界面模拟",
+        "mechanisms": [
+          "cdp"
+        ],
+        "rationale": "通过 OpenCLI 模拟人类在桌面端操作界面，无 API 拦截点（拦不住）"
+      }
     }
   ]
 }

@@ -188,6 +188,9 @@ export const capacityMethods = {
     const l = this.channelLoad(id, false);
     if (!l.driven) return null;
     if (l.accountCooling) return `${l.label}：${l.accountWhy}`;
+    // A bucket its center turns draw from is all but used up: wait for the reset rather than fail (gateway/quota.ts).
+    const quota = this.quotaHold(id);
+    if (quota) return quota;
     if (l.cooling) return `${l.label}：熔断冷却中${l.lastError ? `（${String(l.lastError).slice(0, 60)}）` : ''}`;
     if (l.ours >= l.cap) return `${l.label}：中心在跑 ${l.ours}/${l.cap} 已满`;
     return null;
@@ -209,6 +212,7 @@ export const capacityMethods = {
       else if (!l.driven) left.push(`${l.label}：后端不驱动`);
       else if (!l.canSend) left.push(`${l.label}：后端不能发话`);
       else if (l.accountCooling) left.push(`${l.label}：${l.accountWhy}`);
+      else if (this.quotaHold(l.id)) left.push(this.quotaHold(l.id)!);
       else if (l.cooling) left.push(`${l.label}：熔断冷却中${l.lastError ? `（${String(l.lastError).slice(0, 60)}）` : ''}`);
       else if (l.ours >= l.cap) left.push(`${l.label}：中心在跑 ${l.ours}/${l.cap} 已满`);
       else return true;
@@ -216,8 +220,13 @@ export const capacityMethods = {
     });
     if (exclude.length) left.push(`排除：${exclude.join('、')}`);
     if (!ok.length) return { channel: null as string | null, why: left.join('；') || '没有候选', loads };
-    ok.sort((a, b) => a.running / a.cap - b.running / b.cap || pool.indexOf(a.id) - pool.indexOf(b.id));
-    const p = ok[0];
+    // Under the quota reserve a product is passed over while another can take the work (10-20 Antigravity's weekly
+    // Gemini quota was at 17%; the user: “agy现在的额度也不多了，尝试调度调度”).
+    const roomy = ok.filter((l) => !this.quotaLow(l.id));
+    for (const l of ok) if (roomy.length && !roomy.includes(l)) left.push(this.quotaLow(l.id)!);
+    const from = roomy.length ? roomy : ok;
+    from.sort((a, b) => a.running / a.cap - b.running / b.cap || pool.indexOf(a.id) - pool.indexOf(b.id));
+    const p = from[0];
     const state = p.health === 'closed' ? '健康' : '熔断后试探一轮';
     const busy = `中心在跑 ${p.ours}/${p.cap}${p.outside ? `；外部 ${p.outside} 个会话仅参与排序` : ''}`;
     return { channel: p.id as string | null, why: `${p.label}：${state}，${busy}${left.length ? `；没选：${left.join('；')}` : ''}`, loads };

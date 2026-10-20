@@ -4,7 +4,7 @@
 // Used by agent_gateway.js (subcommands test and goal-gen); the data is hub/data/capability-tests.json,
 // hub/data/capability-units.json and channels/probe/capability-matrix.json.
 //
-//   goal-gen test --agents doubao,zcode --units open,resume     test these units on these products
+//   goal-gen test --agents doubao,zcode --units open,resume [--side] [--why ..]   test these units on these products
 //   goal-gen gaps --kind untested [--agents ..] [--limit 5]       cells nobody has tested yet, that have a question
 //   goal-gen gaps --kind build [--layer L2|L3] [--units ..] [--limit 3]   built at one layer, not the next: build, then test
 //   goal-gen gaps --kind research                                  each researcher's boundary list
@@ -110,8 +110,30 @@ const testerFor = (o, agent) => {
   return pool[i];
 };
 
+/** Products whose quota is spent or under the reserve, from the center (/api/gateway/quota), with why. A named tester
+ *  skips the center's automatic pick, so the pool itself has to leave them out (10-20: “agy现在的额度也不多了，尝试调度调度”). */
+function quotaShort() {
+  const out = new Map();
+  try {
+    const r = require('child_process').spawnSync('curl.exe', ['-s', '--noproxy', '*', '--max-time', '5', `${process.env.HUB_DAEMON_URL || 'http://127.0.0.1:8899'}/api/gateway/quota`], { encoding: 'utf8', timeout: 8000, windowsHide: true });
+    const j = JSON.parse(r.stdout || '{}');
+    for (const [id, p] of Object.entries(j.products || {})) {
+      const t = p.tightest;
+      if (p.cooldown) out.set(id, p.cooldown.why);
+      else if (t && t.remaining < (j.reserve || 0.2)) out.set(id, `${t.group} ${t.label} 只剩 ${Math.round(t.remaining * 100)}%`);
+    }
+  } catch {}
+  return out;
+}
+
 function options(args) {
-  const testers = list(args.tester || 'zcode');
+  let testers = list(args.tester || 'zcode');
+  const short = quotaShort();
+  const roomy = testers.filter((t) => !short.has(t));
+  if (roomy.length && roomy.length < testers.length) {
+    for (const t of testers.filter((x) => short.has(x))) console.error(`（测试员 ${t} 额度不够，这次不派给它：${short.get(t)}）`);
+    testers = roomy;
+  }
   return {
     testers,
     tester: testers[0],
@@ -132,7 +154,8 @@ function goalForTests(args) {
   if (missing.length) throw new Error(`这些单元还没有测试题：${missing.join('、')}（test --missing 看全部）`);
   const off = agents.filter((a) => blocked().has(a));
   if (off.length) throw new Error(`这些产品在宿主卡上标了暂停（blocked_down），先看卡上写的原因：${off.join('、')}`);
-  const tasks = agents.map((a) => testTask(a, us, o));
+  // --side: the code under test is not in 8899 yet, so each tester starts a side instance; --why says what changed.
+  const tasks = agents.map((a) => testTask(a, us, o, { side: Boolean(args.side), why: args.why }));
   return { title: `测试：${us.join('、')} × ${agents.join('、')}`, objective: '照测试题实测，结果照实记进黑板', acceptance: '每道题在黑板上有一行，结论对得上判据', budget: BUDGET(tasks.length), tasks };
 }
 

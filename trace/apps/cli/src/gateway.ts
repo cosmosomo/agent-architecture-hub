@@ -36,6 +36,8 @@ import { metaMethods } from './gateway/meta.ts';
 import { capacityMethods, loadQuotaCooldowns } from './gateway/capacity.ts';
 import { classifyFailure } from './gateway/failure.ts';
 import { guardMethods } from './gateway/guard.ts';
+import { securityMethods, normalizeSecurityMode, type SecurityMode } from './gateway/security.ts';
+import { quotaMethods } from './gateway/quota.ts';
 import { isMainThread } from 'node:worker_threads';
 import { SessionReader } from './gateway/session_reader.ts';
 
@@ -171,6 +173,8 @@ export class AgentGatewayHub {
     for (const d of this.dispatches.values()) this.taskboard.onDispatch(d);
     setInterval(() => void this.taskboard.step(), 15_000).unref?.();
     void this.taskboard.step();
+    // Quota is read before the first pick needs it, then again whenever it is older than five minutes.
+    setTimeout(() => void this.refreshQuota().catch(() => {}), 5_000).unref?.();
   }
 
   // Finished runs go to ~/.agent-hub/runs.jsonl so `agent_gateway.js read`/`wait` and the pages still have the
@@ -362,6 +366,8 @@ export class AgentGatewayHub {
       metaAgents: this.getMetaAgents(),
       metaAgentLogs: this.getMetaAgentLogs(),
       dispatches: this.getDispatchesSummary(),
+      // Each product's remaining quota where it can say (gateway/quota.ts); the page shows it where work is handed out.
+      quota: this.quotaSnapshot(),
     };
   }
 
@@ -636,6 +642,7 @@ export class AgentGatewayHub {
     prompt: string;
     model?: string;
     permissions?: 'all' | 'reads' | 'deny';
+    securityMode?: SecurityMode;
     mode?: 'send' | 'queue' | 'interrupt';
     source?: 'web' | 'cli';
     retryCount?: number;
@@ -679,10 +686,14 @@ export class AgentGatewayHub {
     const key = this.slotKey(prof.id, sessionName);
     const cwd = this.resolveSessionCwd(prof, sessionName, params.cwd);
     this.selectedCwds.set(key, cwd);
-    // Read-only unless the caller asked for more; no meta-agent may widen it silently (2026-10-17 decision).
-    const permissions = params.permissions || 'all';
+    // Security mode and permissions synthesized into one concept
+    const securityMode: SecurityMode = normalizeSecurityMode(
+      params.securityMode || ((params.mode as string) === 'workspace' || (params.mode as string) === 'readonly' || (params.mode as string) === 'full' ? (params.mode as any) : undefined),
+      params.permissions,
+    );
+    const permissions = params.permissions || (securityMode === 'readonly' ? 'deny' : 'all');
     const source = params.source || 'web';
-    const mode = params.mode || 'send';
+    const mode = params.mode === 'interrupt' ? 'interrupt' : params.mode === 'queue' ? 'queue' : 'send';
     // An existing session keeps the model it runs on (its own record) unless one is chosen: the in-memory choice
     // is lost on restart, and falling back to the family default silently switched sessions (seen 2026-10-18).
     const model =
@@ -718,6 +729,7 @@ export class AgentGatewayHub {
           prompt,
           model,
           permissions,
+          securityMode,
           source,
           enqueuedAt: new Date().toISOString(),
         };
@@ -745,6 +757,7 @@ export class AgentGatewayHub {
       prompt,
       model,
       permissions,
+      securityMode: securityMode || 'full',
       source,
       retryCount: params.retryCount || 0,
       resumedByMeta: params.resumedByMeta,
@@ -1216,7 +1229,7 @@ export class AgentGatewayHub {
   }
 
   startRunInternal(opts: RunOpts): ActiveRun {
-    const { prof, sessionName, cwd, prompt, model, permissions, source } = opts;
+    const { prof, sessionName, cwd, prompt, model, permissions, source, securityMode } = opts;
     const key = this.slotKey(prof.id, sessionName);
     const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const startedAt = new Date().toISOString();
@@ -1244,6 +1257,7 @@ export class AgentGatewayHub {
       cwd,
       model,
       permissions,
+      securityMode: securityMode || 'full',
       source,
       prompt,
       status: 'running',
@@ -1344,3 +1358,13 @@ Object.assign(AgentGatewayHub.prototype, guardMethods);
 type CapacityMethods = typeof capacityMethods;
 export interface AgentGatewayHub extends CapacityMethods {}
 Object.assign(AgentGatewayHub.prototype, capacityMethods);
+
+// securityMethods: gateway/security.ts
+type SecurityMethods = typeof securityMethods;
+export interface AgentGatewayHub extends SecurityMethods {}
+Object.assign(AgentGatewayHub.prototype, securityMethods);
+
+// quotaMethods: gateway/quota.ts
+type QuotaMethods = typeof quotaMethods;
+export interface AgentGatewayHub extends QuotaMethods {}
+Object.assign(AgentGatewayHub.prototype, quotaMethods);

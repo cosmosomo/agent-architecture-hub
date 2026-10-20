@@ -237,6 +237,31 @@ function modelLabel(fam, m) {
   return real ? `${real}（${m}）` : m;
 }
 
+// Remaining quota where a product can say it (center: gateway/quota.ts), shown where work is handed out.
+const quotaOf = (fam) => (S.gw && S.gw.quota && S.gw.quota.products && S.gw.quota.products[fam]) || null;
+function untilText(t) {
+  const m = Math.max(0, Math.round((Date.parse(t) - Date.now()) / 60000));
+  return m >= 1440 ? `${Math.floor(m / 1440)} 天 ${Math.floor((m % 1440) / 60)} 小时` : m >= 60 ? `${Math.floor(m / 60)} 小时 ${m % 60} 分` : `${m} 分钟`;
+}
+function quotaLine(fam) {
+  const q = quotaOf(fam);
+  if (!q) return '';
+  if (q.cooldown) return '额度：' + q.cooldown.why;
+  if (!q.ok) return '';
+  const floor = (S.gw.quota && S.gw.quota.floor) || 0.03;
+  const bucket = (b) =>
+    b.window === 'balance' ? b.label + (b.remaining < floor ? '（不够用了，充值后恢复）' : '') :
+    b.resetAt && Date.parse(b.resetAt) < Date.now() ? `${b.label} 已重置` :
+    `${b.label} ${Math.round(b.remaining * 100)}%${b.resetAt ? `（${untilText(b.resetAt)}后重置）` : ''}`;
+  // Codex's reading is the last one it wrote into a session log: say how old it is.
+  const age = q.observedAt && Date.now() - Date.parse(q.observedAt) > 10 * 60000 ? `（${ago(q.observedAt)}的读数）` : '';
+  return '额度：' + q.groups.map((g) => `${g.name}${g.usedByCenter ? '' : '（只在它自己的应用里用）'} ` + g.buckets.map(bucket).join('、')).join('；') + age;
+}
+function quotaShort(fam) {
+  const q = quotaOf(fam), t = q && q.tightest, reserve = (S.gw && S.gw.quota && S.gw.quota.reserve) || 0.2;
+  return Boolean((q && q.cooldown) || (t && t.remaining < reserve));
+}
+
 function findSessionApproval(meta) {
   const apprs = (S.gw && S.gw.pendingApprovals) || [];
   const cName = controlName(meta);
@@ -702,9 +727,11 @@ async function viewFeed() {
               <div class="t" style="margin-top:4px">请求执行：${esc(a.toolName || '工具操作')}</div>
               ${a.toolInput ? `<div class="sub" style="font-family:ui-monospace,monospace;font-size:12px">${esc(argOf(a.toolInput).slice(0, 140))}</div>` : ''}
               <div class="sub" style="color:var(--mute)">拦截原因：${esc(a.reason || '权限门禁')}</div>
-              <div class="cardrow" style="margin-top:8px">
+              <div class="cardrow" style="margin-top:8px;gap:6px;flex-wrap:wrap">
                 <button class="btn ghost btn-touch" data-appr-act="reject" data-appr-id="${esc(a.id)}">驳回</button>
-                <button class="btn btn-touch" style="background:var(--ok)" data-appr-act="approve" data-appr-id="${esc(a.id)}">✓ 同意放行</button>
+                <button class="btn btn-touch" style="background:var(--ok)" data-appr-act="approve" data-appr-scope="once" data-appr-id="${esc(a.id)}">✓ 仅放行一次</button>
+                <button class="btn ghost btn-touch" data-appr-act="approve" data-appr-scope="session" data-appr-id="${esc(a.id)}">本会话放行</button>
+                <button class="btn ghost btn-touch" data-appr-act="approve" data-appr-scope="always" data-appr-id="${esc(a.id)}">以后都放行</button>
               </div>
             </div>`
         });
@@ -755,10 +782,11 @@ async function viewFeed() {
       e.stopPropagation();
       const id = apBtn.dataset.apprId;
       const act = apBtn.dataset.apprAct;
+      const scope = apBtn.dataset.apprScope || 'once';
       apBtn.disabled = true;
       try {
-        await api('/api/gateway/approve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ id, decision: act }) });
-        toast(act === 'approve' ? '已同意放行并全权限重跑' : '已驳回');
+        await api('/api/gateway/approve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ id, decision: act, scope }) });
+        toast(act === 'approve' ? `已批准放行（${scope === 'always' ? '已写回规则' : scope === 'session' ? '本会话放行' : '仅这一次'}）` : '已驳回');
         S.gw = await api('/api/gateway/state').catch(() => S.gw);
         render();
       } catch (err) { toast('操作失败：' + err.message); apBtn.disabled = false; }
@@ -899,7 +927,8 @@ async function dispatchSheet(from) {
   const fams = Object.keys(S.caps ? S.caps.channels : {}).filter((f) => getBackendCap(f, 'spawn-subagent') && FAM[f]);
   const last = store.get('dispFam') || fams[0];
   const el = sheet(`<b>派活${from ? '：从 ' + esc(cleanTitle(from.title || from.name).slice(0, 24)) : ''}</b>
-    <label>交给谁</label><select id="df">${fams.map((f) => `<option value="${f}" ${f === last ? 'selected' : ''}>${esc(FAM[f])}</option>`).join('')}</select>
+    <label>交给谁</label><select id="df">${fams.map((f) => `<option value="${f}" ${f === last ? 'selected' : ''}>${esc(FAM[f])}${quotaShort(f) ? '（额度低）' : ''}</option>`).join('')}</select>
+    <div class="sub" id="dq" style="white-space:normal"></div>
     <label>在哪个会话里做</label><select id="ds"></select>
     <label>模型</label><select id="dm"></select>
     <label>要它做什么</label><textarea id="dt" placeholder="做完让它交回什么"></textarea>
@@ -908,6 +937,7 @@ async function dispatchSheet(from) {
   const fill = () => {
     const f = $('#df', el).value;
     const ch = ((S.gw && S.gw.channels) || []).find((c) => c.id === f) || {};
+    $('#dq', el).textContent = quotaLine(f);
     $('#dm', el).innerHTML = (ch.recommendedModels || []).map((m) => `<option value="${esc(m)}" ${m === ch.defaultModel ? 'selected' : ''}>${esc(modelLabel(f, m))}</option>`).join('') || '<option value="">默认</option>';
     // Never a session a person has open elsewhere (ownership external-active), nor a sub-agent.
     const recent = S.sessions.filter((s) => s.channel === f && isMain(s) && s.ownership !== 'external-active' && s.ownership !== 'subagent' && (!from || s.id !== from.id)).slice(0, 30);
@@ -1325,9 +1355,11 @@ function renderApprovalBanner(meta) {
       <div style="font-weight:600;font-size:14px">${esc(match.toolName || '工具操作')}</div>
       ${match.toolInput ? `<pre class="approval-pre">${esc(pretty(match.toolInput))}</pre>` : ''}
       <div class="sub" style="margin-top:4px;color:var(--mute)"><b>拦截原因：</b>${esc(match.reason || '当前权限门禁拦截')}</div>
-      <div class="row" style="margin-top:10px;justify-content:flex-end;gap:8px">
+      <div class="row" style="margin-top:10px;justify-content:flex-end;gap:6px;flex-wrap:wrap">
         <button class="btn ghost btn-touch" data-appr-act="reject" data-appr-id="${esc(match.id)}">驳回</button>
-        <button class="btn btn-touch" style="background:var(--ok)" data-appr-act="approve" data-appr-id="${esc(match.id)}">${inTurn ? '✓ 批准，这一轮继续' : '✓ 同意放行（全权限重跑）'}</button>
+        <button class="btn btn-touch" style="background:var(--ok)" data-appr-act="approve" data-appr-scope="once" data-appr-id="${esc(match.id)}">${inTurn ? '✓ 批准一次（本轮继续）' : '✓ 批准一次'}</button>
+        <button class="btn ghost btn-touch" data-appr-act="approve" data-appr-scope="session" data-appr-id="${esc(match.id)}">本会话放行</button>
+        <button class="btn ghost btn-touch" data-appr-act="approve" data-appr-scope="always" data-appr-id="${esc(match.id)}">以后都放行</button>
       </div>
     </div>`;
 }
@@ -1556,10 +1588,11 @@ async function viewSession(id) {
     if (!b) return;
     const appId = b.dataset.apprId;
     const act = b.dataset.apprAct;
+    const scope = b.dataset.apprScope || 'once';
     b.disabled = true;
     try {
-      const result = await api('/api/gateway/approve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ id: appId, decision: act }) });
-      toast(act === 'approve' ? (result.inTurn ? '已批准，这一轮继续' : '已同意放行，智能体正在全权限重跑') : '已驳回请求');
+      const result = await api('/api/gateway/approve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ id: appId, decision: act, scope }) });
+      toast(act === 'approve' ? (result.inTurn ? `已批准，这一轮继续（${scope === 'always' ? '已写回规则' : scope === 'session' ? '本会话有效' : '仅这一次'}）` : `已批准放行（${scope === 'always' ? '已写回规则' : scope === 'session' ? '本会话有效' : '仅这一次'}）`) : '已驳回请求');
       S.gw = await api('/api/gateway/state').catch(() => S.gw);
       renderApprovalBanner(meta);
     } catch (err) { toast('审批操作失败：' + err.message); b.disabled = false; }
@@ -1805,7 +1838,8 @@ async function newTask(project) {
   const fams = Object.keys(S.caps ? S.caps.channels : {}).filter((f) => getBackendCap(f, 'open') && FAM[f]);
   const last = store.get('newFam') || 'antigravity';
   const el = sheet(`<b>新任务</b>
-    <label>交给谁</label><select id="nf">${fams.map((f) => `<option value="${f}" ${f === last ? 'selected' : ''}>${FAM[f]}</option>`).join('')}</select>
+    <label>交给谁</label><select id="nf">${fams.map((f) => `<option value="${f}" ${f === last ? 'selected' : ''}>${FAM[f]}${quotaShort(f) ? '（额度低）' : ''}</option>`).join('')}</select>
+    <div class="sub" id="nq" style="white-space:normal"></div>
     <label>模型</label><select id="nm"></select>
     <label>工作目录</label><input id="nc" value="${esc(project || '')}" placeholder="不填就新建一个独立目录">
     <label>权限门禁</label><select id="np"><option value="all">全放行（默认）</option><option value="reads">只读（写文件与跑命令需审批）</option></select>
@@ -1814,6 +1848,7 @@ async function newTask(project) {
   const fill = () => {
     const f = $('#nf', el).value;
     const ch = (S.gw.channels || []).find((c) => c.id === f) || {};
+    $('#nq', el).textContent = quotaLine(f);
     const ms = ch.recommendedModels || [];
     $('#nm', el).innerHTML = ms.map((m) => `<option value="${esc(m)}" ${m === ch.defaultModel ? 'selected' : ''}>${esc(modelLabel(f, m))}</option>`).join('') || '<option value="">默认</option>';
   };

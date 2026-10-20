@@ -10,6 +10,7 @@ export const approvalMethods = {
   async resolveApproval(this: AgentGatewayHub, params: {
     id: string;
     decision: 'approve' | 'reject';
+    scope?: 'once' | 'session' | 'always';
     customHint?: string;
   }) {
     const item = this.pendingApprovals.find((a) => a.id === params.id && a.status === 'pending');
@@ -17,6 +18,10 @@ export const approvalMethods = {
       throw new Error(`未找到待审批项或已处理: ${params.id}`);
     }
     item.status = params.decision === 'approve' ? 'approved' : 'rejected';
+
+    if (params.decision === 'approve' && item.securityRequest) {
+      this.rememberSecurityApproval(item.securityRequest, params.scope || 'once');
+    }
 
     // 1. Live in-turn approval (Codex app-server or Claude stream-json suspended mid-turn)
     const liveResolver = this.liveApprovalResolvers.get(item.id);
@@ -69,12 +74,12 @@ export const approvalMethods = {
       item.channel,
       item.sessionName,
       '批准权限并续跑',
-      `已批准会话 ${item.sessionName} 执行 ${item.toolName}，升级为全权限 (--approve-all) 继续执行`,
+      `已批准会话 ${item.sessionName} 执行 ${item.toolName}，保持当前模式继续执行（不自动升级全权限）`,
     );
 
     const resumePrompt =
       (params.customHint || '').trim() ||
-      `已批准你的权限请求（工具：${item.toolName}），现已开启全读写与命令执行权限 (--approve-all)，请继续完成刚才的操作（原任务：${item.prompt.slice(0, 180)}）。`;
+      `已批准你的权限请求（工具：${item.toolName}），请继续完成刚才的操作（原任务：${item.prompt.slice(0, 180)}）。`;
 
     const res = await this.sendPrompt({
       channel: item.channel,
@@ -83,7 +88,8 @@ export const approvalMethods = {
       cwd: item.cwd,
       model: item.model,
       prompt: resumePrompt,
-      permissions: 'all',
+      securityMode: item.securityRequest?.mode,
+      permissions: item.securityRequest?.mode === 'deny' ? 'deny' : item.securityRequest?.mode === 'readonly' || item.securityRequest?.mode === 'reads' ? 'reads' : 'all',
       mode: 'send',
       source: 'web',
       resumedByMeta: 'meta_approver',

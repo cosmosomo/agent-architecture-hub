@@ -47,8 +47,22 @@
       "id": "approve",
       "method": "POST",
       "path": "/api/gateway/approve",
-      "does": "答复待审批项。现在是补齐：一轮因没权限失败后才生成待审批项，同意就全放行重跑一轮（搬到一个会话这一级）",
+      "does": "答复待审批项。支持轮内原位与会话重试，批准可选 once/session/always，不自动升级为全权限",
       "cli": "approve"
+    },
+    {
+      "id": "security-request-approval",
+      "method": "POST",
+      "path": "/api/gateway/request-approval",
+      "does": "向中心一道闸门请示安全审批，进入中心审批队列",
+      "cli": "key"
+    },
+    {
+      "id": "security-audit",
+      "method": "GET",
+      "path": "/api/gateway/audit",
+      "does": "读取中心安全审计账本（security-audit.jsonl）",
+      "cli": "audit"
     },
     {
       "id": "handoff",

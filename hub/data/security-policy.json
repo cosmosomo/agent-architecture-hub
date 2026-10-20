@@ -29,16 +29,71 @@
   "modes": {
     "full": [],
     "workspace": [
-      { "action": "file.read", "target": "sensitive", "decision": "deny" },
-      { "action": "shell.run", "target": "sensitive", "decision": "deny" },
-      { "action": "file.write", "target": "sensitive", "decision": "deny" },
-      { "action": "file.write", "target": "outside-cwd", "decision": "deny" }
+      {
+        "action": "file.read",
+        "target": "sensitive",
+        "decision": "deny"
+      },
+      {
+        "action": "shell.run",
+        "target": "sensitive",
+        "decision": "deny"
+      },
+      {
+        "action": "file.write",
+        "target": "sensitive",
+        "decision": "deny"
+      },
+      {
+        "action": "file.write",
+        "target": "outside-cwd",
+        "decision": "deny"
+      }
     ],
     "readonly": [
-      { "action": "file.read", "target": "sensitive", "decision": "deny" },
-      { "action": "shell.run", "target": "sensitive", "decision": "deny" },
-      { "action": "file.write", "target": "*", "decision": "deny" }
+      {
+        "action": "file.read",
+        "target": "sensitive",
+        "decision": "deny"
+      },
+      {
+        "action": "shell.run",
+        "target": "sensitive",
+        "decision": "deny"
+      },
+      {
+        "action": "file.write",
+        "target": "*",
+        "decision": "deny"
+      }
+    ],
+    "reads": [
+      {
+        "action": "file.read",
+        "decision": "allow"
+      },
+      {
+        "action": "net",
+        "decision": "allow"
+      },
+      {
+        "action": "*",
+        "decision": "ask"
+      }
+    ],
+    "deny": [
+      {
+        "action": "*",
+        "decision": "deny"
+      }
     ]
   },
-  "defaultMode": "full"
+  "defaultMode": "full",
+  "modesAbout": {
+    "full": "不加限制（默认）",
+    "workspace": "只在派活目录里写，不碰敏感目录",
+    "readonly": "不写文件、不碰敏感目录；命令行不拦（脚本能绕），要拦就给 shell.run 加 ask 或 deny",
+    "reads": "旧参数 --permissions reads：读和联网放行，其余都要批",
+    "deny": "旧参数 --permissions deny：全部拒绝"
+  }
 }

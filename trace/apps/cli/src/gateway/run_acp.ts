@@ -8,6 +8,7 @@ import { AcpResidentDriver, resolveAcpBridgeCommand, type AcpApprovalDecision, t
 import type { RunOpts, ChannelProfile, ActiveRun } from './types.ts';
 import { agentBaseEnv } from './products.ts';
 import { ACP_IDLE_MS, ACPX_TURN_TIMEOUT_SEC } from './common.ts';
+import { toolRequest } from './security.ts';
 
 export const acpRunMethods = {
   /**
@@ -55,7 +56,7 @@ export const acpRunMethods = {
         // The model the agent says it is on, not only the one asked for.
         if (info.currentModel) run.model = info.currentModel;
         // Products whose own mode decides whether they ask before writing (ZCode) get the mode for this turn's permission.
-        const mode = this.acpPinnedModes.get(sid) || prof.acpModes?.[opts.permissions];
+        const mode = this.acpPinnedModes.get(sid) || prof.acpModes?.[run.securityMode || 'full'] || prof.acpModes?.[opts.permissions];
         if (mode && info.currentMode !== mode) {
           try {
             await driver.setSessionMode(sid, mode);
@@ -204,42 +205,13 @@ export const acpRunMethods = {
     }
     const last = run.tools[run.tools.length - 1];
     const title = String(req.toolCall?.title || '').trim() || run.permissionAsk || (last ? last.name : '某个工具');
-    const settle = (allow: boolean): AcpApprovalDecision => {
-      run.permissionAsk = undefined;
-      if (!allow) (run.deniedTools ||= []).push(title);
-      return allow ? 'allow_once' : 'reject_once';
-    };
-    // Leaving plan mode is the plan itself waiting for a yes: it always goes to the person, whatever the permission.
-    const planExit = String(req.toolCall?.kind || '') === 'switch_mode' || /exit plan mode/i.test(title);
-    if (run.permissions === 'deny') return settle(false);
-    if (run.permissions === 'all' && !planExit) return settle(true);
-    if (!planExit && ['read', 'search', 'fetch', 'think'].includes(String(req.toolCall?.kind || ''))) return settle(true);
-
-    const apprId = `appr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    this.pendingApprovals.unshift({
-      id: apprId,
-      runId: run.runId,
-      channel: prof.id,
-      sessionName: run.sessionName,
-      traceSessionId: run.traceSessionId,
-      cwd: run.cwd,
-      model: run.model,
-      prompt: run.prompt,
-      toolName: title,
-      toolInput: JSON.stringify(req.toolCall?.rawInput || req.toolCall || {}).slice(0, 600),
-      reason: `${prof.label} 轮内请求：${title}。批准后这一轮继续`,
-      createdAt: new Date().toISOString(),
-      status: 'pending',
-      inTurn: true,
-      mode: 'in-turn',
-    });
-    if (this.pendingApprovals.length > 20) this.pendingApprovals.pop();
-    run.waitingApprovalId = apprId;
-    (run.warnings ||= []).push(`轮内等待审批: ${title}`);
-    this.broadcast('run_update', run);
-    this.broadcast('state', this.getState());
-    return new Promise<AcpApprovalDecision>((resolve) => {
-      this.liveApprovalResolvers.set(apprId, { runId: run.runId, channel: prof.id, resolve: (allow: boolean) => resolve(settle(allow)) });
-    });
+    const input = req.toolCall?.rawInput || req.toolCall || {};
+    const q = toolRequest(run, title, input, String(req.toolCall?.kind || ''));
+    // Leaving plan mode is the plan itself waiting for a yes: it always goes to the person, whatever the mode.
+    if (String(req.toolCall?.kind || '') === 'switch_mode' || /exit plan mode/i.test(title)) q.askPerson = true;
+    const allow = await this.securityCheck(q, run);
+    run.permissionAsk = undefined;
+    if (!allow) (run.deniedTools ||= []).push(title);
+    return allow ? 'allow_once' : 'reject_once';
   },
 };

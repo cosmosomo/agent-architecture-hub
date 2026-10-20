@@ -11,6 +11,7 @@ export type RunOpts = {
   prompt: string;
   model: string;
   permissions: 'all' | 'reads' | 'deny';
+  securityMode?: 'full' | 'workspace' | 'readonly' | 'reads' | 'deny';
   source: 'web' | 'cli';
   retryCount?: number;
   resumedByMeta?: string;
@@ -77,7 +78,7 @@ export type ChannelProfile = {
   traceKind: string;
   /** How the backend runs a turn for this product: the `route` column of hub/data/products.json. */
   route: string;
-  acpModes?: Partial<Record<'all' | 'reads' | 'deny', string>>;
+  acpModes?: Partial<Record<'all' | 'reads' | 'deny' | 'full' | 'workspace' | 'readonly', string>>;
   modes?: string[];
   maxConcurrent: number;
   /** The quota account it draws on (quotaAccounts in hub/data/products.json); products sharing one stop together. */
@@ -110,6 +111,7 @@ export type QueuedPrompt = {
   prompt: string;
   model?: string;
   permissions: 'all' | 'reads' | 'deny';
+  securityMode?: 'full' | 'workspace' | 'readonly' | 'reads' | 'deny';
   source: 'web' | 'cli';
   enqueuedAt: string;
 };
@@ -125,6 +127,7 @@ export type ActiveRun = {
   cwd: string;
   model: string;
   permissions: 'all' | 'reads' | 'deny';
+  securityMode?: 'full' | 'workspace' | 'readonly' | 'reads' | 'deny';
   source: 'web' | 'cli';
   prompt: string;
   status: 'running' | 'cancelling' | 'completed' | 'failed' | 'aborted';
@@ -223,6 +226,7 @@ export type PendingApproval = {
   inTurn?: boolean;
   /** 'in-turn' for live suspended turns; 'session-retry' for post-turn session-level retry. */
   mode?: 'in-turn' | 'session-retry';
+  securityRequest?: any;
 };
 
 export type ExternalSessionAnomaly = {

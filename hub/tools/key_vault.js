@@ -14,6 +14,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const VAULT = path.join(ROOT, 'channels', '_private', 'sites.local.json');
 const POLICY = path.join(ROOT, 'hub', 'data', 'security-policy.json');
 const AUDIT = path.join(process.env.HUB_DATA_DIR || path.join(os.homedir(), '.agent-hub'), 'key-audit.jsonl');
+const gate = require('./security_gate.cjs');
 
 /** Field names that hold a secret; everything else (urls, names, quotas) is safe to show. */
 const SECRET_FIELD = /^(api_key|key|access_token|refresh_token|password|token|secret|account_id)$/i;
@@ -61,10 +62,9 @@ function entries(provider, p) {
  * '<provider>/<name>'; who: { product, session, task }, product matched against --by.
  */
 function ruleFor(pol, args, key) {
-  const prov = key.split('/')[0];
-  const whoOk = (r) => !r.who || ['product', 'session', 'task'].every((k) => !r.who[k] || r.who[k] === args[k === 'product' ? 'by' : k]);
-  const r = (pol.rules || []).find((x) => x.action === 'key.borrow' && whoOk(x) && (!x.target || x.target === '*' || x.target === key || x.target === `${prov}/*`));
-  return { decision: r ? r.decision : pol.default || 'allow', rule: r ? (pol.rules || []).indexOf(r) : null };
+  const q = { action: 'key.borrow', target: key, product: args.by, session: args.session, task: args.task };
+  const res = gate.evaluate(pol, q);
+  return { decision: res.decision, rule: res.rule };
 }
 
 function list(args = {}) {
@@ -95,10 +95,23 @@ function get(spec, args) {
   const e = name ? es.find((x) => x.name === name) : es[0];
   if (!e) throw new Error(`${prov} 下没有 ${name}；有：${es.map((x) => x.name).join('、')}`);
   const key = `${prov}/${e.name}`;
-  const { decision, rule } = ruleFor(policy(), args, key);
+  const pol = policy();
+  const q = { action: 'key.borrow', target: key, product: args.by, session: args.session, task: args.task, layer: 'L1' };
+  const { decision, rule } = gate.evaluate(pol, q);
+  gate.audit(q, { decision, rule });
   fs.mkdirSync(path.dirname(AUDIT), { recursive: true });
   fs.appendFileSync(AUDIT, JSON.stringify({ at: new Date().toISOString(), by: String(args.by), key, why: String(args.why), decision, rule, lent: decision === 'allow' }) + '\n');
-  if (decision === 'ask') throw new Error(`${key} 要人批：要接到中心的审批队列（/m/ 审批卡）后才生效，现在先不借（规则 ${rule}，hub/data/security-policy.json）`);
+  if (decision === 'ask') {
+    try {
+      const { spawnSync } = require('child_process');
+      const curl = spawnSync('curl', ['-s', '--noproxy', '*', '-X', 'POST', 'http://127.0.0.1:8899/api/gateway/request-approval', '-H', 'Content-Type: application/json', '-d', JSON.stringify({ product: args.by, session: args.session, task: args.task, action: 'key.borrow', target: key, reason: `密钥借用：${key}（用途：${args.why}）`, layer: 'L1' })], { encoding: 'utf8', timeout: 3000 });
+      if (curl.status === 0 && curl.stdout) {
+        const parsed = JSON.parse(curl.stdout);
+        if (parsed.allowed) return e.value;
+      }
+    } catch {}
+    throw new Error(`${key} 要人批：已提交中心审批队列（/m/ 审批卡或 agent_gateway.js approve），批准后方可获取（规则 ${rule}，hub/data/security-policy.json）`);
+  }
   if (decision !== 'allow') throw new Error(`${key} 不借（规则 ${rule}，hub/data/security-policy.json）`);
   return e.value;
 }
