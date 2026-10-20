@@ -61,3 +61,6 @@ channels/research/briefs/
 
 # developers' and testers' detailed reports attached to hand-backs (local)
 channels/probe/reports/
+
+# raw harness census data: samples from the user's own sessions (local)
+channels/research/harness/*-census.json

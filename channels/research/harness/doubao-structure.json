@@ -1,0 +1,216 @@
+{
+  "product": "doubao",
+  "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
+  "cells": {
+    "ctx-system": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "ctx-instructions": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "ctx-capability-list": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "ctx-environment": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "ctx-memory-recall": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "ctx-history": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "ctx-injection": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "ctx-output-style": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "ctx-cache": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "budget-accounting": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "compact-trigger": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "compact-strategy": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "compact-identity": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "compact-recovery": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "result-offload": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "tool-registry": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "tool-loading": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "tool-execution": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "tool-permission": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "tool-sandbox": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "tool-result": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "hooks": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "loop-stop": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "turn-interrupt": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "modes": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "plan-list": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "subagents": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "multi-agent-messaging": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "handoff": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "background-wake": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "goal-loop": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "ownership-lease": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "session-store": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "resume": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "checkpoints": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "long-term-memory": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "session-index": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "model-select": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "provider-credential": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "retry-policy": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "events-usage": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    },
+    "external-protocol": {
+      "how": "",
+      "evidence": [],
+      "level": "未知"
+    }
+  }
+}

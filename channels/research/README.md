@@ -18,6 +18,7 @@
 | 打破能力单元边界 | [frontier.md](frontier.md) | 原生做不到的单元，适配器能补到哪一级 | Argon（Antigravity pro）· research-frontier | adapter-frontier-20261018、theory-limits-20261018、frontier.md | 82/82 理论上限已推 + 12 行黑板实测（含 2272-2274），argon 边界降至 57 单元 191 格，推导 Top 10 派研究单元适配器极限 | 跨进程并发租约管理器（channel-lease）中心服务化、沉淀 desktop_inspector 统一门面 |
 | 底座渠道 | [base.md](base.md) | 按调用选渠道、额度、熔断、并发 | Codex · research-base | channel-base-20261018 | | 官方积分的无头鉴权（WorkBuddy） |
 | 开源工作台对照 | [oss.md](oss.md) | 别人的多智能体工作台做到了什么 | Antigravity · research-oss | openrig-matrix-20261018、agy-pro-openrig-source-20261018、oss.md | 已建卷宗推进 8 项开源突破与能力矩阵对照 | 网关代际编号锁与智能体 MCP 协作工具集（乙路）落地 |
+| 会话考古与 Harness 普查 | [harness/](harness/) | 各家产品本地会话记录里沉淀的 Harness 全部痕迹全量普查 | 各片研究员按产品分工 | [antigravity-会话考古.md](harness/antigravity-会话考古.md)、[doubao-会话考古.md](harness/doubao-会话考古.md) | Antigravity 342会话/79.6k行 + 豆包 71会话/299智能体已全量完成 | 支撑后续七家 Harness 标准化理论框架与“各家 × 要素”结构表 |
 
 研究员一栏是这次排定的，以后谁接着做就改这一栏。
 

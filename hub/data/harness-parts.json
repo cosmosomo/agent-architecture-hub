@@ -1,0 +1,300 @@
+{
+  "generatedFrom": "harness构造_理论框架_20261020.md",
+  "generatedAt": "2026-10-20T13:21:04.477Z",
+  "parts": [
+    {
+      "id": "ctx-system",
+      "group": "上下文装配",
+      "summary": "自带的系统提示词",
+      "added": false,
+      "seenIn": "Hermes `system_prompts` 表存了装配后的整篇（68 行）；Codex `session_meta.base_instructions` 只出现一次"
+    },
+    {
+      "id": "ctx-instructions",
+      "group": "上下文装配",
+      "summary": "指令文件的发现、加载顺序和优先级",
+      "added": false,
+      "seenIn": "Claude `attachment:instructions`；Codex `message`、`world_state` 里的 AGENTS.md"
+    },
+    {
+      "id": "ctx-capability-list",
+      "group": "上下文装配",
+      "summary": "工具与技能清单怎么写进上下文",
+      "added": false,
+      "seenIn": "Claude `skill_listing`、`agent_listing_delta`、`mcp_instructions_delta`"
+    },
+    {
+      "id": "ctx-environment",
+      "group": "上下文装配",
+      "summary": "环境信息（日期、目录、平台、模型、git）",
+      "added": false,
+      "seenIn": "Claude `environment`、`date`、`model`；Codex `turn_context`（含上下文窗口大小）；Hermes 的 git 列"
+    },
+    {
+      "id": "ctx-memory-recall",
+      "group": "上下文装配",
+      "summary": "记忆什么时候、以什么形式读进来",
+      "added": false,
+      "seenIn": "Antigravity `CONVERSATION_HISTORY`（新会话第 1 步注入）；Claude `nested_memory`"
+    },
+    {
+      "id": "ctx-history",
+      "group": "上下文装配",
+      "summary": "历史怎么放，压缩过的怎么代替",
+      "added": false,
+      "seenIn": "各家转录本身；压缩后见 ctx 和 compact 各项"
+    },
+    {
+      "id": "ctx-injection",
+      "group": "上下文装配",
+      "summary": "临时注入：提醒、文件变化、排队消息、钩子补充、外部注入",
+      "added": false,
+      "seenIn": "Claude 40 多种 attachment（`total_tokens_reminder` 45,094、`edited_text_file`、`queued_command`、`hook_additional_context`）；ZCode 的提醒包在工具结果里，不是独立记录"
+    },
+    {
+      "id": "ctx-output-style",
+      "group": "上下文装配",
+      "summary": "输出风格与格式要求",
+      "added": false,
+      "seenIn": "Claude `output_style`、`structured_output`"
+    },
+    {
+      "id": "ctx-cache",
+      "group": "上下文装配",
+      "summary": "哪些放在可缓存的前缀里",
+      "added": false,
+      "seenIn": "各家用量里的 cache_read、cache_creation；装配顺序要抓请求才看得清"
+    },
+    {
+      "id": "budget-accounting",
+      "group": "预算与压缩",
+      "summary": "用量和花费怎么记、怎么提醒",
+      "added": false,
+      "seenIn": "Codex `token_count`（含额度窗口 resets_at）；Claude `cost-state`；WorkBuddy `credit-usage`；ZCode `turn_usage`；Hermes 的成本列与 pricing_version"
+    },
+    {
+      "id": "compact-trigger",
+      "group": "预算与压缩",
+      "summary": "什么时候压缩",
+      "added": false,
+      "seenIn": "ZCode compaction 部件：`trigger:auto`、`phase:pre_request`、`compactReason:context_limit`、`preCompactTokenCount`"
+    },
+    {
+      "id": "compact-strategy",
+      "group": "预算与压缩",
+      "summary": "怎么压、压完留下什么、原话能否找回",
+      "added": false,
+      "seenIn": "Claude `compact_boundary` + `compact_file_reference`；Antigravity `CHECKPOINT`（394 次）；Codex `compacted` + `retained_context`；WorkBuddy `summary`"
+    },
+    {
+      "id": "compact-identity",
+      "group": "预算与压缩",
+      "summary": "压缩后会话还是不是同一个",
+      "added": false,
+      "seenIn": "OpenCode `session_context_epoch`（压缩世代，把环境说明整块作为基线重注入）"
+    },
+    {
+      "id": "compact-recovery",
+      "group": "预算与压缩",
+      "summary": "压缩失败或无效时怎么办",
+      "added": true,
+      "seenIn": "Hermes `compression_failure_cooldown_until`、`compression_fallback_streak`、`compression_ineffective_count`"
+    },
+    {
+      "id": "result-offload",
+      "group": "预算与压缩",
+      "summary": "超长结果存到外面只留引用",
+      "added": false,
+      "seenIn": "Antigravity `steps/<步>/output.txt`（21,538 份）；Claude `read_truncation_notice`"
+    },
+    {
+      "id": "tool-registry",
+      "group": "工具系统",
+      "summary": "工具从哪来：内置、技能、MCP、子智能体",
+      "added": false,
+      "seenIn": "Codex `McpToolCall`、`Extension`；Antigravity 工具调用排行"
+    },
+    {
+      "id": "tool-loading",
+      "group": "工具系统",
+      "summary": "一次全给还是用到再加载",
+      "added": false,
+      "seenIn": "Claude `deferred_tools_record`（5,658）、`deferred_tools_delta`；Codex `additional_tools`"
+    },
+    {
+      "id": "tool-execution",
+      "group": "工具系统",
+      "summary": "调度、并行、超时、在哪个进程和沙箱",
+      "added": false,
+      "seenIn": "Codex `CommandExecution`（含 exit_code、duration）；Antigravity 后台任务日志 3,461 份"
+    },
+    {
+      "id": "tool-permission",
+      "group": "工具系统",
+      "summary": "审批、记住批准、权限模式",
+      "added": false,
+      "seenIn": "Claude `permission-mode`、`command_permissions`；WorkBuddy `sessions.permission_mode`；各家审批决策本身几乎都不落盘"
+    },
+    {
+      "id": "tool-sandbox",
+      "group": "工具系统",
+      "summary": "系统层面拦到哪一级",
+      "added": false,
+      "seenIn": "Codex `turn_context.sandbox_policy`；WorkBuddy `workspace_trust_decisions`"
+    },
+    {
+      "id": "tool-result",
+      "group": "工具系统",
+      "summary": "结果怎么回到上下文",
+      "added": false,
+      "seenIn": "Claude 结果嵌在 user 消息的 tool_result 块；Codex `function_call_output`"
+    },
+    {
+      "id": "hooks",
+      "group": "工具系统",
+      "summary": "调用前后、轮末的钩子",
+      "added": false,
+      "seenIn": "Claude `hook_success`、`system:stop_hook_summary`；Codex `hooks.json` 的 11 类事件"
+    },
+    {
+      "id": "loop-stop",
+      "group": "主循环与组织",
+      "summary": "一轮内的循环和停止判定",
+      "added": false,
+      "seenIn": "ZCode、OpenCode 的 step-start / step-finish（约 5 万对）；Codex `task_started` / `task_complete` / `turn_aborted`"
+    },
+    {
+      "id": "turn-interrupt",
+      "group": "主循环与组织",
+      "summary": "插话、打断、排队怎么生效",
+      "added": false,
+      "seenIn": "ZCode `session_input.delivery`（startNow / queue / guide）；OpenCode `delivery=steer`；Claude `queue-operation`（9,980）"
+    },
+    {
+      "id": "modes",
+      "group": "主循环与组织",
+      "summary": "计划、只读、权限等模式",
+      "added": false,
+      "seenIn": "Claude `mode`、`plan_mode`；OpenCode `agent-switched`"
+    },
+    {
+      "id": "plan-list",
+      "group": "主循环与组织",
+      "summary": "计划和待办列表",
+      "added": true,
+      "seenIn": "ZCode `todo`（2,421）；OpenCode `todo`；Claude `task_status`"
+    },
+    {
+      "id": "subagents",
+      "group": "主循环与组织",
+      "summary": "子智能体的派生、隔离、回收",
+      "added": false,
+      "seenIn": "Antigravity `subagents/<会话>.json`（113）；Codex `SubAgentActivity`；Hermes `parent_session_id`、`async_delegations`"
+    },
+    {
+      "id": "multi-agent-messaging",
+      "group": "主循环与组织",
+      "summary": "智能体之间发消息",
+      "added": false,
+      "seenIn": "Codex `inter_agent_communication_metadata`（spawn_agent、send_message、wait_agent……）；Antigravity 消息信封 5,081 份；Hermes `hosted_room_*` 18 张表"
+    },
+    {
+      "id": "handoff",
+      "group": "主循环与组织",
+      "summary": "把一件事交给另一个会话或平台",
+      "added": true,
+      "seenIn": "Hermes `handoff_state`、`handoff_platform`"
+    },
+    {
+      "id": "background-wake",
+      "group": "主循环与组织",
+      "summary": "后台任务、定时、等事件后继续",
+      "added": false,
+      "seenIn": "WorkBuddy `automations` → `automation_runs` → 派发队列；Hermes `cron/`"
+    },
+    {
+      "id": "goal-loop",
+      "group": "主循环与组织",
+      "summary": "按目标和预算持续推进",
+      "added": false,
+      "seenIn": "Codex `goals_1.sqlite`、`thread_goal_updated`"
+    },
+    {
+      "id": "ownership-lease",
+      "group": "主循环与组织",
+      "summary": "谁正在持有这个会话或这一轮",
+      "added": true,
+      "seenIn": "WorkBuddy `sessions/<pid>.json`（进程登记、心跳）；Hermes `session_turn_leases`"
+    },
+    {
+      "id": "session-store",
+      "group": "持久化与记忆",
+      "summary": "会话存在哪、什么格式",
+      "added": false,
+      "seenIn": "JSONL（Claude、Codex、WorkBuddy、Antigravity）；SQLite（ZCode、OpenCode、Hermes）；OpenCode 两代格式并存"
+    },
+    {
+      "id": "resume",
+      "group": "持久化与记忆",
+      "summary": "退出后怎么接上",
+      "added": false,
+      "seenIn": "Claude `last-prompt`；ZCode `runtime/execution_state`"
+    },
+    {
+      "id": "checkpoints",
+      "group": "持久化与记忆",
+      "summary": "文件快照与回退",
+      "added": false,
+      "seenIn": "Claude、WorkBuddy `file-history-snapshot`；ZCode `runtime/workspace_checkpoint`（7,937）；Hermes `rewind_count`"
+    },
+    {
+      "id": "long-term-memory",
+      "group": "持久化与记忆",
+      "summary": "跨会话记忆的写、存、读",
+      "added": false,
+      "seenIn": "WorkBuddy 五个文件（MEMORY、USER、SOUL、IDENTITY、BOOTSTRAP）；Hermes MEMORY、USER（带锁文件）；Claude 项目 memory 目录；ZCode `memories/` 与 memoryEnabled 开关"
+    },
+    {
+      "id": "session-index",
+      "group": "持久化与记忆",
+      "summary": "标题、摘要、检索",
+      "added": false,
+      "seenIn": "Claude `ai-title`、`custom-title`；Hermes `messages_fts`；Antigravity `conversation_summaries.db` 全文索引"
+    },
+    {
+      "id": "model-select",
+      "group": "模型与渠道",
+      "summary": "选模型、推理力度、换模型",
+      "added": false,
+      "seenIn": "Codex `thread_settings_applied`；ZCode `runtime/model_selection`"
+    },
+    {
+      "id": "provider-credential",
+      "group": "模型与渠道",
+      "summary": "供应商、中转、凭据、额度",
+      "added": false,
+      "seenIn": "Claude `credential_org`；cc-switch；Codex 额度窗口"
+    },
+    {
+      "id": "retry-policy",
+      "group": "模型与渠道",
+      "summary": "请求失败怎么重试、何时放弃",
+      "added": true,
+      "seenIn": "Claude `system:api_error`（2,907，带 retryAttempt、maxRetries）；Codex `config.toml` 的重试参数；Hermes 失败请求转储 22 份"
+    },
+    {
+      "id": "events-usage",
+      "group": "可观测与对外",
+      "summary": "事件流、用量、错误",
+      "added": false,
+      "seenIn": "OpenCode `event` 表（事件总线持久化，10,922）；Codex `event_msg`"
+    },
+    {
+      "id": "external-protocol",
+      "group": "可观测与对外",
+      "summary": "对外驱动的协议和能拿到的内部状态",
+      "added": false,
+      "seenIn": "见《适配器模块设计》和各家卷宗；会话记录里只看得到它留下的结果"
+    }
+  ]
+}
