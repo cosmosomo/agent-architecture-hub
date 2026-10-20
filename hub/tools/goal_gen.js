@@ -144,6 +144,15 @@ function cells() {
   return out;
 }
 
+/** Cells with a question and nothing recorded at any place (never tested), for the products pick lets through. */
+const untestedCells = (pick) => cells().filter((x) => pick(x) && ['app', 'api', 'adapter', 'front'].every((L) => !x.c[L]) && tests().tests[x.unit.id]);
+
+/** For `test --untested`: what a tester of this product (or of every product) can just go and test. */
+function untested(agent) {
+  const off = blocked();
+  return untestedCells((x) => !off.has(x.product) && (!agent || x.product === agent)).map((x) => ({ product: x.product, unit: x.unit.id, name: x.unit.name }));
+}
+
 function goalForGaps(args) {
   const o = options(args);
   const kind = args.kind;
@@ -154,7 +163,7 @@ function goalForGaps(args) {
   const pick = (x) => !off.has(x.product) && (!onlyAgents.length || onlyAgents.includes(x.product)) && (!onlyUnits.length || onlyUnits.includes(x.unit.id));
   if (kind === 'untested') {
     // Nothing recorded at any place, and a question exists: a tester can just go.
-    const todo = cells().filter((x) => pick(x) && ['app', 'api', 'adapter', 'front'].every((L) => !x.c[L]) && T[x.unit.id]);
+    const todo = untestedCells(pick);
     const by = {};
     for (const x of todo) (by[x.product] ||= []).push(x.unit.id);
     const tasks = Object.entries(by).map(([a, us]) => testTask(a, us.slice(0, o.limit), o, { why: '矩阵里这几格在任何位置都还没有记录（一次都没测过）。' }));
@@ -222,4 +231,4 @@ function generate(args) {
   throw new Error('goal-gen test --agents .. --units .. | goal-gen gaps --kind untested|build|research');
 }
 
-module.exports = { renderTest, generate };
+module.exports = { renderTest, generate, untested };

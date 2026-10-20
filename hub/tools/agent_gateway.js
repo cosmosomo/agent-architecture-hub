@@ -1876,9 +1876,17 @@ function cmdNote(args) {
 // User 10-20: “你得围绕基本能力做一个通用测试题集合了……多一个功能多一个测试题”.
 //   test --unit <单元> [--agent <产品>] [--token <暗号>]     print the question
 //   test --missing                                           units with no question yet
+//   test --untested [--agent <产品>]                         units with a question nobody has tested on that product
 function cmdTest(args) {
   const T = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'hub', 'data', 'capability-tests.json'), 'utf8'));
   const units = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'hub', 'data', 'capability-units.json'), 'utf8')).units;
+  // 10-20 a cold-started tester found no way to ask this: --missing is “no question”, not “not tested”.
+  if (args.untested) {
+    const rows = require('./goal_gen.js').untested(args.agent);
+    console.log(`${args.agent || '各家'}：有题、但矩阵里在任何位置都还没有记录的 ${rows.length} 格（拿题：test --unit <单元> --agent <产品>）`);
+    for (const r of rows) console.log(`  ${r.product}  ${r.unit}  ${r.name}`);
+    process.exit(0);
+  }
   if (args.missing) {
     const miss = units.filter((u) => !T.tests[u.id]);
     console.log(`有题 ${units.length - miss.length} / ${units.length} 个单元。还没有题的：`);
