@@ -1,5 +1,7 @@
 # 接口地图：前端控件 → 接口 → 网关 → 下层命令 → 能力
 
+> **历史文档**（截至 10-18：控件 → 接口 → 命令的对照。接口以 `hub/data/actions.json` 为准（`agent_gateway.js tables check` 核对）；手机页 `/m/` 已是主页面。）
+
 负责人（Claude）2026-10-17 读代码整理。本文是“定义”：控件和接口实际连到哪里。每条结论标来源：〔代码〕读代码得出（附文件:行号）；〔实测〕见 `probe/blackboard.jsonl` 行号。下层每项能力能不能做，以 `probe/MATRIX.md` 为准。入口文档见 [README.md](README.md)。
 
 ## 一、总的走向

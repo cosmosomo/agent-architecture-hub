@@ -1,5 +1,7 @@
 # 跨 Agent 统一调用网关架构与本机实测验收报告（`acpx` + ACP + `agent_gateway.js`）
 
+> **历史文档**（截至 10-14：接入 acpx 的决策与验收记录。现在中心直接驱动各家（Codex app-server、Claude stream-json、ACP 常驻桥、Antigravity agentapi 等），见 [README.md](README.md) 的“管线”“链路”两节；文中的协议对照是声明，以能力矩阵为准。）
+
 > **更新时间**：`2026-10-14T17:42:00+08:00`
 > **落盘位置**：`e:\program\GIT\Agent\multi\Agent-Architecture-Hub\channels\GATEWAY.md`
 > **核心执行入口**：[`hub/tools/agent_gateway.js`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/hub/tools/agent_gateway.js) ｜ 全局底层 CLI：`acpx@0.19.5`（配置文件：[`~/.acpx/config.json`](file:///C:/Users/COLORFIRE/.acpx/config.json)、[`.acpxrc.json`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/.acpxrc.json)）

@@ -58,3 +58,6 @@ channels/probe/blackboard.*
 
 # Research briefs are generated from the map; regenerate with build_briefs.mjs
 channels/research/briefs/
+
+# developers' and testers' detailed reports attached to hand-backs (local)
+channels/probe/reports/

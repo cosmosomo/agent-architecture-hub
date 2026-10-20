@@ -659,9 +659,9 @@ xacpx 的三样做法，实现时照着做：
 
 | 文件 | 现在的角色 |
 |---|---|
-| `EVALUATION_20261017.md` | 缺陷评估与设计方案：七个根因、设计、P0～P5、用户已定的事、委派复盘、每轮修复记录；末尾附原 README 结论一节（10-17～10-18） |
-| `P3_任务定义_20261018.md` | P3（嵌入 acpx 运行时）的任务定义草稿，等用户批准 |
-| `INTERFACES.md` | 接口地图：网页每个控件 → 接口 → 后端方法 → 对各产品实际执行的命令 → 能力 |
+| `EVALUATION_20261017.md` | （历史，截至 10-18）缺陷评估与设计方案：七个根因、设计、P0～P5、用户已定的事、委派复盘、每轮修复记录；末尾附原 README 结论一节（10-17～10-18） |
+| `P3_任务定义_20261018.md` | （历史）P3（嵌入 acpx 运行时）的任务定义草稿，等用户批准 |
+| `INTERFACES.md` | （截至 10-18，接口以 actions.json 为准）接口地图：网页每个控件 → 接口 → 后端方法 → 对各产品实际执行的命令 → 能力 |
 | `probe/README.md` | 分层实测的任务书（给测试员） |
 | `probe/blackboard.jsonl` | 事实 |
 | `probe/MATRIX.md` | 逐条路线的通断明细和待复测清单（生成，`probe/scripts/build_matrix.js`） |
@@ -674,12 +674,24 @@ xacpx 的三样做法，实现时照着做：
 | `~/.agent-hub/` | 运行时数据（仓库外）：`runs.jsonl` 运行记录、`uploads/` 发给智能体的图、`feedback/` 手机页反馈、`lan-host`、`hub-8899.log` |
 | `probe/results/` | 测试员的叙述报告 |
 | `probe/scripts/` | 测试脚本与负责人的工具：`tables.js`（打印四张表并和代码核对，也是 `agent_gateway.js tables`）、`build_coverage.js`（现状和功能矩阵）、`build_matrix.js`（黑板 → 矩阵＋待复测清单）、`append_corrections.js`（核验更正，只追加）、`gen_retest.js`、`watch_agy.js`；`P0/` 下是修复后的复测脚本 |
-| `BOARD.md` | 各能力渠道的运行状态灯（可用、冷却、封禁）。域 A 的能力列是声明，与实测矛盾处以矩阵为准 |
+| `BOARD.md` | （历史，截至 10-14）各能力渠道的运行状态灯（可用、冷却、封禁）。域 A 的能力列是声明，与实测矛盾处以矩阵为准 |
 | `GATEWAY.md` | 10-14 接入 acpx 的决策与验收记录（历史；第四节的协议对照表是声明） |
 | `hosts/*.md`、`hosts/codex/` | 各产品的档案卡：入口、能力、安全红线、演进日志；Codex 四册 |
 | `models/*.md` | 各条模型渠道的档案卡：yinzi、2chat、智谱、火山方舟、Anthropic 官方 |
 | `_private/` | key 与全量凭证手册（不进公开仓库） |
-| `../HANDOFF.md` | 给外部审查者的交接入口；其能力矩阵是声明，以矩阵为准 |
+| `../HANDOFF.md` | （历史，截至 10-18）给外部审查者的交接入口；其能力矩阵是声明，以矩阵为准 |
+| `../AGENTS.md` | 进这个仓库干活的智能体先读的一页：铁律、分层读、常用命令（各家共用的接入技能 local-capability-hub 里有同样的铁律） |
+| `演化路径.md` | 一路怎么走过来的：每一步改了什么、学到了什么；最后一节是现在的目标和下一轮候选 |
+| `research/README.md`、`research/*.md` | 研究目录：每片一位研究员、固定会话、卷宗（关键信息、经验、还没解决的、出处）、会话台账 |
+| `research/briefs/<研究员>-边界.md` | 每位研究员这片的边界清单：没到理论上限的格子、卡在哪、证据、别家怎么打通（生成，`probe/scripts/build_briefs.mjs`，不进库） |
+| `research/continue-20261019.md` | 研究员的通用任务书：整片推进、先查网上、照题实测 |
+| `probe/SOP_对话探查生态功能.md` | 问各家有什么独家功能、怎么核实、怎么登记 |
+| `../hub/data/capability-tests.json` | 测试题：一个能力单元一道，题就是验收标准（`agent_gateway.js test --unit <单元> --agent <产品>`） |
+| `../hub/tools/goal_gen.js` | 派活生成：从测试题和矩阵缺口生成目标（`agent_gateway.js goal-gen`，加 --go 才提交） |
+| `../hub/data/security-policy.json` | 安全的唯一规则表：动作 × 谁 × 对象 → 放行 / 要批 / 拒绝，默认放行；限制模式是一组规则的名字；敏感目录 |
+| `../hub/tools/key_vault.js` | 借密钥：`agent_gateway.js key list / key get`，按规则表判、每次记账（`~/.agent-hub/key-audit.jsonl`）；密钥本身在 `_private/sites.local.json` |
+| `probe/capability-matrix.json`、`probe/capability-matrix.html` | 能力矩阵的逐格数据和网页版（生成，`probe/scripts/build_coverage.js`） |
+| `probe/reports/` | 开发者、测试员交回时附的详细报告（不进库） |
 
 ## 附录：黑板里的路线编号
 

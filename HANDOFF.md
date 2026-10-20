@@ -1,5 +1,7 @@
 # Agent-Architecture-Hub 交接与认知锚点文档 (HANDOFF.md)
 
+> **历史文档**（截至 10-18：给外部审查者的交接索引。之后的做法和现状以 [AGENTS.md](AGENTS.md)、[channels/README.md](channels/README.md)、[channels/演化路径.md](channels/演化路径.md) 为准；文中的能力矩阵是声明，以 [channels/probe/CAPABILITY_MAP.md](channels/probe/CAPABILITY_MAP.md) 为准。）
+
 > **2026-10-18 认知同步声明**：
 > 本文档最初作为交接索引发起本轮系统性探针摸底与架构纠偏；经 2026-10-17 至 2026-10-18 多智能体全量实测（`channels/probe/blackboard.jsonl` 1,559 条记录）、119 项能力单元登记、根因审计（`R1–R8`）与 `P0` / 手机督工台（`/m/` v2）落地后，**[`channels/README.md`](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/channels/README.md) 已成为任何接手智能体的第一认知总入口**。本文档已与 2026-10-18 最新架构事实、术语铁律及 `P3` 演进路线完全对齐。
 

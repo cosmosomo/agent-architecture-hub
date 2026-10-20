@@ -11,6 +11,17 @@ English | [简体中文](README.zh-CN.md)
 
 Hub parses three kinds of input into one unified model — written orchestration (Markdown documents or JSON), recorded runs, and live agent sessions from your machine — and presents it through a set of linked observation panels. The model keeps three layers apart: the **definition** (what the collaboration is written to be), the **facts** (what happened) and the **analysis** computed from the two. The page is the debugger for the difference between them.
 
+## What grew on top: the coordination center (since 2026-10-17)
+
+The same service (`node trace/apps/cli/src/main.ts serve --port 8899`) has since grown into a coordination center for the agents on this machine: it drives Claude, Codex, Antigravity, ZCode, WorkBuddy, OpenCode, Hermes and Doubao, dispatches work, collects hand-backs, runs a task board and accepts work by test questions; the phone page is at `/m/`. The working documents are in Chinese; start with:
+
+- [AGENTS.md](AGENTS.md): the one page an agent reads before working here (rules, what to read, commands).
+- [channels/README.md](channels/README.md): the entry to the concepts, the pipeline and each product's entry points; its closing file map says what each document is for and which are history.
+- [channels/演化路径.md](channels/演化路径.md): how it got here, step by step.
+- Status: the capability map [channels/probe/CAPABILITY_MAP.md](channels/probe/CAPABILITY_MAP.md); research [channels/research/README.md](channels/research/README.md).
+
+The rest of this page describes the observatory itself (written 2026-10-13, still valid).
+
 ![A team parsed from five Markdown documents: departments, individuals and the four kinds of lines](docs/img/overview.jpg)
 
 ## Automatic parsing

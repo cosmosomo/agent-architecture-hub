@@ -1,5 +1,7 @@
 # 后续开发计划
 
+> **历史文档**（截至 10-13：观察台阶段的开发计划。现在的目标和下一轮候选见 [channels/演化路径.md](../channels/演化路径.md) 最后一节。）
+
 这份计划写的是**已经看清、还没做**的事，按依赖和价值排序。每一项都写了现状、要做什么、做到什么算完成。已经做完的不在这里（见 `README.md` 和 `docs/ARCHITECTURE.md`）。
 
 English summary: (1) one Trace — the standalone viewer and the observatory share one component, one link format and one annotation source; (2) one orchestration and visualisation layer — layout, default views and edits live in the case and write back to its documents; (3) facts from annotated sessions, compared with the written definition; (4) parsing with machine verification; (5) release engineering.

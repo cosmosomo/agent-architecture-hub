@@ -11,6 +11,17 @@
 
 Hub 把三类输入解析成同一个统一模型——写下来的编排（Markdown 文档或 JSON）、记录下来的运行、以及你本机上真实的智能体会话——再用一组相互联动的观察面板呈现。模型把三层分开保存：**定义**（协作被写成什么样）、**事实**（实际发生了什么）、以及由两者算出的**分析**。页面就是调试这两者差异的工具。
 
+## 现在多了什么：协作中心（10-17 起）
+
+同一个服务（`node trace/apps/cli/src/main.ts serve --port 8899`）后来长成了本机多智能体的协作中心：它驱动 Claude、Codex、Antigravity、ZCode、WorkBuddy、OpenCode、Hermes、豆包，能派活、收交回、跑任务板、按测试题验收，手机督工台在 `/m/`。从这里读起：
+
+- [AGENTS.md](AGENTS.md)：进仓库干活的智能体先读的一页（铁律、分层读、常用命令）。
+- [channels/README.md](channels/README.md)：认知入口（立体认知、管线、各产品入口），末尾的“文件地图”列出每份文档现在的角色、哪些已是历史。
+- [channels/演化路径.md](channels/演化路径.md)：一路怎么走过来的、每一步改了什么、学到了什么。
+- 现状：能力矩阵 [channels/probe/CAPABILITY_MAP.md](channels/probe/CAPABILITY_MAP.md)；研究目录 [channels/research/README.md](channels/research/README.md)。
+
+下面是观察台本身的说明（10-13 写的，仍然有效）。
+
 ![由五份 Markdown 文档解析出的团队：部门、个体和四类线](docs/img/overview.jpg)
 
 ## 自动解析
