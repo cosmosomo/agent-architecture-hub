@@ -235,6 +235,17 @@ const taskOf = (g, key) => board.tasksOf(board.getGoal(g.id)).find((t) => t.key 
   check('中文“验收通过”算过、“验收不通过”算返工', taskOf(g, 'zhp').status === 'completed' && taskOf(g, 'zhf').reworkCount === 1, `${taskOf(g, 'zhp').status} ${taskOf(g, 'zhf').status} ${taskOf(g, 'zhf').reworkCount}`);
 }
 
+// 6j. the verdict line may carry the hand-back mark
+{
+  const g = board.createGoal({ title: '交回标记', objective: 'x', channel: 'zcode', verifyBy: 'agent:claude', tasks: [{ key: 'mark', title: '带标记的结论' }] });
+  await tick();
+  board.onDispatch({ id: last().id, status: 'completed', delivery: { at: new Date().toISOString(), summary: '做完了', reply: '做完了', files: [], via: 'cli' } });
+  await tick();
+  board.onDispatch({ id: last().id, status: 'completed', delivery: { at: new Date().toISOString(), summary: '', reply: '核对过了，都对得上。\n\n【交回】PASS — 黑板 1 行（2326）', files: [] } });
+  await tick();
+  check('“【交回】PASS — …”算过', taskOf(g, 'mark').status === 'completed', taskOf(g, 'mark').status);
+}
+
 // 6f. a named task's session is reused by the next goal on the same line, one piece of work at a time
 {
   const g1 = board.createGoal({ title: '同一条线一', objective: 'x', channel: 'opencode', verifyBy: 'auto', tasks: [{ key: 'line-x', title: '第一件' }] });

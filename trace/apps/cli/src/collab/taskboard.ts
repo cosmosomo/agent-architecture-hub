@@ -633,7 +633,8 @@ export class TaskBoard {
     if (!['completed', 'failed', 'stalled', 'cancelled'].includes(d.status)) return;
     t.verifierDispatchId = null;
     const reply = String(d.delivery?.reply || d.delivery?.summary || '');
-    const m = reply.match(/^\s*\**\s*(PASS|FAIL)\b[\s:：*]*(.*)$/im);
+    // A line may carry the hand-back mark the dispatch footer asks for (“【交回】PASS — …”, 10-20).
+    const m = reply.match(/^\s*(?:【交回】)?\s*\**\s*(PASS|FAIL)\b[\s:：*—-]*(.*)$/im);
     // Haiku checkers often open in Chinese (“验收通过：…”) instead of the PASS/FAIL line; 10-20 three checks that had
     // verified everything sat waiting for a person because of it. Only the first line counts, not phrases inside.
     const first = (reply.split(/\r?\n/).map((l) => l.replace(/^[\s*#>`-]+/, '')).find((l) => l.trim()) || '').trim();

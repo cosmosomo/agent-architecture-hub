@@ -278,7 +278,10 @@ export const collabMethods = {
     for (const d of this.dispatches.values()) {
       if (d.status !== 'running' && d.status !== 'issued') continue;
       const matchById = d.targetRunId && d.targetRunId === run.runId;
-      const matchBySlot = d.to.channel === run.channel && d.to.sessionName === run.sessionName;
+      // Only a dispatch issued before this turn began can be answered by it: a check dispatched again the moment the
+      // previous check ended was handed that same reply (10-20, test-act-request-workbuddy).
+      const issuedBeforeTurn = (Date.parse(d.receipts?.issuedAt || '') || 0) <= Date.parse(run.startedAt) + 2000;
+      const matchBySlot = d.to.channel === run.channel && d.to.sessionName === run.sessionName && issuedBeforeTurn;
       if (!matchById && !matchBySlot) continue;
       const toolFiles: string[] = [];
       for (const t of run.tools || []) {
