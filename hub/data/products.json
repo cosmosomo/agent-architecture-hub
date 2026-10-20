@@ -432,7 +432,7 @@
         "mechanisms": [
           "acp request_permission"
         ],
-        "rationale": "通过 ACP 桥接中心审批答复，脚本可绕过（L1）"
+        "rationale": "10-20 旁路实测（黑板 2443、2444）：Hermes 经 ACP 发权限请求，中心闸门判了：--permissions deny 下 write_file 被立即拒绝，workspace 模式下工作目录外写被拒；但换成脚本（命令行）写照样成功，只拦到工具级。"
       }
     },
     {
