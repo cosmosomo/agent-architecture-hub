@@ -624,39 +624,99 @@ foreach ($p in $procs) {
       ? ['agentapi', 'send-message', cid, prompt]
       : ['agentapi', 'new-conversation', `--model=${cliModel}`, `--title=${agyTitle(sessionName, prompt)}`, prompt];
 
-    const child = spawn(ls.bin, args, {
-      cwd,
-      env: { ...agentBaseEnv(), ...ls.env, ANTIGRAVITY_PROJECT_ID: resolveAgyProjectId(cwd) },
-      windowsHide: true,
-    });
+    const deliver = (args: string[]) => {
+      const child = spawn(ls.bin, args, {
+        cwd,
+        env: { ...agentBaseEnv(), ...ls.env, ANTIGRAVITY_PROJECT_ID: resolveAgyProjectId(cwd) },
+        windowsHide: true,
+      });
 
-    this.activeProcs.set(key, child);
-    let stdoutBuf = '';
-    let stderrBuf = '';
+      this.activeProcs.set(key, child);
+      let stdoutBuf = '';
+      let stderrBuf = '';
 
-    child.stdout.on('data', (chunk: Buffer) => {
-      stdoutBuf += chunk.toString('utf8');
-      // Try extracting conversationId early if new-conversation outputs it
-      if (!cid) {
-        const m = /"conversationId"\s*:\s*"([0-9a-f-]{36})"/i.exec(stdoutBuf);
-        if (m) {
-          cid = m[1];
-          agyMap[sessionName] = cid;
-          this.saveAgySessionMap(agyMap);
-          run.traceSessionId = `antigravity:${cid}`;
+      child.stdout.on('data', (chunk: Buffer) => {
+        stdoutBuf += chunk.toString('utf8');
+        // Try extracting conversationId early if new-conversation outputs it
+        if (!cid) {
+          const m = /"conversationId"\s*:\s*"([0-9a-f-]{36})"/i.exec(stdoutBuf);
+          if (m) {
+            cid = m[1];
+            agyMap[sessionName] = cid;
+            this.saveAgySessionMap(agyMap);
+            run.traceSessionId = `antigravity:${cid}`;
+          }
         }
-      }
-    });
+      });
 
-    child.stderr.on('data', (chunk: Buffer) => {
-      stderrBuf += chunk.toString('utf8');
-    });
+      child.stderr.on('data', (chunk: Buffer) => {
+        stderrBuf += chunk.toString('utf8');
+      });
+
+      child.on('close', (code) => {
+        try {
+          const parsed = JSON.parse(stdoutBuf.trim());
+          const newCid = parsed?.response?.newConversation?.conversationId;
+          if (newCid && !cid) {
+            cid = newCid;
+            agyMap[sessionName] = cid;
+            this.saveAgySessionMap(agyMap);
+          }
+        } catch {}
+
+        if (cid) {
+          run.traceSessionId = `antigravity:${cid}`;
+          this.syncFromAntigravityTranscript(run, cid);
+        }
+
+        if (run.status === 'cancelling' || run.status === 'aborted') {
+          finish('aborted');
+        } else if ((code !== 0 && !run.text) || !cid) {
+          finish('failed', stderrBuf.trim() || stdoutBuf.trim() || `Antigravity 退出码 ${code}`);
+        } else {
+          delivered = true;
+          deliveredAt = Date.now();
+        }
+      });
+    };
 
     // agentapi only delivers the message and exits; the turn ends when the transcript shows a final
     // PLANNER_RESPONSE. So after a successful delivery keep polling until then (or cancel / 1h cap).
     let delivered = false;
     let finished = false;
     const deadline = Date.now() + 60 * 60_000;
+    // send-message into a conversation that a shutdown cut off mid-turn says it delivered, but nothing ever
+    // runs the message (10-20: dev-center-r3 after the reboot, three one-hour waits). So when the transcript
+    // has not grown two minutes after delivery and the conversation is idle, carry on in a new conversation
+    // once; if that one is silent too, fail now instead of waiting out the hour.
+    let deliveredAt = 0;
+    let carriedOn = false;
+    const transcriptLines = (id: string) => {
+      try {
+        return readFileSync(join(this.agyBrainDir, id, '.system_generated', 'logs', 'transcript.jsonl'), 'utf8')
+          .split(/\r?\n/)
+          .filter((l) => l.trim()).length;
+      } catch {
+        return 0;
+      }
+    };
+    const swallowed = () =>
+      Date.now() - deliveredAt > 2 * 60_000 &&
+      transcriptLines(cid) <= (run.initialMsgCount ?? 0) &&
+      this.agyConversationIdle(cid) === true;
+    const carryOn = () => {
+      const oldCid = cid;
+      carriedOn = true;
+      delivered = false;
+      cid = '';
+      run.initialMsgCount = 0;
+      (run.warnings ||= []).push(`原会话 ${oldCid.slice(0, 8)} 收下消息两分钟没动静（上次在回合中途被打断），改在新会话里发`);
+      this.broadcast('run_update', run);
+      const note =
+        `（接续会话：原 Antigravity 会话 ${oldCid} 上次在回合中途被打断，收不到新消息，中心改在这个新会话里发。` +
+        `需要之前的上下文时读 ${join(this.agyBrainDir, oldCid, '.system_generated', 'logs', 'transcript.jsonl')}。）\n\n`;
+      deliver(['agentapi', 'new-conversation', `--model=${cliModel}`, `--title=${agyTitle(sessionName, prompt)}`, note + prompt]);
+    };
     const finish = (status: 'completed' | 'failed' | 'aborted', error?: string) => {
       if (finished) return;
       finished = true;
@@ -672,34 +732,13 @@ foreach ($p in $procs) {
       if (!delivered) return;
       if (run.status === 'cancelling' || run.status === 'aborted') finish('aborted');
       else if (this.isAgyTurnDone(run, cid)) finish('completed');
-      else if (Date.now() > deadline) finish('failed', 'Antigravity 一小时内没有在 transcript 里写出最终回复');
+      else if (swallowed()) {
+        if (hasExistingBrain && !carriedOn) carryOn();
+        else finish('failed', 'Antigravity 收下消息两分钟后 transcript 仍没有动静，会话空闲（消息没有被执行）');
+      } else if (Date.now() > deadline) finish('failed', 'Antigravity 一小时内没有在 transcript 里写出最终回复');
     }, 600);
 
-    child.on('close', (code) => {
-      try {
-        const parsed = JSON.parse(stdoutBuf.trim());
-        const newCid = parsed?.response?.newConversation?.conversationId;
-        if (newCid && !cid) {
-          cid = newCid;
-          agyMap[sessionName] = cid;
-          this.saveAgySessionMap(agyMap);
-        }
-      } catch {}
-
-      if (cid) {
-        run.traceSessionId = `antigravity:${cid}`;
-        this.syncFromAntigravityTranscript(run, cid);
-      }
-
-      if (run.status === 'cancelling' || run.status === 'aborted') {
-        finish('aborted');
-      } else if ((code !== 0 && !run.text) || !cid) {
-        finish('failed', stderrBuf.trim() || stdoutBuf.trim() || `Antigravity 退出码 ${code}`);
-      } else {
-        delivered = true;
-      }
-    });
-
+    deliver(args);
     return run;
   },
 

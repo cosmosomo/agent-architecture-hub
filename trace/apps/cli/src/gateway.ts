@@ -954,7 +954,9 @@ export class AgentGatewayHub {
     const linked = this.listAcpxSessions().find(
       (s) => s.channel === prof.id && s.sessionName === sessionName,
     );
-    if (linked) {
+    // The Antigravity driver knows the conversation it used, and it can change mid-run (a conversation that no longer
+    // takes messages is carried on in a new one); the session list comes from a worker and can lag behind that.
+    if (linked && !(prof.id === 'antigravity' && run.traceSessionId?.startsWith('antigravity:'))) {
       run.traceSessionId = linked.traceSessionId;
     }
 

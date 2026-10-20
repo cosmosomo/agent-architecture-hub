@@ -44,5 +44,7 @@
 | 回看一个会话过去的对话 | `recall` |
 | 看会话、搜索、看中心状态 | `sessions`、`session`、`search`、`state` |
 | 联网搜索、提取网页正文 | `node hub/tools/search_hub.js search "<词>"`、`… extract "<链接>"` |
+| 系统自检：中心、各家、任务板、数据一层层查，坏了的写怎么办 | `node hub/tools/selfcheck.js`（`--json`；上次结果在 `~/.agent-hub/selfcheck.json`） |
+| 起中心、空闲时重启（等手上的轮次跑完） | `powershell -File hub/tools/hub_boot.ps1`、`… -Restart`；开机自启已登记（`-Install` / `-Uninstall`），日志 `~/.agent-hub/boot.log` |
 
 每个子命令不带参数运行，会提示它要哪些参数。
