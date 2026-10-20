@@ -1,0 +1,35 @@
+{
+  "product": "opencode",
+  "sources": [
+    "opencode --help（22 个 CLI 子命令，本轮实测拉取）",
+    "opencode serve /doc OpenAPI 全路径 162 条（本轮实测：channels/probe/tmp/oc-doc-paths.json）",
+    "opencode agent list（权限/工具矩阵，本轮实测）",
+    "census：~/.local/share/opencode/opencode.db + storage/（channels/research/harness/opencode-census.json）"
+  ],
+  "entries": [
+    { "name": "opencode run [message..]", "kind": "cli", "what": "无头单轮（--agent/-m/--session 可配）", "unit": "resume", "level": "看到", "evidence": "opencode --help（本轮）" },
+    { "name": "opencode serve / web / attach", "kind": "cli", "what": "无头 HTTP 服务/带网页启动/接回运行中服务", "unit": "external-protocol", "level": "试过", "evidence": "serve /doc 162 路径（本轮）；attach 在 --help" },
+    { "name": "opencode acp", "kind": "cli", "what": "ACP 模式", "unit": "external-protocol", "level": "试过", "evidence": "常驻桥全轮实测（acp.md）" },
+    { "name": "opencode session / export / import", "kind": "cli", "what": "会话管理/导出 JSON/导入", "unit": "handoff", "level": "看到", "evidence": "opencode --help" },
+    { "name": "opencode agents / agent / github / pr", "kind": "cli", "what": "智能体管理/GitHub agent/拉 PR 干活", "unit": "spawn-subagent", "level": "看到", "evidence": "opencode --help（pr 命令=拉 PR 分支后跑 opencode）" },
+    { "name": "opencode models / providers(auth) / stats / upgrade / plugin / db / debug", "kind": "cli", "what": "模型列表/供应商凭证/用量统计/升级/插件/库工具/调试", "unit": "model-list", "level": "看到", "evidence": "opencode --help；stats 有黑板证据（quota 行）" },
+    { "name": "opencode mcp", "kind": "cli", "what": "MCP 管理（add/list）", "unit": "mount-tools", "level": "看到", "evidence": "native-opencode-20261019.md：mcp list 5 服务 connected" },
+    { "name": "HTTP /session 系（new/children/command/diff/fork/init/message/prompt_async/revert/unrevert/share/shell/summarize/todo/abort/status）", "kind": "http", "what": "会话全生命周期面", "unit": "open", "level": "试过", "evidence": "/doc 162 路径 + 本轮 task 闭环与 fork 实测" },
+    { "name": "HTTP /session/{id}/question(+reject/reply) 与 /question、/api/question/request", "kind": "http", "what": "提问三件套（挂起/拒答/作答）", "unit": "ask-user", "level": "试过", "evidence": "blackboard.jsonl 10-19 早节（同轮问答闭环）" },
+    { "name": "HTTP /session/{id}/permission(+reply) 与 /permission/*、/api/permission/saved", "kind": "http", "what": "权限审批与已存批准", "unit": "tool-permission", "level": "试过", "evidence": "blackboard.jsonl:2360" },
+    { "name": "HTTP /session/{id}/model / compact / summarize / todo", "kind": "http", "what": "切模型/压缩/摘要/待办", "unit": "model-switch", "level": "试过", "evidence": "blackboard.jsonl:2359（model）与 10-19 summarize" },
+    { "name": "HTTP /session/{id}/interrupt / abort / wait", "kind": "http", "what": "打断/中止/等待轮结束（wait 该版 503）", "unit": "turn-interrupt", "level": "看到", "evidence": "/doc 162 路径；wait 503 见 native-opencode-20261019.md" },
+    { "name": "HTTP /session/{id}/revert / unrevert / diff / revert/{stage,commit,clear}", "kind": "http", "what": "回退与差异（含 staged 提交制）", "unit": "rewind", "level": "看到", "evidence": "/doc 162 路径" },
+    { "name": "HTTP /pty/*（shells/{id}/input/output/resize/connect-token）", "kind": "http", "what": "持久终端 PTY 面", "unit": "terminal", "level": "看到", "evidence": "/doc 162 路径" },
+    { "name": "HTTP /vcs/{status,diff,diff/raw,apply}", "kind": "http", "what": "版本控制操作面", "unit": null, "level": "看到", "evidence": "/doc 162 路径（candidates：VCS 原语我们没登记）" },
+    { "name": "HTTP /tui/*（append-prompt/submit-prompt/execute-command/open-models/open-sessions/select-session/show-toast/publish/control）", "kind": "http", "what": "TUI 远程遥控面（无头驱动 TUI）", "unit": "handover-human", "level": "看到", "evidence": "/doc 162 路径 + native-opencode-20261019.md tui/append-prompt 200" },
+    { "name": "HTTP /experimental/session/{id}/background / workspace/warp/copy(+generate-name) / control-plane/move-session", "kind": "http", "what": "实验面：后台会话/工作区瞬移/项目复制/控制面迁移", "unit": "wake-bg", "level": "看到", "evidence": "/doc 162 路径（background 该版未挂载，native 报告）" },
+    { "name": "HTTP /file /file/content /file/status /find /find/file /find/symbol /formatter", "kind": "http", "what": "文件读写/状态/三种查找/格式化", "unit": "workspace-files", "level": "看到", "evidence": "/doc 162 路径" },
+    { "name": "HTTP /mcp/{name}/{connect,disconnect,auth/authenticate,callback}", "kind": "http", "what": "MCP 连接与 OAuth 授权流", "unit": "mount-tools", "level": "看到", "evidence": "/doc 162 路径" },
+    { "name": "HTTP /api/fs/{find,list,read/*} /api/location /api/model /api/provider(+oauth) /api/skill /api/command /api/agent", "kind": "http", "what": "文件/定位/模型/供应商(含 OAuth 授权)/技能/命令/智能体", "unit": "probe-host", "level": "看到", "evidence": "/doc 162 路径" },
+    { "name": "HTTP /event /global/event /api/event /sync/{history,replay,start,steal}", "kind": "http", "what": "事件流（多代）与同步面（可偷取同步锁）", "unit": "observe-live", "level": "看到", "evidence": "/doc 162 路径" },
+    { "name": "HTTP /auth/{providerID} /config /global/config /config/providers /log /lsp /path /vcs/status", "kind": "http", "what": "鉴权/配置/日志/LSP/路径", "unit": "config", "level": "看到", "evidence": "/doc 162 路径" },
+    { "name": "斜杠命令（/command /api/command /session/{id}/command 端点）", "kind": "slash", "what": "命令面有 HTTP 出口（ACP 报告 10 个命令经桥可用）", "unit": "cmd-list", "level": "看到", "evidence": "/doc 路径 + native-opencode-20261019.md" }
+  ],
+  "gaps": "162 路径的请求/响应 schema 未逐一展开（/doc 里全有，需要时再抽）；TUI 斜杠命令全表未拉（在 TUI 内）；/experimental/workspace/warp 语义未实测。"
+}

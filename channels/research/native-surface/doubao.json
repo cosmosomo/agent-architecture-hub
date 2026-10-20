@@ -1,0 +1,22 @@
+{
+  "product": "doubao",
+  "sources": [
+    "静态普查（红线：不启动、不连）：安装目录 C:/Users/COLORFIRE/AppData/Local/Doubao/Application（app/ 下 DLL 与 exe 全清单）+ User Data/Default/.doubao/agent_mode/workspace/.sessions/（明文会话记录）+ Doubao.ini/DoubaoWork.ini",
+    "宿主档案卡：channels/hosts/doubao-desktop.md（维护者 S5，10-19/10-20 实测记录含 CDP 9225 隐藏开关、agent_infra.dll AgentToolIpcServer、pip_sdk.dll 虚拟桌面、黑板 2188-2190）",
+    "研究卷宗：channels/research/ui-route.md（豆包接入路线）"
+  ],
+  "entries": [
+    { "name": "CDP 隐藏开关（--remote-debugging-port=9225）", "kind": "cli-flag", "what": "逆向 Doubao.dll（RVA 0x00af5752）解锁的无头守护开关，配合 Local State devtools.remote_debugging.allowed=true；配 --user-data-dir 独立 profile 可零窗口后台实例", "unit": "external-protocol", "level": "看到", "evidence": "宿主卡 doubao-desktop.md（另一研究员 10-19 实测 0.5s 就绪 0 窗口；本机版 2.32.6）——本轮仅静态核对开关字符串存在" },
+    { "name": "OpenCLI doubao-app 适配器", "kind": "cli", "what": "经 CDP 的 DOM 级收发（status/ask/send/read/new/screenshot/dump），v2.32.6 contenteditable 富文本适配", "unit": "resume", "level": "看到", "evidence": "宿主卡：黑板 2188-2190（open/resume/act-deliver 三项实测 pass，28s/7.8s/9s）——非我实测，引他人行号" },
+    { "name": "agent_infra.dll（AgentToolIpcServer）+ DoubaoWork.exe", "kind": "binary", "what": "工作模式本地工具链 IPC：静默执行 Bash/Read/Write/Edit/Glob/Grep（工作（本地电脑）模式）", "unit": "terminal", "level": "看到", "evidence": "宿主卡：实测 9 秒本地文件读写、0 键鼠占用；DLL 在 app/ 目录在案（本轮 ls）" },
+    { "name": "pip_sdk.dll + pip_main.exe + pip_remote.dll", "kind": "binary", "what": "画中画虚拟桌面：WTS 影子会话 + 本地回环 RDP(127.0.0.2) 渲染独立桌面，不抢物理键鼠", "unit": "computer-use", "level": "看到", "evidence": "宿主卡（pip_sdk v0.0.0.85，PipSdk_IsSystemEnvironmentInitialized）；DLL 在案（本轮 ls）" },
+    { "name": ".doubao/agent_mode/workspace/.sessions/<会话id>/", "kind": "local-store", "what": "智能体模式会话明文记录：system/assignment.md（派活单）、trajectory.jsonl（轨迹）、tool-results/*.txt（工具结果外置）、agents/<id>/socket/{briefing.md,findings.jsonl}（子代理简报与发现）、board.md（看板）、memory/MEMORY.md（会话记忆）", "unit": "spawn-subagent", "level": "看到", "evidence": "本轮静态 ls：会话 38438080916058626 全文件树在案且无锁" },
+    { "name": "User Data/Default/saman_shell_db_storage/", "kind": "local-store", "what": "普通聊天全量历史（Chromium LevelDB 二进制块，内含消息 JSON）", "unit": "session-index", "level": "看到", "evidence": "宿主卡存储位置段；目录在 User Data/Default（本轮 ls）" },
+    { "name": "多智能体并行联网搜索", "kind": "builtin", "what": "客户端内置并行搜索（native 专属能力，无外部口）", "unit": "web-search", "level": "看到", "evidence": "宿主卡能力矩阵（用户核定 native）" },
+    { "name": "云端工具调用 SSE（/alice/office/tool_local/chunk_stream）", "kind": "network", "what": "账号级工具调用流广播——同账号双实例会互相打崩（sandbox_environment_not_ready 抢答），blocked_down 根因", "unit": null, "level": "看到", "evidence": "宿主卡 10-20 根因分析（saman_2026.1020.0.log）——候选：账号级会话广播与实例互斥是登记表外的新概念" },
+    { "name": "Doubao.ini / DoubaoWork.ini", "kind": "config", "what": "应用配置（内容未解析）", "unit": "config", "level": "看到", "evidence": "本轮 ls 在案" },
+    { "name": "辅助进程族：DoubaoLinkRouter.exe / Doubao_browser_proxy.exe / Doubao_proxy.exe / file_search_host.exe / file_utils_host.exe / ghelper.exe / aha_doctor", "kind": "binary", "what": "链接路由/浏览器代理/网络代理/文件搜索/文件工具/助手/自检", "unit": null, "level": "看到", "evidence": "本轮 ls（app/ 目录非 DLL 清单）——候选：桌面壳的宿主服务面" },
+    { "name": "agent 网关桥接（agent_gateway.js doubao_sessions_discover）", "kind": "center-bridge", "what": "中心侧桥：秒级列出 70+ 智能体模式本地会话（读 .sessions 明文）", "unit": "discover-sessions", "level": "看到", "evidence": "宿主卡 10-20 日志段（另一研究员实现并提交 trace/ 接入方案）" }
+  ],
+  "gaps": "按红线未启动未连：斜杠/按钮等 UI 命令面、设置面板项、API 网络协议（除已知的 SSE 广播）全部只能从 GUI 观察或抓包获得；Doubao.dll 内还有多少隐藏 CLI 开关未穷举（逆向样本仅 CDP 一处）；DoubaoWork IPC 的完整方法表需反汇编 agent_infra.dll。"
+}

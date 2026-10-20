@@ -1,6 +1,6 @@
 {
  "generatedFrom": "能力单元登记表_20261017.md",
- "generatedAt": "2026-10-20T15:34:49.947Z",
+ "generatedAt": "2026-10-20T18:30:34.486Z",
  "units": [
   {
    "id": "open",
@@ -1306,6 +1306,60 @@
    "definition": "读到这家自己的远程控制开没开、从哪里连、能不能开关",
    "judge": "和应用里显示的一致",
    "source": "Codex remoteControl/status/changed；Antigravity GetRemoteControlInfo；Claude Code 的 Remote Control。ui-multidevice 说的是中心网页的多端，这里是各家自己的"
+  },
+  {
+   "id": "serve-as-tool",
+   "name": "当作工具被调用",
+   "category": "渠道级操作（候选，10-21 原生接口普查补登）",
+   "bitmap": null,
+   "definition": "把这家智能体自己开成一个工具服务（例如 MCP 服务），别的智能体或程序像调工具一样用它的技能和会话",
+   "judge": "另一个客户端连上后能列出并调用它，结果正确",
+   "source": "Hermes `hermes mcp`（run Hermes as an MCP server）；中心自己的 hub/tools/mcp_server.js 也是这样把中心交给别家用。external-protocol 说的是我们怎么驱动它，这里是它怎么被别人用"
+  },
+  {
+   "id": "secret-supply",
+   "name": "密钥供给",
+   "category": "宿主环境（候选，10-21 原生接口普查补登）",
+   "bitmap": null,
+   "definition": "这家从哪里给智能体拿干活用的密钥：本地加密库、外部密钥管理器，或在出口处注入，智能体本身看不到明文",
+   "judge": "智能体用上了要用的密钥，回复和记录里没有明文",
+   "source": "Hermes vault、secrets（Bitwarden、1Password）、egress（出口注入）；中心的 key_vault.js（key get 借用、记审计）。和这家调模型用的凭证不是一回事"
+  },
+  {
+   "id": "remote-run",
+   "name": "远端执行",
+   "category": "宿主环境（候选，10-21 原生接口普查补登）",
+   "bitmap": null,
+   "definition": "把整个会话放到云端或远程沙箱（容器、云主机）里跑，能接回、保活、传回本机",
+   "judge": "会话确实在远端跑（看得到远端环境），结果能接回本机",
+   "source": "WorkBuddy --sandbox container/E2B/CVM、--teleport；Claude Code --cloud、--environment"
+  },
+  {
+   "id": "side-question",
+   "name": "侧问",
+   "category": "会话管理（候选，10-21 原生接口普查补登）",
+   "bitmap": null,
+   "definition": "智能体干活时另开一条侧问通道问个问题，不打断它、不进主会话的上下文",
+   "judge": "侧问得到回答，主会话的进度和上下文不受影响",
+   "source": "WorkBuddy _codebuddy.ai/sideQuestion（/btw）；Claude Code 的 /btw"
+  },
+  {
+   "id": "worktree",
+   "name": "工作树隔离",
+   "category": "新建时的配置（候选，10-21 原生接口普查补登）",
+   "bitmap": null,
+   "definition": "给一个会话或子智能体开一个独立的 git 工作树和分支，在里面改，做完合并或丢弃",
+   "judge": "会话的改动只出现在它的工作树和分支上，主目录不受影响",
+   "source": "WorkBuddy --worktree、Hermes worktree、Antigravity CreateWorktree（子智能体 Workspace=branch）、Claude Code 的 worktree。workspace 只指定目录，这里是 git 层面的隔离"
+  },
+  {
+   "id": "vcs-ops",
+   "name": "版本库操作",
+   "category": "可选操作（候选，10-21 原生接口普查补登）",
+   "bitmap": null,
+   "definition": "通过这家自己的接口看状态、看差异、打补丁、提交",
+   "judge": "结果和 git 自己看到的一致",
+   "source": "OpenCode HTTP /vcs/{status,diff,apply}；Antigravity GitCommit、GitPush、GetWorktreeDiff。ui-git-badge 是显示，这里是操作"
   }
  ]
 }

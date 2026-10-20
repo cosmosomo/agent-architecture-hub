@@ -1285,6 +1285,48 @@
       "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex remoteControl/status；Antigravity GetRemoteControlInfo。只读，不开关。",
       "pass": "给出开或关的状态，和应用里显示的一致。",
       "fail": "读的是中心网页的多端状态而不是这家自己的。"
+    },
+    "serve-as-tool": {
+      "do": "把这家开成一个工具服务，用另一个客户端连上去列工具、调一次。",
+      "native": "入口见 channels/research/native-surface/<产品>.json 和主机卡 channels/hosts/<产品>.md。 例：Hermes `hermes mcp`；中心自己的 hub/tools/mcp_server.js。只在本机起，测完关掉。",
+      "pass": "另一个客户端列出了它的工具，调一次带暗号 {token} 的请求，结果正确返回。",
+      "fail": "服务起来了但列不出工具；或调用没结果。"
+    },
+    "secret-supply": {
+      "do": "让智能体用一把它看不到明文的密钥干一件事（例如用一个测试用的假密钥调一个本地回显服务）。",
+      "center": [
+        "node hub/tools/agent_gateway.js key list  （看中心有哪些可借，不要借真密钥做测试）"
+      ],
+      "native": "入口见 channels/research/native-surface/<产品>.json 和主机卡 channels/hosts/<产品>.md。 例：Hermes vault、secrets、egress。用假密钥 test-{token}，不要用任何真秘密。",
+      "pass": "事情做成了，回复、会话记录、黑板里都没有密钥明文。",
+      "fail": "密钥明文出现在回复或记录里；或根本用不上。"
+    },
+    "remote-run": {
+      "do": "把一个小会话放到远端（容器或云）跑，再接回本机看结果。",
+      "native": "入口见 channels/research/native-surface/<产品>.json 和主机卡 channels/hosts/<产品>.md。 例：WorkBuddy --sandbox container；Claude Code --cloud。会花钱或要账号的先问用户。",
+      "pass": "看得到会话在远端环境里跑（远端的主机名或路径），结果接回本机，带暗号 {token}。",
+      "fail": "其实在本机跑；或远端跑了接不回来。"
+    },
+    "side-question": {
+      "do": "智能体干一件要几分钟的事时，用侧问问它一句无关的问题。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --async --prompt \"数一下 channels/research 下有几个 .md 文件，逐个读标题后再回答，结尾写 {token}\""
+      ],
+      "native": "入口见 channels/research/native-surface/<产品>.json 和主机卡 channels/hosts/<产品>.md。 例：WorkBuddy 的 /btw（_codebuddy.ai/sideQuestion）；Claude Code 的 /btw。",
+      "pass": "侧问得到回答；主任务照常做完，它的回复和上下文里没有侧问的内容。",
+      "fail": "侧问打断了主任务；或侧问内容混进了主会话。"
+    },
+    "worktree": {
+      "do": "给一个会话开独立的 git 工作树，让它改一个文件，看主目录有没有变。",
+      "native": "入口见 channels/research/native-surface/<产品>.json 和主机卡 channels/hosts/<产品>.md。 例：WorkBuddy --worktree；Hermes worktree；Antigravity CreateWorktree。只在 channels/probe/tmp/ 下建的测试仓库里做，不碰正在用的仓库。",
+      "pass": "改动只在它的工作树和分支上，主目录的 git status 干净；测完工作树删掉。",
+      "fail": "改动落到了主目录；或没有新分支。"
+    },
+    "vcs-ops": {
+      "do": "通过这家自己的接口看一次仓库状态和差异。只读，不提交不推送。",
+      "native": "入口见 channels/research/native-surface/<产品>.json 和主机卡 channels/hosts/<产品>.md。 例：OpenCode serve 的 /vcs/status、/vcs/diff；Antigravity GetWorktreeDiff。",
+      "pass": "读到的状态和差异与 git status、git diff 一致。",
+      "fail": "读到的和 git 对不上；或动手提交、推送了。"
     }
   }
 }

@@ -1,0 +1,42 @@
+{
+  "product": "claude-code",
+  "sources": [
+    "claude --help（CLI 全量选项与子命令，本轮实测拉取）",
+    "~/.claude 本地目录静态清单（agents/commands/skills/plugins/output-styles/workflows/jobs/plans/file-history/daemon/ide/settings.json 等，本轮 ls）",
+    "census：~/.claude/projects/*.jsonl 会话记录类型（channels/research/harness/claude-code-census.json，负责人 10-20 普查）",
+    "研究卷宗：channels/research/claude-stream.md（stream-json 驱动）；官方文档 docs.anthropic.com/en/docs/claude-code"
+  ],
+  "entries": [
+    { "name": "claude -p/--print", "kind": "cli", "what": "无头单轮（text/json/stream-json 三种输出）", "unit": "resume", "level": "试过", "evidence": "claude --help（本轮）+ claude-stream.md 驱动实测" },
+    { "name": "--input-format/--output-format stream-json", "kind": "cli", "what": "流式 JSON 双向（--include-partial-messages 原始分片）", "unit": "observe-live", "level": "试过", "evidence": "claude-stream.md 驱动实测" },
+    { "name": "--resume / --continue / --session-id / --fork-session / --teleport", "kind": "cli", "what": "恢复/续聊/指定 id/resume 时换 id/传送恢复", "unit": "resume", "level": "看到", "evidence": "claude --help" },
+    { "name": "--bg/--attach/logs/agents/respawn/stop|kill/rm（子命令族）", "kind": "cli", "what": "后台会话全生命周期：脱拉起/接回终端/看输出/列出/带当前版本重启/停（对话保留）/删", "unit": "wake-bg", "level": "看到", "evidence": "claude --help Commands 表（本轮）" },
+    { "name": "--cloud [desc|session_id] / --environment / ultrareview", "kind": "cli", "what": "云端会话（云端跑）/云环境选择/云端多代理代码评审", "unit": null, "level": "看到", "evidence": "claude --help——云端托管会话与云评审是登记表外新面（candidates）" },
+    { "name": "--remote-control [name]", "kind": "cli", "what": "Remote Control 会话（远程接管）", "unit": "remote-control", "level": "看到", "evidence": "claude --help" },
+    { "name": "--chrome / --desktop", "kind": "cli", "what": "Chrome 集成 / 转到 Claude Desktop 打开", "unit": "browser", "level": "看到", "evidence": "claude --help" },
+    { "name": "--json-schema", "kind": "cli", "what": "结构化输出契约校验", "unit": "output-contract", "level": "看到", "evidence": "claude --help" },
+    { "name": "--max-budget-usd", "kind": "cli", "what": "美元预算硬顶（--print 下）", "unit": "budget-accounting", "level": "看到", "evidence": "claude --help——预算上限参数" },
+    { "name": "--effort <level>", "kind": "cli", "what": "推理力度", "unit": "reasoning-effort", "level": "看到", "evidence": "claude --help" },
+    { "name": "--autocompact <auto|tokens>", "kind": "cli", "what": "自动压缩窗口（auto/100k-1M）", "unit": "compact", "level": "看到", "evidence": "claude --help" },
+    { "name": "--permission-mode <acceptEdits|auto|bypassPermissions|manual|dontAsk|plan> / --permission-prompts <host|none>", "kind": "cli", "what": "权限模式与审批应答方（host=SDK 宿主/--permission-prompt-tool，none=自动拒）", "unit": "tool-permission", "level": "看到", "evidence": "claude --help" },
+    { "name": "--tools / --allowedTools / --disallowedTools", "kind": "cli", "what": "内置工具集裁剪与允许/拒绝清单（Bash(git:*) 细粒度）", "unit": "mount-tools", "level": "看到", "evidence": "claude --help" },
+    { "name": "--system-prompt / --append-system-prompt / --system-prompt-snapshot <on|off>", "kind": "cli", "what": "系统提示词覆盖/追加/每会话记录一次复用（压缩前不变）", "unit": "instructions", "level": "看到", "evidence": "claude --help（snapshot 机制原文）" },
+    { "name": "--worktree [name] / --tmux", "kind": "cli", "what": "git worktree 会话（tmux 可选）", "unit": "workspace", "level": "看到", "evidence": "claude --help" },
+    { "name": "--from-pr", "kind": "cli", "what": "按 PR 号接续关联会话", "unit": "handoff", "level": "看到", "evidence": "claude --help" },
+    { "name": "--agents <json> / --agent / --name", "kind": "cli", "what": "会话级自定义智能体/会话显示名", "unit": "label", "level": "看到", "evidence": "claude --help" },
+    { "name": "--prompt-suggestions", "kind": "cli", "what": "预测下一句用户输入（print/SDK 下发 prompt_suggestion 消息）", "unit": null, "level": "看到", "evidence": "claude --help——登记表外新面（candidates）" },
+    { "name": "--fallback-model / --model", "kind": "cli", "what": "过载回落链 / 选模型", "unit": "channel-route", "level": "看到", "evidence": "claude --help" },
+    { "name": "claude mcp", "kind": "cli", "what": "MCP 服务器管理（add/remove/list/serve）", "unit": "mount-tools", "level": "看到", "evidence": "claude --help Commands + 官方文档" },
+    { "name": "claude auth / setup-token / gateway", "kind": "cli", "what": "认证管理/长期 token/企业 auth+telemetry 网关", "unit": "provider-credential", "level": "看到", "evidence": "claude --help Commands" },
+    { "name": "claude plugin(s) / import", "kind": "cli", "what": "插件管理 / 从其他 AI 编码智能体导入配置", "unit": "extensions", "level": "看到", "evidence": "claude --help（import：import-external 同域）" },
+    { "name": "claude doctor / auto-mode / update / purge", "kind": "cli", "what": "体检/自动模式分类器/更新/清空项目全部状态", "unit": "probe-host", "level": "看到", "evidence": "claude --help（purge=delete 的官方口）" },
+    { "name": "TUI 斜杠命令（~40：/resume /compact /agents /mcp /hooks /model /output-style /memory /todo …）", "kind": "slash", "what": "交互命令面（官方文档 + bundle 内注册表）", "unit": "cmd-list", "level": "看到", "evidence": "官方文档 docs.anthropic.com/en/docs/claude-code/slash-commands；~/.claude/commands 用户自定义目录在案" },
+    { "name": "hooks 事件系（PreToolUse/PostToolUse/UserPromptSubmit/Stop/…）", "kind": "hook", "what": "settings.json 配置的 shell/工具钩子 + --include-hook-events 全生命周期外显", "unit": "hooks", "level": "看到", "evidence": "claude --help --include-hook-events + census：hook_additional_context 记录类型（claude-code-census.json）" },
+    { "name": "~/.claude/projects/<项目>/*.jsonl", "kind": "local-store", "what": "会话转录（attachment 族：total_tokens_reminder/deferred_tools_record/environment/instructions/skill_listing/hook_additional_context/queued_command/silent_turn_reminder/file-history-snapshot/queue-operation/mode/compact-summary 等 15+ 类）", "unit": "ctx-injection", "level": "看到", "evidence": "census（claude-code-census.json，负责人 10-20 普查条数）" },
+    { "name": "~/.claude/file-history/ + file-history-snapshot", "kind": "local-store", "what": "文件历史快照（回退底座，rewind 单元）", "unit": "checkpoints", "level": "看到", "evidence": "目录在案（本轮 ls）+ census 类型" },
+    { "name": "~/.claude/output-styles/", "kind": "local-store", "what": "输出风格（/output-style 命令的存储）", "unit": "ctx-output-style", "level": "看到", "evidence": "目录在案（本轮 ls）——output-style 原生有存储面" },
+    { "name": "~/.claude/{agents,commands,skills,plugins,workflows,plans,jobs}/", "kind": "local-store", "what": "子代理定义/自定义斜杠命令/技能/插件/工作流/计划/后台作业", "unit": "spawn-subagent", "level": "看到", "evidence": "目录在案（本轮 ls）——workflows 目录为登记表外新发现" },
+    { "name": "~/.claude/{daemon,daemon.log,ide,history.jsonl,shell-snapshots,paste-cache,state,telemetry,stats-cache.json,policy-limits.json}", "kind": "local-store", "what": "后台会话守护/IDE 桥/输入历史/shell 快照/粘贴缓存/遥测/统计缓存/策略限额", "unit": "events-usage", "level": "看到", "evidence": "目录在案（本轮 ls）" }
+  ],
+  "gaps": "TUI 斜杠命令全表未从 bundle 抽（约 40 个，官方文档有公开清单可核）；ACP 面：Claude Code 官方无 ACP（经 acp.md 之外第三方适配器不属于原生面）；企业 gateway 子命令细节未展开。"
+}
