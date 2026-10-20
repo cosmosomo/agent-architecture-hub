@@ -100,7 +100,9 @@ export async function parsePath(adapter: SourceAdapter, path: string, now: numbe
   const st = statSync(path);
   if (adapter.parseBundle && members) {
     const files = members.includes(path) ? members : [path, ...members];
-    return adapter.parseBundle({ path, size: st.size, mtimeMs: st.mtimeMs }, {
+    // 会话追加通常只改轨迹文件；展示时间与缓存使用同一份源文件签名。
+    const signature = bundleStat(files);
+    return adapter.parseBundle({ path, size: signature.size, mtimeMs: signature.mtimeMs }, {
       files,
       read: (p) => readFileSync(p, 'utf8'),
     }, { now });

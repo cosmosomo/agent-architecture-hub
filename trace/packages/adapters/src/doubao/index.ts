@@ -5,7 +5,7 @@ import { maskSecrets, oneLine, partsText } from '../text.ts';
 import { toolFamily } from '../gemini/parse.ts';
 
 const KIND = 'doubao-desktop';
-const VERSION = '0.1.1';
+const VERSION = '0.1.2';
 const MARKER = /^(.*[\\/]\.sessions[\\/]([^\\/]+))[\\/]agents[\\/]([^\\/]+)[\\/]system[\\/]assignment\.md$/;
 const CAPABILITIES: AdapterCapabilities = {
   observe_only: true,

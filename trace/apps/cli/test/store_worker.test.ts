@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { DatabaseSync } from 'node:sqlite';
 import { dirname, join } from 'node:path';
@@ -51,7 +51,15 @@ test('bundle cache invalidates when only trajectory changes, on both threads', a
     await Promise.all(stores.map((s) => s.scan()));
     await Promise.all(stores.map((s) => s.session('doubao-desktop:123')));
     appendFileSync(trajectory, '{"role":"assistant","content":"新的完整回复"}\n');
-    for (const store of stores) assert.equal((await store.session('doubao-desktop:123'))!.turns[0].output, '新的完整回复');
+    const updated = new Date('2030-01-01T00:00:00Z');
+    utimesSync(trajectory, updated, updated);
+    for (const store of stores) {
+      const session = (await store.session('doubao-desktop:123'))!;
+      assert.equal(session.turns[0].output, '新的完整回复');
+      assert.equal(session.updatedAt, updated.toISOString());
+      await store.scan();
+      assert.equal(store.index().sessions[0].updatedAt, updated.toISOString());
+    }
   } finally {
     await Promise.all(stores.map((s) => s.close()));
     rmSync(dir, { recursive: true, force: true });

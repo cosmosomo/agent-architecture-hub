@@ -593,6 +593,20 @@ function reconcileCards(container, items) {
   }
 }
 
+async function loadFeedStalls() {
+  const result = await api('/api/gateway/dispatches', { signal: AbortSignal.timeout(10000) });
+  // Only the last day: older stalls were mostly turns cut by a service restart and dispatched again since.
+  const since = Date.now() - 24 * 3600 * 1000;
+  S.stalledDispatches = result.dispatches.filter((d) => (d.status === 'stalled' || d.status === 'timeout') && Date.parse(d.updatedAt || d.receipts?.returnedAt || '') > since);
+  S.stallError = '';
+}
+function stalledDispatchCard(d) {
+  return `<div class="card" data-key="stall:${esc(d.id)}" data-unit="wake-stall" style="border:2px solid var(--warn);background:rgba(180,83,9,.08)">
+    <div class="row"><b class="tag st-stale">卡住/已超时</b><span>${esc(FAM[d.to.channel] || d.to.channel)} · ${esc(d.to.sessionName)}</span></div>
+    <div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(d.error || d.delivery?.summary || '中心已标记异常，请核对派活单')}</div>
+    ${d.waitingFor ? `<div style="white-space:pre-wrap">等待条件：${esc(d.waitingFor)}</div>` : ''}
+    <div class="sub">${esc(d.id)} · ${esc(d.updatedAt)}</div><a href="#/collab">查看协作派活记录</a></div>`;
+}
 function feedCards() {
   const cards = [];
   const since = Date.now() - 36 * 3600 * 1000;
@@ -628,7 +642,7 @@ async function viewFeed() {
   $('#back').hidden = true; $('#newBtn').hidden = false; $('#newBtn').onclick = () => newTask('');
   const main = $('#main');
   if (!S.sessions.length) main.innerHTML = '<div class="empty">读取本机会话…</div>';
-  try { await Promise.all([loadSessions(true), loadCaps()]); } catch (e) { main.innerHTML = '<div class="empty">读不到：' + esc(e.message) + '</div>'; return; }
+  try { await Promise.all([loadSessions(true), loadCaps(), loadFeedStalls()]); } catch (e) { main.innerHTML = '<div class="empty">读不到：' + esc(e.message) + '</div>'; return; }
   if (my !== viewId) return;
   S.level = S.level || 'mine';
   const LEVELS = [['mine', '要我看的'], ['key', '加上在推进的'], ['all', '全部']];
@@ -646,6 +660,8 @@ async function viewFeed() {
     else if (S.level === 'key') cards = all.filter((c) => c.kind !== 'observation');
     
     const items = [];
+    if (S.stallError) items.push({ key: 'stall:error', sig: S.stallError, html: `<div class="card" data-key="stall:error" style="border-color:var(--warn)">无法核对卡住状态：${esc(S.stallError)}</div>` });
+    for (const d of S.stalledDispatches || []) items.push({ key: `stall:${d.id}`, sig: JSON.stringify(d), html: stalledDispatchCard(d) });
 
     // 等人回答的问题最置顶（这一轮停着），点进会话回答
     const qs = (S.gw && S.gw.pendingQuestions) || [];
@@ -762,11 +778,13 @@ async function viewFeed() {
   render();
   const tick = async () => {
     if (my !== viewId || S.activeView !== 'feed') return;
-    if (S.sseConnected) return; // 实时推流已接通，停掉盲轮询
-    try { await loadSessions(true); if (my === viewId) render(); } catch {}
+    try {
+      await Promise.all([loadFeedStalls(), S.sseConnected ? Promise.resolve() : loadSessions(true)]);
+    } catch (e) { S.stalledDispatches = []; S.stallError = e.message; console.error('待处理流异常状态更新失败', e); }
+    if (my === viewId) render();
     timer = setTimeout(tick, 15000);
   };
-  if (!S.sseConnected) timer = setTimeout(tick, 10000);
+  timer = setTimeout(tick, 10000);
 }
 
 async function viewHome() {
@@ -861,14 +879,14 @@ function dispatchReports(d) {
 function dispatchCard(d) {
   const rc = d.receipts || {};
   const steps = RECEIPTS.map(([k, label]) => `<span class="tag ${rc[k] ? 'st-idle' : ''}" title="${esc(rc[k] || '还没到这一步')}">${label}${rc[k] ? ' ' + clock(rc[k]) : ''}</span>`).join(' → ');
-  const st = d.status === 'completed' ? '交回了' : d.status === 'failed' ? '失败' : d.status === 'yielded' || d.status === 'waiting' ? '让出等待' : '进行中';
+  const st = d.status === 'stalled' || d.status === 'timeout' ? '卡住/已超时' : d.status === 'completed' ? '交回了' : d.status === 'failed' ? '失败' : d.status === 'yielded' || d.status === 'waiting' ? '让出等待' : '进行中';
   const reports = dispatchReports(d);
   const back = dispatchDelivery(d);
   const WAKE = { woken: '已叫醒', waiting: '等交回后叫醒', none: '不叫醒', 'auto-resume': '交回后自动叫醒' };
   const wk = d.wake && (d.wake.state || d.wake.mode);
   const wake = wk ? `<div class="sub">⏰ 派活方：${esc(WAKE[wk] || wk)}${d.wake.wokenAt ? ' ' + clock(d.wake.wokenAt) : ''}</div>` : '';
   const wrap = 'white-space:normal;overflow:visible';
-  return `<div class="card"><div class="row"><span class="t grow" style="${wrap};display:block;-webkit-line-clamp:unset">${endLink(d.from || {})} → ${endLink(d.to || {})}</span><span class="tag">${st}</span></div>
+  return `<div class="card"><div class="row"><span class="t grow" style="${wrap};display:block;-webkit-line-clamp:unset">${endLink(d.from || {})} → ${endLink(d.to || {})}</span><span class="tag ${d.status === 'stalled' || d.status === 'timeout' ? 'st-stale' : ''}">${st}</span></div>
     <div class="sub" style="${wrap}">${esc(String(d.task || '').slice(0, 160))}</div>
     <div class="sub" style="margin-top:6px;${wrap};line-height:2">${steps}</div>${dispatchWaiting(d)}${reports}${back}${wake}
     <div class="sub">${esc(d.id)} · ${esc(ago(d.updatedAt))}</div></div>`;
