@@ -3,6 +3,18 @@
 议题：ZCode、WorkBuddy、OpenCode、Hermes 经 ACP 能做到哪一步，断在哪。研究员：ZCode · research-acp。
 范围（briefs/zcode-现状.md）：这一片 77 单元 × 四家 × 四位置；边界清单 131 格（zcode-边界.md）。
 
+## 10-20 凌晨（边界清单第二轮）：9 格 + 静默注入入口
+
+黑板 2356–2364（research-acp）：
+
+- **inject-silent@WB（2356，理论上限达成）**：`session/inject_history` 传 `{sessionId, messages:[{role,content}]}` 返回 `{injected:1}`，**瞬间返回零模型轮**（skipRun 构建），下一轮模型答出注入的静默暗号。这是 ACP 标准里没有的 WB 扩展方法——理论上限在 WB 有原生口。坑：参数键是 `messages` 不是 `items`；注入内容会被 WB 自动记忆当事实写进记忆文件，驱动要自行决定放不放行。
+- **steer@WB（2357）**：`session/steer` 传 `{sessionId, contentBlocks:[{type:'text',text}]}` 返回 `{steered:true,ownerRequestId}`，插话在**同一个 session/prompt 调用内**被消费（模型照改：数到 5 + STEER-WB-OK）。上轮"参数形状待定"解决。
+- **permission@WB/HM/OC（2363/2364/2360）**：三家适配位置全通——WB 真活闭环 3 帧应答、HM 编辑审批 allow 后同轮落盘、OC 越界写触发 external_directory ask（带 locations 请求原文）allow 后落盘（OC 的 allow_once 不粘第二帧）。
+- **OC 四格（2358–2361）**：open-idle（session/new 零 chunk + session/list 可查）、model-switch（big-pickle→zhipuai-glm-5.3-flash，下一轮自报新 ID）、close（close 后 prompt 报 session not found）、permission 见上。
+- **mode-switch@HM（2362，行为级）**：同会话 default 写文件 1 帧 edit 审批 → set_mode accept_edits 后 0 帧直接落盘，behaviorChanged=true。
+
+仍未打：compact@WB/OC（判据要“用量下降”，需灌到阈值的大会话，留给额度宽裕窗口）、mount-tools@WB/OC、goal@四家行为级、OC steer（ACP 桥=排队，serve HTTP=插话，语义差异已记）。
+
 ## 10-19 晚（边界清单轮）：真活闭环与一批格子
 
 **中心派真活、收回结果的闭环在四家全部打通**，另打通 fork×2、steer×1、inject-next×2、跨进程 resume×2。工具：新增驱动 `hub/tools/acp_resident_bridge.mjs`（task/fork/load/steer 四个子命令，可当库被 import；本片后续探针都从它走）。
