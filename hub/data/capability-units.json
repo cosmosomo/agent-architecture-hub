@@ -1,6 +1,6 @@
 {
  "generatedFrom": "能力单元登记表_20261017.md",
- "generatedAt": "2026-10-19T07:11:17.761Z",
+ "generatedAt": "2026-10-20T15:34:49.947Z",
  "units": [
   {
    "id": "open",
@@ -1189,6 +1189,123 @@
    "definition": "生成或修改演示文稿、文档、表格文件",
    "judge": "文件能用对应软件打开，内容和格式符合要求",
    "source": "用户 10-19 原话：“其实可以做一些高阶能力渠道矩阵，然后把各家优势记录和注册下来。比如computeruse，browseruse什么的”；又：“有些生态他们的那个 Computer Use 会做的很好，豆包的 Computer Use 就做的很好”"
+  },
+  {
+   "id": "plan",
+   "name": "套餐与权益",
+   "category": "渠道级状态（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "读到这家账号的套餐和等级，以及它允许用哪些模型、哪些功能，每月给多少额度或积分",
+   "judge": "读到的和这家的账号页一致",
+   "source": "Antigravity GetUserStatus 的 planStatus、userTier（10-20 实测，黑板 2432）；Codex account/read。依赖：quota"
+  },
+  {
+   "id": "model-status",
+   "name": "模型可用状态",
+   "category": "模型与模式（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "每个模型现在能不能用、用的是哪一组额度、那一组还剩多少；模型被改道或降级时中心知道",
+   "judge": "和这家面板里每个模型的状态一致；改道时中心收到通知",
+   "source": "Antigravity GetUserStatus 每个模型带 quotaInfo、GetModelStatuses（10-20 实测，黑板 2432）；Codex model/rerouted、model/list。依赖：model-list、quota"
+  },
+  {
+   "id": "usage-history",
+   "name": "用量统计",
+   "category": "渠道级状态（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "一段时间里用了多少（token、轮数、花费），能按模型、按会话分开看",
+   "judge": "数字和这家自己的统计一致",
+   "source": "Codex account/usage/read；Antigravity GetUserAnalyticsSummary。依赖：ui-credit-ledger（单轮花费）"
+  },
+  {
+   "id": "extensions",
+   "name": "技能与插件",
+   "category": "宿主环境（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "列出、安装、卸载这家的技能、插件、工作流和规则文件",
+   "judge": "清单和应用里显示的一致；装上的在新会话里用得到",
+   "source": "Codex skills/list、plugin/install、marketplace/*；Antigravity GetAllSkills、GetAllPlugins、InstallCascadePlugin、GetAllRules、GetAllWorkflows；中心自己用 sync_skill.js 往各家分发技能"
+  },
+  {
+   "id": "hooks",
+   "name": "钩子",
+   "category": "宿主环境（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "读到这家挂了哪些钩子（工具调用前后、一轮前后、会话开始和结束），钩子执行时看得到",
+   "judge": "清单和配置一致；钩子触发时中心记得到",
+   "source": "Codex hooks/list、hook/started、hook/completed；Claude Code 设置里的 hooks；harness 构件 hooks。守卫是规则，钩子是执行规则的一个位置"
+  },
+  {
+   "id": "mcp-status",
+   "name": "MCP 服务状态",
+   "category": "宿主环境（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "读到这家连着哪些 MCP 服务、哪些连不上、各有哪些工具，能开关和重连",
+   "judge": "和这家应用里显示的一致；连不上的被发现并说清原因",
+   "source": "Codex mcpServerStatus/list、mcpServer/startupStatus/updated、config/mcpServer/reload；Antigravity GetMcpServerStates、ToggleMcpServer、RefreshMcpServers；10-20 负责人自己的会话就有 4 个 MCP 服务没连上。依赖：mount-tools"
+  },
+  {
+   "id": "config",
+   "name": "读写设置",
+   "category": "宿主环境（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "读和改这家自己的设置：默认模型、权限方式、实验功能开关等",
+   "judge": "读到的和设置页一致；改了之后设置页和下一轮行为都变（改要经中心闸门，默认只读）",
+   "source": "Codex config/read、config/value/write、experimentalFeature/list；Antigravity GetUserSettings、SetUserSettings"
+  },
+  {
+   "id": "memory-rw",
+   "name": "读写长期记忆",
+   "category": "可选操作（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "读出、修改、删除这家记下的长期记忆条目",
+   "judge": "读出的和应用里的记忆一致；改过的在下一个会话里生效",
+   "source": "Antigravity GetCascadeMemories、UpdateCascadeMemory、DeleteCascadeMemory、GetUserMemories；Claude Code 的记忆文件。依赖：memory-mode（开关）"
+  },
+  {
+   "id": "org-policy",
+   "name": "组织策略",
+   "category": "守卫（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "读到组织或管理员对这家的限制：允许哪些模型、功能、命令",
+   "judge": "和管理后台一致；中心闸门按它收紧，不比它宽",
+   "source": "Codex configRequirements/read；Antigravity FetchAdminControls、GetTeamOrganizationalControls。和安全收拢的中心闸门相接"
+  },
+  {
+   "id": "voice",
+   "name": "语音输入与朗读",
+   "category": "人机交互·输入（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "用说话代替打字，或者把回复读出来",
+   "judge": "转出的文字和原话一致；读出的和回复一致",
+   "source": "Codex thread/realtime/*（音频、转写）；Antigravity StreamAudioTranscription、StartNarration"
+  },
+  {
+   "id": "multi-model-compare",
+   "name": "多模型对比",
+   "category": "团队协同（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "同一件事让几个模型各做一份，比较之后选一份落地",
+   "judge": "几份结果都在、能并排比较，选中的落地，其余丢弃",
+   "source": "Antigravity StartBattleMode、EliminateBattleModeArm、GetBattleWorktreeDiff；中心给几家派同一道题，是同一件事的跨产品版"
+  },
+  {
+   "id": "import-external",
+   "name": "导入别家会话与配置",
+   "category": "会话管理（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "把别的智能体产品的会话历史和配置导进这一家，接着用",
+   "judge": "导入后在这一家看得到，并能接着那段对话干活",
+   "source": "Codex externalAgentConfig/import、import/readHistories；Antigravity ImportFromCursor"
+  },
+  {
+   "id": "remote-control",
+   "name": "远程控制",
+   "category": "宿主环境（候选，10-20 原生接口对照补登）",
+   "bitmap": null,
+   "definition": "读到这家自己的远程控制开没开、从哪里连、能不能开关",
+   "judge": "和应用里显示的一致",
+   "source": "Codex remoteControl/status/changed；Antigravity GetRemoteControlInfo；Claude Code 的 Remote Control。ui-multidevice 说的是中心网页的多端，这里是各家自己的"
   }
  ]
 }

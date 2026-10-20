@@ -1200,6 +1200,91 @@
       ],
       "pass": "生成的文件真实存在且格式规范，能用微软 Office 或对应解析库正常打开读取，内容包含暗号 {token}。",
       "fail": "生成的文件损坏无法打开；或者只是把文本存成了 .txt 后缀强行改名。"
+    },
+    "plan": {
+      "do": "读出这家账号的套餐、等级、每月额度或积分，以及它允许用哪些模型。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Antigravity GetUserStatus 的 planStatus、userTier；Codex account/read。",
+      "pass": "读到套餐名和等级，和这家账号页或设置页显示的一致；写清从哪个接口读到。",
+      "fail": "只写了产品表里抄来的套餐说明；或读到的是别的账号。"
+    },
+    "model-status": {
+      "do": "读出每个模型现在能不能用、属于哪一组额度、那一组还剩多少。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Antigravity GetUserStatus.cascadeModelConfigData.clientModelConfigs[].quotaInfo；Codex model/list、model/rerouted。",
+      "pass": "至少两个模型各给出可用与否和余量，和这家面板（例如 Antigravity 的 View Usage）一致。",
+      "fail": "只给模型名单没有状态；或所有模型给同一个写死的数。"
+    },
+    "usage-history": {
+      "do": "读出最近一段时间（例如今天或本周）用了多少：token、轮数或花费。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex account/usage/read；Antigravity GetUserAnalyticsSummary。",
+      "pass": "给出带时间范围的用量数，和这家自己的统计页对得上。",
+      "fail": "把单轮的 token 当成一段时间的用量；或数字对不上。"
+    },
+    "extensions": {
+      "do": "列出这家装了哪些技能、插件、工作流或规则文件。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session} --prompt \"列出你现在能用的技能和插件的名字，结尾写 {token}\""
+      ],
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex skills/list、plugin/list；Antigravity GetAllSkills、GetAllPlugins、GetAllRules。",
+      "pass": "清单里有 local-capability-hub（中心分发的技能），并和这家应用里的技能页一致。",
+      "fail": "只凭记忆列了几个；或清单里缺中心分发的技能。"
+    },
+    "hooks": {
+      "do": "读出这家挂了哪些钩子，并看到一次钩子执行。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex hooks/list、hook/started；Claude Code 的 settings.json hooks。",
+      "pass": "列出钩子（事件和命令），并给出一次触发的记录（时间、事件）。",
+      "fail": "只读了配置没看到执行；或把守卫规则当成钩子。"
+    },
+    "mcp-status": {
+      "do": "读出这家连着哪些 MCP 服务、哪些连不上、各有哪些工具。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex mcpServerStatus/list；Antigravity GetMcpServerStates。",
+      "pass": "每个服务给出连上与否；连不上的给出原因；和这家应用里显示的一致。",
+      "fail": "只列配置里写了哪些服务，没有连接状态。"
+    },
+    "config": {
+      "do": "读出这家自己的设置（默认模型、权限方式等）；不改。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex config/read；Antigravity GetUserSettings。只读：改设置要用户同意，并经中心闸门。",
+      "pass": "读到的默认模型和权限方式与设置页一致。",
+      "fail": "读的是中心自己的 products.json 而不是这家的设置；或动手改了设置。"
+    },
+    "memory-rw": {
+      "do": "读出这家记下的长期记忆条目；不改不删。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Antigravity GetCascadeMemories、GetUserMemories；Claude Code 的记忆文件。",
+      "pass": "列出若干条记忆和它们存在哪，和应用里的记忆页一致。",
+      "fail": "把会话记录当成长期记忆；或改了、删了记忆。"
+    },
+    "org-policy": {
+      "do": "读出组织或管理员对这家的限制（允许的模型、功能、命令）。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex configRequirements/read；Antigravity FetchAdminControls、GetTeamOrganizationalControls。个人账号读到“没有限制”也算读到。",
+      "pass": "给出限制清单或明确的“没有限制”，写清从哪个接口读到。",
+      "fail": "没有读接口，凭推测说没有限制。"
+    },
+    "voice": {
+      "do": "用语音说一句带暗号 {token} 的话（或放一段录音），看它转成文字；或让它把一段回复读出来。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex thread/realtime/*；Antigravity StreamAudioTranscription、StartNarration。要用麦克风或扬声器时先问用户，不打扰用户。",
+      "pass": "转出的文字含暗号且和原话一致；或朗读内容和回复一致。",
+      "fail": "只是在文字框里打字；或转写和原话对不上。"
+    },
+    "multi-model-compare": {
+      "do": "同一道小题让两个模型各做一份，并排比较后选一份。",
+      "center": [
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session}-a --model <模型甲> --prompt \"用一句话解释什么是幂等，结尾写 {token}\"",
+        "node hub/tools/agent_gateway.js run --agent {agent} --session {session}-b --model <模型乙> --prompt \"用一句话解释什么是幂等，结尾写 {token}\""
+      ],
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Antigravity StartBattleMode、GetBattleWorktreeDiff。",
+      "pass": "两份结果都在、各自写明是哪个模型做的，选出一份并写明理由。",
+      "fail": "两份其实是同一个模型；或只做了一份。"
+    },
+    "import-external": {
+      "do": "看这家能不能把别的智能体产品的配置或会话历史导进来；只做探测，不真的导入。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex externalAgentConfig/detect；Antigravity ImportFromCursor。",
+      "pass": "给出探测结果：能导哪家的什么，导入入口在哪；不改动任何配置。",
+      "fail": "真的导入了，改了这家的配置；或没探测就说不支持。"
+    },
+    "remote-control": {
+      "do": "读出这家自己的远程控制开没开、从哪里连。",
+      "native": "Antigravity 语言服务（channels/probe/scripts/antigravity/discover.mjs 后用 rpc.mjs <方法>）；Codex app-server（方法名见 codex app-server generate-json-schema）；其余几家看主机卡 channels/hosts/<产品>.md 和研究卷宗。 例：Codex remoteControl/status；Antigravity GetRemoteControlInfo。只读，不开关。",
+      "pass": "给出开或关的状态，和应用里显示的一致。",
+      "fail": "读的是中心网页的多端状态而不是这家自己的。"
     }
   }
 }
