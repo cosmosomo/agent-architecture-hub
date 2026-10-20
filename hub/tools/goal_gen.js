@@ -88,8 +88,8 @@ function testTask(agent, unitIds, o, extra = {}) {
   return {
     key: extra.key || `test-${agent}`,
     title: `测试 ${agent}：${qs.map((q) => q.unit.id).join('、')}`,
-    channel: o.tester,
-    ...(o.testerModel ? { model: o.testerModel } : {}),
+    channel: testerFor(o, agent),
+    ...(o.testers.length > 1 ? (TESTER_MODEL[testerFor(o, agent)] ? { model: TESTER_MODEL[testerFor(o, agent)] } : {}) : o.testerModel ? { model: o.testerModel } : {}),
     session: `tester-${agent}`,
     verifyBy: `agent:${o.verify}`,
     ...(extra.dependsOn ? { dependsOn: extra.dependsOn } : {}),
@@ -100,10 +100,22 @@ function testTask(agent, unitIds, o, extra = {}) {
   };
 }
 
+/** Each tester product's cheap model. */
+const TESTER_MODEL = { zcode: 'glm-5.3-flash', antigravity: 'flash', claude: 'haiku' };
+/** The tester for one product: --tester a,b,c spreads products over a pool (10-20 every tester queued on ZCode's
+ *  three slots), the same product always to the same tester so its tester-<product> session keeps its context. */
+const testerFor = (o, agent) => {
+  const pool = o.testers;
+  const i = [...agent].reduce((n, ch) => n + ch.charCodeAt(0), 0) % pool.length;
+  return pool[i];
+};
+
 function options(args) {
+  const testers = list(args.tester || 'zcode');
   return {
-    tester: args.tester || 'zcode',
-    testerModel: args['tester-model'] || (args.tester && args.tester !== 'zcode' ? undefined : 'glm-5.3-flash'),
+    testers,
+    tester: testers[0],
+    testerModel: args['tester-model'] || TESTER_MODEL[testers[0]],
     dev: args.dev || 'codex',
     verify: args.verify || 'claude',
     limit: Number(args.limit || 5),
