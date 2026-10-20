@@ -2,6 +2,8 @@
 
 ## 关键信息
 
+- **2026-10-20 试过：channel-health 部分通过**：照题运行 targets、state、pick。Codex 为绿色 ok；pick 排除原因是 3/3 并发满载，health=closed、cooling=false、accountCooling=false。state 中健康计数 started=11、delivered=7、failed=0、consecutiveFailures=0；本轮没有故障样本，因此不能把容量排除当作熔断通过。黑板 **2270 partial**，已 `bb find` 核对。
+
 - **看到**：WorkBuddy/CodeBuddy CLI 可通过 `--model custom-local:<model>` 选择本地 BYOK 渠道；普通模型代号走腾讯官方 Credits 计费。此前仅证明渠道选择能力，不代表 CLI 能自行登录官方账号。依据：[渠道底座报告](../probe/results/channel-base-20261018.md)、[ZCode/WorkBuddy 实测报告](../probe/results/agy-fact-zcode-workbuddy-20261018.md)。
 - **看到**：已有实测报告称 headless 官方 Credits 路径缺少桌面登录生成的 `$wbEncrypted` 加密信封，无法查询账号级剩余 Credits；CLI 本地会话账本仍可记录逐笔用量。当前证据没有覆盖 CLI 独立登录、设备授权或其他官方鉴权流程。依据：[ZCode/WorkBuddy 实测报告](../probe/results/agy-fact-zcode-workbuddy-20261018.md)“WorkBuddy 事实边界”。
 - **看到**：WorkBuddy 自报报告列出官方产品页 `https://cloud.tencent.com/product/workbuddy`、技术概要 `https://developer.cloud.tencent.com/article/2651884`、上手指南 `https://cloud.tencent.com/developer/article/2680632`；这些是后续核实 CLI 登录机制的入口，当前尚未逐页确认其是否说明 headless 登录。依据：[WorkBuddy 自报报告](../probe/results/self-report-workbuddy-20261019.md)。
@@ -10,12 +12,16 @@
 
 ## 经验
 
+- 健康状态读取、容量拒派、故障熔断是不同子判据。正常渠道被并发上限排除，只证明容量控制；不要主动破坏共享渠道认证制造故障。
+
 - **试过**：检查上一轮底座报告及 WorkBuddy 实测报告，确认“CLI 有 `--model` 路由”与“CLI 有官方账号登录”是两个独立问题；前者不能推导后者。
 - **试过**：调用联网搜索查询官方文档及 GitHub 上的 CodeBuddy 登录/认证信息；三次搜索均返回 `user rejected MCP tool call`，没有可引用的新搜索结果，也没有发起 CLI 登录或访问桌面凭证。
 - **试过**：本轮官方搜索再试一次，返回 `{ok:false, provider:'anysearch', error:'All AnySearch keys failed'}`；未把网络拒绝解释成渠道端健康故障。
 - 研究此路径时应将 CLI help/API 声明、登录实际闭环、官方 Credits 接口调用分开核验；不得把本地 `session_usage.credit_json` 的历史消费当作账号余额。
 
 ## 还没解决的
+
+- 下一步观察隔离测试渠道的真实故障类别及熔断后 pick 排除，或捕获已有故障的完整状态证据。本轮真实 Codex 模型调用成功，旧的 os error 10013 不应继续当作中心当前断点。
 
 - **问题**：CodeBuddy CLI 是否有受支持的独立登录/鉴权方法，可在无头环境使用官方 Credits 或读取官方账号额度？
 - **卡点**：本轮联网搜索被审批层拒绝；现有报告只记录 `$wbEncrypted` 桌面信封缺失后的失败边界，没有核查 CLI 登录命令、设备码/OAuth 流程或官方账号 API。

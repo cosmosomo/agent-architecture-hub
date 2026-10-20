@@ -11,11 +11,11 @@
 | ACP 常驻桥 | [acp.md](acp.md) | ZCode、WorkBuddy、OpenCode、Hermes 经 ACP 能做到哪一步，断在哪 | ZCode · research-acp | acp-runtime-20261018、ask-user-acp-20261019、native-zcode/opencode/hermes-20261019 | | 真活闭环×4 已通（WB/ZC 含中途提问）、fork/steer/inject-next/resume 一批格子已实测（hub/tools/acp_resident_bridge.mjs）：下一步中枢接入网页派活、WB session/steer 参数、hermes resume-native 键空间 |
 | Codex app-server | [codex.md](codex.md) | app-server 协议能给到的上限 | Codex · research-codex | codex-app-driver-20261018 | | 原生 thread/goal、计划模式提问 |
 | Claude stream-json | [claude-stream.md](claude-stream.md) | stream-json 能给到的上限 | Claude（haiku）· research-claude | claude-stream-driver-20261018 | | 合成报错、压缩、子智能体在流里怎么出现 |
-| Antigravity agentapi / Connect-RPC | [agy.md](agy.md) | 332 个方法里哪些能从外部真正用起来 | Antigravity · research-agy | agy-fact-antigravity-20261018、native-antigravity-20261019、self-report-antigravity-20261019 | 27 格地面真值闭环（含 close/inject-inbox/rewind 实测，黑板 1982-1985） | act-request 交互流逆向、archive 写回与 capacity 并发压测 |
+| Antigravity agentapi / Connect-RPC | [agy.md](agy.md) | 332 个方法里哪些能从外部真正用起来 | Antigravity · research-agy | agy-fact-antigravity-20261018、native-antigravity-20261019、self-report-antigravity-20261019 | 30 格地面真值闭环（含 peer-message/wake-persist/wake-stall 实测，黑板 2272-2274） | 查清 compact/mode-switch 适配器断点；act-request 交互流逆向、archive 与 capacity 并发压测 |
 | 界面路线：OpenCLI / CDP | [ui-route.md](ui-route.md) | 只能操作界面的产品怎么接，豆包怎么接 | Antigravity · research-ui-route | opencli-route-20261018、doubao-closed-loop-20261019 | 豆包端到端闭环实测通过（真活下发+研报产出）+ 会话发现工具落地 | 探查 PiP 家庭版环境边界并入会话聚合链 |
 | 通用 GUI 适配器 | [gui.md](gui.md) | 不占用用户屏幕地看、用任意桌面应用，技术路线有哪些，哪条能通用 | Argon（Antigravity pro）· research-gui | gui-adapter-20261019、cdp_read_dom.mjs | CDP WebSocket 静默读出三大桌面端面板、后台截屏与 Automations 面板闭环（黑板 1977-1981, 1984） | UIA 与 CDP 统一门面（desktop_inspector）封装 |
 | 微信适配器 | [wechat.md](wechat.md) | 攻防最激烈的接入：各种路线怎么做、怎么被封、哪些技术能借到别家 | 未定 | | | 还没派 |
-| 打破能力单元边界 | [frontier.md](frontier.md) | 原生做不到的单元，适配器能补到哪一级 | Argon（Antigravity pro）· research-frontier | adapter-frontier-20261018、theory-limits-20261018、frontier.md | 76/82 理论上限已推 + 9 行黑板实测（1977-1985），argon 边界降至 57 单元 193 格 | 跨进程并发租约管理器（channel-lease）中心服务化 |
+| 打破能力单元边界 | [frontier.md](frontier.md) | 原生做不到的单元，适配器能补到哪一级 | Argon（Antigravity pro）· research-frontier | adapter-frontier-20261018、theory-limits-20261018、frontier.md | 82/82 理论上限已推 + 12 行黑板实测（含 2272-2274），argon 边界降至 57 单元 191 格，推导 Top 10 派研究单元适配器极限 | 跨进程并发租约管理器（channel-lease）中心服务化、沉淀 desktop_inspector 统一门面 |
 | 底座渠道 | [base.md](base.md) | 按调用选渠道、额度、熔断、并发 | Codex · research-base | channel-base-20261018 | | 官方积分的无头鉴权（WorkBuddy） |
 | 开源工作台对照 | [oss.md](oss.md) | 别人的多智能体工作台做到了什么 | Antigravity · research-oss | openrig-matrix-20261018、agy-pro-openrig-source-20261018、oss.md | 已建卷宗推进 8 项开源突破与能力矩阵对照 | 网关代际编号锁与智能体 MCP 协作工具集（乙路）落地 |
 

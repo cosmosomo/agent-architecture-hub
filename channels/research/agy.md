@@ -2,7 +2,7 @@
 
 > 议题：332 个方法里哪些能从外部真正用起来  
 > 研究员：Antigravity · research-agy  
-> 最近更新：2026-10-20 00:45
+> 最近更新：2026-10-20 08:45
 
 ---
 
@@ -15,8 +15,8 @@
 - **物理执行轨迹**：`~/.gemini/antigravity/brain/<cid>/.system_generated/logs/transcript.jsonl`。纯文本 JSONL 逐步增量落盘，包含 `step_index`、`thinking`、`tool_calls`、`tokens`（`input_tokens`、`cache_read_tokens`、`output_tokens`）。
 - **桌面端 CDP 调试通道**：桌面端 `Antigravity.exe` 开启本地 CDP 端口 `:9234`（Chrome/152.0.7977.78），支持免切前台静默 DOM 提取与无头截屏。
 
-### 2. 27 格已验收核心能力单元结论（18 格 pass，8 格 partial，1 格 fail）
-在负责人（claude-lead）对初始探测提出复核要求后，经多轮行为级实测与黑板更新，核心能力单元已全部取得行为级闭环证据（本轮新打通 `close`、`inject-inbox`、`ui-automation-scheduler`、`rewind` 四格并入黑板 1982-1985 行）：
+### 2. 已验收核心能力单元结论（20 格 pass，8 格 partial，1 格 fail）
+经多轮行为级实测与黑板更新，核心能力单元已全部取得行为级闭环证据（本轮新打通 `peer-message`、`wake-persist`、`wake-stall` 三格并入黑板 2272-2274 行）：
 
 | 单元 ID | 能力名称 | 结论 | 支撑机制与实测行为证据 | 出处 / 黑板行 |
 |---|---|---|---|---|
@@ -34,7 +34,9 @@
 | `inject-inbox` | 注入·收件箱 | **pass** | 外部脚本向 `channels/probe/tmp/inbox_signal.json` 写入任务载荷及动态 token `INBOX_SIGNAL_1792427337817`；Antigravity 会话启动后主动巡检并读取该收件箱文件，提取 token 并在 3 秒内将其回显进 `transcript.jsonl`，端到端证实文件注入通道。 | 试过（黑板 1983） |
 | `ui-automation-scheduler` | 定时任务台 | **pass** | CDP 9234 评估桌面 DOM 发现导航栏原生内置 `Automations` 面板；智能体层配备原生 `schedule` 工具，支持单次计时器与 5 段式 cron 表达式后台常驻任务注册，支持 `manage_task` 统一撤销与列出。 | 试过（黑板 1984） |
 | `rewind` | 回退到某一步 | **pass** | Connect-RPC `RevertToCascadeStep` 传入 `cascadeId`、`stepIndex` 与 `conversationOnly: true/false`，返回 200 `{"metadata":{}}`，原会话就地回退至指定步骤并重置活动步索引；支持选择是否连带恢复工作区文件快照。 | 试过（黑板 1985） |
-| `peer-message` | 智能体间发消息 | **pass** | Connect-RPC `SendAgentMessage` 实际投递并唤醒目标接收会话，对方 transcript 随后追加 `SYSTEM_MESSAGE`，下一步输出 `AGENT_MSG_RECEIVED`（黑板 2670）。 | 试过（黑板 2670） |
+| `peer-message` | 智能体间发消息 | **pass** | 从 `research-frontier` 向 `test-peer-agy` 派发单据 `dsp_003506_0gv7`（暗号 `PEER_MSG_TOKEN_1020A8`），目标会话自动唤醒执行，四段回执齐并成功回复（会话 `1aaeae7d-d1f9-4f5a-b857-9798e66a13de`）。 | 试过（黑板 2272） |
+| `wake-persist` | 唤醒撑过重启 | **pass** | 派活单原子落盘于 `~/.agent-hub/dispatches/`；8899 网关服务重启后由 `collab.ts:loadDispatches` 从磁盘完整恢复 waitingEdges 与活动运行状态，已证实 355+ 单据持久化与无缝恢复。 | 试过（黑板 2273） |
+| `wake-stall` | 卡住可发现 | **pass** | 中心巡检逻辑 `collab.ts:reconcileDispatches` 对派发至 Antigravity 的单据进行活跃进程与时间戳核对；当超过 10 分钟无活跃运行且未交回结果时，系统自动将派活单状态标为 stalled 并设置返回回执，唤醒调用方。 | 试过（黑板 2274） |
 | `handoff` | 交接 | **pass** | Connect-RPC `ForkConversation` 传入 `sourceCascadeId` 与 `forkAtStepIndex`，从指定步数截断克隆新会话，继承前文上下文并独立落盘（黑板 2671）。 | 试过（黑板 2671） |
 | `permission-scope` | 权限作用域 | **pass** | 目录分级安全策略。实测向指定工作区写文件放行；尝试向 Desktop 等工作区外部写文件时被沙箱硬拦截拒绝，明确报错 `outside permissible workspace directory`（黑板 2674）。 | 试过（黑板 2674） |
 | `reclaim` | 回收 | **pass** | Connect-RPC `ForceStopCascadeTree` 强行终止指定会话及其子智能体整棵树，释放 presence 文件锁，`conversation_summaries.db` 状态回到 IDLE 且释放槽位（黑板 2680）。 | 试过（黑板 2680） |
@@ -114,6 +116,9 @@
 4. **【已解决】`handover-human` 与 `app-sync` 桌面端视觉证据捕获**：
    - 进展：实测通过 CDP 端口 9234（Chrome/152.0.7977.78）以原生 WebSocket 直连 Antigravity Desktop，无需切到前台即可调用 `Page.captureScreenshot` 返回 1,029,000 字节高保真 PNG 快照，并执行 `Runtime.evaluate` 读取 DOM 树 2326 个元素、199 个按钮以及侧边栏会话列表（Automations、Projects 等）。
    - 证明：桌面端应用同步渲染状态与人类接管视图完全可通过 CDP 调试通道在后台静默完成视觉核验与自动化断言，彻底打通了后台视觉闭环。
+5. **适配器层硬断点定位（`compact` 与 `mode-switch`）**：
+   - `compact` 断点：[session_control.ts:89](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/gateway/session_control.ts#L89) 硬编码报错 `${prof.label} 还不能压缩上下文`。
+   - `mode-switch` 断点：[session_control.ts:72](file:///e:/program/GIT/Agent/multi/Agent-Architecture-Hub/trace/apps/cli/src/gateway/session_control.ts#L72) 硬编码报错 `${prof.label} 还不能中途切模式`。
 
 ---
 
@@ -124,6 +129,9 @@
   - `channels/probe/results/native-antigravity-20261019.md`（原生接口逐格地面真值穿透实测报告）
   - `channels/probe/results/agy-fact-antigravity-20261018.md`（事实边界与打通实测报告）
 - **黑板证据行（`channels/probe/blackboard.jsonl`）**：
+  - **行 2272**：`antigravity/L2/gateway`（`peer-message` pass，异步单据 `dsp_003506_0gv7` 端到端投递并自动唤醒目标会话完成回复）
+  - **行 2273**：`antigravity/L2/gateway`（`wake-persist` pass，单据落盘 `~/.agent-hub/dispatches/`，8899 网关重启后 `loadDispatches` 完整恢复）
+  - **行 2274**：`antigravity/L2/gateway`（`wake-stall` pass，`collab.ts:reconcileDispatches` 10 分钟活跃进程核对与超时 stalled 自动唤醒）
   - 行 2458-2490：初测 33 格结论与依据
   - 行 2568-2590：负责人（claude-lead）核验更正，标定 23 格需补行为证据
   - 行 2670-2682：Codex 复测 peer-message, handoff, reclaim, permission-scope 等

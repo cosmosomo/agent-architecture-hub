@@ -101,6 +101,10 @@
 
 ## 出处
 
+- 上述 2026-10-20 Claude 排队 partial 已经中心追加黑板 **2271**，并用 `bb find --family claude --capability inject-next --since 2026-10-20T00:27:00Z` 核对。
+
+- **2026-10-20 research-codex 实测补充**：按 inject-next 题运行 `test-claude`，第一轮完整输出 1–100（`run_1792456243391_slvk`），第二轮回复 `T102000U5`（`run_1792456265260_haww`）。但 queue 请求返回 running，实际第二轮启动已在前轮结束 539ms 之后，未捕获运行中排队，因此记 partial，不能认定自动队列闭环。下一步将数数轮拉长，并在第一轮返回 running 后立即送 queue；核对 queued、两轮时间与暗号。详见 [本轮报告](../probe/reports/dsp_002706_j357.md)。
+
 ### 本仓库报告
 - `channels/probe/results/claude-stream-driver-20261018.md` —— 全能力实测报告（含代码、黑板行号、落盘路径）
 - `channels/probe/scripts/probe_claude_stream.mjs` —— 完整闭环探针脚本
