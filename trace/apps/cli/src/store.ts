@@ -8,12 +8,15 @@ import { homedir } from 'node:os';
 import { DatabaseSync } from 'node:sqlite';
 import { dirname, join, sep } from 'node:path';
 import { createInterface } from 'node:readline';
+import { ReadRpc } from './read_rpc.ts';
 import { ADAPTERS, type SourceAdapter } from '@hub-trace/adapters';
 import { CONTRACT_VERSION, summarize, type Session, type SessionIndex, type SessionSummary } from '@hub-trace/contract';
 
 export type Root = { adapter: SourceAdapter; dir: string };
 
 export type StoreOptions = {
+  /** Serve mode: source discovery and parsing belong to a worker, never the HTTP event loop. */
+  worker?: boolean;
   /** Directories to search; default: every adapter's home roots. */
   roots?: Root[];
   /** Index cache file; default: ~/.agent-hub/trace/index-v<contract>.json (HUB_TRACE_HOME moves the folder). */
@@ -124,6 +127,19 @@ function bundleStat(members: string[]): { size: number; mtimeMs: number } {
   return { size, mtimeMs };
 }
 
+/** WAL writes need not touch the database file, but they still invalidate a session read. */
+function sourceStat(path: string): { size: number; mtimeMs: number } {
+  const st = statSync(path);
+  if (!/\.(db|sqlite)$/i.test(path)) return st;
+  try {
+    const wal = statSync(path + '-wal');
+    return { size: st.size + wal.size, mtimeMs: Math.max(st.mtimeMs, wal.mtimeMs) };
+  } catch (error: any) {
+    if (error.code === 'ENOENT') return st;
+    throw error;
+  }
+}
+
 /** Child links from the children's side: a parent learns about every child that names it. */
 function linkChildren(summaries: SessionSummary[]): SessionSummary[] {
   const byId = new Map(summaries.map((s) => [s.id, s]));
@@ -153,6 +169,7 @@ const BIG_FILE = 16 * 1024 * 1024;
 const BIG_REPARSE_MS = 120_000;
 
 export class SessionStore {
+  private readonly readWorker?: ReadRpc;
   readonly roots: Root[];
   readonly cacheFile: string;
   private readonly now: () => number;
@@ -181,6 +198,16 @@ export class SessionStore {
     this.roots = opts.roots || defaultRoots();
     this.cacheFile = opts.cacheFile || defaultCacheFile();
     this.now = opts.now || Date.now;
+    if (opts.worker) {
+      this.loaded = true;
+      this.readWorker = new ReadRpc(new URL('./store_worker.ts', import.meta.url), {
+        roots: this.roots.map((r) => {
+          const adapterIndex = ADAPTERS.indexOf(r.adapter);
+          if (adapterIndex < 0) throw new Error(`Unregistered worker adapter ${r.adapter.kind}`);
+          return { adapterIndex, kind: r.adapter.kind, dir: r.dir };
+        }), cacheFile: this.cacheFile,
+      });
+    }
   }
 
   private load() {
@@ -240,6 +267,19 @@ export class SessionStore {
   /** Incremental: only files that are new, changed, parsed by an older adapter, or still open get parsed. */
   scan(onProgress?: (done: number, total: number) => void): Promise<ScanReport> {
     if (this.scanning) return this.scanning;
+    if (this.readWorker) {
+      this.scanning = this.readWorker.call<{ report: ScanReport; files: SourceFile[]; index: SessionIndex; revision: number }>('scan').then((result) => {
+        this.loaded = true;
+        this.entries = new Map(result.files.map((f) => [f.path, f]));
+        this.byId = new Map(result.files.map((f) => [f.id, f]));
+        this.rev = result.revision;
+        this.cachedIndex = { rev: this.rev, count: this.byId.size, idx: result.index };
+        this.lastScan = this.now();
+        onProgress?.(result.report.files, result.report.files);
+        return result.report;
+      }).finally(() => { this.scanning = null; });
+      return this.scanning;
+    }
     this.scanning = this.doScan(onProgress).finally(() => { this.scanning = null; });
     return this.scanning;
   }
@@ -303,7 +343,7 @@ export class SessionStore {
       const members = this.membersByMarker.get(f.path);
       let st;
       try {
-        st = members ? bundleStat(members) : statSync(f.path);
+        st = members ? bundleStat(members) : sourceStat(f.path);
       } catch {
         continue;
       }
@@ -495,6 +535,7 @@ export class SessionStore {
 
   /** Parse one source file as it is now, without caching or linking. */
   parseSource(f: SourceFile): Promise<Session> {
+    if (this.readWorker) return this.readWorker.call('parseSource', [f]);
     // Database sessions resolve from the parsed store, or selectively by sourceId.
     const hash = f.path.indexOf('#');
     if (hash > 0) {
@@ -505,7 +546,7 @@ export class SessionStore {
       if (existsSync(real)) {
         const dbAdapter = ADAPTERS.find((a) => a.parseSqlite && a.matchFile(real));
         if (dbAdapter) {
-          const st = statSync(real);
+          const st = sourceStat(real);
           const one = this.readSingleSqliteSession(dbAdapter, real, st, sourceId);
           if (one) return Promise.resolve(one);
         }
@@ -524,6 +565,7 @@ export class SessionStore {
 
   /** Full session, parsed from its file now (cached while the file is unchanged). */
   async session(id: string): Promise<Session | undefined> {
+    if (this.readWorker) return this.readWorker.call('session', [id]);
     if (!this.has(id)) return undefined;
     const e = this.byId.get(id)!;
     const adapter = ADAPTERS.find((a) => a.kind === e.kind);
@@ -533,7 +575,7 @@ export class SessionStore {
       const real = e.path.slice(0, hash);
       const sourceId = e.path.slice(hash + 1);
       if (existsSync(real)) {
-        const st = statSync(real);
+        const st = sourceStat(real);
         const hit = this.parsedCache.get(id);
         if (hit && hit.size === st.size && hit.mtimeMs === st.mtimeMs) return hit.session;
         const dbAdapter = ADAPTERS.find((a) => a.parseSqlite && a.matchFile(real));
@@ -551,10 +593,11 @@ export class SessionStore {
       return undefined;
     }
     if (!existsSync(e.path)) return undefined;
-    const st = statSync(e.path);
+    const members = this.membersFor(adapter, e.path);
+    const st = members ? bundleStat(members) : statSync(e.path);
     const hit = this.parsedCache.get(id);
     if (hit && hit.size === st.size && hit.mtimeMs === st.mtimeMs) return hit.session;
-    const session = await parsePath(adapter, e.path, this.now(), this.membersFor(adapter, e.path));
+    const session = await parsePath(adapter, e.path, this.now(), members);
     const child = linkChildren([summarize(session), ...this.index().sessions.filter((s) => s.links.some((l) => l.rel === 'parent' && l.id === id))])[0];
     session.links = child.links;
     session.stats = child.stats;
@@ -562,4 +605,6 @@ export class SessionStore {
     if (this.parsedCache.size > 12) this.parsedCache.delete(this.parsedCache.keys().next().value!);
     return session;
   }
+
+  async close() { await this.readWorker?.close(); }
 }

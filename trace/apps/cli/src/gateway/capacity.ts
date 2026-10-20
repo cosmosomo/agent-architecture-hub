@@ -21,7 +21,7 @@ export type QuotaCooldown = { until: number; reason: string; from: string; at: s
 
 /** Sessions working outside the center (a desktop app, a terminal), per product, recounted at most this often. */
 const EXTERNAL_TTL_MS = 60_000;
-let externalCache: { at: number; byKind: Map<string, number> } = { at: 0, byKind: new Map() };
+let externalCache: { at: number; owner?: AgentGatewayHub; revision?: number; byKind: Map<string, number> } = { at: 0, byKind: new Map() };
 
 /**
  * When the provider says the quota comes back, as epoch ms, or null when the text does not say. Understands a date
@@ -120,7 +120,7 @@ export const capacityMethods = {
    * while the person ran a long PPT job on its desktop app).
    */
   externalBusy(this: AgentGatewayHub, kind: string): number {
-    if (Date.now() - externalCache.at > EXTERNAL_TTL_MS) {
+    if (externalCache.owner !== this || externalCache.revision !== this.sessionReader?.updatedAt || Date.now() - externalCache.at > EXTERNAL_TTL_MS) {
       const ours = new Set([...this.activeRuns.values()].map((r) => r.traceSessionId).filter(Boolean));
       const base = this.store.index().sessions;
       // Only sessions written in the last half hour can count, so only those are parsed. Parsing every session the
@@ -128,7 +128,7 @@ export const capacityMethods = {
       // queued task: 10-20 08:00 the service stopped answering for minutes with ~20 tester tasks queued.
       const recentlyWritten = (t?: string) => Date.now() - Date.parse(t || '') <= 30 * 60_000;
       const known = new Set(base.map((x) => x.id));
-      const extras = this.listAcpxSessions()
+      const extras = this.sessionReader ? this.sessionReader.recent.filter((s) => !known.has(s.id)) : this.listAcpxSessions()
         .filter((i) => !known.has(i.traceSessionId) && recentlyWritten(i.updatedAt))
         .map((i) => this.getAcpxSessionAsContract(i.traceSessionId) || this.getAcpxSessionAsContract(i.acpxRecordId))
         .filter((s): s is NonNullable<typeof s> => Boolean(s));
@@ -142,19 +142,16 @@ export const capacityMethods = {
         if (Date.now() - Date.parse(x.updatedAt || x.startedAt || '') > 30 * 60_000) continue;
         byKind.set(x.source.kind, (byKind.get(x.source.kind) || 0) + 1);
       }
-      externalCache = { at: Date.now(), byKind };
+      externalCache = { at: Date.now(), owner: this, revision: this.sessionReader?.updatedAt, byKind };
     }
     return externalCache.byKind.get(kind) || 0;
   },
 
   /** One product as the pick sees it: turns running now (ours and outside ones), its limit, its breaker, its account's cooldown. */
-  channelLoad(this: AgentGatewayHub, id: string) {
+  channelLoad(this: AgentGatewayHub, id: string, includeOutside = true) {
     const prof = CHANNEL_PROFILES[id as ChannelId];
     const ours = [...this.activeRuns.values()].filter((r) => r.channel === id && r.status === 'running').length;
-    let outside = 0;
-    try {
-      outside = prof ? this.externalBusy(prof.traceKind) : 0;
-    } catch {}
+    const outside = includeOutside && prof ? this.externalBusy(prof.traceKind) : 0;
     const running = ours + outside;
     const h = this.channelFailures.get(id as ChannelId);
     const cooling = Boolean(h && h.state === 'open' && h.openedAt && Date.now() - Date.parse(h.openedAt) < COOLDOWN_MS);
@@ -167,6 +164,7 @@ export const capacityMethods = {
       driven: Boolean(prof),
       canSend: Boolean(prof?.capabilities.canSendPrompt),
       running,
+      ours,
       outside,
       cap: prof?.maxConcurrent || 3,
       health: (h?.state || 'closed') as 'closed' | 'open' | 'probing',
@@ -186,11 +184,12 @@ export const capacityMethods = {
    * breaker open, full); null when it can, or when it cannot for good (not driven: sending will say so).
    */
   holdFor(this: AgentGatewayHub, id: string): string | null {
-    const l = this.channelLoad(id);
+    // Named work only competes with our own turns. External sessions only rank automatic choices.
+    const l = this.channelLoad(id, false);
     if (!l.driven) return null;
     if (l.accountCooling) return `${l.label}：${l.accountWhy}`;
     if (l.cooling) return `${l.label}：熔断冷却中${l.lastError ? `（${String(l.lastError).slice(0, 60)}）` : ''}`;
-    if (l.running >= l.cap) return `${l.label}：在跑 ${l.running}/${l.cap} 已满`;
+    if (l.ours >= l.cap) return `${l.label}：中心在跑 ${l.ours}/${l.cap} 已满`;
     return null;
   },
 
@@ -206,11 +205,12 @@ export const capacityMethods = {
     const loads = pool.map((c) => this.channelLoad(c));
     const left: string[] = [];
     const ok = loads.filter((l) => {
-      if (!l.driven) left.push(`${l.label}：后端不驱动`);
+      if (this.sessionReader && !this.sessionReader.ready) left.push(`${l.label}：会话发现未就绪或快照已过期`);
+      else if (!l.driven) left.push(`${l.label}：后端不驱动`);
       else if (!l.canSend) left.push(`${l.label}：后端不能发话`);
       else if (l.accountCooling) left.push(`${l.label}：${l.accountWhy}`);
       else if (l.cooling) left.push(`${l.label}：熔断冷却中${l.lastError ? `（${String(l.lastError).slice(0, 60)}）` : ''}`);
-      else if (l.running >= l.cap) left.push(`${l.label}：在跑 ${l.running}/${l.cap} 已满`);
+      else if (l.ours >= l.cap) left.push(`${l.label}：中心在跑 ${l.ours}/${l.cap} 已满`);
       else return true;
       return false;
     });
@@ -219,7 +219,7 @@ export const capacityMethods = {
     ok.sort((a, b) => a.running / a.cap - b.running / b.cap || pool.indexOf(a.id) - pool.indexOf(b.id));
     const p = ok[0];
     const state = p.health === 'closed' ? '健康' : '熔断后试探一轮';
-    const busy = `在跑 ${p.running}/${p.cap}${p.outside ? `（其中 ${p.outside} 个在中心以外，比如桌面端）` : ''}`;
+    const busy = `中心在跑 ${p.ours}/${p.cap}${p.outside ? `；外部 ${p.outside} 个会话仅参与排序` : ''}`;
     return { channel: p.id as string | null, why: `${p.label}：${state}，${busy}${left.length ? `；没选：${left.join('；')}` : ''}`, loads };
   },
 };

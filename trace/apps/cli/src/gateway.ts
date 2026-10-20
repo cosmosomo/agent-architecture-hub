@@ -36,6 +36,8 @@ import { metaMethods } from './gateway/meta.ts';
 import { capacityMethods, loadQuotaCooldowns } from './gateway/capacity.ts';
 import { classifyFailure } from './gateway/failure.ts';
 import { guardMethods } from './gateway/guard.ts';
+import { isMainThread } from 'node:worker_threads';
+import { SessionReader } from './gateway/session_reader.ts';
 
 // Everything above the class lives in gateway/: types, products, common. Re-exported for the callers.
 export type { ChannelId, MetaAgentId, MetaAgentConfig, MetaAgentLogEntry, ChannelCapabilities, ChannelProfile, LiveToolCall, QueuedPrompt, ActiveRun, AcpxSessionInfo, PendingQuestion, PendingApproval, ExternalSessionAnomaly, DispatchReceiptState, DispatchStatus, DispatchRecord } from './gateway/types.ts';
@@ -43,6 +45,7 @@ export { CHANNEL_PROFILES, resolveChannel, detectChannelFromCommand, normalizeAg
 export { NEW_CWD, DEFAULT_SUPERVISOR_PERSONA, DEFAULT_META_AGENTS } from './gateway/common.ts';
 
 export class AgentGatewayHub {
+  readonly sessionReader?: SessionReader;
   readonly repoRoot: string;
   readonly store: SessionStore;
   readonly acpxDir = join(HOME, '.acpx', 'sessions');
@@ -136,6 +139,7 @@ export class AgentGatewayHub {
   >();
   hermesCache: {
     at: number;
+    signature: string;
     sessions: Map<string, { info: AcpxSessionInfo; contract: Session }>;
   } | null = null;
   agyLsCache: {
@@ -154,6 +158,10 @@ export class AgentGatewayHub {
     this.loadMetaAgents();
     this.loadRecentRuns();
     this.loadDispatches();
+    if (isMainThread && !process.env.NODE_TEST_CONTEXT) {
+      this.sessionReader = new SessionReader(repoRoot, store.cacheFile);
+      void this.sessionReader.refresh().catch((error) => console.error('[session-discovery]', error));
+    }
     if (!BACKGROUND) return;
     // Shared append-only records stay append-only (gateway/guard.ts, AGENTS.md 铁律 1).
     this.guardAppendOnly();
@@ -190,7 +198,7 @@ export class AgentGatewayHub {
     } catch {}
   }
 
-  slotKey(channel: ChannelId, sessionName: string): string {
+  slotKey(channel: string, sessionName: string): string {
     return `${channel}:${sessionName}`;
   }
 
@@ -342,6 +350,7 @@ export class AgentGatewayHub {
     return {
       ok: true,
       channels,
+      sessionDiscovery: this.sessionReader ? { ready: this.sessionReader.ready, updatedAt: this.sessionReader.updatedAt, error: this.sessionReader.error } : undefined,
       workspaceDirs,
       activeRuns: Array.from(this.activeRuns.values()),
       recentRuns: this.recentRuns.slice(0, 15),
@@ -636,6 +645,7 @@ export class AgentGatewayHub {
     /** Pictures sent with the words (data: URLs, e.g. a pasted phone screenshot). */
     images?: string[];
   }) {
+    if (this.sessionReader) await this.sessionReader.refresh();
     const prof = resolveChannel(params.channel);
     if (!prof) {
       throw new Error(`未知渠道: ${params.channel}`);
@@ -1028,7 +1038,7 @@ export class AgentGatewayHub {
     this.broadcast('state', this.getState());
 
     // Refresh SessionStore asynchronously in background so SSE run_done is never delayed
-    this.store.refresh(0).catch(() => {});
+    this.store.refresh(0).catch((error) => console.error('[run-finalized-refresh]', error));
 
     // Check Meta-Agents for Loop Guard / Model Failover / Auto-Resume on failure (skip for brain sessions themselves!)
     const isBrainSession = sessionName.startsWith('meta-brain');

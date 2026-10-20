@@ -1,14 +1,17 @@
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // The account cooldown file goes to a temp folder, not the real ~/.agent-hub.
 process.env.HUB_DATA_DIR = mkdtempSync(join(tmpdir(), 'hub-capacity-'));
-const { capacityMethods, loadQuotaCooldowns, quotaResetAt } = await import('../src/gateway/capacity.ts');
+const { loadQuotaCooldowns, quotaResetAt } = await import('../src/gateway/capacity.ts');
 const { isQuotaError } = await import('../src/gateway/failure.ts');
 const { CHANNEL_PROFILES } = await import('../src/gateway/products.ts');
+const { AgentGatewayHub } = await import('../src/gateway.ts');
+const { SessionStore } = await import('../src/store.ts');
+const { claudeCodeAdapter } = await import('@hub-trace/adapters');
 
 const NOW = Date.parse('2026-10-19T02:44:40+08:00');
 
@@ -37,16 +40,53 @@ test('no reset time, a past one, or a date that is not the reset gives null', ()
   assert.equal(quotaResetAt('started 2026-10-19 09:00:00, quota exceeded', '+08:00', NOW), null);
 });
 
-/** Just the parts of the hub the capacity block touches. */
-function fakeHub() {
-  const hub: any = { activeRuns: new Map(), channelFailures: new Map(), quotaCooldowns: new Map() };
-  for (const [k, f] of Object.entries(capacityMethods)) hub[k] = f;
+const hubDirs: string[] = [];
+after(() => { for (const dir of hubDirs) rmSync(dir, { recursive: true, force: true }); });
+/** Real hub and store, with native source directories isolated from the user's running products. */
+function testHub(store?: InstanceType<typeof SessionStore>) {
+  const dir = mkdtempSync(join(tmpdir(), 'hub-capacity-state-'));
+  hubDirs.push(dir);
+  const hub = new AgentGatewayHub(dir, store || new SessionStore({ roots: [], cacheFile: join(dir, 'index.json') }));
+  Object.assign(hub, { acpxDir: join(dir, 'acpx'), agyBrainDir: join(dir, 'brain'), agyMapFile: join(dir, 'agy-map.json'), wbDir: join(dir, 'workbuddy'), hermesDir: join(dir, 'hermes') });
   return hub;
 }
 const run = (status: string, error?: string) => ({ status, error }) as any;
 
+test('eleven external Claude sessions do not block named work or exclude its only automatic candidate', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'hub-capacity-external-'));
+  const sources = join(dir, '.claude', 'projects', 'test');
+  mkdirSync(sources, { recursive: true });
+  const now = new Date().toISOString();
+  for (let i = 0; i < 11; i++) {
+    const sessionId = `external-${i}`;
+    const rows = [
+      { type: 'user', uuid: 'u', sessionId, timestamp: now, message: { role: 'user', content: '读取文档' } },
+      { type: 'assistant', uuid: 'a', sessionId, timestamp: now, message: { role: 'assistant', content: [{ type: 'tool_use', id: 'read', name: 'Read', input: { file_path: '/code/doc.md' } }] } },
+    ];
+    writeFileSync(join(sources, sessionId + '.jsonl'), rows.map((r) => JSON.stringify(r)).join('\n'));
+  }
+  const store = new SessionStore({ roots: [{ adapter: claudeCodeAdapter, dir: sources }], cacheFile: join(dir, 'cache', 'index.json') });
+  try {
+    await store.scan();
+    const hub = testHub(store);
+    const load = hub.channelLoad('claude');
+    assert.equal(load.outside, 11);
+    assert.equal(load.ours, 0);
+    assert.equal(hub.holdFor('claude'), null);
+    assert.equal(hub.pickChannel(['claude']).channel, 'claude');
+    const cap = CHANNEL_PROFILES.claude.maxConcurrent;
+    for (let i = 0; i < cap; i++) hub.activeRuns.set(`claude:test-${i}`, { ...run('running'), channel: 'claude' });
+    assert.match(hub.holdFor('claude')!, new RegExp(`${cap}/${cap} 已满`));
+    assert.equal(hub.pickChannel(['claude']).channel, null);
+    assert.equal(hub.channelLoad('claude').outside, load.outside);
+  } finally {
+    await store.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('one product hitting the account limit keeps every product on that account out of the pick until the reset', () => {
-  const hub = fakeHub();
+  const hub = testHub();
   const zcode = CHANNEL_PROFILES.zcode;
   assert.equal(zcode.quotaAccount, 'zhipu-coding-plan');
   const reset = new Date(Date.now() + 3 * 3600_000);
@@ -61,6 +101,7 @@ test('one product hitting the account limit keeps every product on that account 
   assert.match(pick.why, /WorkBuddy：额度账号 智谱 Coding Plan 用完/);
   assert.match(pick.why, /ZCode 报的/);
   const cd = hub.quotaCooldowns.get('zhipu-coding-plan');
+  assert.ok(cd);
   assert.equal(Math.round(cd.until / 60_000), Math.round(Date.parse(bjText.replace(' ', 'T') + '+08:00') / 60_000));
 
   // Kept on disk: a restarted center still knows.
@@ -73,9 +114,10 @@ test('one product hitting the account limit keeps every product on that account 
 });
 
 test('a quota failure without a reset time cools the account for the short cooldown; products on other accounts are untouched', () => {
-  const hub = fakeHub();
+  const hub = testHub();
   hub.recordTurnHealth(CHANNEL_PROFILES.workbuddy, run('failed', 'Quota exceeded: 429 您的账户已达到速率限制'));
   const cd = hub.quotaCooldowns.get('zhipu-coding-plan');
+  assert.ok(cd);
   assert.ok(cd.until - Date.now() <= 120_000 && cd.until > Date.now());
   assert.equal(hub.pickChannel(['hermes', 'claude']).channel, 'claude');
   hub.recordTurnHealth(CHANNEL_PROFILES.codex, run('failed', 'Quota exceeded'));

@@ -66,6 +66,7 @@ export interface AcpSessionInfo {
   sessionId: string;
   currentModel?: string;
   availableModels?: string[];
+  configOptions?: any[];
   currentMode?: string;
   availableModes?: string[];
 }
@@ -241,7 +242,21 @@ export class AcpResidentDriver extends EventEmitter {
     this.shutdown('关闭');
     if (cp && !cp.killed) {
       if (process.platform === 'win32' && cp.pid) {
-        spawn('taskkill', ['/pid', String(cp.pid), '/t', '/f'], { windowsHide: true, stdio: 'ignore' });
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const killer = spawn('taskkill', ['/pid', String(cp.pid), '/t', '/f'], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'], timeout: 5000 });
+            let stderr = '';
+            killer.stderr?.on('data', (data) => { stderr += data.toString(); });
+            killer.on('error', reject);
+            killer.on('close', (code) => code === 0 ? resolve() : reject(new Error(`Closing ${this.product} bridge ${cp.pid} failed (${code}): ${stderr.trim()}`)));
+          });
+        } finally {
+          // Descendants may inherit pipes; the closed driver must release its local handles too.
+          cp.stdin?.destroy();
+          cp.stdout?.destroy();
+          cp.stderr?.destroy();
+          cp.unref();
+        }
       } else {
         cp.kill();
       }
@@ -268,6 +283,7 @@ export class AcpResidentDriver extends EventEmitter {
   private remember(sessionId: string, res: any): AcpSessionInfo {
     const info: AcpSessionInfo = {
       sessionId,
+      configOptions: res?.configOptions,
       currentModel: res?.models?.currentModelId,
       availableModels: Array.isArray(res?.models?.availableModels)
         ? res.models.availableModels.map((m: any) => String(m.modelId || m.id || m))

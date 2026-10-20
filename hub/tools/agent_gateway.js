@@ -259,13 +259,27 @@ function parseAcpxNdjson(stdout, stderr) {
   };
 }
 
+function liveModelCatalogs(args) {
+  const catalogs = {};
+  const requested = args.agent ? resolveProfile(args.agent)?.id : null;
+  if (args.agent && !requested) throw new Error(`Unknown agent: ${args.agent}`);
+  for (const channel of requested ? [requested] : ['claude', 'antigravity']) {
+    const result = callSharedDaemon(`/api/gateway/models?channel=${channel}`, 'GET', null, 75);
+    if (!result || !result.ok) throw new Error(`Live model discovery failed for ${channel}: ${result?.error || 'center unavailable'}`);
+    catalogs[channel] = result;
+  }
+  return catalogs;
+}
+
 function cmdTargets(args) {
+  const catalogs = liveModelCatalogs(args);
   const rows = [];
   for (const [k, prof] of Object.entries(AGENT_PROFILES)) {
     if (prof.aliasOf) continue;
     const card = readHostCardMeta(prof.hostCard) || {};
     rows.push({
       id: prof.id,
+      modelCatalog: catalogs[prof.id],
       driver: prof.driver,
       adapter: prof.adapterPackage || `CDP:${prof.cdpPort}`,
       boardStatus: card.status || 'unknown',
@@ -1441,6 +1455,8 @@ function querySearchPoolsLiveQuota() {
 }
 
 function cmdQuota(args) {
+  const catalogs = Object.values(liveModelCatalogs(args));
+  console.log(JSON.stringify({ liveModelCatalogs: catalogs }, null, 2));
   const modelsDir = path.join(CHANNELS_DIR, 'models');
   const modelCards = [];
   if (fs.existsSync(modelsDir)) {
@@ -1994,25 +2010,6 @@ function cmdApi(args, sub) {
       let filtered = res.sessions.filter(
         (s) => (!ch || s.channel === ch) && (!q || String(s.title || s.name || '').toLowerCase().includes(q))
       );
-      if ((ch === 'doubao-desktop' || ch === 'doubao') && filtered.length === 0) {
-        try {
-          const discTool = path.join(ROOT_DIR, 'hub', 'tools', 'doubao_sessions_discover.js');
-          if (fs.existsSync(discTool)) {
-            const raw = spawnSync(process.execPath, [discTool, 'list', '--limit', String(args.limit || 30)], { encoding: 'utf8', timeout: 5000 }).stdout || '';
-            const discLines = raw.trim().split('\n').filter((l) => l.startsWith('doubao:'));
-            filtered = discLines.map((l) => {
-              const parts = l.split('\t');
-              return {
-                id: parts[0] || '',
-                channel: 'doubao-desktop',
-                state: parts[1] || 'idle',
-                updatedAt: parts[2] || '',
-                title: parts.slice(6).join('\t') || parts[0],
-              };
-            });
-          }
-        } catch {}
-      }
       const rows = filtered
         .slice(0, Number(args.limit) || 30)
         // The slim list gives state as a string ("working"); the full one as { status }.

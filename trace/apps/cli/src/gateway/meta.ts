@@ -219,16 +219,14 @@ export const metaMethods = {
   startMetaPatrolLoop(this: AgentGatewayHub) {
     if (this.patrolTimer) clearInterval(this.patrolTimer);
     this.patrolTimer = setInterval(() => {
-      try {
-        this.tickMetaPatrol();
-      } catch {}
+      void this.tickMetaPatrol().catch((error) => console.error('[meta-patrol]', error));
     }, 5000);
     if (typeof this.patrolTimer.unref === 'function') {
       this.patrolTimer.unref();
     }
   },
 
-  tickMetaPatrol(this: AgentGatewayHub) {
+  async tickMetaPatrol(this: AgentGatewayHub) {
     const nowMs = Date.now();
     const resumer = this.metaAgents.get('meta_resumer');
     const intervalMs = Math.max(5, resumer?.patrolIntervalSec || 15) * 1000;
@@ -292,7 +290,8 @@ export const metaMethods = {
         // the ZCode store, WorkBuddy files) held the event loop ~0.5 s each 15 s tick (profiled 10-18), so the list is
         // reused for a minute. The API still lists fresh.
         if (!this.patrolListCache || nowMs - this.patrolListCache.at > 60_000) {
-          this.patrolListCache = { at: nowMs, list: this.listAcpxSessions().slice(0, 18) };
+          const list = this.sessionReader ? await this.sessionReader.refresh() : this.listAcpxSessions();
+          this.patrolListCache = { at: nowMs, list: list.slice(0, 18) };
         }
         for (const s of this.patrolListCache.list) {
           if (s.sessionName.startsWith('meta-brain')) continue;
@@ -314,7 +313,7 @@ export const metaMethods = {
             });
             continue;
           }
-          const contract = this.getAcpxSessionAsContract(s.traceSessionId);
+          const contract = await this.readSessionContract(s.traceSessionId);
           if (!contract || contract.turns.length === 0) continue;
           const lastTurn = contract.turns[contract.turns.length - 1];
           const errStep = lastTurn.steps.find((st) => st.kind === 'tool' && st.status === 'error');
@@ -338,7 +337,7 @@ export const metaMethods = {
           if (detected.length >= 5) break;
         }
         this.externalAnomalies = detected;
-      } catch {}
+      } catch (error) { console.error('[meta-patrol] session read failed', error); }
     }
 
     try {

@@ -332,15 +332,19 @@ export const sessionMethods = {
 
   /** Load and cache Hermes sessions from `AppData/Local/hermes/state.db` and `profiles/eni/state.db`. */
   loadHermesSessions(this: AgentGatewayHub, force = false): Map<string, { info: AcpxSessionInfo; contract: Session }> {
-    if (!force && this.hermesCache && Date.now() - this.hermesCache.at < 15_000) {
-      return this.hermesCache.sessions;
-    }
     const map = new Map<string, { info: AcpxSessionInfo; contract: Session }>();
     const prof = CHANNEL_PROFILES.hermes;
     const dbPaths = [
       join(this.hermesDir, 'state.db'),
       join(this.hermesDir, 'profiles', 'eni', 'state.db'),
     ].filter((p) => existsSync(p));
+    const signature = dbPaths.flatMap((p) => [p, p + '-wal']).map((p) => {
+      try { const st = statSync(p); return `${p}:${st.size}:${st.mtimeMs}`; } catch (error: any) {
+        if (error.code === 'ENOENT') return `${p}:absent`;
+        throw error;
+      }
+    }).join('|');
+    if (!force && this.hermesCache?.signature === signature) return this.hermesCache.sessions;
 
     for (const dbPath of dbPaths) {
       try {
@@ -583,7 +587,7 @@ export const sessionMethods = {
       } catch {}
     }
 
-    this.hermesCache = { at: Date.now(), sessions: map };
+    this.hermesCache = { at: Date.now(), signature, sessions: map };
     return map;
   },
 
@@ -689,6 +693,15 @@ export const sessionMethods = {
 
   /** Read all `~/.acpx/sessions/*.json` records + Antigravity Brain + WorkBuddy Desktop + Hermes SQLite sessions. */
   listAcpxSessions(this: AgentGatewayHub): AcpxSessionInfo[] {
+    if (this.sessionReader) {
+      const rows = this.sessionReader.current().map((s) => {
+        const model = this.selectedModels.get(this.slotKey(s.channel, s.sessionName)) || this.selectedModels.get(s.channel);
+        return model ? { ...s, currentModel: model } : s;
+      });
+      const slots = new Set(rows.map((s) => this.slotKey(s.channel, s.sessionName)));
+      for (const [slot, draft] of this.draftSessions) if (!slots.has(slot)) rows.push(draft);
+      return rows;
+    }
     const out: AcpxSessionInfo[] = [];
     const seenSlots = new Set<string>();
     const seenAcpIds = new Set<string>();
@@ -1267,7 +1280,8 @@ export const sessionMethods = {
   },
 
   /** Get synthetic summaries for `acpx` / WorkBuddy / Hermes / Antigravity sessions that aren't already in `SessionStore`. */
-  getExtraSummaries(this: AgentGatewayHub, existingIds: Set<string>): SessionSummary[] {
+  async getExtraSummaries(this: AgentGatewayHub, existingIds: Set<string>): Promise<SessionSummary[]> {
+    if (this.sessionReader) return this.sessionReader.summaries(existingIds);
     const extras: SessionSummary[] = [];
     const seen = new Set(existingIds);
     for (const info of this.listAcpxSessions()) {
@@ -1284,6 +1298,11 @@ export const sessionMethods = {
       }
     }
     return extras;
+  },
+
+  async readSessionContract(this: AgentGatewayHub, id: string): Promise<Session | null> {
+    if (this.sessionReader && !id.startsWith('new:')) return this.sessionReader.contract(id);
+    return this.getAcpxSessionAsContract(id);
   },
 
   listWorkspaceDirs(this: AgentGatewayHub, extraSessions?: AcpxSessionInfo[]): string[] {

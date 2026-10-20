@@ -12,6 +12,7 @@
 import { appendFileSync, createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
+import { listModels } from './gateway/models.ts';
 import { extname, join, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
 import { DatabaseSync } from 'node:sqlite';
@@ -405,8 +406,13 @@ export function createService(opts: ServeOptions): Server {
       const files = store.files();
       const all = [...files, ...outsideFiles(new Set(files.map((f) => f.id)))];
       search
-        .sync(all, (f) => (f.adapter.startsWith('gateway:') ? Promise.resolve(gateway.getAcpxSessionAsContract(f.id) as Session) : store.parseSource(f)))
-        .catch(() => {});
+        .sync(all, async (f) => {
+          if (!f.adapter.startsWith('gateway:')) return store.parseSource(f);
+          const session = await gateway.readSessionContract(f.id);
+          if (!session) throw new Error(`Missing gateway session ${f.id}`);
+          return session;
+        })
+        .catch((error) => console.error('[search-refresh]', error));
     }
   };
   let allowedHosts: Set<string> = new Set();
@@ -850,6 +856,9 @@ export function createService(opts: ServeOptions): Server {
       if (path === '/api/gateway/state') {
         return json(res, 200, gateway.getState());
       }
+      if (path === '/api/gateway/models') {
+        return json(res, 200, await listModels(gateway, String(url.searchParams.get('channel') || '')));
+      }
       if (path === '/api/gateway/goals') {
         const id = url.searchParams.get('id');
         if (!id) return json(res, 200, { ok: true, goals: gateway.taskboard.listGoals() });
@@ -886,7 +895,7 @@ export function createService(opts: ServeOptions): Server {
         const baseIdx = store.index();
         const existingIds = new Set(baseIdx.sessions.map((s) => s.id));
         const usesHomeRoots = store.roots.some((r) => r.dir.includes('.codex') || r.dir.includes('.claude') || r.dir.includes('.zcode'));
-        const extra = usesHomeRoots ? gateway.getExtraSummaries(existingIds) : [];
+        const extra = usesHomeRoots ? await gateway.getExtraSummaries(existingIds) : [];
         const combined = (extra.length ? [...extra, ...baseIdx.sessions] : [...baseIdx.sessions]).sort((a, b) =>
           String(b.updatedAt || b.startedAt || '').localeCompare(String(a.updatedAt || a.startedAt || '')),
         );
@@ -1001,7 +1010,7 @@ export function createService(opts: ServeOptions): Server {
           const picked: typeof filtered = [];
           for (const s of filtered) {
             const ch = normCh(s);
-            if (!['codex', 'claude', 'zcode', 'workbuddy', 'opencode', 'antigravity', 'hermes'].includes(ch)) continue;
+            if (!['codex', 'claude', 'zcode', 'workbuddy', 'opencode', 'antigravity', 'hermes', 'doubao-desktop'].includes(ch)) continue;
             const titleStr = String(s.title || '').trim();
             if (syntheticRe.test(titleStr)) continue;
             const count = buckets[ch] || 0;
@@ -1074,7 +1083,7 @@ export function createService(opts: ServeOptions): Server {
         const rawRootId = t[1];
         const ids = subtree(store.index().sessions, rawRootId, TREE_MAX);
         if (!ids.length) {
-          const gwSess = gateway.getAcpxSessionAsContract(rawRootId);
+          const gwSess = await gateway.readSessionContract(rawRootId);
           if (gwSess) {
             return json(res, 200, { contract: CONTRACT_VERSION, sessions: [gwSess], truncated: false });
           }
@@ -1090,7 +1099,7 @@ export function createService(opts: ServeOptions): Server {
       if (fm) {
         const sid = fm[1];
         const want = String(url.searchParams.get('path') || '');
-        const sess = gateway.getAcpxSessionAsContract(sid) || (await store.session(sid).catch(() => undefined));
+        const sess = await gateway.readSessionContract(sid) || (await store.session(sid));
         if (!sess || !want) return json(res, 404, { ok: false, error: 'no such session or path' });
         const norm = (p: string) => p.replace(/\//g, '\\').replace(/^\\\\\?\\/, '').toLowerCase();
         const allowed = new Set(sessionFiles(sess).map(norm));
@@ -1104,7 +1113,7 @@ export function createService(opts: ServeOptions): Server {
       }
       if (/^\/api\/sessions\/[^/]+\/files$/.test(path)) {
         const sid = path.split('/')[3];
-        const sess = gateway.getAcpxSessionAsContract(sid) || (await store.session(sid).catch(() => undefined));
+        const sess = await gateway.readSessionContract(sid) || (await store.session(sid));
         if (!sess) return json(res, 404, { ok: false, error: 'no such session' });
         const files = sessionFiles(sess).filter((p) => { try { return statSync(p).isFile(); } catch { return false; } });
         return json(res, 200, { ok: true, files });
@@ -1112,7 +1121,9 @@ export function createService(opts: ServeOptions): Server {
       const m = /^\/api\/sessions\/([^/]+)(\/otel)?$/.exec(path);
       if (m) {
         const rawId = m[1];
-        const acpxSess = gateway.getAcpxSessionAsContract(rawId);
+        // File-only Doubao sessions never enter the execution gateway or its session discovery.
+        const isDoubao = rawId.startsWith('doubao-desktop:');
+        const acpxSess = isDoubao ? null : await gateway.readSessionContract(rawId);
         const storeSess =
           rawId.startsWith('new:') ||
           rawId.startsWith('acpx:') ||
@@ -1142,8 +1153,8 @@ export function createService(opts: ServeOptions): Server {
         const rawCh = String(rawSession.source?.kind || (rawSession as any)?.channel || rawSession.agent?.originator || '').toLowerCase();
         const ch = rawCh === 'claude-code' ? 'claude' : rawCh === 'agy' ? 'antigravity' : rawCh;
         const isSub = rawSession.agent?.role === 'subagent' || Boolean(agyParent(sid));
-        const b = gateway.sessionBindings().get(sid) || gateway.sessionBindings().get(sid.split(':').pop() || sid);
-        const h = hubRuns().get(sid.split(':').pop() || sid);
+        const b = isDoubao ? undefined : gateway.sessionBindings().get(sid) || gateway.sessionBindings().get(sid.split(':').pop() || sid);
+        const h = isDoubao ? undefined : hubRuns().get(sid.split(':').pop() || sid);
         const stStatus = (rawSession as any).state?.status || '';
         const controlName = b?.sessionName || rawSession.agent?.name || ('m-' + (sid.split(':').pop() || sid).replace(/[^\w-]/g, '').slice(0, 12));
         const entry: string = isSub
@@ -1379,10 +1390,16 @@ export function createService(opts: ServeOptions): Server {
     // Warm up before the first request, then rescan on a timer: no request ever waits
     // for (or shares a thread with) a rescan any more. The cadence keeps the directory
     // cache warm, which is what makes the rescan itself cheap.
-    const warmup = setTimeout(() => { refresh().catch(() => {}); }, 250);
+    const warmup = setTimeout(() => { refresh().catch((error) => console.error('[session-refresh]', error)); }, 250);
     if (typeof warmup.unref === 'function') warmup.unref();
-    const timer = setInterval(() => { refresh().catch(() => {}); }, 60000);
+    const timer = setInterval(() => { refresh().catch((error) => console.error('[session-refresh]', error)); }, 60000);
     if (typeof timer.unref === 'function') timer.unref();
+    server.once('close', () => {
+      clearTimeout(warmup);
+      clearInterval(timer);
+      void gateway.sessionReader?.close().catch((error) => console.error('[session-reader-close]', error));
+      void store.close().catch((error) => console.error('[store-close]', error));
+    });
   });
   return server;
 }

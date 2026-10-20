@@ -8,6 +8,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import { ReadRpc } from './read_rpc.ts';
 import type { DayStats, ModelStat, SearchHit, SearchRequest, SearchResult, Session, StatsDoc, Step, ToolStat } from '@hub-trace/contract';
 import type { SourceFile } from './store.ts';
 
@@ -57,6 +58,7 @@ function statusOf(s: Step): string {
 const BIG_SESSION = 16 * 1024 * 1024;
 
 export class SearchIndex {
+  private writer?: ReadRpc;
   /** When each session was last (re)indexed in this process. */
   private readonly indexedAt = new Map<string, number>();
   readonly file: string;
@@ -66,7 +68,8 @@ export class SearchIndex {
   /** Answer cache: the same query is the same fold of the same index until a sync changes it. */
   private results = new Map<string, SearchResult>();
 
-  constructor(file: string) {
+  constructor(file: string, options: { worker?: boolean } = {}) {
+    if (options.worker && file === ':memory:') throw new Error('A worker search index requires a shared file path');
     this.file = file;
     if (file !== ':memory:') mkdirSync(dirname(file), { recursive: true });
     this.db = new DatabaseSync(file);
@@ -87,10 +90,12 @@ export class SearchIndex {
       this.db.exec('DELETE FROM files; DELETE FROM steps; DELETE FROM steps_fts;');
       this.db.prepare("INSERT OR REPLACE INTO meta (k, v) VALUES ('version', ?)").run(INDEX_VERSION);
     }
+    if (options.worker) this.writer = new ReadRpc(new URL('./search_worker.ts', import.meta.url), { file });
   }
 
   close() {
     this.db.close();
+    return this.writer?.close();
   }
 
   /** Merge the full-text segments and compact; the file gets smaller and reads faster. Run after a bulk rebuild. */
@@ -113,7 +118,11 @@ export class SearchIndex {
     const live = new Set(files.map((f) => f.id));
     const report: SyncReport = { sessions: files.length, indexed: 0, removed: 0, failed: 0, steps: 0, ms: 0 };
     for (const id of known.keys()) {
-      if (!live.has(id)) { this.remove(id); report.removed++; }
+      if (!live.has(id)) {
+        if (this.writer) await this.writer.call('remove', [id]);
+        else this.remove(id);
+        report.removed++;
+      }
     }
     const todo = files
       .filter((f) => {
@@ -142,7 +151,8 @@ export class SearchIndex {
         report.steps += await this.put(f, await parse(f), tick);
         this.indexedAt.set(f.id, Date.now());
         report.indexed++;
-      } catch {
+      } catch (error) {
+        console.error(`[search-sync] ${f.id}`, error);
         report.failed++;
       }
       this.progress.done++;
@@ -150,18 +160,24 @@ export class SearchIndex {
     if (report.indexed || report.removed) this.results.clear();
     // A big sync is a rebuild (or first run): refresh the planner's statistics, it picks
     // the wrong side of the steps/files join without them (measured 712ms vs 139ms).
-    if (report.indexed > 300) this.db.exec('ANALYZE');
+    if (report.indexed > 300) {
+      if (this.writer) await this.writer.call('analyze');
+      else this.analyze();
+    }
     report.ms = Date.now() - t0;
     return report;
   }
 
-  private remove(id: string) {
+  analyze() { this.db.exec('ANALYZE'); }
+
+  remove(id: string) {
     this.db.prepare('DELETE FROM steps_fts WHERE rowid IN (SELECT id FROM steps WHERE session = ?)').run(id);
     this.db.prepare('DELETE FROM steps WHERE session = ?').run(id);
     this.db.prepare('DELETE FROM files WHERE session = ?').run(id);
   }
 
-  private async put(f: SourceFile, s: Session, tick: () => Promise<void>): Promise<number> {
+  async put(f: SourceFile, s: Session, tick: () => Promise<void>): Promise<number> {
+    if (this.writer) return this.writer.call('put', [f, s]);
     const step = this.db.prepare('INSERT INTO steps (session, turn, step, kind, facet, name, status, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     const fts = this.db.prepare('INSERT INTO steps_fts (rowid, body) VALUES (?, ?)');
     let n = 0;

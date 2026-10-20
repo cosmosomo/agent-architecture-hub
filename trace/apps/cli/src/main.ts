@@ -58,7 +58,7 @@ const searchFile = (store: SessionStore) => join(dirname(store.cacheFile), 'sear
 function storeFrom(a: Args): SessionStore {
   const dirs = a.flags.get('root');
   const roots: Root[] | undefined = dirs?.flatMap((d) => ADAPTERS.map((adapter) => ({ adapter, dir: resolve(d) })));
-  return new SessionStore({ roots, cacheFile: flag(a, 'cache') });
+  return new SessionStore({ roots, cacheFile: flag(a, 'cache'), worker: a.cmd === 'serve' });
 }
 
 async function scan(store: SessionStore) {
@@ -121,7 +121,7 @@ async function main() {
     }
     case 'serve': {
       // The page is up at once; sessions fill in while the first scan runs (the page polls the index).
-      const search = new SearchIndex(searchFile(store));
+      const search = new SearchIndex(searchFile(store), { worker: true });
       // --lan <address> (or HUB_LAN_HOST) also serves the page to other devices at that address, e.g. a phone
       // on EasyTier; every request from another machine then needs the access token kept in ~/.agent-hub/.
       const lanHost = (flag(a, 'lan') || process.env.HUB_LAN_HOST || '').trim() || undefined;

@@ -266,6 +266,13 @@
       "path": "/api/gateway/records",
       "does": "往共享记录（黑板、功能登记、注释）追加行；中心是唯一写入方，盖时间，只拦缺必填项的行",
       "cli": "bb/feature/note"
+    },
+    {
+      "id": "models",
+      "method": "GET",
+      "path": "/api/gateway/models",
+      "does": "一家产品此刻真实可用的模型清单（?channel=claude|antigravity，向这家实际查来，不是产品表里写死的推荐列表；unit model-list）",
+      "cli": "quota、targets 里带出"
     }
   ]
 }
