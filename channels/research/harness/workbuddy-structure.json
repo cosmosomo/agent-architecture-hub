@@ -1,48 +1,319 @@
 {
-  "product": "workbuddy",
-  "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
-  "cells": {
-    "ctx-system": { "how": "系统提示词不落盘；人格由五个常驻 md 承载（MEMORY/USER/SOUL/IDENTITY/BOOTSTRAP），SOUL.md 1,792B。", "evidence": ["census：projects JSONL 10 类无 system 类（workbuddy-census.json）", "文件在案：~/.workbuddy/{SOUL,IDENTITY,BOOTSTRAP,USER,MEMORY}.md"], "level": "看到" },
-    "ctx-instructions": { "how": "claude-code 血统：工作区说明文件注入；BOOTSTRAP.md 是启动说明件。优先级顺序未见记录。", "evidence": ["文件在案：BOOTSTRAP.md", "JSONL 与 claude-import 格式同构（互证）"], "level": "推测" },
-    "ctx-capability-list": { "how": "技能清单不落盘；技能本体在 buddy-snapshots（整棵技能树快照含 SKILL.md）。模型侧有 tool_search 元工具（模型自述“通过工具搜索也找不到”）。", "evidence": ["census artifacts：buddy-snapshots 下 SKILL.md/references 文件", "本轮实测：模型自述 tool_search（acp.md 10-19）"], "level": "看到" },
-    "ctx-environment": { "how": "环境信息不单独落盘；session-meta 记 hostKind（unopted）等来源标注。", "evidence": ["census 样本：session-meta 含 _meta[codebuddy.ai/hostKind]"], "level": "看到" },
-    "ctx-memory-recall": { "how": "自动记忆体系：MEMORY.md/USER.md 常驻 + memory/<agentId>_memory.md（带 .bak）；10-20 实测注入的静默暗号被它当事实主动写盘（走 Read/Write 审批帧）。", "evidence": ["census artifacts：五件套+memory/ 文件", "实测：inject 后模型更新 project_secret_code.md（acp.md 10-20 凌晨节）"], "level": "试过" },
-    "ctx-history": { "how": "claude-code 血统 JSONL：function_call 3,277 / function_call_result 3,250 / reasoning 1,872 / message 1,591，按会话一文件。", "evidence": ["census：projects/ 166 文件 11,906 行类型分布（workbuddy-census.json）"], "level": "看到" },
-    "ctx-injection": { "how": "未见独立提醒类型；排队消息有专门面（Web UI RPC session/enqueue_followup|get_followup_queue|send_followup_now，bundle 文档）。", "evidence": ["bundle：dist/codebuddy-headless.js session/enqueue_followup 分支"], "level": "看到" },
-    "ctx-output-style": { "how": "未见落盘记录。", "evidence": ["census：无相关类型"], "level": "未知" },
-    "ctx-cache": { "how": "无逐轮缓存记账；额度按 credit-usage 251 条条级记账。", "evidence": ["census：credit-usage 251"], "level": "看到" },
-    "budget-accounting": { "how": "两层：JSONL credit-usage（条级额度）+ model-usage（按模型）；workbuddy.db session_usage 142 行（session_id,used,size）记上下文占用。", "evidence": ["census：credit-usage 251、session_usage 142"], "level": "看到" },
-    "compact-trigger": { "how": "触发启发式不落盘；结果可见——summary 93 条。", "evidence": ["census：summary 93"], "level": "推测" },
-    "compact-strategy": { "how": "压缩摘要以 summary 行回填，providerData.source 标注来源（样本 source:initial-user-message）；原话保留在同 JSONL（file-history-snapshot 与旧行不删）。", "evidence": ["census 样本：summary 行字段 id/summary/providerData/_meta"], "level": "看到" },
-    "compact-identity": { "how": "摘要写回同一 JSONL，会话不变。", "evidence": ["census：summary 与消息同文件"], "level": "看到" },
-    "compact-recovery": { "how": "未见压缩失败记录。", "evidence": ["census：无相关类型"], "level": "未知" },
-    "result-offload": { "how": "未见引用式外置记录（大结果处理不可见）。", "evidence": ["census：无相关类型"], "level": "未知" },
-    "tool-registry": { "how": "内置+MCP+技能工具运行时组装；codebuddy mcp add/remove/list 命令面存在。", "evidence": ["黑板 agy-fact-zcode-workbuddy-audit：codebuddy mcp 命令集"], "level": "看到" },
-    "tool-loading": { "how": "有 tool_search 元工具：模型先搜再调（2.168.2 模型自述“通过工具搜索也无法找到 AskUserQuestion”）。", "evidence": ["本轮实测：run2 模型原话（channels/probe/scripts/probe_wb_ask2_run2.log）"], "level": "看到" },
-    "tool-execution": { "how": "function_call/function_call_result 成对落盘（3,277/3,250，比例≈1:1）；执行进程与沙箱细节不落盘。", "evidence": ["census：projects JSONL 类型分布"], "level": "看到" },
-    "tool-permission": { "how": "两层：运行时 request_permission（DeferExecuteTool 式，实测应答后执行）+ workspace_trust_decisions 4 行（工作区信任落库）。", "evidence": ["实测：真活闭环 permissionCount=3（loop-wb.json）", "census：workspace_trust_decisions 4"], "level": "试过" },
-    "tool-sandbox": { "how": "未见沙箱级记录； PortableGit bash 执行环境（进程树可见）。", "evidence": ["本轮进程清单：codebuddy 拉起 PortableGit bash"], "level": "推测" },
-    "tool-result": { "how": "function_call_result 3,250 条回填上下文，与调用同文件。", "evidence": ["census：JSONL 类型分布"], "level": "看到" },
-    "hooks": { "how": "mods 体系有 functionHookSnapshot 与 classic.PreToolUse 等钩子，但强依赖 clientApprovals 签名与用户设置；无头 ACP 默认不挂。", "evidence": ["黑板 agy-fact-zcode-workbuddy：dist/mods 体系", "CHANGELOG 2.167.0：classic.* 钩子结果生效"], "level": "看到" },
-    "loop-stop": { "how": "未见循环熔断落盘。", "evidence": ["census：无相关类型"], "level": "未知" },
-    "turn-interrupt": { "how": "session/steer 轮内插话（实测 {sessionId,contentBlocks}→{steered:true}，同一 prompt 调用内消费）；排队走 session/enqueue_followup。", "evidence": ["实测：黑板 2357（steer@WB pass，本轮）"], "level": "试过" },
-    "modes": { "how": "default/plan/bypassPermissions 经 session/set_mode 热切（10-18 实测 currentValue 前后变化）；permission_mode 落 workbuddy.db sessions。", "evidence": ["实测：10-18 acp-runtime", "census：sessions 表"], "level": "试过" },
-    "plan-list": { "how": "未见独立 todo 表/类型；推测走 message 内嵌（claude 血统 TodoWrite 工具）。", "evidence": ["census：无 todo 类型"], "level": "推测" },
-    "subagents": { "how": "workflow agent()/Agent 工具/fork skill 可启子代理，AskUserQuestion 子代理支持为 2.167.0 修复项（#89387）；子代理转录未见独立文件。", "evidence": ["CHANGELOG 2.167.0：“ACP 子代理提问（#89387）”"], "level": "看到" },
-    "multi-agent-messaging": { "how": "team 体系：DetachedSseBridge 把成员事件转成 ACP sessionUpdate 回灌主会话（convertHistoryItemToAcpUpdates），team.* 键与成员通信 UI 存在。", "evidence": ["bundle：DetachedSseBridge/startSseStream/handleSseEvent 代码", "黑板 workbuddy 证据行：team.* 键"], "level": "看到" },
-    "handoff": { "how": "未见会话级交接原语。", "evidence": ["census：无相关类型"], "level": "未知" },
-    "background-wake": { "how": "automations 1 + automation_runs 121 + automation_runtime_state + automation_delivery_outbox——定时任务全生命周期落库。", "evidence": ["census：workbuddy.db 表行数（workbuddy-census.json）"], "level": "看到" },
-    "goal-loop": { "how": "goal 斜杠命令存在（“设置要持续追求的目标”）；预算推进未见记录。", "evidence": ["黑板 workbuddy 证据行：command.goal.description"], "level": "看到" },
-    "ownership-lease": { "how": "进程注册表：sessions/<pid>.json {pid,sessionId,cwd,kind,lastHeartbeat}——谁在跑、心跳何时。", "evidence": ["census 样本：48768.json 全字段（workbuddy-census.json）"], "level": "看到" },
-    "session-store": { "how": "双轨：projects/<转义cwd>/<会话名>.jsonl（claude-code 血统转录）+ workbuddy.db（元数据/自动化/快照索引）。", "evidence": ["census：166 文件 11,906 行 + 451 行 db（workbuddy-census.json）"], "level": "看到" },
-    "resume": { "how": "session/load 能力声明为真；会话名即恢复锚（codebuddy --session-id / sessions ensure）。", "evidence": ["实测：initialize caps（本轮）", "黑板 acpx 证据行"], "level": "看到" },
-    "checkpoints": { "how": "两级：JSONL file-history-snapshot 1,082 条（逐次文件快照）+ buddy_snapshots 库（整棵工作区含技能树的快照）；Web UI revertToCheckpoint(target=Conversation|Code|CodeAndConversation)。", "evidence": ["census：file-history-snapshot 1,082、buddy_snapshots 表", "黑板 workbuddy 证据行：revertToCheckpoint"], "level": "看到" },
-    "long-term-memory": { "how": "自动记忆主动写：实测注入内容 30 秒内被整理进 memory/project_secret_code.md 并更新 MEMORY.md（写入走审批帧）。", "evidence": ["实测：本轮 inject 后审批帧与文件落盘（acp.md 10-20 凌晨节）"], "level": "试过" },
-    "session-index": { "how": "workbuddy.db sessions 143 行（元数据索引）；JSONL 内 ai-title 86 条自动起标题。", "evidence": ["census：sessions 143、ai-title 86"], "level": "看到" },
-    "model-select": { "how": "session/set_model 热切（实测 custom-local:glm-5.3-flash 生效）；model-usage JSONL 行按模型记账。", "evidence": ["实测：本轮 set_model+闭环任务", "census：model-usage 1"], "level": "试过" },
-    "provider-credential": { "how": "BYOK 走桌面本地服务：products.json env 注入 ACC_PRODUCT_CONFIG_V3 静态 token（wb-local-byok）；failover.json 记故障转移——认证间歇失败（Authentication required）与 failover 窗口相关，等几分钟自愈。", "evidence": ["实测：本轮 4 次认证失败→自愈全过程（acp.md 经验节）"], "level": "试过" },
-    "retry-policy": { "how": "重试策略不落盘；JSONL 无 retry 类型。", "evidence": ["census：无相关类型"], "level": "未知" },
-    "events-usage": { "how": "会话内 usage_update sessionUpdate 推用量；审计走 audit-log/（8 文件 124 行）。", "evidence": ["实测：ACP 流 usage_update 帧", "census：audit-log 124 行"], "level": "看到" },
-    "external-protocol": { "how": "ACP 桥（codebuddy --acp 2.168.2）+ Web UI JSON-RPC 面（session/steer|inject_history|enqueue_followup 等）+ A2A + serve 模式（桌面端即 --serve 起的）；extMethod 族 _codebuddy.ai/*（question/resolveInterruption/sideQuestion/checkpoint）。", "evidence": ["实测：黑板 2356/2357/2363（提问/插话/审批经 ACP）", "bundle：ExtensionMethod 表与 session/* 分发（dist/codebuddy-headless.js）"], "level": "试过" }
+ "product": "workbuddy",
+ "about": "每个构件：how 这家怎么做的；evidence 证据（会话记录种类与条数、代码或打包代码位置、请求样本、实测命令或黑板行号、外部链接）；level 试过 / 看到 / 推测 / 未知。",
+ "cells": {
+  "ctx-system": {
+   "how": "系统提示词不落盘；人格由五个常驻 md 承载（MEMORY/USER/SOUL/IDENTITY/BOOTSTRAP），SOUL.md 1,792B。",
+   "evidence": [
+    "census：projects JSONL 10 类无 system 类（workbuddy-census.json）",
+    "文件在案：~/.workbuddy/{SOUL,IDENTITY,BOOTSTRAP,USER,MEMORY}.md"
+   ],
+   "level": "看到"
+  },
+  "ctx-instructions": {
+   "how": "claude-code 血统：工作区说明文件注入；BOOTSTRAP.md 是启动说明件。优先级顺序未见记录。",
+   "evidence": [
+    "文件在案：BOOTSTRAP.md",
+    "JSONL 与 claude-import 格式同构（互证）"
+   ],
+   "level": "推测"
+  },
+  "ctx-capability-list": {
+   "how": "技能清单不落盘；技能本体在 buddy-snapshots（整棵技能树快照含 SKILL.md）。模型侧有 tool_search 元工具（模型自述“通过工具搜索也找不到”）。",
+   "evidence": [
+    "census artifacts：buddy-snapshots 下 SKILL.md/references 文件",
+    "本轮实测：模型自述 tool_search（acp.md 10-19）"
+   ],
+   "level": "看到"
+  },
+  "ctx-environment": {
+   "how": "环境信息不单独落盘；session-meta 记 hostKind（unopted）等来源标注。",
+   "evidence": [
+    "census 样本：session-meta 含 _meta[codebuddy.ai/hostKind]"
+   ],
+   "level": "看到"
+  },
+  "ctx-memory-recall": {
+   "how": "自动记忆体系：MEMORY.md/USER.md 常驻 + memory/<agentId>_memory.md（带 .bak）；10-20 实测注入的静默暗号被它当事实主动写盘（走 Read/Write 审批帧）。",
+   "evidence": [
+    "census artifacts：五件套+memory/ 文件",
+    "实测：inject 后模型更新 project_secret_code.md（acp.md 10-20 凌晨节）",
+    "blackboard.jsonl:2396"
+   ],
+   "level": "试过"
+  },
+  "ctx-history": {
+   "how": "claude-code 血统 JSONL：function_call 3,277 / function_call_result 3,250 / reasoning 1,872 / message 1,591，按会话一文件。",
+   "evidence": [
+    "census：projects/ 166 文件 11,906 行类型分布（workbuddy-census.json）"
+   ],
+   "level": "看到"
+  },
+  "ctx-injection": {
+   "how": "未见独立提醒类型；排队消息有专门面（Web UI RPC session/enqueue_followup|get_followup_queue|send_followup_now，bundle 文档）。",
+   "evidence": [
+    "bundle：dist/codebuddy-headless.js session/enqueue_followup 分支"
+   ],
+   "level": "看到"
+  },
+  "ctx-output-style": {
+   "how": "未见落盘记录。",
+   "evidence": [
+    "census：无相关类型"
+   ],
+   "level": "未知"
+  },
+  "ctx-cache": {
+   "how": "无逐轮缓存记账；额度按 credit-usage 251 条条级记账。",
+   "evidence": [
+    "census：credit-usage 251"
+   ],
+   "level": "看到"
+  },
+  "budget-accounting": {
+   "how": "两层：JSONL credit-usage（条级额度）+ model-usage（按模型）；workbuddy.db session_usage 142 行（session_id,used,size）记上下文占用。",
+   "evidence": [
+    "census：credit-usage 251、session_usage 142"
+   ],
+   "level": "看到"
+  },
+  "compact-trigger": {
+   "how": "触发启发式不落盘；结果可见——summary 93 条。",
+   "evidence": [
+    "census：summary 93"
+   ],
+   "level": "推测"
+  },
+  "compact-strategy": {
+   "how": "压缩摘要以 summary 行回填，providerData.source 标注来源（样本 source:initial-user-message）；原话保留在同 JSONL（file-history-snapshot 与旧行不删）。",
+   "evidence": [
+    "census 样本：summary 行字段 id/summary/providerData/_meta"
+   ],
+   "level": "看到"
+  },
+  "compact-identity": {
+   "how": "摘要写回同一 JSONL，会话不变。",
+   "evidence": [
+    "census：summary 与消息同文件"
+   ],
+   "level": "看到"
+  },
+  "compact-recovery": {
+   "how": "未见压缩失败记录。",
+   "evidence": [
+    "census：无相关类型"
+   ],
+   "level": "未知"
+  },
+  "result-offload": {
+   "how": "未见引用式外置记录（大结果处理不可见）。",
+   "evidence": [
+    "census：无相关类型"
+   ],
+   "level": "未知"
+  },
+  "tool-registry": {
+   "how": "内置+MCP+技能工具运行时组装；codebuddy mcp add/remove/list 命令面存在。",
+   "evidence": [
+    "黑板 agy-fact-zcode-workbuddy-audit：codebuddy mcp 命令集"
+   ],
+   "level": "看到"
+  },
+  "tool-loading": {
+   "how": "有 tool_search 元工具：模型先搜再调（2.168.2 模型自述“通过工具搜索也无法找到 AskUserQuestion”）。",
+   "evidence": [
+    "本轮实测：run2 模型原话（channels/probe/scripts/probe_wb_ask2_run2.log）"
+   ],
+   "level": "看到"
+  },
+  "tool-execution": {
+   "how": "function_call/function_call_result 成对落盘（3,277/3,250，比例≈1:1）；执行进程与沙箱细节不落盘。",
+   "evidence": [
+    "census：projects JSONL 类型分布"
+   ],
+   "level": "看到"
+  },
+  "tool-permission": {
+   "how": "两层：运行时 request_permission（DeferExecuteTool 式，实测应答后执行）+ workspace_trust_decisions 4 行（工作区信任落库）。",
+   "evidence": [
+    "实测：真活闭环 permissionCount=3（loop-wb.json）",
+    "census：workspace_trust_decisions 4",
+    "blackboard.jsonl:2397"
+   ],
+   "level": "试过"
+  },
+  "tool-sandbox": {
+   "how": "未见沙箱级记录； PortableGit bash 执行环境（进程树可见）。",
+   "evidence": [
+    "本轮进程清单：codebuddy 拉起 PortableGit bash"
+   ],
+   "level": "推测"
+  },
+  "tool-result": {
+   "how": "function_call_result 3,250 条回填上下文，与调用同文件。",
+   "evidence": [
+    "census：JSONL 类型分布"
+   ],
+   "level": "看到"
+  },
+  "hooks": {
+   "how": "mods 体系有 functionHookSnapshot 与 classic.PreToolUse 等钩子，但强依赖 clientApprovals 签名与用户设置；无头 ACP 默认不挂。",
+   "evidence": [
+    "黑板 agy-fact-zcode-workbuddy：dist/mods 体系",
+    "CHANGELOG 2.167.0：classic.* 钩子结果生效"
+   ],
+   "level": "看到"
+  },
+  "loop-stop": {
+   "how": "未见循环熔断落盘。",
+   "evidence": [
+    "census：无相关类型"
+   ],
+   "level": "未知"
+  },
+  "turn-interrupt": {
+   "how": "session/steer 轮内插话（实测 {sessionId,contentBlocks}→{steered:true}，同一 prompt 调用内消费）；排队走 session/enqueue_followup。",
+   "evidence": [
+    "实测：黑板 2357（steer@WB pass，本轮）"
+   ],
+   "level": "试过"
+  },
+  "modes": {
+   "how": "default/plan/bypassPermissions 经 session/set_mode 热切（10-18 实测 currentValue 前后变化）；permission_mode 落 workbuddy.db sessions。",
+   "evidence": [
+    "实测：10-18 acp-runtime",
+    "census：sessions 表",
+    "blackboard.jsonl:2398"
+   ],
+   "level": "试过"
+  },
+  "plan-list": {
+   "how": "未见独立 todo 表/类型；推测走 message 内嵌（claude 血统 TodoWrite 工具）。",
+   "evidence": [
+    "census：无 todo 类型"
+   ],
+   "level": "推测"
+  },
+  "subagents": {
+   "how": "workflow agent()/Agent 工具/fork skill 可启子代理，AskUserQuestion 子代理支持为 2.167.0 修复项（#89387）；子代理转录未见独立文件。",
+   "evidence": [
+    "CHANGELOG 2.167.0：“ACP 子代理提问（#89387）”"
+   ],
+   "level": "看到"
+  },
+  "multi-agent-messaging": {
+   "how": "team 体系：DetachedSseBridge 把成员事件转成 ACP sessionUpdate 回灌主会话（convertHistoryItemToAcpUpdates），team.* 键与成员通信 UI 存在。",
+   "evidence": [
+    "bundle：DetachedSseBridge/startSseStream/handleSseEvent 代码",
+    "黑板 workbuddy 证据行：team.* 键"
+   ],
+   "level": "看到"
+  },
+  "handoff": {
+   "how": "未见会话级交接原语。",
+   "evidence": [
+    "census：无相关类型"
+   ],
+   "level": "未知"
+  },
+  "background-wake": {
+   "how": "automations 1 + automation_runs 121 + automation_runtime_state + automation_delivery_outbox——定时任务全生命周期落库。",
+   "evidence": [
+    "census：workbuddy.db 表行数（workbuddy-census.json）"
+   ],
+   "level": "看到"
+  },
+  "goal-loop": {
+   "how": "goal 斜杠命令存在（“设置要持续追求的目标”）；预算推进未见记录。",
+   "evidence": [
+    "黑板 workbuddy 证据行：command.goal.description"
+   ],
+   "level": "看到"
+  },
+  "ownership-lease": {
+   "how": "进程注册表：sessions/<pid>.json {pid,sessionId,cwd,kind,lastHeartbeat}——谁在跑、心跳何时。",
+   "evidence": [
+    "census 样本：48768.json 全字段（workbuddy-census.json）"
+   ],
+   "level": "看到"
+  },
+  "session-store": {
+   "how": "双轨：projects/<转义cwd>/<会话名>.jsonl（claude-code 血统转录）+ workbuddy.db（元数据/自动化/快照索引）。",
+   "evidence": [
+    "census：166 文件 11,906 行 + 451 行 db（workbuddy-census.json）"
+   ],
+   "level": "看到"
+  },
+  "resume": {
+   "how": "session/load 能力声明为真；会话名即恢复锚（codebuddy --session-id / sessions ensure）。",
+   "evidence": [
+    "实测：initialize caps（本轮）",
+    "黑板 acpx 证据行"
+   ],
+   "level": "看到"
+  },
+  "checkpoints": {
+   "how": "两级：JSONL file-history-snapshot 1,082 条（逐次文件快照）+ buddy_snapshots 库（整棵工作区含技能树的快照）；Web UI revertToCheckpoint(target=Conversation|Code|CodeAndConversation)。",
+   "evidence": [
+    "census：file-history-snapshot 1,082、buddy_snapshots 表",
+    "黑板 workbuddy 证据行：revertToCheckpoint"
+   ],
+   "level": "看到"
+  },
+  "long-term-memory": {
+   "how": "自动记忆主动写：实测注入内容 30 秒内被整理进 memory/project_secret_code.md 并更新 MEMORY.md（写入走审批帧）。",
+   "evidence": [
+    "实测：本轮 inject 后审批帧与文件落盘（acp.md 10-20 凌晨节）",
+    "blackboard.jsonl:2401"
+   ],
+   "level": "试过"
+  },
+  "session-index": {
+   "how": "workbuddy.db sessions 143 行（元数据索引）；JSONL 内 ai-title 86 条自动起标题。",
+   "evidence": [
+    "census：sessions 143、ai-title 86"
+   ],
+   "level": "看到"
+  },
+  "model-select": {
+   "how": "session/set_model 热切（实测 custom-local:glm-5.3-flash 生效）；model-usage JSONL 行按模型记账。",
+   "evidence": [
+    "实测：本轮 set_model+闭环任务",
+    "census：model-usage 1",
+    "blackboard.jsonl:2399"
+   ],
+   "level": "试过"
+  },
+  "provider-credential": {
+   "how": "BYOK 走桌面本地服务：products.json env 注入 ACC_PRODUCT_CONFIG_V3 静态 token（wb-local-byok）；failover.json 记故障转移——认证间歇失败（Authentication required）与 failover 窗口相关，等几分钟自愈。",
+   "evidence": [
+    "实测：本轮 4 次认证失败→自愈全过程（acp.md 经验节）",
+    "blackboard.jsonl:2400"
+   ],
+   "level": "试过"
+  },
+  "retry-policy": {
+   "how": "重试策略不落盘；JSONL 无 retry 类型。",
+   "evidence": [
+    "census：无相关类型"
+   ],
+   "level": "未知"
+  },
+  "events-usage": {
+   "how": "会话内 usage_update sessionUpdate 推用量；审计走 audit-log/（8 文件 124 行）。",
+   "evidence": [
+    "实测：ACP 流 usage_update 帧",
+    "census：audit-log 124 行"
+   ],
+   "level": "看到"
+  },
+  "external-protocol": {
+   "how": "ACP 桥（codebuddy --acp 2.168.2）+ Web UI JSON-RPC 面（session/steer|inject_history|enqueue_followup 等）+ A2A + serve 模式（桌面端即 --serve 起的）；extMethod 族 _codebuddy.ai/*（question/resolveInterruption/sideQuestion/checkpoint）。",
+   "evidence": [
+    "实测：黑板 2356/2357/2363（提问/插话/审批经 ACP）",
+    "bundle：ExtensionMethod 表与 session/* 分发（dist/codebuddy-headless.js）"
+   ],
+   "level": "试过"
   }
+ }
 }
