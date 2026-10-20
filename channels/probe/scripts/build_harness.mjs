@@ -61,10 +61,13 @@ const bbRows = fs.existsSync(BB) ? fs.readFileSync(BB, 'utf8').split('\n') : [];
 const FAMILY = { 'claude-code': 'claude' };
 const backed = (p, c) =>
   (c.evidence || []).some((e) => {
-    for (const m of String(e).matchAll(/blackboard\.jsonl:(\d+)/g)) {
-      try {
-        if (JSON.parse(bbRows[Number(m[1]) - 1]).family === (FAMILY[p] || p)) return true;
-      } catch {}
+    // Rows are cited as blackboard.jsonl:2388, or 黑板 2356/2357/2363, 黑板行 2290、2291.
+    for (const m of String(e).matchAll(/(?:blackboard\.jsonl:|黑板行?\s*)(\d+(?:\s*[\/、,，]\s*\d+)*)/g)) {
+      for (const n of m[1].split(/\s*[\/、,，]\s*/)) {
+        try {
+          if (JSON.parse(bbRows[Number(n) - 1]).family === (FAMILY[p] || p)) return true;
+        } catch {}
+      }
     }
     return false;
   });
