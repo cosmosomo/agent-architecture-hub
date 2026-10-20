@@ -831,7 +831,7 @@ function dispatchDelivery(d) {
   // returned 也可能是轮末收回；只有 CLI deliver 且成功结束才是主动交付。
   const active = delivery.via === 'cli' && d.status === 'completed';
   const source = active ? '主动交回（deliver 命令）' : ({
-    cli: '命令回执（未完成交付）',
+    cli: d.status === 'yielded' ? '主动让出（yield 命令）' : '命令回执（未完成交付）',
     'structured-output': '结构化尾注（轮末解析，待核验主动交付）',
     'turn-end': '轮末收回（部分做到，非主动交付）',
     recovered: '恢复时收回（部分做到，非主动交付）',
@@ -845,11 +845,24 @@ function dispatchDelivery(d) {
     <details><summary style="min-height:44px;cursor:pointer">结构化交回记录</summary><pre style="white-space:pre-wrap">${esc(JSON.stringify({ id: d.id, status: d.status, receipts: d.receipts, delivery }, null, 2))}</pre></details>
   </details>`;
 }
+function dispatchWaiting(d) {
+  if (d.status !== 'yielded' && d.status !== 'waiting') return '';
+  const reason = String(d.waitingFor || '').trim();
+  return `<div class="question-box" data-unit="act-yield" style="white-space:pre-wrap;overflow-wrap:anywhere"><b>让出等待</b><div>${reason ? '正在等待：' + esc(reason) : '等待原因缺失，请核对派活单；当前不能确认在等什么。'}</div></div>`;
+}
+function dispatchReports(d) {
+  const reports = d.progressReports || [];
+  if (!reports.length) return '';
+  return `<details data-unit="act-report" style="margin-top:8px;overflow-wrap:anywhere">
+    <summary style="min-height:44px;cursor:pointer">↗ 进度上报（${reports.length}）</summary>
+    <ol>${reports.map((r) => `<li><div class="sub">${esc(r.at || '')} · ${esc(r.via || '来源未登记')}</div><div style="white-space:pre-wrap">${esc(r.text || r.summary || '')}</div></li>`).join('')}</ol>
+  </details>`;
+}
 function dispatchCard(d) {
   const rc = d.receipts || {};
   const steps = RECEIPTS.map(([k, label]) => `<span class="tag ${rc[k] ? 'st-idle' : ''}" title="${esc(rc[k] || '还没到这一步')}">${label}${rc[k] ? ' ' + clock(rc[k]) : ''}</span>`).join(' → ');
-  const st = d.status === 'completed' ? '交回了' : d.status === 'failed' ? '失败' : d.status === 'yielded' ? '让出等待' : '进行中';
-  const reports = (d.progressReports || []).map((r) => `<div class="sub">↗ 上报 ${clock(r.at)}：${esc(String(r.text || r.summary || '').slice(0, 120))}</div>`).join('');
+  const st = d.status === 'completed' ? '交回了' : d.status === 'failed' ? '失败' : d.status === 'yielded' || d.status === 'waiting' ? '让出等待' : '进行中';
+  const reports = dispatchReports(d);
   const back = dispatchDelivery(d);
   const WAKE = { woken: '已叫醒', waiting: '等交回后叫醒', none: '不叫醒', 'auto-resume': '交回后自动叫醒' };
   const wk = d.wake && (d.wake.state || d.wake.mode);
@@ -857,7 +870,7 @@ function dispatchCard(d) {
   const wrap = 'white-space:normal;overflow:visible';
   return `<div class="card"><div class="row"><span class="t grow" style="${wrap};display:block;-webkit-line-clamp:unset">${endLink(d.from || {})} → ${endLink(d.to || {})}</span><span class="tag">${st}</span></div>
     <div class="sub" style="${wrap}">${esc(String(d.task || '').slice(0, 160))}</div>
-    <div class="sub" style="margin-top:6px;${wrap};line-height:2">${steps}</div>${reports}${back}${wake}
+    <div class="sub" style="margin-top:6px;${wrap};line-height:2">${steps}</div>${dispatchWaiting(d)}${reports}${back}${wake}
     <div class="sub">${esc(d.id)} · ${esc(ago(d.updatedAt))}</div></div>`;
 }
 // Dispatch from the page (POST /api/gateway/dispatch). From a session: that session is the caller and can be woken
