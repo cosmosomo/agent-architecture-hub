@@ -44,7 +44,7 @@ export const FAILURE_LABEL: Record<FailureKind, string> = {
 
 /** A failure that says the account's quota or rate is used up: another try only hits the same wall. */
 export function isQuotaError(text: string): boolean {
-  return /\b429\b|\b1308\b|quota|rate.?limit|usage limit|速率限制|额度|配额|使用上限|用量上限/i.test(text);
+  return /\b429\b|\b1308\b|quota|rate.?limit|usage limit|out of credits|insufficient[ _](?:credits|balance|quota)|credit balance|余额不足|速率限制|额度|配额|使用上限|用量上限/i.test(text);
 }
 
 /** The kind of a failed turn, from what the run recorded and the error's words. First match wins. */
