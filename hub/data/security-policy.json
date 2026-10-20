@@ -1,0 +1,24 @@
+{
+  "about": "限制模式和敏感目录（安全边界第 2 层）。派活、发话、任务板任务都可以带 mode；中心把它翻译成各家自己的开关（Codex 沙箱、Claude 权限规则、ZCode guarded、ACP 系由中心按规则答复审批），做不到的产品在限制模式下不派活，并如实标出来。不含任何密钥值。用户 10-20：“面向安全边界，秘密泄露之类，我们系统可以加一层吗？比如启动限制模式，每个智能体开启各家的目录限制，这样信息就可以不泄露了。然后做一些权限管理什么的”；“默认仍是满权限，需要时开限制模式；敏感目录按你建议的”。",
+  "defaultMode": "full",
+  "modes": {
+    "full": "满权限：现在的行为（用户 10-18 定的默认）。",
+    "workspace": "只在工作目录：只能写派活的工作目录（cwd）里的文件；敏感目录不能读也不能写；工作目录外可以读（看代码、查资料），不能写。",
+    "readonly": "只读：哪里都不能写，敏感目录不能读。"
+  },
+  "sensitive": [
+    "~/.ssh",
+    "~/.agent-hub/secrets",
+    "~/.agent-hub/key-audit.jsonl",
+    "~/.cc-switch",
+    "~/.codex/auth.json",
+    "~/.claude/.credentials.json",
+    "{repo}/channels/_private",
+    "%LOCALAPPDATA%/Google/Chrome/User Data",
+    "%LOCALAPPDATA%/Microsoft/Edge/User Data",
+    "%LOCALAPPDATA%/Doubao/User Data",
+    "%LOCALAPPDATA%/DoubaoWork/User Data",
+    "~/.agent-hub/doubao-daemon",
+    "%LOCALAPPDATA%/Temp/doubao_cdp_test"
+  ]
+}
