@@ -12,6 +12,7 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hub-taskboard-'));
 const sent = []; // every dispatch the board asked for
 const full = new Set(); // products the fake pick treats as full
 const held = new Map(); // product → why the fake center holds it for now (holdFor)
+const closed = []; // dispatches the board asked the center to close (closeDispatch)
 let n = 0;
 const board = new TaskBoard(
   {
@@ -26,6 +27,7 @@ const board = new TaskBoard(
       return pool.length ? { channel: pool[0], why: `${pool[0]} 空闲` } : { channel: null, why: `都满了或被排除：${[...full, ...exclude].join('、')}` };
     },
     holdFor: (c) => held.get(c) || null,
+    closeDispatch: (id, why) => closed.push({ id, why }),
   },
   dir,
 );
@@ -261,6 +263,16 @@ const taskOf = (g, key) => board.tasksOf(board.getGoal(g.id)).find((t) => t.key 
   check('前一件交回后派到同一个会话', last() !== d1 && last().toSessionName === 'line-x' && t2.status === 'dispatched' && !t2.waitingWhy, `${t2.status} ${last().toSessionName}`);
   const g3 = board.createGoal({ title: '没名字', objective: 'x', channel: 'opencode', tasks: [{ title: '无 key' }] });
   check('没起名字的任务还是目标自己的会话', taskOf(g3, 't1').sessionName === `goal-${g3.id.slice(5)}-t1`, taskOf(g3, 't1').sessionName);
+}
+
+// 6b. cancelling a task closes the dispatch it still has out, so a yielded one does not keep its session taken
+{
+  const g = board.createGoal({ title: '取消', objective: 'x', channel: 'zcode', tasks: [{ key: 'c', title: '会被取消的' }] });
+  await tick();
+  const t = taskOf(g, 'c');
+  const out = t.activeDispatchId;
+  board.taskAction(t.id, 'cancel', { reason: '不做了' });
+  check('取消任务时收掉它挂着的派活单', t.status === 'cancelled' && closed.some((c) => c.id === out && /不做了/.test(c.why)), `${t.status} ${JSON.stringify(closed)}`);
 }
 
 // 7. the view: graph and trajectory

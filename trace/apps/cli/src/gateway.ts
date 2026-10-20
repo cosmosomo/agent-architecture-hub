@@ -66,6 +66,10 @@ export class AgentGatewayHub {
     pickChannel: (candidates, exclude) => this.pickChannel(candidates, exclude),
     holdFor: (channel) => this.holdFor(channel),
     sessionBusy: (channel, sessionName) => this.activeRuns.get(this.slotKey(channel, sessionName))?.status === 'running',
+    // Only a yielded one: a running dispatch is a turn in progress, and its reply is simply no longer awaited.
+    closeDispatch: (id, why) => {
+      if (this.dispatches.get(id)?.status === 'yielded') void this.recordCollabEvent({ id, kind: 'reclaim', summary: why }).catch(() => {});
+    },
     changed: (g) => this.broadcast('goal_update', { id: g.id, status: g.status, reason: g.reason }),
   });
   readonly eventsFile: string;

@@ -151,6 +151,9 @@ export interface TaskBoardDeps {
   holdFor?: (channel: string) => string | null;
   /** A turn is running in this session now (anyone's: a page, another agent). */
   sessionBusy?: (channel: string, sessionName: string) => boolean;
+  /** A dispatch nobody waits for any more (its task was cancelled): closed, so a yielded one does not keep its
+   *  session taken (10-20: one hung 20 hours after its task was cancelled). */
+  closeDispatch?: (id: string, why: string) => void;
 }
 
 const DEFAULT_BUDGET: GoalBudget = { maxDispatches: 20, maxParallel: 2, maxRework: 2, maxStall: 6, maxWallClockMs: 4 * 3600_000 };
@@ -337,7 +340,11 @@ export class TaskBoard {
       g.usage.sinceLastCompletion = 0;
       this.setGoal(g, 'running', '人恢复', body.budget ? { budget: g.budget } : undefined);
     } else if (action === 'cancel') {
-      for (const t of this.tasksOf(g)) if (!['completed', 'cancelled'].includes(t.status)) this.setTask(t, 'cancelled', 'cancelled_with_goal');
+      for (const t of this.tasksOf(g)) {
+        if (['completed', 'cancelled'].includes(t.status)) continue;
+        if (t.activeDispatchId) this.deps.closeDispatch?.(t.activeDispatchId, `目标取消：${body.reason || '人取消'}`);
+        this.setTask(t, 'cancelled', 'cancelled_with_goal');
+      }
       this.setGoal(g, 'cancelled', body.reason || '人取消');
     } else {
       throw new Error(`目标没有这个动作：${action}（pause、resume、cancel）`);
@@ -376,6 +383,7 @@ export class TaskBoard {
       this.setTask(t, this.depsDone(t) ? 'queued' : 'blocked', action, action === 'reassign' ? { channel: t.channel || 'auto', model: t.model } : undefined);
       if (g.status === 'fused') this.setGoal(g, 'running', `任务 ${t.key} ${action === 'retry' ? '重来' : '改派'}`);
     } else if (action === 'cancel') {
+      if (t.activeDispatchId) this.deps.closeDispatch?.(t.activeDispatchId, `任务取消：${body.reason || '人取消'}`);
       this.setTask(t, 'cancelled', 'task_cancelled', { reason: body.reason || '人取消' });
     } else {
       throw new Error(`任务没有这个动作：${action}（verify、retry、reassign、cancel）`);
