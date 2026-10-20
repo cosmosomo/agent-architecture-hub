@@ -5,7 +5,8 @@
     "一道题可以在几个位置测：center 是经中心（agent_gateway.js 或 8899 接口，记为 L2），web 是在网页 /m/ 上点（记为 L3），native 是绕过中心直接用这家自己的入口（命令行、接口、桌面端，记为 L0，入口见 channels/hosts/<产品>.md 和研究卷宗）。题里写了哪个位置就测哪个；没写的位置照同一个判据自己找入口。",
     "照 pass 判：看到的现象全对上才算 pass；部分对上记 partial，并写缺了哪条；没跑通记 fail，并写断在哪一步、原样的报错。fail 里列的是常见的假通过，遇到要当 fail。",
     "不打扰用户：不对用户正在用的会话和窗口发话，不动鼠标键盘；要开会话就开 test- 开头的。",
-    "临时文件（暗号文件、产出的报告和文档、导出的会话、一次性分析脚本）一律写进 channels/probe/tmp/（不进仓库），题里没写位置也一样；不要写在仓库根目录。10-20 根目录堆了 28 个这样的文件，已移到 channels/probe/tmp/root-leftovers-20261020/。"
+    "临时文件（暗号文件、产出的报告和文档、导出的会话、一次性分析脚本）一律写进 channels/probe/tmp/（不进仓库），题里没写位置也一样；不要写在仓库根目录。10-20 根目录堆了 28 个这样的文件，已移到 channels/probe/tmp/root-leftovers-20261020/。",
+    "会改派活单状态的题（让出、收回这类）用另派的探针单测，不要对你自己手上这张任务单做；测完把探针单收尾。"
   ],
   "record": "测完就记，一题一行：node hub/tools/agent_gateway.js bb add --by <你的产品或会话名> --family {agent} --capability <单元> --result pass|partial|fail --route {agent}/<L0|L2|L3>/<入口，例如 center-cli、m-page、acp> --condition \"<版本、模型、前提>\" --evidence \"<实际跑的命令和看到的原样结果，带暗号>\"",
   "tests": {
@@ -291,11 +292,12 @@
     "act-yield": {
       "do": "智能体结束当前执行阶段并主动让出执行权，清楚写明自己在等待什么条件或外部事件。",
       "center": [
-        "node hub/tools/agent_gateway.js yield --id <派活单号> --waiting-for \"等待外部输入暗号 {token}\"",
-        "node hub/tools/agent_gateway.js dispatches  （查看该单的 waitingFor 字段与状态）"
+        "node hub/tools/agent_gateway.js dispatch --to {agent} --to-session {session} --no-wait --task \"这是让出测试：不要做别的，用 node hub/tools/agent_gateway.js yield --id <这张派活单的单号> --waiting-for 等待外部输入暗号{token} 让出，然后结束这一轮。\"  （记下返回的探针单号；被测的是 {agent} 自己让出，不是你）",
+        "node hub/tools/agent_gateway.js dispatches --id <探针单号>  （等它的状态变成 yielded，看 waitingFor）",
+        "收尾：node hub/tools/agent_gateway.js reclaim --id <探针单号> --summary \"让出测试收尾\"  （不收尾，这张单会一直挂着、占着会话）"
       ],
-      "pass": "派活单状态变为 yielded/waiting，waitingFor 字段明确记录“等待外部输入暗号 {token}”，中心不再盲目轮询。",
-      "fail": "让出动作导致中心将该任务判定为失败；或者让出时没有保存等待原因变成无头悬挂。"
+      "pass": "派活单状态变为 yielded/waiting，waitingFor 字段明确记录“等待外部输入暗号{token}”，中心不再盲目轮询。",
+      "fail": "让出动作导致中心将该任务判定为失败；或者让出时没有保存等待原因变成无头悬挂；或者测试员让出的是自己手上的任务单（10-20 三张任务单这样挂了 21 小时，挡住了别的目标）。"
     },
     "act-report": {
       "do": "智能体在长任务中途上报阶段性进展或关键指标，中心记录其进度且当前执行轮次不被中断。",
