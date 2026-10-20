@@ -17,6 +17,9 @@ param([switch]$Restart, [switch]$Install, [switch]$Uninstall, [switch]$NoWatch)
 $ErrorActionPreference = 'Continue'
 # node writes UTF-8; Windows PowerShell would read it as the console code page.
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# Local calls only, never through the system proxy. Windows PowerShell 5.1 has no -NoProxy (10-20: every probe
+# failed on that and -Restart stopped waiting for running turns), so switch the default proxy off here.
+[System.Net.WebRequest]::DefaultWebProxy = [System.Net.GlobalProxySelection]::GetEmptyWebProxy()
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $hubHome = Join-Path $HOME '.agent-hub'
 $port = 8899
@@ -53,7 +56,7 @@ function Listener {
 }
 
 function Healthy([int]$timeoutSec = 5) {
-  try { $null = Invoke-RestMethod -NoProxy "http://127.0.0.1:$port/api/health" -TimeoutSec $timeoutSec; return $true } catch { return $false }
+  try { $null = Invoke-RestMethod "http://127.0.0.1:$port/api/health" -TimeoutSec $timeoutSec; return $true } catch { return $false }
 }
 
 function Start-Center {
@@ -88,7 +91,7 @@ if ($Restart) {
   # Wait (up to 2 hours) until no turn is running; Antigravity turns live in its desktop app and are picked up again.
   for ($i = 0; $i -lt 720; $i++) {
     try {
-      $j = Invoke-RestMethod -NoProxy "http://127.0.0.1:$port/api/gateway/state" -TimeoutSec 10
+      $j = Invoke-RestMethod "http://127.0.0.1:$port/api/gateway/state" -TimeoutSec 10
       $busy = @($j.activeRuns.PSObject.Properties.Value | Where-Object { $_.status -eq 'running' -and $_.channel -ne 'antigravity' })
       if ($busy.Count -eq 0) { break }
       if ($i -eq 0) { Log "等 $($busy.Count) 个在跑的轮次结束再重启：$(($busy | ForEach-Object { "$($_.channel)/$($_.sessionName)" }) -join '，')" }

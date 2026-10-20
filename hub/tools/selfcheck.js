@@ -84,7 +84,8 @@ async function center() {
         const since = all.lastIndexOf('==== 启动 ');
         const kinds = {};
         for (const l of (since >= 0 ? all.slice(all.indexOf('\n', since) + 1) : all).split(/\r?\n/)) {
-          if (!l.trim() || /^\s+at /.test(l)) continue;
+          // stderr also carries progress (扫描 N/N); count only lines that read as errors.
+          if (!l.trim() || /^\s+at /.test(l) || !/error|exception|fail|unhandled|失败|错误|出错|E[A-Z]{3,}/i.test(l)) continue;
           const k = l.replace(/[0-9a-f]{8}-[0-9a-f-]{27}/g, '<id>').replace(/\d+/g, 'N').slice(0, 120);
           kinds[k] = (kinds[k] || 0) + 1;
         }
