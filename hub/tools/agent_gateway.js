@@ -2098,6 +2098,19 @@ function main() {
   if (sub === 'recall') return cmdRecall(args);
   if (sub === 'test') return cmdTest(args);
   if (sub === 'goal-gen') return cmdGoalGen(args);
+  // key list | key get <供应商>[/<名字>] --by <你> --why <用途>: keys are borrowed from the vault through the approval
+  // node and written to the audit (hub/tools/key_vault.js); the skill no longer carries them.
+  if (sub === 'key') {
+    const kv = require('./key_vault.js');
+    try {
+      if (args._[1] === 'get') process.stdout.write(kv.get(args._[2], args) + '\n');
+      else console.log(kv.list());
+      process.exit(0);
+    } catch (e) {
+      console.error(JSON.stringify({ ok: false, error: e.message }));
+      process.exit(1);
+    }
+  }
   if (sub === 'feature') return cmdFeature(args);
   if (sub === 'note') return cmdNote(args);
   if (sub === 'bb') return cmdBlackboard(args);
@@ -2121,7 +2134,7 @@ function main() {
     console.log(problems.length ? `核对：${problems.length} 处对不上\n` + problems.map((x) => '  - ' + x).join('\n') : '核对：四张表和代码全部对上');
     return;
   }
-  console.error(`Unknown subcommand: ${sub}. Expected: targets | status | quota | run | read | wait | cancel | handoff | dispatch | dispatches | dispatch-wait | deliver | report | yield | reclaim | patrol | tables | test | goal-gen`);
+  console.error(`Unknown subcommand: ${sub}. Expected: targets | status | quota | run | read | wait | cancel | handoff | dispatch | dispatches | dispatch-wait | deliver | report | yield | reclaim | patrol | tables | test | goal-gen | key`);
   process.exit(1);
 }
 

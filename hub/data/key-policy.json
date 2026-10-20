@@ -1,0 +1,10 @@
+{
+  "about": "借密钥的审批节点（hub/tools/key_vault.js）：每个供应商借用时怎么处理。auto 自动放行、只记审计；ask 要人批（接到中心审批卡之前先不外借）；deny 不外借。没写的按 default。不含任何密钥值。用户 10-20：“秘钥可以拿，但是后续可以在这里加审批节点”。 fields 按字段名定：账号密码不外借，账号级登录令牌要人批（10-20 负责人按“API 密钥可以拿、账号凭据不同”设的，用户可改）。",
+  "default": "auto",
+  "keys": {},
+  "fields": {
+    "password": "deny",
+    "refresh_token": "ask",
+    "access_token": "ask"
+  }
+}

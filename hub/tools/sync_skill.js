@@ -237,7 +237,17 @@ function main() {
     const keysDest = path.join(canonicalDir, 'references', 'keys-and-endpoints.md');
     if (fs.existsSync(keysSrc)) {
       fs.mkdirSync(path.dirname(keysDest), { recursive: true });
-      fs.copyFileSync(keysSrc, keysDest);
+      // The skill goes to every agent (11 places, Doubao's skill folders among them), so it carries the manual with
+      // every key replaced by how to borrow it from the center (key_vault.js), never the plaintext (user 10-20:
+      // “密钥从技能里拿走”). Without the vault module nothing is copied rather than the plaintext.
+      try {
+        const { mask } = require(path.join(HUB_ROOT, 'hub', 'tools', 'key_vault.js'));
+        const head = '> **密钥不在这份文档里了（10-20）**：`node e:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\hub\\tools\\agent_gateway.js key list` 看有哪些，`key get <供应商>[/<名字>] --by <你> --why <用途>` 借用；每次借用记审计，账号密码不外借、登录令牌要人批（hub/data/key-policy.json）。下文 `<借用：…>` 处原来是密钥。';
+        const text = mask(fs.readFileSync(keysSrc, 'utf8')).replace(/^# .*$/m, (h) => `${h}\n\n${head}`);
+        fs.writeFileSync(keysDest, text, 'utf8');
+      } catch (e) {
+        console.error(`[skip] key manual not copied into the skill: ${e.message}`);
+      }
     }
     const syncSelf = __filename;
     const syncCanonical = path.join(canonicalDir, 'scripts', 'sync_skill.js');
