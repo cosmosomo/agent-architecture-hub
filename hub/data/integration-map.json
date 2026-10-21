@@ -725,6 +725,21 @@
         ],
         "status": "real",
         "note": "10-18 实测 7 家全部通过：登记请求项并设置 waitingFor，同步进入 waitingEdges"
+      },
+      {
+        "action": "collab-event",
+        "how": "POST /api/gateway/collab-event kind=answer（命令行 agent_gateway.js answer --id <派活单> --text …）：把派活单里在等答复的请求标成已答复、记下答复，答复发进被派的会话（它在干活就排到这一轮结束后）；命令行补了 request 子命令",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "10-21 负责人；之前请求只登记、没有任何路径答复（types 里 resolved/answer 一直没写过）；没测"
       }
     ],
     "wait-visible": [
@@ -1513,6 +1528,20 @@
         ],
         "status": "real",
         "note": "10-21 8899 浏览器实测：网页“＋新任务”交给 ZCode、模型 GLM-5.3-Flash、目录 channels/probe/tmp，会话 zcode:sess_3350617c：智能体自述用的是 GLM-5.3-Flash"
+      },
+      {
+        "page": "/m/（10-21 负责人：网页追后端第四批）",
+        "control": "新任务“模型”下拉（列模型那一条：验证过的在前，实时列表补在后）",
+        "action": "send",
+        "channels": [
+          "claude",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex"
+        ],
+        "status": "built",
+        "note": "只在 ZCode 上点过"
       }
     ],
     "permission": [
@@ -1525,6 +1554,19 @@
         ],
         "status": "real",
         "note": "10-18 负责人浏览器实测 probe-m-approval-test：点同意后后端全放行重跑；后端这一项是补齐（一个会话这一级）"
+      },
+      {
+        "page": "/m/（10-21 负责人：网页追后端第四批）",
+        "control": "同 ZCode：会话页审批卡和待处理里的审批卡（ui-approval）",
+        "action": "approve",
+        "channels": [
+          "codex",
+          "claude",
+          "workbuddy",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "这几家没在网页上点过"
       }
     ],
     "handoff": [
@@ -2953,6 +2995,20 @@
         ],
         "status": "real",
         "note": "10-21 8899 浏览器实测：网页“＋新任务”交给 ZCode、模型 GLM-5.3-Flash、目录 channels/probe/tmp，会话 zcode:sess_3350617c：会话 cwd 正是填的目录，文件落在那里"
+      },
+      {
+        "page": "/m/（10-21 负责人：网页追后端第四批）",
+        "control": "同 ZCode：新任务“工作目录”，填了在那里干活，不填新建独立目录",
+        "channels": [
+          "claude",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "网页这一格各家同一段代码；只在 ZCode 上点过"
       }
     ],
     "inject-next": [
@@ -2965,6 +3021,19 @@
         ],
         "status": "real",
         "note": "10-21 8899 浏览器实测：网页“＋新任务”交给 ZCode、模型 GLM-5.3-Flash、目录 channels/probe/tmp，会话 zcode:sess_3350617c：sleep 40 期间发“把文件改成 W1021B”，按钮显示“排下一轮”，下一轮执行，文件变成 W1021B"
+      },
+      {
+        "page": "/m/（10-21 负责人：网页追后端第四批）",
+        "control": "同 ZCode：干活时发话排到下一轮",
+        "channels": [
+          "claude",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex"
+        ],
+        "status": "built",
+        "note": "同一段代码，只在 ZCode 上点过"
       }
     ],
     "close": [
@@ -3066,6 +3135,89 @@
         ],
         "status": "built",
         "note": "没测；Antigravity 照旧三档"
+      }
+    ],
+    "act-request": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第四批）",
+        "control": "协作页派活卡片“它在问你”：列出请求和答复，点“答复”在弹层里写，发进被派的会话",
+        "action": "collab-event",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "没测"
+      }
+    ],
+    "act-deliver": [
+      {
+        "page": "/m/",
+        "control": "协作页派活卡片“↩ 交回”：来源（主动 deliver、尾注、轮末兜底、恢复）、摘要、全文、文件",
+        "action": "dispatches",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "网页一直在显示，这次补登；没逐家在网页核对"
+      }
+    ],
+    "wake-persist": [
+      {
+        "page": "/m/",
+        "control": "协作页派活卡片：重启后补采的交回标“恢复时收回”",
+        "action": "dispatches",
+        "channels": [
+          "claude",
+          "zcode",
+          "opencode",
+          "hermes",
+          "workbuddy",
+          "codex",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "补登；没在网页上看过重启后的那张卡"
+      }
+    ],
+    "ask-user": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第四批）",
+        "control": "会话页提问卡（ui-question）：选项可点、能自己写，送回同一轮",
+        "action": "answer",
+        "channels": [
+          "claude",
+          "codex",
+          "zcode"
+        ],
+        "status": "built",
+        "note": "Claude 网页实测过（ui-question 那条）；Codex、ZCode 网页没点过"
+      }
+    ],
+    "resume-native": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第四批）",
+        "control": "会话页输入框：对这一家自己开的会话发话，中心接着它的原会话做",
+        "action": "send",
+        "channels": [
+          "workbuddy",
+          "zcode",
+          "claude",
+          "codex"
+        ],
+        "status": "built",
+        "note": "补登；网页没逐家点过"
       }
     ]
   }

@@ -1,12 +1,12 @@
 # 功能矩阵：每个单元在各家、各位置上的理论上限与现状（由黑板、integration-map 和完整性检查生成，勿手改）
 
-生成时间：2026-10-21T07:19:29.600Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
+生成时间：2026-10-21T07:33:30.894Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
 
 标记：✓ 有行为证据（后面是实现路径）；◐ 部分；? 未验证；✗ 不通；✗假 界面有、实际是别的办法模拟；有（截图/代码） 桌面端界面这一列靠截图或代码分析得出、不是行为实测（这批来自调研，未逐格核）；· 没有记录。
 
 ## 现在还缺什么（外层：按 README“立体认知”的轴把现在的差摆出来）
 
-README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-21T07:19:29.606Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
+README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-21T07:33:30.900Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
 
 **每一层：理论极限、我们的目标、现状、依据记在哪**（一格 = 一个能力单元在一个产品）
 
@@ -309,10 +309,10 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ channels/probe/scripts/antigravity/rpc.mjs SendUse | ✓ channels/probe/scripts/L2/test_l2_lifecycle_core.m | · | 自己做：做到前端 |
-| codex | · | ✓ codex exec resume --json --skip-git-repo-check -m  | ✓ 会话身份统一为 <产品>:<原生编号>（gateway.canonicalSessionId，ZCo | · | 自己做：做到前端 |
-| claude | · | ✓ claude -p "刚才暗号是什么？只回复暗号本身" --resume 3a8c395c-287f | ✓ 会话身份统一为 <产品>:<原生编号>（gateway.canonicalSessionId，ZCo | · | 自己做：做到前端 |
-| zcode | ✗ node E:\zcode\resources\glm\zc | ◐ node E:\zcode\resources\glm\zc | ✓ 会话身份统一为 <产品>:<原生编号>（gateway.canonicalSessionId，ZCo | · | 自己做：做到前端 |
-| workbuddy | · | · | ✗ sessionName 降级为 hub-workbuddy， | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| codex | · | ✓ codex exec resume --json --skip-git-repo-check -m  | ✓ 会话身份统一为 <产品>:<原生编号>（gateway.canonicalSessionId，ZCo | ? /m/（10-21 负责人：网页追后端第四批）：会话页输入框 | 自己做：做到前端 |
+| claude | · | ✓ claude -p "刚才暗号是什么？只回复暗号本身" --resume 3a8c395c-287f | ✓ 会话身份统一为 <产品>:<原生编号>（gateway.canonicalSessionId，ZCo | ? /m/（10-21 负责人：网页追后端第四批）：会话页输入框 | 自己做：做到前端 |
+| zcode | ✗ node E:\zcode\resources\glm\zc | ◐ node E:\zcode\resources\glm\zc | ✓ 会话身份统一为 <产品>:<原生编号>（gateway.canonicalSessionId，ZCo | ? /m/（10-21 负责人：网页追后端第四批）：会话页输入框 | 自己做：做到前端 |
+| workbuddy | · | · | ✗ sessionName 降级为 hub-workbuddy， | ? /m/（10-21 负责人：网页追后端第四批）：会话页输入框 | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | opencode | · | ✓ opencode run "之前告诉你的暗号是什么？请只完整复述暗号本身" -s ses_eb68e | ✗ channels/probe/scripts/L2/test | · | 自己做：接进适配器 |
 | hermes | · | ✓ acpx hermes -s probe-hermes-x1 "记住暗号 PINE-2277…" → | ✗ channels/probe/scripts/L2/test | · | 自己做：接进适配器 |
 | gemini | · | ✗ echo n / gemini -m gemini-2.5- | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
@@ -431,12 +431,12 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ node channels/probe/scripts/antigravity/rpc.mjs Se | · | · | 自己做：接进适配器 |
-| codex | · | ? audit-inspection | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| claude | · | · | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| codex | · | ? audit-inspection | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| claude | · | · | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | zcode | · | ◐ node channels/probe/scripts/na | ? acpx 提供 --no-wait 选项，在一轮运行中可将新 | ✓ /m/（10-21 负责人：网页追后端第三批，手机页端到端）：干活时发话：这一家只能排到下一轮时，按 | 已到前端 |
-| workbuddy | · | ✓ node hub/tools/acp_resident_bridge.mjs steer --pro | ? acpx 提供 --no-wait 模式，指令进入 acpx | · | 自己做：接进适配器 |
-| opencode | · | ✓ node hub/tools/acp_resident_bridge.mjs steer --pro | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | · | 自己做：接进适配器 |
-| hermes | · | ✓ 读 acp_adapter/server.py:705-712 + L1b 佐证 | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | · | 自己做：接进适配器 |
+| workbuddy | · | ✓ node hub/tools/acp_resident_bridge.mjs steer --pro | ? acpx 提供 --no-wait 模式，指令进入 acpx | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：接进适配器 |
+| opencode | · | ✓ node hub/tools/acp_resident_bridge.mjs steer --pro | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：接进适配器 |
+| hermes | · | ✓ 读 acp_adapter/server.py:705-712 + L1b 佐证 | ◐ gateway.sendPrompt：会话在跑时排进后端内存 | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：接进适配器 |
 
 ## 注入·工具结果捎带（inject-tool）
 
@@ -511,12 +511,12 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✗ channels/probe/scripts/antigra | ✗ fetch('http://127.0.0.1:8932/a | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| codex | · | ✓ driver.startTurn({ threadId, input: "请在终端执行此命令..." | ✗ gateway.ts:3960 在子进程退出后的 final | · | 自己做：接进适配器 |
-| claude | · | ✓ channels/probe/scripts/retest/test_claude_l1a_perm | ✗ gateway.ts:3960-3987 待审批项是在进程已 | · | 自己做：接进适配器 |
+| codex | · | ✓ driver.startTurn({ threadId, input: "请在终端执行此命令..." | ✗ gateway.ts:3960 在子进程退出后的 final | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：接进适配器 |
+| claude | · | ✓ channels/probe/scripts/retest/test_claude_l1a_perm | ✗ gateway.ts:3960-3987 待审批项是在进程已 | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：接进适配器 |
 | zcode | · | ✓ node channels/probe/scripts/suite_zcode_l1a.mjs | ✗ gateway.ts:3960-3987 待审批项是在进程已 | ✓ /m/（10-18 晚负责人接手）：待处理里的审批卡片：同意放行、驳回；如实标“补齐·会话级重跑” | 已到前端 |
-| workbuddy | · | ✓ node hub/tools/acp_resident_bridge.mjs task --prod | ✗ gateway.ts:3960-3987 待审批项是在进程已 | · | 自己做：接进适配器 |
+| workbuddy | · | ✓ node hub/tools/acp_resident_bridge.mjs task --prod | ✗ gateway.ts:3960-3987 待审批项是在进程已 | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：接进适配器 |
 | opencode | · | ✓ node /tmp/oc_cells.mjs | ✗ gateway.ts:3960-3987 待审批项是在进程已 | · | 自己做：接进适配器 |
-| hermes | · | ✓ acp_probe2.py perm | ✗ gateway.ts:3960-3987 待审批项是在进程已 | · | 自己做：接进适配器 |
+| hermes | · | ✓ acp_probe2.py perm | ✗ gateway.ts:3960-3987 待审批项是在进程已 | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：接进适配器 |
 | gemini | · | ✗ gemini --help（--approval-mode  | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 分叉（fork）
@@ -578,12 +578,12 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ channels/probe/scripts/antigravity/run_agentapi.mj | ✗ {"jsonrpc":"2.0","id":null,"er | ✓ /m/：新任务的 flash / pro | 已到前端 |
-| codex | · | ✓ codex exec --json -m gpt-5.6-sol - | ✓ POST /api/gateway/send 带 model → codex app-server  | ✓ console.js + gateway.ts 代码路径 | 已到前端 |
-| claude | · | ✓ claude -p "记住暗号..." --session-id 3a8c395c-287f-447 | ✓ POST /api/gateway/send 带 model → codex app-server  | · | 自己做：做到前端 |
+| codex | · | ✓ codex exec --json -m gpt-5.6-sol - | ✓ POST /api/gateway/send 带 model → codex app-server  | ✓ gateway sendPrompt 把所选模型作为 --model 传每轮 acpx（codex  | 已到前端 |
+| claude | · | ✓ claude -p "记住暗号..." --session-id 3a8c395c-287f-447 | ✓ POST /api/gateway/send 带 model → codex app-server  | ? /m/（10-21 负责人：网页追后端第四批）：新任务“模型 | 自己做：做到前端 |
 | zcode | · | ✓ ZCODE_MODEL='builtin:bigmodel-coding-plan\GLM-5.3- | ✓ POST /api/gateway/send 带 model → codex app-server  | ✓ /m/（10-21 负责人：网页追后端第三批，手机页端到端）：新任务“模型”下拉：按这家推荐的模型列 | 已到前端 |
-| workbuddy | · | ✓ codebuddy -p "请只回复四个字：天地玄黄" --session-id probe-wb- | ✓ POST /api/gateway/send 带 model → codex app-server  | · | 自己做：做到前端 |
-| opencode | · | ✓ opencode run "回复测试成功四个字" -m zai-coding-plan/glm-5. | ✗ ⚠ No acpx session found (searc | · | 自己做：接进适配器 |
-| hermes | · | ✓ hermes chat -q "你用的什么模型？只回复模型名。" --oneshot --yolo  | ✓ POST /api/gateway/send 带 model → codex app-server  | · | 自己做：做到前端 |
+| workbuddy | · | ✓ codebuddy -p "请只回复四个字：天地玄黄" --session-id probe-wb- | ✓ POST /api/gateway/send 带 model → codex app-server  | ? /m/（10-21 负责人：网页追后端第四批）：新任务“模型 | 自己做：做到前端 |
+| opencode | · | ✓ opencode run "回复测试成功四个字" -m zai-coding-plan/glm-5. | ✗ ⚠ No acpx session found (searc | ? /m/（10-21 负责人：网页追后端第四批）：新任务“模型 | 自己做：接进适配器 |
+| hermes | · | ✓ hermes chat -q "你用的什么模型？只回复模型名。" --oneshot --yolo  | ✓ POST /api/gateway/send 带 model → codex app-server  | ? /m/（10-21 负责人：网页追后端第四批）：新任务“模型 | 自己做：做到前端 |
 | gemini | · | ✗ gemini -m gemini-2.5-flash -p  | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 中途切模型（model-switch）
@@ -693,8 +693,8 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ node channels/probe/scripts/antigravity/run_agenta | ✓ 三条交回路：(1) 乙路 CLI `agent_gateway.js deliver --id <i | ✓ dispatch dsp_233657_xjg2 四段回执齐：issued 23:36:57→del | 已到前端 |
-| codex | · | ? audit-inspection | ✓ 三条交回路：(1) 乙路 CLI `agent_gateway.js deliver --id <i | ◐ 两单回执均走完 issued→delivered→seen→ | 自己做：做到前端 |
-| claude | · | ✓ claude -p --json-schema | ◐ 照题复测 verify.js 的 claude spawn- | ◐ 同题两派（dsp_233758_iwqr、dsp_23401 | 自己做：接进适配器 |
+| codex | · | ? audit-inspection | ✓ 三条交回路：(1) 乙路 CLI `agent_gateway.js deliver --id <i | ? /m/：协作页派活卡片“↩ 交回”：来源（主动 delive | 自己做：做到前端 |
+| claude | · | ✓ claude -p --json-schema | ◐ 照题复测 verify.js 的 claude spawn- | ? /m/：协作页派活卡片“↩ 交回”：来源（主动 delive | 自己做：接进适配器 |
 | zcode | · | ✓ node hub/tools/acp_resident_bridge.mjs task --prod | ✓ 三条交回路：(1) 乙路 CLI `agent_gateway.js deliver --id <i | ✓ L3 网页全流程：本无头子座席的官方浏览器桥不可用（agent.browsers.list() 返回 | 已到前端 |
 | workbuddy | · | · | ✓ 三条交回路：(1) 乙路 CLI `agent_gateway.js deliver --id <i | ✓ 派活 dsp_003650_hm2j（task=写一句话介绍你自己，结尾带 T101918ZK，然后 | 已到前端 |
 | opencode | · | ✓ opencode export ses_eb430366cffeB5WW7NyVlfuHsd | ✓ 三条交回路：(1) 乙路 CLI `agent_gateway.js deliver --id <i | ✓ 页面表单提交 POST /api/gateway/dispatch，生成单 dsp_003854_r | 已到前端 |
@@ -710,10 +710,10 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ node channels/probe/scripts/antigravity/run_agenta | ✓ POST /api/gateway/collab-event (kind=request)：被派会话 | ✗ 请求本身发起成功：run prompt 后 agent 走到 | 自己做：做到前端 |
-| codex | · | ? audit-inspection | ✓ POST /api/gateway/collab-event (kind=request)：被派会话 | ◐ 链路走通：run --permissions reads 让 | 自己做：做到前端 |
+| codex | · | ? audit-inspection | ✓ POST /api/gateway/collab-event (kind=request)：被派会话 | ? /m/（10-21 负责人：网页追后端第四批）：协作页派活卡 | 自己做：做到前端 |
 | claude | · | · | ✓ POST /api/gateway/collab-event (kind=request)：被派会话 | ✓ bb find --family claude --capability act-request - | 已到前端 |
 | zcode | · | · | ✓ POST /api/gateway/collab-event (kind=request)：被派会话 | ✓ L3 网页全流程（官方浏览器桥在本子座席不可用 bridge unsupported: intera | 已到前端 |
-| workbuddy | · | · | ✓ POST /api/gateway/collab-event (kind=request)：被派会话 | ◐ 缺的一条：题面配方（默认 permissions=all + | 自己做：做到前端 |
+| workbuddy | · | · | ✓ POST /api/gateway/collab-event (kind=request)：被派会话 | ? /m/（10-21 负责人：网页追后端第四批）：协作页派活卡 | 自己做：做到前端 |
 | opencode | · | ? question tool / ask permission | ✓ POST /api/gateway/collab-event (kind=request)：被派会话 | ✗ 流程: /m/ 会话视图 #msg 发送 '请通过你的提问或 | 自己做：做到前端 |
 | hermes | · | ✓ acp_probe2.py perm; toolsets 枚举 clarify; hermes ap | ✓ POST /api/gateway/collab-event (kind=request)：被派会话 | ✓ 链路'请求登记→等待→答复→同轮继续'全程实测走通：①发话'请求测试 T101918EH：在 Tem | 已到前端 |
 
@@ -838,13 +838,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ◐ ls ~/.gemini/config/sidecars/* | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | · | 自己做：做到前端 |
-| codex | · | ? audit-inspection | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | · | 自己做：做到前端 |
-| claude | · | ✗ CronCreate schema inspection | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | · | 自己做：做到前端 |
-| zcode | · | · | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | · | 自己做：做到前端 |
-| opencode | · | ✗ opencode --help | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | · | 自己做：做到前端 |
-| hermes | · | ✓ type cron/jobs.json; hermes cron status; hermes cr | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | · | 自己做：做到前端 |
+| antigravity | · | ◐ ls ~/.gemini/config/sidecars/* | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | ? /m/：协作页派活卡片：重启后补采的交回标“恢复时收回” | 自己做：做到前端 |
+| codex | · | ? audit-inspection | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | ? /m/：协作页派活卡片：重启后补采的交回标“恢复时收回” | 自己做：做到前端 |
+| claude | · | ✗ CronCreate schema inspection | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | ? /m/：协作页派活卡片：重启后补采的交回标“恢复时收回” | 自己做：做到前端 |
+| zcode | · | · | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | ? /m/：协作页派活卡片：重启后补采的交回标“恢复时收回” | 自己做：做到前端 |
+| workbuddy | · | · | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | ? /m/：协作页派活卡片：重启后补采的交回标“恢复时收回” | 自己做：做到前端 |
+| opencode | · | ✗ opencode --help | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | ? /m/：协作页派活卡片：重启后补采的交回标“恢复时收回” | 自己做：做到前端 |
+| hermes | · | ✓ type cron/jobs.json; hermes cron status; hermes cr | ✓ 派活单原子写盘 ~/.agent-hub/dispatches/<id>.json；8899 重启后 | ? /m/：协作页派活卡片：重启后补采的交回标“恢复时收回” | 自己做：做到前端 |
 
 ## 派子智能体（spawn-subagent）
 
@@ -919,9 +919,9 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ? 接口存在，缺行为证据：ask_question 工具声明存在 | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| codex | · | ? audit-inspection | ✓ 智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/stat | · | 自己做：做到前端 |
-| claude | · | ? AskUserQuestion tool schema | ✓ 智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/stat | · | 自己做：做到前端 |
-| zcode | · | · | ✓ 智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/stat | · | 自己做：做到前端 |
+| codex | · | ? audit-inspection | ✓ 智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/stat | ? /m/（10-21 负责人：网页追后端第四批）：会话页提问卡 | 自己做：做到前端 |
+| claude | · | ? AskUserQuestion tool schema | ✓ 智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/stat | ? /m/（10-21 负责人：网页追后端第四批）：会话页提问卡 | 自己做：做到前端 |
+| zcode | · | · | ✓ 智能体在一轮中途问人：问题挂成 pendingQuestions（/api/gateway/stat | ? /m/（10-21 负责人：网页追后端第四批）：会话页提问卡 | 自己做：做到前端 |
 | workbuddy | · | ✓ node hub/tools/acp_resident_bridge.mjs task --prod | ? 经 ACP 问不到：WorkBuddy 的 headless | · | 自己做：接进适配器 |
 | opencode | · | ? opencode debug agent build | ? 经 ACP 问不到：WorkBuddy 的 headless | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 | hermes | · | ✗ channels/probe/results/ask-use | ? 经 ACP 问不到：WorkBuddy 的 headless | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
@@ -1064,13 +1064,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ agentapi get-conversation-metadata <cid> | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | · | 自己做：做到前端 |
-| codex | · | ? audit-inspection | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | · | 自己做：做到前端 |
-| claude | · | ✓ claude -p "..." --tools "Write" (cwd 隔离绑定) | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | · | 自己做：做到前端 |
+| antigravity | · | ✓ agentapi get-conversation-metadata <cid> | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：做到前端 |
+| codex | · | ? audit-inspection | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：做到前端 |
+| claude | · | ✓ claude -p "..." --tools "Write" (cwd 隔离绑定) | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：做到前端 |
 | zcode | · | · | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | ✓ /m/（10-21 负责人：网页追后端第三批，手机页端到端）：新任务“工作目录”：填了就在那里干活， | 已到前端 |
-| workbuddy | · | ✓ codebuddy -p "请读取当前目录下的 marker.txt 文件" -y | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | · | 自己做：做到前端 |
-| opencode | · | ✓ opencode run "pwd" --dir "C:\Users\COLORFIRE" --au | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | · | 自己做：做到前端 |
-| hermes | · | ✓ hermes -z "run terminal pwd" --in "C:\Users\COLORF | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | · | 自己做：做到前端 |
+| workbuddy | · | ✓ codebuddy -p "请读取当前目录下的 marker.txt 文件" -y | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：做到前端 |
+| opencode | · | ✓ opencode run "pwd" --dir "C:\Users\COLORFIRE" --au | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：做到前端 |
+| hermes | · | ✓ hermes -z "run terminal pwd" --in "C:\Users\COLORF | ✓ 请求里的 cwd 或 __new__ → gateway.resolveSessionCwd（默认  | ? /m/（10-21 负责人：网页追后端第四批）：同 ZCod | 自己做：做到前端 |
 
 ## 产出约定（output-contract）
 

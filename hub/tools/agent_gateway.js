@@ -2190,6 +2190,9 @@ function main() {
   if (sub === 'report') return cmdCollabEvent(args, 'report');
   if (sub === 'yield') return cmdCollabEvent(args, 'yield');
   if (sub === 'reclaim') return cmdCollabEvent(args, 'reclaim');
+  // The target asks the dispatcher something (request --id <派活单> --text ...); the dispatcher answers it (answer --id <派活单> --text ...).
+  if (sub === 'request') return cmdCollabEvent(args, 'request');
+  if (sub === 'answer') return cmdCollabEvent(args, 'answer');
   if (sub === 'patrol') return cmdPatrol(args);
   // The four tables of the pipeline (channels/README.md 管线): products, actions, unit → action, checked against the code.
   // One command to test the backend for real, unit by unit, following the four tables (channels/probe/scripts/verify.js).
@@ -2205,7 +2208,7 @@ function main() {
     console.log(problems.length ? `核对：${problems.length} 处对不上\n` + problems.map((x) => '  - ' + x).join('\n') : '核对：四张表和代码全部对上');
     return;
   }
-  console.error(`Unknown subcommand: ${sub}. Expected: targets | status | quota | run | read | wait | cancel | handoff | dispatch | dispatches | dispatch-wait | deliver | report | yield | reclaim | patrol | tables | test | goal-gen | key`);
+  console.error(`Unknown subcommand: ${sub}. Expected: targets | status | quota | run | read | wait | cancel | handoff | dispatch | dispatches | dispatch-wait | deliver | report | yield | reclaim | request | answer | patrol | tables | test | goal-gen | key`);
   process.exit(1);
 }
 

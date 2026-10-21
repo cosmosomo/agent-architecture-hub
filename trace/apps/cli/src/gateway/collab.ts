@@ -616,13 +616,13 @@ export const collabMethods = {
 
   /**
    * Handle explicit collaboration actions (`deliver`, `report`, `yield`, `request`, `reclaim`)
-   * from either the target session CLI (`agent_gateway.js`) or the web UI.
+   * from either the target session CLI (`agent_gateway.js`) or the web UI, and `answer` to the target's open requests.
    */
   async recordCollabEvent(this: AgentGatewayHub, params: {
     id?: string;
     channel?: string;
     sessionName?: string;
-    kind: 'deliver' | 'report' | 'yield' | 'request' | 'reclaim';
+    kind: 'deliver' | 'report' | 'yield' | 'request' | 'reclaim' | 'answer';
     summary?: string;
     text?: string;
     reply?: string;
@@ -647,6 +647,36 @@ export const collabMethods = {
     const nowIso = new Date().toISOString();
     const via = params.via || 'cli';
     const msg = String(params.summary || params.text || params.waitingFor || '').trim();
+
+    // A person (web) or the dispatching agent answers what the target asked (kind request): the open requests are
+    // marked resolved and the answer goes to the target session, queued for its next turn if it is mid-turn.
+    if (params.kind === 'answer') {
+      const open = (d.requests || []).filter((r) => r.status === 'pending');
+      if (!open.length) throw new Error(`派活单 ${d.id} 没有在等答复的请求`);
+      if (!msg) throw new Error('答复不能为空');
+      for (const r of open) {
+        r.status = 'resolved';
+        r.answer = msg;
+      }
+      if (d.status !== 'yielded') d.waitingFor = undefined;
+      this.saveDispatch(d);
+      const prompt = [
+        `【你在派活单 ${d.id} 里提的请求有答复了】`,
+        ...open.map((r) => `- 你问的：${r.text}`),
+        `答复（来自${via === 'web' ? '网页上的人' : '派活方'}）：${msg}`,
+        '按答复接着做，做完照常交回。',
+      ].join('\n');
+      const sent = await this.sendPrompt({
+        channel: d.to.channel,
+        sessionName: d.to.sessionName,
+        traceSessionId: d.to.traceSessionId,
+        prompt,
+        permissions: 'all',
+        mode: 'send',
+        source: via === 'web' ? 'web' : 'cli',
+      });
+      return { ok: true, kind: 'answer', dispatch: d, runId: sent.run?.runId };
+    }
 
     if (!d.receipts.deliveredAt) d.receipts.deliveredAt = nowIso;
     if (!d.receipts.seenAt) {

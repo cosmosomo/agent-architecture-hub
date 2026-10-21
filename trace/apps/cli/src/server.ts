@@ -632,7 +632,8 @@ export function createService(opts: ServeOptions): Server {
             body.kind === 'report' ||
             body.kind === 'yield' ||
             body.kind === 'request' ||
-            body.kind === 'reclaim'
+            body.kind === 'reclaim' ||
+            body.kind === 'answer'
               ? body.kind
               : 'deliver',
           summary: body.summary ? String(body.summary) : undefined,

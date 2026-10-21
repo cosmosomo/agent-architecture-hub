@@ -919,6 +919,15 @@ function dispatchWaiting(d) {
   const reason = String(d.waitingFor || '').trim();
   return `<div class="question-box" data-unit="act-yield" style="white-space:pre-wrap;overflow-wrap:anywhere"><b>让出等待</b><div>${reason ? '正在等待：' + esc(reason) : '等待原因缺失，请核对派活单；当前不能确认在等什么。'}</div></div>`;
 }
+// What the target asked (collab-event request) and is still waiting on; the person answers it from here (kind
+// answer: the request is marked answered and the answer goes into the target session).
+function dispatchRequests(d) {
+  const rs = d.requests || [];
+  if (!rs.length) return '';
+  const open = rs.filter((r) => r.status === 'pending');
+  const row = (r) => `<li><div class="sub">${esc(clock(r.at))}${r.status === 'pending' ? ' · 在等答复' : ' · 已答复'}</div><div style="white-space:pre-wrap">${esc(r.text || '')}</div>${r.answer ? `<div class="sub" style="white-space:pre-wrap">答：${esc(r.answer)}</div>` : ''}</li>`;
+  return `<div class="question-box" data-unit="act-request" style="overflow-wrap:anywhere"><b>${open.length ? `它在问你（${open.length} 条在等答复）` : `它问过（${rs.length} 条，都答了）`}</b><ol>${rs.map(row).join('')}</ol>${open.length ? `<button class="btn btn-touch" data-answer="${esc(d.id)}">答复</button>` : ''}</div>`;
+}
 function dispatchReports(d) {
   const reports = d.progressReports || [];
   if (!reports.length) return '';
@@ -941,7 +950,7 @@ function dispatchCard(d) {
   const open = ['issued', 'running', 'yielded', 'waiting', 'stalled', 'timeout'].includes(d.status);
   return `<div class="card"><div class="row"><span class="t grow" style="${wrap};display:block;-webkit-line-clamp:unset">${endLink(d.from || {})} → ${endLink(d.to || {})}</span><span class="tag ${d.status === 'stalled' || d.status === 'timeout' ? 'st-stale' : ''}">${st}</span></div>
     <div class="sub" style="${wrap}">${esc(String(d.task || '').slice(0, 160))}</div>
-    <div class="sub" style="margin-top:6px;${wrap};line-height:2">${steps}</div>${dispatchWaiting(d)}${reports}${back}${wake}
+    <div class="sub" style="margin-top:6px;${wrap};line-height:2">${steps}</div>${dispatchWaiting(d)}${dispatchRequests(d)}${reports}${back}${wake}
     <div class="row"><span class="sub grow">${esc(d.id)} · ${esc(ago(d.updatedAt))}</span>${open ? `<button class="btn ghost" data-reclaim="${esc(d.id)}" style="min-height:36px">收回</button>` : ''}</div></div>`;
 }
 
@@ -1018,6 +1027,21 @@ async function viewCollab() {
   $('#main').innerHTML = `<div id="chanBox"></div><div class="row" style="margin:14px 2px 4px"><span class="grow" id="goalHead" style="color:var(--mute);font-size:13px">目标（一群会话：拆成几件事，派给不同智能体，验收后接着往下做）</span><button class="btn ghost" id="goalNew" style="min-height:36px">＋ 目标</button></div><div id="collabBody"><div class="empty">读取派活单…</div></div>`;
   $('#goalNew').onclick = goalSheet;
   const main = $('#collabBody');
+  main.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-answer]');
+    if (!a) return;
+    // In a sheet, so the page's redraw every 10 s does not wipe what is being typed.
+    const el = sheet(`<b>答复它的请求</b><div class="sub">答复会发进被派的会话；它正在干活就排到这一轮结束后</div><textarea id="ra"></textarea>
+      <div class="row" style="margin-top:14px;gap:10px"><button class="btn ghost btn-touch grow" id="rx">取消</button><button class="btn btn-touch grow" id="rgo">发出去</button></div>`);
+    $('#rx', el).onclick = () => el.remove();
+    $('#rgo', el).onclick = async () => {
+      const text = $('#ra', el).value.trim();
+      if (!text) return toast('写一下答复');
+      $('#rgo', el).disabled = true;
+      try { await post('/api/gateway/collab-event', { kind: 'answer', id: a.dataset.answer, text, via: 'web' }); el.remove(); toast('已答复'); last = ''; render(); }
+      catch (err) { toast('没发出去：' + err.message); $('#rgo', el).disabled = false; }
+    };
+  });
   main.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-reclaim]');
     if (!b || !confirm('收回这张派活单？被派的会话这一轮会停下，派活单记为取消。')) return;
