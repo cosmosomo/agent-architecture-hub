@@ -1522,7 +1522,9 @@ function sessionControlSheet(meta, items) {
       const r = await api('/api/gateway/' + c.call, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: meta.channel, sessionName: controlName(meta), traceSessionId: meta.id, op: c.op, value }) });
       el.remove();
       if (c.then === 'open-session' && r.traceSessionId) { toast(c.label + '：已打开新会话'); location.hash = '#/s/' + encodeURIComponent(r.traceSessionId); return; }
-      toast(c.label + (label ? '：' + label : '：已提交'));
+      toast(c.label + '：' + ([label, r.how].filter(Boolean).join('，') || '已提交'));
+      if (c.op === 'rename' && value) { meta.title = value; const s = S.sessions.find((x) => x.id === meta.id); if (s) s.title = value; }
+      if (c.op === 'close' || c.op === 'rename') { S.loadedAt = 0; route(); }
     } catch (e) { toast('没做成：' + e.message); }
   };
   el.addEventListener('click', (e) => {
@@ -1530,7 +1532,7 @@ function sessionControlSheet(meta, items) {
     if (b) {
       const c = items[Number(b.dataset.i)];
       const choices = c.choices === 'modes' ? (ch.modes || []).map((m) => [m, m]) : Array.isArray(c.choices) ? c.choices : null;
-      if (!c.choices) return run(c);
+      if (!c.choices) return c.confirm && !confirm(c.confirm) ? undefined : run(c);
       if (!choices.length) { const v = prompt(c.label); if (v) run(c, v.trim(), v.trim()); return; }
       el.querySelector('.box').innerHTML = `<b>${esc(c.label)}</b>` + choices.map(([v, l]) => `<button class="card btn-touch" data-v="${esc(v)}" data-l="${esc(l)}" data-c="${b.dataset.i}">${esc(l)}</button>`).join('');
       return;
@@ -1572,7 +1574,8 @@ async function viewSession(id) {
     const conflictPill = meta.pointCapabilities?.resume?.conflictWarning ? `<span class="tag tag-fill" title="${esc(meta.pointCapabilities.resume.conflictWarning)}">⚠️ 外部活跃中</span>` : '';
     // The bar's buttons and the 更多 items come from the unit → action table (webControls); handlers in BAR_HANDLERS.
     const bar = webControls(meta.channel, 'session-bar').filter((c) => BAR_HANDLERS[c.handler]);
-    const more = webControls(meta.channel, 'session-more').filter((c) => c.call);
+    // hubOnly items (close, rename) only on sessions the center opened itself (origin from the driver record); the center refuses the others too.
+    const more = webControls(meta.channel, 'session-more').filter((c) => c.call && (!c.hubOnly || meta.origin === 'hub'));
     const barBtn = (c) => `<button class="pinb ${c.act.cls}" data-ctl="${esc(c.unit)}" title="${esc(c.act.title)}">${esc(c.handler === 'pin' && store.get('pin:' + id) ? '取消置顶' : c.label)}</button>`;
 
     $('#sl').innerHTML = `${stTag(st.status)} ${coordPill} ${conflictPill}<span>${esc(st.detail || '')}</span> · ${esc(FAM[meta.channel] || meta.channel)}${meta.model ? ' · ' + esc(meta.model) : ''}${usageText(sess)}

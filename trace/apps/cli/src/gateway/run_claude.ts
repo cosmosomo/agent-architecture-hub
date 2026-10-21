@@ -161,6 +161,8 @@ export const claudeRunMethods = {
             : '';
         }
         sessionId = candidateId || crypto.randomUUID();
+        // A new id: the center opened it; an id from someone else's session: taken over (closing and renaming check this).
+        const origin = !candidateId ? 'hub' : existingRec ? undefined : 'taken-over';
         run.claudeSessionId = sessionId;
         run.traceSessionId = `claude-code:${sessionId}`;
         this.activeClaudeRunsBySession.set(sessionId, run);
@@ -168,6 +170,7 @@ export const claudeRunMethods = {
           channel: 'claude',
           sessionName,
           nativeId: sessionId,
+          origin,
           cwd,
           model,
           driverName: 'stream-json',

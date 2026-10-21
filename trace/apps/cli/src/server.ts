@@ -1070,7 +1070,7 @@ export function createService(opts: ServeOptions): Server {
           filtered = filtered.slice(0, limitParam);
         }
         const slim = url.searchParams.get('slim') === '1';
-        const etag = `"r${store.revision()}-${combined.length}-${chParam}-${qParam}-${limitParam}-${perChannelParam}-${slim}"`;
+        const etag = `"r${store.revision()}-t${gateway.titleRev}-${combined.length}-${chParam}-${qParam}-${limitParam}-${perChannelParam}-${slim}"`;
         if (req.headers['if-none-match'] === etag) { res.writeHead(304, { ETag: etag }); return res.end(); }
         // slim=1: what a list needs (the phone page lists all ~1500 sessions grouped by project), with the working
         // directory normalized into `project` so one folder is one project whichever family wrote it.
@@ -1091,10 +1091,13 @@ export function createService(opts: ServeOptions): Server {
               controlName: pt.controlName,
               entry: pt.entry,
               ownership: pt.ownership,
+              // Who opened it (driver record): the page offers close and rename only on 'hub' (session-control checks too).
+              origin: (bindings.get(sid) || bindings.get(sid.split(':').pop() || ''))?.origin,
               pointCapabilities: pt.capabilities,
               waitingFor: dsp?.waitingFor || undefined,
               dispatchLinks: dsp ? { out: dsp.dispatchedOut, in: dsp.dispatchedIn } : undefined,
-              title: nativeTitle(sid, String(s.title || '')).slice(0, 160),
+              // A name given from the center (session-control rename) wins over the product's own title.
+              title: ((bindings.get(sid) || bindings.get(sid.split(':').pop() || ''))?.customTitle || nativeTitle(sid, String(s.title || ''))).slice(0, 160),
               project: nativeProject(sid, s.cwd),
               model: s.agent?.model || pt.currentModel || '',
               updatedAt: s.updatedAt || s.startedAt || '',

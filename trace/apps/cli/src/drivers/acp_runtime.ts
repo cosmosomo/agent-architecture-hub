@@ -175,6 +175,22 @@ export class AcpResidentDriver extends EventEmitter {
     return this.commands.get(sessionId) || [];
   }
 
+  /** session/close one session; false when the agent has no such method, so the caller says so. Tried even when
+   *  initialize does not declare sessionCapabilities.close: ZCode's code has the method without declaring it (10-21).
+   *  The bridge and its other sessions stay up. */
+  public async closeSession(sessionId: string): Promise<boolean> {
+    await this.start();
+    try {
+      await this.serial(() => this.call('session/close', { sessionId }));
+    } catch (e: any) {
+      if (/-32601|method not found|unknown method|method .*not (found|supported)|未实现/i.test(String(e?.message || e))) return false;
+      throw e;
+    }
+    this.sessions.delete(sessionId);
+    this.commands.delete(sessionId);
+    return true;
+  }
+
   /** session/new in the given folder. */
   public async createSession(cwd: string): Promise<AcpSessionInfo> {
     await this.start();

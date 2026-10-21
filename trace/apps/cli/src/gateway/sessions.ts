@@ -800,7 +800,7 @@ export const sessionMethods = {
             channel,
             channelId: channel,
             cwd: raw.cwd || wbNative?.info.cwd || this.repoRoot,
-            title: firstText || wbNative?.info.title || `${prof.label} 会话 (${sessionName})`,
+            title: raw.title || firstText || wbNative?.info.title || `${prof.label} 会话 (${sessionName})`,
             closed: Boolean(raw.closed),
             pid: raw.pid ?? null,
             createdAt: raw.created_at || wbNative?.info.createdAt,
@@ -810,6 +810,8 @@ export const sessionMethods = {
             currentModel: rawModel,
             availableModels,
             fromAcpxStore: true,
+            origin: raw.origin,
+            customTitle: raw.title || undefined,
           };
 
           const prevIdx = byTraceId.get(traceSessionId);
@@ -1358,15 +1360,17 @@ export const sessionMethods = {
     return map;
   },
 
-  sessionBindings(this: AgentGatewayHub): Map<string, { sessionName: string; fromAcpxStore: boolean; channel: ChannelId; currentModel?: string }> {
+  sessionBindings(this: AgentGatewayHub): Map<string, { sessionName: string; fromAcpxStore: boolean; channel: ChannelId; currentModel?: string; customTitle?: string; origin?: 'hub' | 'taken-over' }> {
     if (Date.now() - this.bindingCache.at < 2000) return this.bindingCache.map;
-    const map = new Map<string, { sessionName: string; fromAcpxStore: boolean; channel: ChannelId; currentModel?: string }>();
+    const map = new Map<string, { sessionName: string; fromAcpxStore: boolean; channel: ChannelId; currentModel?: string; customTitle?: string; origin?: 'hub' | 'taken-over' }>();
     for (const s of this.listAcpxSessions()) {
       const entry = {
         sessionName: s.sessionName,
         fromAcpxStore: Boolean(s.fromAcpxStore),
         channel: s.channel,
         currentModel: s.currentModel,
+        customTitle: s.customTitle,
+        origin: s.origin,
       };
       if (s.traceSessionId) map.set(s.traceSessionId, entry);
       if (s.acpSessionId && !map.has(s.acpSessionId)) map.set(s.acpSessionId, entry);

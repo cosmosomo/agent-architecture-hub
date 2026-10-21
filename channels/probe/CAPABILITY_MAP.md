@@ -1,12 +1,12 @@
 # 功能矩阵：每个单元在各家、各位置上的理论上限与现状（由黑板、integration-map 和完整性检查生成，勿手改）
 
-生成时间：2026-10-21T06:39:02.306Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
+生成时间：2026-10-21T06:57:20.806Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
 
 标记：✓ 有行为证据（后面是实现路径）；◐ 部分；? 未验证；✗ 不通；✗假 界面有、实际是别的办法模拟；有（截图/代码） 桌面端界面这一列靠截图或代码分析得出、不是行为实测（这批来自调研，未逐格核）；· 没有记录。
 
 ## 现在还缺什么（外层：按 README“立体认知”的轴把现在的差摆出来）
 
-README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-21T06:39:02.313Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
+README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-21T06:57:20.812Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
 
 **每一层：理论极限、我们的目标、现状、依据记在哪**（一格 = 一个能力单元在一个产品）
 
@@ -15,8 +15,8 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 理论 | 每个能力单元最多做到哪、卡在哪、最多补齐到哪一级 | 每个单元都推出来 | 82 / 100 个单元已推 | 设计目录《完整性检查》4.2：上限、靠什么、根本限制、最多补齐到 |
 | 原生面 | 那一级循环开放的时机 × 通向它的入口 | 每格查清：原生能做，或要补齐到哪一级 | 231 / 700 格已证实 | 黑板 route = <产品>/L0 或 L1a/<入口>：命令、原始输出、产品版本、日期 |
 | 适配路线 | 路线挂的那个原生面能给的 | 每个产品走能力最高的路线 | 实测通过的格：经 acpx 命令行 66、直连 ACP 桥（嵌入 acpx 运行时可达） 84、直连 app-server 26、直连 Connect-RPC ＋ agentapi 32、驱动原生命令行 100、直连 CDP 操作桌面端界面 4、经 OpenCLI 操作桌面端界面 9 | 黑板 route = <产品>/L1b/acpx 等 |
-| 后端 | 原生面能给的，加上我们当宿主补齐的（两个会话之间、一群会话全由我们） | 全部能力单元；补齐写明搬到哪一级 | 351 / 700 格已接：实测通过 274、部分 30、补齐 39、实现了未测 8 | `hub/data/integration-map.json`：action、status、fillLevel；实测记黑板 route = <产品>/L2/server-api |
-| 网页 | 后端已接的，加上人机交互单元 | 桌面端有的都有，再加我们独有的（待处理、协作图） | 199 / 700 格网页用得到；桌面端有、网页没有 11 项 | integration-map 的 frontend；实测记黑板 route = <产品>/L3/m |
+| 后端 | 原生面能给的，加上我们当宿主补齐的（两个会话之间、一群会话全由我们） | 全部能力单元；补齐写明搬到哪一级 | 354 / 700 格已接：实测通过 276、部分 30、补齐 39、实现了未测 9 | `hub/data/integration-map.json`：action、status、fillLevel；实测记黑板 route = <产品>/L2/server-api |
+| 网页 | 后端已接的，加上人机交互单元 | 桌面端有的都有，再加我们独有的（待处理、协作图） | 201 / 700 格网页用得到；桌面端有、网页没有 11 项 | integration-map 的 frontend；实测记黑板 route = <产品>/L3/m |
 | 命令行网关 | 后端的全部动作 | 全部动作 | 26 / 45 个动作有子命令 | `hub/data/actions.json` 的 cli；实测记黑板 route = <产品>/L2/agent_gateway |
 
 **按尺度和位置看**（格数）
@@ -24,7 +24,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 尺度 | 格数 | 原生面已证实 | 后端已接：实测通过、部分或补齐 | 后端已接：实现了未测 | 网页上用得到 |
 |---|---|---|---|---|---|
 | 一轮之内 | 70 | 37 | 35 | 0 | 36 |
-| 一个会话 | 245 | 128 | 142 | 3 | 60 |
+| 一个会话 | 245 | 128 | 144 | 4 | 62 |
 | 两个会话之间（我们当宿主） | 84 | 20 | 60 | 0 | 42 |
 | 一群会话（我们当宿主） | 35 | 11 | 31 | 4 | 25 |
 | 底座 | 98 | 33 | 51 | 1 | 36 |
@@ -40,10 +40,10 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | antigravity | 61% | 46% | 35% | 43% | 69% |
 | zcode | 55% | 33% | 44% | 67% | 72% |
 | workbuddy | 56% | 34% | 43% | 62% | 71% |
-| opencode | 48% | 25% | 39% | 64% | 没查 |
-| hermes | 50% | 36% | 34% | 56% | 没查 |
+| opencode | 48% | 25% | 40% | 68% | 没查 |
+| hermes | 50% | 36% | 35% | 58% | 没查 |
 
-**自己做**（108 格：原生已证实而后端没接，或这一级本来就由我们当宿主；按涉及的家数排，列前十）
+**自己做**（105 格：原生已证实而后端没接，或这一级本来就由我们当宿主；按涉及的家数排，列前十）
 
 - 交给人接手（handover-human，两个会话之间）：claude、codex、antigravity、zcode、workbuddy、opencode、hermes
 - 原生应用同步可见（app-sync，两个会话之间）：claude、codex、antigravity、zcode、workbuddy、opencode、hermes
@@ -69,10 +69,11 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 生成图片（image-gen）：claude、zcode、workbuddy
 - 关闭会话（close）：codex、zcode
 
-**补测**（8 格：后端已经实现，还没在这个产品上实测；按涉及的产品数排，列前十）
+**补测**（9 格：后端已经实现，还没在这个产品上实测；按涉及的产品数排，列前十）
 
 - 共享任务板（task-board）：claude、codex、antigravity、workbuddy
 - 压缩上下文（compact）：workbuddy、opencode、hermes
+- 命名与标注（label）：codex
 - 可用命令清单（cmd-list）：claude
 
 **派研究**（241 格：这一级由各家当宿主，原生面和后端都没证实；按涉及的家数排，列前十，注明理论上限推了没有）
@@ -130,8 +131,8 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | antigravity | 61（61%） | 46（46%） | 35（35%） | 43% |
 | zcode | 55（55%） | 33（33%） | 44（44%） | 67% |
 | workbuddy | 56（56%） | 34（34%） | 43（43%） | 62% |
-| opencode | 48（48%） | 25（25%） | 39（39%） | 64% |
-| hermes | 50（50%） | 36（36%） | 34（34%） | 56% |
+| opencode | 48（48%） | 25（25%） | 40（40%） | 68% |
+| hermes | 50（50%） | 36（36%） | 35（35%） | 58% |
 | gemini | 4（4%） | 0（0%） | 4（4%） | — |
 | droid | 4（4%） | 0（0%） | 4（4%） | — |
 
@@ -156,8 +157,8 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | antigravity | · | 1（1%） | · | 32（32%） | · | 2（2%） | 4（4%） | 35（35%） |
 | zcode | 14（14%） | 21（21%） | · | · | 5（5%） | 2（2%） | 5（5%） | 44（44%） |
 | workbuddy | 12（12%） | 13（13%） | · | · | 13（13%） | · | · | 43（43%） |
-| opencode | 9（9%） | 11（11%） | · | · | 18（18%） | · | · | 39（39%） |
-| hermes | 11（11%） | 17（17%） | · | · | 27（27%） | · | · | 34（34%） |
+| opencode | 9（9%） | 11（11%） | · | · | 18（18%） | · | · | 40（40%） |
+| hermes | 11（11%） | 17（17%） | · | · | 27（27%） | · | · | 35（35%） |
 | gemini | · | · | · | · | · | · | · | 4（4%） |
 | droid | · | · | · | · | · | · | · | 4（4%） |
 
@@ -168,10 +169,10 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | antigravity | 47 | 53 | 51 |
 | codex | 44 | 43 | 64 |
 | claude | 47 | 38 | 66 |
-| zcode | 56 | 40 | 55 |
-| workbuddy | 41 | 53 | 57 |
-| opencode | 43 | 34 | 74 |
-| hermes | 44 | 34 | 73 |
+| zcode | 57 | 39 | 55 |
+| workbuddy | 42 | 52 | 57 |
+| opencode | 45 | 32 | 74 |
+| hermes | 46 | 32 | 73 |
 | doubao | 0 | 7 | 1 |
 | gemini | 24 | 2 | 20 |
 | droid | 24 | 2 | 6 |
@@ -185,7 +186,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 观察·实时（observe-live）：doubao、antigravity、codex、claude、opencode、hermes、workbuddy
 - 观察·历史（observe-history）：doubao
 - 打断（cancel）：codex、claude、zcode、opencode、hermes、workbuddy
-- 关闭会话（close）：antigravity、codex、claude、opencode、hermes、workbuddy
+- 关闭会话（close）：antigravity、codex、claude、workbuddy
 - 插话（注入）（steer）：codex、hermes、workbuddy
 - 注入·下一轮（inject-next）：antigravity、opencode、hermes、workbuddy
 - 注入·工具结果捎带（inject-tool）：claude、workbuddy
@@ -222,7 +223,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 指定工作目录（workspace）：antigravity、codex、claude、opencode、hermes、workbuddy
 - 产出约定（output-contract）：antigravity、claude、opencode、workbuddy
 - 只建不跑（open-idle）：antigravity、codex、claude、zcode、opencode、workbuddy
-- 命名与标注（label）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 命名与标注（label）：antigravity、codex、claude
 - 所有权识别（ownership）：gemini、droid
 - 列出会话（discover-sessions）：doubao
 - 探测本机（probe-host）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
@@ -395,12 +396,12 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ node channels/probe/scripts/antigravity/test_close | ✗ acpx --format json antigravity | · | 自己做：接进适配器 |
-| codex | · | ✓ codex archive 01a1493c-3800-7dc2-a647-3b22b045e47d | ◐ acpx codex sessions close prob | · | 自己做：接进适配器 |
-| claude | · | ✓ claude stop 40b211f1 -> claude agents --json -> cl | ✓ acpx claude sessions close probe-rt-l1b-a → taskli | · | 自己做：做到前端 |
-| zcode | · | ✗ node E:\zcode\resources\glm\zc | ◐ acpx zcode sessions close prob | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | ✗ codebuddy rm probe-workbuddy-l | ✓ acpx --format json workbuddy sessions close probe- | · | 自己做：做到前端 |
-| opencode | · | ✓ opencode session delete ses_eb4b8cbb8ffeD0GgHgHHuD | ✓ acpx opencode sessions close probe-opencode-l1b-ma | · | 自己做：做到前端 |
-| hermes | · | ✓ connection.closeSession({sessionId}) | ✓ acpx hermes sessions close probe-hermes-l1b3 | · | 自己做：做到前端 |
+| codex | · | ✓ codex archive 01a1493c-3800-7dc2-a647-3b22b045e47d | ? session-control op=close：只动中心自 | ? /m/（10-21 负责人）：同上 | 自己做：接进适配器 |
+| claude | · | ✓ claude stop 40b211f1 -> claude agents --json -> cl | ✓ 第一次 close：exit 0 但带警告 Queue-owner descendant clean | ? /m/（10-21 负责人）：同上 | 自己做：做到前端 |
+| zcode | · | ✗ node E:\zcode\resources\glm\zc | ? session-control op=close：只动中心自 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| workbuddy | · | ✗ codebuddy rm probe-workbuddy-l | ✓ {"action":"session_closed","acpxRecordId":"41528d7 | · | 自己做：做到前端 |
+| opencode | · | ✓ opencode session delete ses_eb4b8cbb8ffeD0GgHgHHuD | ✓ session-control op=close：只动中心自己开的会话（驱动记录 origin=hu | ✓ /m/（10-21 负责人）：会话详情“更多”→“关闭会话”：只在中心自己开的会话上出现（origi | 已到前端 |
+| hermes | · | ✓ connection.closeSession({sessionId}) | ✓ session-control op=close：只动中心自己开的会话（驱动记录 origin=hu | ✓ /m/（10-21 负责人）：会话详情“更多”→“关闭会话”：只在中心自己开的会话上出现（origi | 已到前端 |
 | gemini | · | ✗ gemini --delete-session <index | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 插话（注入）（steer）
@@ -1111,12 +1112,12 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ agentapi new-conversation --title=... + sqlite3 co | · | · | 自己做：接进适配器 |
-| codex | · | ✓ thread/name/set { threadId, name: "probe-codex-tes | · | · | 自己做：接进适配器 |
-| claude | · | · | ✓ acpx claude status -s probe-fact-idle-001 | · | 自己做：做到前端 |
-| zcode | · | ◐ sqlite3 db.sqlite "SELECT titl | ✓ acpx zcode sessions list --local | · | 自己做：做到前端 |
-| workbuddy | · | ◐ grep -h '"type":"ai-title"' pr | ✓ acpx workbuddy sessions list --local & codebuddy p | · | 自己做：做到前端 |
-| opencode | · | ✓ opencode run --title "probe-oc-title-1792271841284 | · | · | 自己做：接进适配器 |
-| hermes | · | ✓ hermes sessions rename <id> <t>; hermes sessions p | · | · | 自己做：接进适配器 |
+| codex | · | ✓ thread/name/set { threadId, name: "probe-codex-tes | ? session-control op=rename：只动中心 | ? /m/（10-21 负责人）：同上 | 自己做：接进适配器 |
+| claude | · | · | ✓ acpx claude status -s probe-fact-idle-001 精确返回 ses | ? /m/（10-21 负责人）：同上 | 自己做：做到前端 |
+| zcode | · | ◐ sqlite3 db.sqlite "SELECT titl | ✓ session-control op=rename：只动中心自己开的会话；Claude rename | ✓ /m/（10-21 负责人）：会话详情“更多”→“改名”：只在中心自己开的会话上出现，填新名字，标题 | 已到前端 |
+| workbuddy | · | ◐ grep -h '"type":"ai-title"' pr | ✓ session-control op=rename：只动中心自己开的会话；Claude rename | ✓ /m/（10-21 负责人）：会话详情“更多”→“改名”：只在中心自己开的会话上出现，填新名字，标题 | 已到前端 |
+| opencode | · | ✓ opencode run --title "probe-oc-title-1792271841284 | ✓ session-control op=rename：只动中心自己开的会话；Claude rename | ✓ /m/（10-21 负责人）：会话详情“更多”→“改名”：只在中心自己开的会话上出现，填新名字，标题 | 已到前端 |
+| hermes | · | ✓ hermes sessions rename <id> <t>; hermes sessions p | ✓ session-control op=rename：只动中心自己开的会话；Claude rename | ✓ /m/（10-21 负责人）：会话详情“更多”→“改名”：只在中心自己开的会话上出现，填新名字，标题 | 已到前端 |
 
 ## 所有权识别（ownership）
 

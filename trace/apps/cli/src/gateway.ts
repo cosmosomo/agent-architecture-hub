@@ -51,6 +51,8 @@ export class AgentGatewayHub {
   readonly repoRoot: string;
   readonly store: SessionStore;
   readonly acpxDir = join(HOME, '.acpx', 'sessions');
+  /** Bumped when a session is renamed or closed from the center, so the session list is not served from its cache. */
+  titleRev = 0;
   readonly agyMapFile = join(HOME, '.acpx', 'agy-sessions.json');
   readonly agyBrainDir = join(HOME, '.gemini', 'antigravity', 'brain');
   readonly wbDir = join(HOME, '.workbuddy');
@@ -1183,6 +1185,9 @@ export class AgentGatewayHub {
     driverName: 'app-server' | 'stream-json' | 'acp-resident';
     prompt?: string;
     reply?: string;
+    /** Who opened the native session: 'hub' when the center created it, 'taken-over' when it loaded one opened
+     *  elsewhere. Set once, kept after; closing and renaming touch only 'hub' sessions (user 10-21). */
+    origin?: 'hub' | 'taken-over';
   }) {
     try {
       mkdirSync(this.acpxDir, { recursive: true });
@@ -1217,6 +1222,7 @@ export class AgentGatewayHub {
             : 'claude --input-format stream-json',
         cwd: params.cwd,
         name: params.sessionName,
+        origin: existing?.origin || params.origin,
         created_at: existing?.created_at || now,
         last_used_at: now,
         last_seq: messages.length,

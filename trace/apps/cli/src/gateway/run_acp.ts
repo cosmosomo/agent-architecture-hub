@@ -28,6 +28,8 @@ export const acpRunMethods = {
         const prefix = prof.traceKind + ':';
         sid = rec?.acpSessionId || (opts.traceSessionId?.startsWith(prefix) ? opts.traceSessionId.slice(prefix.length) : '');
         let info = sid ? driver.getSession(sid) : undefined;
+        // Opened here (session/new) or loaded from elsewhere: kept on the record, closing and renaming check it.
+        let createdHere = false;
         if (!info && sid) {
           try {
             info = await driver.loadSession(sid, cwd);
@@ -41,6 +43,7 @@ export const acpRunMethods = {
         if (!info) {
           info = await driver.createSession(cwd);
           sid = info.sessionId;
+          createdHere = true;
         }
         // Two hub sessions must never share one agent session (WorkBuddy handed out one id twice, 10-19).
         const other = this.activeAcpRunsBySession.get(sid);
@@ -66,7 +69,7 @@ export const acpRunMethods = {
         }
         const ownRecord = !rec || rec.acpxRecordId.startsWith('driver-');
         if (ownRecord) {
-          this.saveDriverSessionRecord({ channel: prof.id, sessionName, nativeId: sid, cwd, model: run.model, driverName: 'acp-resident' });
+          this.saveDriverSessionRecord({ channel: prof.id, sessionName, nativeId: sid, cwd, model: run.model, driverName: 'acp-resident', origin: createdHere ? 'hub' : rec ? undefined : 'taken-over' });
         }
         run.traceSessionId = this.canonicalSessionId(prof.id, sid);
         this.activeAcpRunsBySession.set(sid, run);

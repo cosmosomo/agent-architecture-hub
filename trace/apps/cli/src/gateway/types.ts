@@ -190,6 +190,10 @@ export type AcpxSessionInfo = {
   availableModels?: string[];
   isDraft?: boolean;
   fromAcpxStore?: boolean;
+  /** Who opened the native session (driver records): 'hub' the center, 'taken-over' elsewhere; absent on older records. */
+  origin?: 'hub' | 'taken-over';
+  /** The name a person gave it from the center (session-control rename); the page shows it over the product's own. */
+  customTitle?: string;
   interrupted?: boolean;
   lastError?: string;
 };

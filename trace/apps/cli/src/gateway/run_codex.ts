@@ -220,6 +220,8 @@ export const codexRunMethods = {
             threadId = '';
           }
         }
+        // Started here: the center opened it; resumed from someone else's thread: taken over (closing and renaming check this).
+        let origin: 'hub' | 'taken-over' | undefined = candidateId && !existingRec ? 'taken-over' : undefined;
         if (!threadId) {
           const started = await driver.startThread({
             cwd,
@@ -230,6 +232,7 @@ export const codexRunMethods = {
             name: sessionName,
           });
           threadId = started.threadId;
+          origin = 'hub';
         }
 
         run.codexThreadId = threadId;
@@ -239,6 +242,7 @@ export const codexRunMethods = {
           channel: 'codex',
           sessionName,
           nativeId: threadId,
+          origin,
           cwd,
           model,
           driverName: 'app-server',

@@ -1144,6 +1144,62 @@
         "fillLevel": "一个会话",
         "note": "10-19 在 Antigravity、ZCode 会话上用过：按关键词、轮次、说话人筛都对；它读的就是 probe_display.mjs 核对过的那份数据。各家原生能不能自己翻长历史（Claude 桌面端能）没查；智能体实际调用它回答问题还没测"
       }
+    ],
+    "close": [
+      {
+        "action": "session-control",
+        "how": "session-control op=close：只动中心自己开的会话（驱动记录 origin=hub）；Claude 结束它的常驻进程，Codex thread/unsubscribe，ACP 常驻桥 session/close；记录标 closed，再发一句话会重新打开",
+        "channels": [
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 旁路实例 18919 实测：session/close 成功，记录标 closed（OpenCode 另在网页上关过一次）"
+      },
+      {
+        "action": "session-control",
+        "how": "session-control op=close：只动中心自己开的会话（驱动记录 origin=hub）；Claude 结束它的常驻进程，Codex thread/unsubscribe，ACP 常驻桥 session/close；记录标 closed，再发一句话会重新打开",
+        "channels": [
+          "claude",
+          "codex"
+        ],
+        "status": "built",
+        "note": "10-21 负责人实现；Claude 中转钱包空、Codex 积分用完，没测"
+      },
+      {
+        "action": "session-control",
+        "how": "session-control op=close：只动中心自己开的会话（驱动记录 origin=hub）；Claude 结束它的常驻进程，Codex thread/unsubscribe，ACP 常驻桥 session/close；记录标 closed，再发一句话会重新打开",
+        "channels": [
+          "zcode",
+          "workbuddy"
+        ],
+        "status": "todo",
+        "note": "10-21 旁路实例 18919 实测：两家回 method not found（ZCode 代码里有这个字，但不认这个方法），关不了，中心照实报错"
+      }
+    ],
+    "label": [
+      {
+        "action": "session-control",
+        "how": "session-control op=rename：只动中心自己开的会话；Claude rename_session、Codex thread/name/set 让这一家自己也改名；各家都写进中心记录 title，网页列表和详情显示它",
+        "channels": [
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 旁路实例 18919 实测：四家名字记在中心、网页显示新名字；它们自己没有改名接口，自己的应用里名字不变"
+      },
+      {
+        "action": "session-control",
+        "how": "session-control op=rename：只动中心自己开的会话；Claude rename_session、Codex thread/name/set 让这一家自己也改名；各家都写进中心记录 title，网页列表和详情显示它",
+        "channels": [
+          "claude",
+          "codex"
+        ],
+        "status": "built",
+        "note": "10-21 负责人实现（这两家能原生改名）；没测"
+      }
     ]
   },
   "frontend": {
@@ -2831,6 +2887,74 @@
         ],
         "status": "real",
         "note": "10-21 8899 浏览器实测：网页“＋新任务”交给 ZCode、模型 GLM-5.3-Flash、目录 channels/probe/tmp，会话 zcode:sess_3350617c：sleep 40 期间发“把文件改成 W1021B”，按钮显示“排下一轮”，下一轮执行，文件变成 W1021B"
+      }
+    ],
+    "close": [
+      {
+        "page": "/m/（10-21 负责人）",
+        "control": "会话详情“更多”→“关闭会话”：只在中心自己开的会话上出现（origin=hub），先确认",
+        "action": "session-control",
+        "channels": [
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 旁路实例 18919 实测：OpenCode 网页点关闭→确认→session/close，记录 closed；旧记录的会话“更多”里不出现",
+        "ui": {
+          "slot": "session-more",
+          "order": 60,
+          "label": "关闭会话",
+          "call": "session-control",
+          "op": "close",
+          "hubOnly": true,
+          "confirm": "关闭这个会话？智能体那边的这个会话会结束；再给它发一句话会重新打开。"
+        }
+      },
+      {
+        "page": "/m/（10-21 负责人）",
+        "control": "同上",
+        "action": "session-control",
+        "channels": [
+          "claude",
+          "codex"
+        ],
+        "status": "built",
+        "note": "没测"
+      }
+    ],
+    "label": [
+      {
+        "page": "/m/（10-21 负责人）",
+        "control": "会话详情“更多”→“改名”：只在中心自己开的会话上出现，填新名字，标题马上换",
+        "action": "session-control",
+        "channels": [
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 旁路实例 18919 实测：OpenCode 网页改名两次，标题当场换；中文正常",
+        "ui": {
+          "slot": "session-more",
+          "order": 70,
+          "label": "改名",
+          "call": "session-control",
+          "op": "rename",
+          "choices": [],
+          "hubOnly": true
+        }
+      },
+      {
+        "page": "/m/（10-21 负责人）",
+        "control": "同上",
+        "action": "session-control",
+        "channels": [
+          "claude",
+          "codex"
+        ],
+        "status": "built",
+        "note": "没测"
       }
     ]
   }
