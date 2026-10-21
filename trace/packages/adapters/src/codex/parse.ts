@@ -15,6 +15,7 @@ import {
   CONTRACT_VERSION,
   sessionId,
   type AdapterCapabilities,
+  type ContextUse,
   type Effect,
   type Iso,
   type RateLimit,
@@ -116,6 +117,8 @@ export function createCodexParser(file: SourceFile): LineParser {
   let recentTool: ToolStep | null = null;
   let provider: string | undefined;
   let sessionUsage: Usage | undefined;
+  // The last model call's size against the model's window (token_count.info): how full the context is now.
+  let context: ContextUse | undefined;
   let limits: RateLimit[] | undefined;
   const children = new Map<string, string>(); // global id -> label
   const realUserTexts = new Set<string>();
@@ -287,6 +290,9 @@ export function createCodexParser(file: SourceFile): LineParser {
         const info = p.info;
         if (info?.total_token_usage) sessionUsage = usageOf(info.total_token_usage) || sessionUsage;
         if (B.model && !B.model.usage && info?.last_token_usage) B.closeModel(at, usageOf(info.last_token_usage));
+        const last = info?.last_token_usage;
+        if (last && Number(last.total_tokens || last.input_tokens) > 0)
+          context = { used: Number(last.total_tokens || last.input_tokens), ...(Number(info.model_context_window) > 0 ? { window: Number(info.model_context_window) } : {}), ...(at ? { at } : {}) };
         const rl = p.rate_limits;
         if (rl && typeof rl === 'object') {
           const out: RateLimit[] = [];
@@ -530,6 +536,7 @@ export function createCodexParser(file: SourceFile): LineParser {
           compactions: f.compactions,
           subagents: children.size,
           ...(f.durationTotal ? { durationMs: f.durationTotal } : {}),
+          ...(context ? { context } : {}),
           records,
           skipped,
         },

@@ -1200,6 +1200,29 @@
         "status": "built",
         "note": "10-21 负责人实现（这两家能原生改名）；没测"
       }
+    ],
+    "context-usage": [
+      {
+        "action": "session",
+        "how": "会话统计 stats.context = { used, window?, at }：最近一次调模型带的全部输入（含读缓存）加输出；Codex 取 token_count 的 last_token_usage 和 model_context_window；Claude 取最后一条 assistant 的 usage，窗口只在模型名标 [1m] 或用量已超 200k 时记 1M，其余不记；OpenCode、ZCode 取最后一次用量；Antigravity 取最后一个模型步的 usage",
+        "channels": [
+          "codex",
+          "claude"
+        ],
+        "status": "built",
+        "note": "10-21 负责人实现；旁路实例 18919 读到 Codex 245807 / 475000，Claude 963960（Opus 1M 会话）；还没和应用里显示的数对过"
+      },
+      {
+        "action": "session",
+        "how": "会话统计 stats.context = { used, window?, at }：最近一次调模型带的全部输入（含读缓存）加输出；Codex 取 token_count 的 last_token_usage 和 model_context_window；Claude 取最后一条 assistant 的 usage，窗口只在模型名标 [1m] 或用量已超 200k 时记 1M，其余不记；OpenCode、ZCode 取最后一次用量；Antigravity 取最后一个模型步的 usage",
+        "channels": [
+          "opencode",
+          "zcode",
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "10-21 负责人实现；这三家记录里没有模型上限，只给用量；旁路实例读到 OpenCode 15699、ZCode 34251、Antigravity 90645；没和应用对过"
+      }
     ]
   },
   "frontend": {
@@ -2952,6 +2975,22 @@
         "channels": [
           "claude",
           "codex"
+        ],
+        "status": "built",
+        "note": "没测"
+      }
+    ],
+    "context-usage": [
+      {
+        "page": "/m/（10-21 负责人）",
+        "control": "会话状态行：有上限时显示“上下文 N%（用量 / 上限）”，超过 80% 标红；没有上限时显示“上下文 N token”",
+        "action": "session",
+        "channels": [
+          "codex",
+          "claude",
+          "opencode",
+          "zcode",
+          "antigravity"
         ],
         "status": "built",
         "note": "没测"

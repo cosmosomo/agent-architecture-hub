@@ -255,6 +255,8 @@ foreach ($p in $procs) {
       let turnIdx = 0;
       let stepSeq = 0;
       let modelCalls = 0;
+      // The last model step's size (input, read from cache, output): how full the context is; the window is not recorded.
+      let context: { used: number; at?: string } | undefined;
       let toolCalls = 0;
       let toolErrors = 0;
       let subagents = 0;
@@ -312,6 +314,10 @@ foreach ($p in $procs) {
             if (c.error) toolErrors++;
           }
           toolCalls += e.calls.length;
+          if (e.usage) {
+            const used = (e.usage.input || 0) + (e.usage.cached || 0) + (e.usage.output || 0);
+            if (used > 0) context = { used, ...(at ? { at } : {}) };
+          }
           if (!e.thinking && !e.text && !e.calls.length) continue;
           modelCalls++;
           curSteps.push({
@@ -423,6 +429,7 @@ foreach ($p in $procs) {
           messages: finalTurns.length,
           compactions: 0,
           subagents,
+          ...(context ? { context } : {}),
           records: lines.length,
           skipped: 0,
         },

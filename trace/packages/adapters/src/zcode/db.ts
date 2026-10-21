@@ -7,7 +7,7 @@
  * Subagent sessions (parent_id set) become subagent sessions with a parent link,
  * which the observatory draws as one org graph.
  */
-import { sessionId, type Iso, type Session, type SessionLink, type Usage } from '@hub-trace/contract';
+import { sessionId, type ContextUse, type Iso, type Session, type SessionLink, type Usage } from '@hub-trace/contract';
 import { detectState, STALE_MS } from '../state.ts';
 import { TurnBuilder, titleFallback } from '../turns.ts';
 import { clean, oneLine } from '../text.ts';
@@ -133,6 +133,12 @@ function zcodeSessionFromRows(
   let skipped = 0;
   let records = 0;
   let usageSum: Usage | undefined;
+  // The last model call's size (input, cached, written to cache, output): how full the context is; the window is not recorded.
+  let context: ContextUse | undefined;
+  const noteContext = (u: Usage | undefined, at: Iso | undefined) => {
+    const used = u ? (u.input || 0) + (u.cachedInput || 0) + (u.cacheWrite || 0) + (u.output || 0) : 0;
+    if (used > 0) context = { used, ...(at ? { at } : {}) };
+  };
   let costUsd: number | undefined;
   let lastModel: string | undefined;
   let firstUser = '';
@@ -203,7 +209,7 @@ function zcodeSessionFromRows(
         }
       } else if (p.type === 'step-finish') {
         const u = usageOf(p.tokens);
-        if (u) { B.closeModel(iso(p.time?.end) || iso(m.time?.completed), u); usageSum = addUsage(usageSum, u); usageFromStep = true; }
+        if (u) { B.closeModel(iso(p.time?.end) || iso(m.time?.completed), u); usageSum = addUsage(usageSum, u); usageFromStep = true; noteContext(u, iso(p.time?.end) || iso(m.time?.completed)); }
       } else if (p.type === 'step-start' || p.type === 'timeline') {
         // structural markers, not content
       } else if (p.type) {
@@ -211,7 +217,7 @@ function zcodeSessionFromRows(
       }
     }
     const mu = usageOf(m.tokens);
-    if (mu && !usageFromStep) { B.closeModel(iso(m.time?.completed), mu); usageSum = addUsage(usageSum, mu); }
+    if (mu && !usageFromStep) { B.closeModel(iso(m.time?.completed), mu); usageSum = addUsage(usageSum, mu); noteContext(mu, iso(m.time?.completed)); }
     else if (B.model) B.closeModel(iso(m.time?.completed));
     const endAt = iso(m.time?.completed) || at;
     if (m.finish === 'stop' && B.cur) B.closeTurn(B.cur, endAt, 'completed');
@@ -270,6 +276,7 @@ function zcodeSessionFromRows(
       ...(costUsd !== undefined ? { costUsd } : {}),
       ...(Number.isFinite(+s.summary_additions) ? { linesAdded: +s.summary_additions } : {}),
       ...(Number.isFinite(+s.summary_deletions) ? { linesRemoved: +s.summary_deletions } : {}),
+      ...(context ? { context } : {}),
       records,
       skipped,
     },

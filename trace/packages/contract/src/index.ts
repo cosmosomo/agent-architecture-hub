@@ -80,6 +80,8 @@ export type SessionState = {
   detail?: string;
 };
 
+export type ContextUse = { used: number; window?: number; at?: Iso };
+
 export type SessionStats = {
   turns: number;
   modelCalls: number;
@@ -96,6 +98,9 @@ export type SessionStats = {
   /** Lines written and deleted by the tools, when the source reports them. */
   linesAdded?: number;
   linesRemoved?: number;
+  /** How full the context was at the last model call, when the source reports it (unit context-usage): `used` tokens
+   *  that call carried, `window` the model's context size when known, `at` when it was read. */
+  context?: ContextUse;
   /** Source records read and records that could not be parsed. */
   records: number;
   skipped: number;

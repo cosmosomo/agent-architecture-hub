@@ -20,6 +20,7 @@ import {
   CONTRACT_VERSION,
   sessionId,
   type AdapterCapabilities,
+  type ContextUse,
   type Iso,
   type ModelStep,
   type Session,
@@ -127,6 +128,10 @@ export function createClaudeParser(file: SourceFile): LineParser {
   let cost: { usd?: number; linesAdded?: number; linesRemoved?: number } = {};
   let sessionUsage: Usage | undefined;
   let usageSum: Usage | undefined; // added up per model call until cost-state replaces it
+  // The last model call's size (all of its input, cached or not, plus its output) against the model's window. The
+  // record does not say the window: 1M when the model id is marked [1m] or a call already carried more than 200k
+  // (10-21 an Opus session read 964k, so it could not be 200k); otherwise unknown, rather than a share that may be wrong.
+  let context: ContextUse | undefined;
   const agentToolCalls = new Set<string>();
 
   function onRecord(o: J) {
@@ -199,6 +204,11 @@ export function createClaudeParser(file: SourceFile): LineParser {
           if (usage) {
             B.closeModel(at, usage);
             usageSum = addUsage(usageSum, usage);
+          }
+          const used = (usage?.input || 0) + (usage?.cachedInput || 0) + (usage?.cacheWrite || 0) + (usage?.output || 0);
+          if (used > 0) {
+            const model = String(msg.model || '');
+            context = { used, ...(/\[1m\]|-1m\b/i.test(model) || used > 200_000 ? { window: 1_000_000 } : {}), ...(at ? { at } : {}) };
           }
           return;
         }
@@ -335,6 +345,7 @@ export function createClaudeParser(file: SourceFile): LineParser {
           ...(cost.usd !== undefined ? { costUsd: cost.usd } : {}),
           ...(cost.linesAdded !== undefined ? { linesAdded: cost.linesAdded } : {}),
           ...(cost.linesRemoved !== undefined ? { linesRemoved: cost.linesRemoved } : {}),
+          ...(context ? { context } : {}),
           records,
           skipped,
         },

@@ -1310,7 +1310,11 @@ function usageText(sess) {
   for (const t of sess.turns || []) for (const s of t.steps || []) if (s.usage) { u.input += s.usage.input || 0; u.output += s.usage.output || 0; }
   const k = (n) => (n >= 10000 ? (n / 10000).toFixed(1) + ' 万' : String(n));
   const cost = sess.stats && sess.stats.costUsd ? ' · $' + Number(sess.stats.costUsd).toFixed(2) : '';
-  return u.input || u.output ? ` · 最近几轮 输入 ${k(u.input)} / 输出 ${k(u.output)} token${cost}` : cost;
+  // How full the context was at the last model call (unit context-usage): a share when the window is known, red past
+  // 80% (the product will compact soon), else just the size.
+  const c = sess.stats && sess.stats.context;
+  const ctx = c && c.used ? (c.window ? ` · <span${c.used / c.window > 0.8 ? ' style="color:var(--bad,#c33)"' : ''} title="上一次调模型带的上下文 / 模型上限">上下文 ${Math.round((c.used / c.window) * 100)}%（${k(c.used)} / ${k(c.window)}）</span>` : ` · <span title="上一次调模型带的上下文（这一家不记模型上限）">上下文 ${k(c.used)} token</span>`) : '';
+  return (u.input || u.output ? ` · 最近几轮 输入 ${k(u.input)} / 输出 ${k(u.output)} token${cost}` : cost) + ctx;
 }
 async function filesSheet(sid) {
   const base = '/api/sessions/' + encodeURIComponent(sid);

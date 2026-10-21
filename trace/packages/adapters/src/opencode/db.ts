@@ -4,7 +4,7 @@
  * hold OpenCode message/part JSON objects. The store opens the database read-only and injects
  * the query surface (types.ts SqliteSource); this module maps rows to the contract.
  */
-import { sessionId, type Iso, type Session, type SessionLink, type Usage } from '@hub-trace/contract';
+import { sessionId, type ContextUse, type Iso, type Session, type SessionLink, type Usage } from '@hub-trace/contract';
 import { detectState, STALE_MS } from '../state.ts';
 import { TurnBuilder, titleFallback } from '../turns.ts';
 import { clean, oneLine } from '../text.ts';
@@ -140,6 +140,7 @@ function opencodeSessionFromRows(
   let records = 0;
   let usageSum: Usage | undefined;
   let costUsd: number | undefined = Number.isFinite(+s.cost) && +s.cost > 0 ? +s.cost : undefined;
+  let context: ContextUse | undefined;
   let lastModel: string | undefined = normalizeModel(s.model);
   let firstUser = '';
 
@@ -239,6 +240,10 @@ function opencodeSessionFromRows(
       }
     }
     const mu = usageOf(m.tokens);
+    // The last reply's size (input, cached, written to cache, output): how full the context is; OpenCode does not
+    // record the model's window here.
+    const used = mu ? (mu.input || 0) + (mu.cachedInput || 0) + (mu.cacheWrite || 0) + (mu.output || 0) : 0;
+    if (used > 0) context = { used, ...(iso(m.time?.completed) ? { at: iso(m.time?.completed) } : {}) };
     if (mu && !usageFromStep) {
       B.closeModel(iso(m.time?.completed), mu);
       usageSum = addUsage(usageSum, mu);
@@ -316,6 +321,7 @@ function opencodeSessionFromRows(
       ...(costUsd !== undefined ? { costUsd } : {}),
       ...(Number.isFinite(+s.summary_additions) ? { linesAdded: +s.summary_additions } : {}),
       ...(Number.isFinite(+s.summary_deletions) ? { linesRemoved: +s.summary_deletions } : {}),
+      ...(context ? { context } : {}),
       records,
       skipped,
     },
