@@ -567,7 +567,7 @@
       "env": {},
       "accent": "#94A3B8",
       "badge": "CDP · 豆包",
-      "notes": "经 opencli 操作桌面界面；人在用时（holder=user-active）不抢",
+      "notes": "经 opencli 操作桌面界面；人在用时（holder=user-active）不抢。网页（L3）测试首选豆包：浏览器强、便宜（用户 10-21）；后台实例停用，测试单用 test --browser 生成、贴进前台豆包的工作模式",
       "securityGate": {
         "level": "拦不住",
         "name": "界面模拟",

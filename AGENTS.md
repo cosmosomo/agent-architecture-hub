@@ -38,7 +38,7 @@
 | 要做什么 | 子命令 |
 |---|---|
 | 交回、汇报进度、让出等待（派活单里有编号） | `deliver`、`report`、`yield` |
-| 测某项能力：先拿题，照题测、照题判 | `test --unit <单元> --agent <产品>`（`test --untested --agent <产品>` 看这家还没测过的，`test --missing` 看还没题的） |
+| 测某项能力：先拿题，照题测、照题判 | `test --unit <单元> --agent <产品>`（`test --untested --agent <产品>` 看这家还没测过的，`test --missing` 看还没题的）；网页测试交给豆包：`test --browser --agent <产品> --units u1,u2` 生成测试单，贴进豆包 |
 | 写一条实测记录；查记录（核对交回说的行号） | `bb add`；`bb find --family <产品> --capability <单元> --since <时间>` |
 | 派活不手写：从测试题或矩阵缺口生成目标 | `goal-gen test --agents a,b --units u1,u2`；`goal-gen gaps --kind untested\|build\|research`；加 `--go` 才提交；`--tester zcode,antigravity,claude` 把测试分给几家（各用便宜模型） |
 | 登记你这家的功能，或者给某项能力加注释 | `feature`、`note` |

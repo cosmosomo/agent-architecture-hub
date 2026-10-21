@@ -1912,6 +1912,25 @@ function cmdNote(args) {
 function cmdTest(args) {
   const T = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'hub', 'data', 'capability-tests.json'), 'utf8'));
   const units = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'hub', 'data', 'capability-units.json'), 'utf8')).units;
+  // --browser: a sheet to paste into Doubao, the web steps of these questions (goal_gen.js browserSheet). Units from
+  // --units, or with --untested this product's untested cells that have a web step (--limit, default 5).
+  if (args.browser) {
+    const gg = require('./goal_gen.js');
+    if (!args.agent) {
+      console.error(JSON.stringify({ ok: false, error: 'test --browser --agent <被测产品> --units u1,u2 | --untested [--limit 5]' }));
+      process.exit(1);
+    }
+    let ids = String(args.units || args.unit || '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (!ids.length && args.untested) ids = gg.untested(args.agent).map((r) => r.unit).filter((u) => T.tests[u] && T.tests[u].web).slice(0, Number(args.limit || 5));
+    if (!ids.length) {
+      console.error(JSON.stringify({ ok: false, error: '没有要测的单元：给 --units，或 --untested' }));
+      process.exit(1);
+    }
+    const sheet = gg.browserSheet(args.agent, ids, args.token);
+    console.log(sheet.text);
+    if (sheet.skipped.length) console.error(`（这些单元的题没有网页步骤，没放进来：${sheet.skipped.join('、')}）`);
+    process.exit(0);
+  }
   // 10-20 a cold-started tester found no way to ask this: --missing is “no question”, not “not tested”.
   if (args.untested) {
     const rows = require('./goal_gen.js').untested(args.agent);

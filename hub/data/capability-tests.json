@@ -88,7 +88,7 @@
       "center": [
         "node hub/tools/agent_gateway.js session-control --agent {agent} --session {session} --op close"
       ],
-      "web": "在 /m/ 会话栏的更多操作菜单中点击“关闭会话”。",
+      "web": "在 /m/ 先点“＋新任务”交给 {agent}，会话名用 test-close-{token}，发一句只回 {token}；回完后在会话详情“更多 → 关闭会话”。只有中心自己开的会话才有这一项。再往这个会话发一句话，看页面怎么说。",
       "native": "在原生端关闭窗口、输入 /exit 或调用 ACP 的 session 关闭接口。",
       "pass": "接口返回 ok: true；sessions 列表中该会话状态标为 closed；向已关闭会话发话会提示会话已结束或拒绝。",
       "fail": "关闭后向该会话继续发话依然可以无感知正常运行，没有关闭或阻断提示。"
@@ -195,7 +195,7 @@
         "node hub/tools/agent_gateway.js targets --json",
         "node hub/tools/agent_gateway.js quota"
       ],
-      "web": "在 /m/ 新建会话或会话顶部下拉列表中查看模型清单。",
+      "web": "在 /m/ 点“＋新任务”，交给 {agent}，展开“模型”下拉：先是“验证过的”一组，过一两秒可能多出“这家还报了（没验证能用）”一组。把两组的模型名都记下来，和 {agent} 自己应用里的模型列表对比。",
       "native": "在原生 CLI 执行 --list-models 或读取配置文件中声明的模型列表。",
       "pass": "返回的模型清单包含该产品可用的模型标识列表，且列出的模型均能正常建立连接与发起推理。",
       "fail": "返回写死的假数据列表，包含大量实际无权访问或已被废弃的模型 ID。"
@@ -287,7 +287,8 @@
         "node hub/tools/agent_gateway.js state  （查看是否有 pendingQuestions 或 pendingApprovals）"
       ],
       "pass": "state 输出中登记了智能体发出的请求原文，会话处于 waiting 等待状态，直到中心给出答复后才继续推进。",
-      "fail": "智能体未经请求直接自行写入；或者仅在回复文本里写了“我想要权限”后直接退出该轮。"
+      "fail": "智能体未经请求直接自行写入；或者仅在回复文本里写了“我想要权限”后直接退出该轮。",
+      "web": "在 /m/ 底部“协作”页找一张卡片上写着“它在问你”的派活单（被派的智能体用 request 提过请求）；点“答复”，写一句带 {token} 的答复发出去，再打开被派的那个会话，看它有没有收到这句答复。没有这样的卡片就记 fail，写“没有在等答复的请求可测”。"
     },
     "act-yield": {
       "do": "智能体结束当前执行阶段并主动让出执行权，清楚写明自己在等待什么条件或外部事件。",
@@ -527,7 +528,7 @@
         "node hub/tools/agent_gateway.js sessions --agent {agent} --q my-label-{token}"
       ],
       "native": "在原生客户端通过重命名对话或设置标签进行标记。",
-      "web": "在 /m/ 对指定会话双击重命名或修改标签。",
+      "web": "在 /m/ 先点“＋新任务”交给 {agent}，会话名用 test-label-{token}，发一句只回 {token}；建好后在会话详情“更多 → 改名”改成 改名{token}。只有中心自己开的会话才有“改名”。刷新页面再看标题。",
       "pass": "sessions 列表中该会话的标题或名称被正确显示，通过 --q 关键词能精确搜索召回。",
       "fail": "会话名被强制重置为默认生成的 UUID；或者重命名后刷新网页丢失。"
     },
@@ -712,7 +713,7 @@
       "center": [
         "node hub/tools/agent_gateway.js session --id <会话编号> --tail 1"
       ],
-      "web": "在 /m/ 会话详情页底部或侧栏查看用量指示器（如 xx k / xx k tokens）。",
+      "web": "在 /m/ 打开 {agent} 的一个有好几轮的 test- 会话，看会话顶部状态行最后的“上下文 N%（用量 / 上限）”或“上下文 N token”，再到 {agent} 自己的应用里看同一个会话显示的上下文用量，两边对比。",
       "pass": "接口返回数据中的 tokens / contextUsage 与原生应用界面展示的数值在合理刷新误差内一致。",
       "fail": "数字始终显示为 0、NaN 或完全没有该统计项。"
     },

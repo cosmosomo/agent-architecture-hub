@@ -255,4 +255,40 @@ function generate(args) {
   throw new Error('goal-gen test --agents .. --units .. | goal-gen gaps --kind untested|build|research');
 }
 
-module.exports = { renderTest, generate, untested };
+/**
+ * A browser test sheet for Doubao (user 10-21: “测试用豆包，感觉豆包的browser特别厉害，写好指令让豆包进行浏览器测试很不错，
+ * 而且豆包很便宜”): the web part (L3) of each question, to paste into Doubao's work mode on this computer. The center
+ * cannot hand it to Doubao itself (its background instance stays blocked_down, channels/hosts/doubao-desktop.md).
+ * Units without a web step are left out and named.
+ */
+function browserSheet(agent, unitIds, token = newToken()) {
+  const T = tests();
+  const page = `${(process.env.HUB_DAEMON_URL || 'http://127.0.0.1:8899').replace(/\/$/, '')}/m/`;
+  const qs = [];
+  const skipped = [];
+  for (const id of unitIds) {
+    const q = renderTest(id, agent, token);
+    if (q && q.test.web) qs.push(q);
+    else skipped.push(id);
+  }
+  const fill = (s) => String(s).replace(/\{session\}/g, `test-${agent}`).replace(/\{agent\}/g, agent).replace(/\{token\}/g, token);
+  const lines = [
+    `【浏览器测试单 · 暗号 ${token}】`,
+    `被测的是中心网页上的 ${agent}。请用你自己的浏览器打开 ${page}（中心的手机版网页），照下面的题在网页上点，看到什么如实记什么。`,
+    `规矩：只在这个网页上操作；新建会话一律取 test- 开头的名字；不碰用户正在用的会话、窗口、鼠标键盘；不改代码和文件；不写明文密钥。打不开这个地址（例如你的浏览器不在这台电脑上）就停下，原样告诉我报错。`,
+    '',
+  ];
+  qs.forEach((q, i) => {
+    lines.push(`第 ${i + 1} 题：${q.unit.name}（${q.unit.id}）`, `  在网页上做：${fill(q.test.web)}`, `  怎样算通过：${q.pass}`);
+    if (q.test.fail) lines.push(`  当心（遇到算 fail 或 partial）：${fill(q.test.fail)}`);
+    lines.push('');
+  });
+  lines.push(
+    '每做完一题记一行（在终端里，目录 E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub）：',
+    `  node hub/tools/agent_gateway.js bb add --by doubao --family ${agent} --capability <题号后括号里的单元> --result pass|partial|fail --route ${agent}/L3/m-doubao --condition "豆包浏览器，暗号 ${token}" --evidence "<点了什么、页面上原样看到什么>"`,
+    '最后交回：每题一行，写单元、结果、黑板行号；没过的写卡在哪一步、页面上原样的报错或现象。',
+  );
+  return { token, units: qs.map((q) => q.unit.id), skipped, text: lines.join('\n') };
+}
+
+module.exports = { renderTest, generate, untested, browserSheet };
