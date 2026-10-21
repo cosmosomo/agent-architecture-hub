@@ -1369,6 +1369,16 @@
         ],
         "status": "real",
         "note": ""
+      },
+      {
+        "page": "/m/（10-21 负责人：网页追后端第三批，手机页端到端）",
+        "control": "新任务“模型”下拉：按这家推荐的模型列表选",
+        "action": "send",
+        "channels": [
+          "zcode"
+        ],
+        "status": "real",
+        "note": "10-21 8899 浏览器实测：网页“＋新任务”交给 ZCode、模型 GLM-5.3-Flash、目录 channels/probe/tmp，会话 zcode:sess_3350617c：智能体自述用的是 GLM-5.3-Flash"
       }
     ],
     "permission": [
@@ -2797,6 +2807,30 @@
         ],
         "status": "built",
         "note": "页面有这段，10-21 当时没有这种状态的单可看，没实测"
+      }
+    ],
+    "workspace": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第三批，手机页端到端）",
+        "control": "新任务“工作目录”：填了就在那里干活，不填新建独立目录",
+        "action": "send",
+        "channels": [
+          "zcode"
+        ],
+        "status": "real",
+        "note": "10-21 8899 浏览器实测：网页“＋新任务”交给 ZCode、模型 GLM-5.3-Flash、目录 channels/probe/tmp，会话 zcode:sess_3350617c：会话 cwd 正是填的目录，文件落在那里"
+      }
+    ],
+    "inject-next": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第三批，手机页端到端）",
+        "control": "干活时发话：这一家只能排到下一轮时，按钮写“排下一轮”，这一轮结束后自动发出",
+        "action": "send",
+        "channels": [
+          "zcode"
+        ],
+        "status": "real",
+        "note": "10-21 8899 浏览器实测：网页“＋新任务”交给 ZCode、模型 GLM-5.3-Flash、目录 channels/probe/tmp，会话 zcode:sess_3350617c：sleep 40 期间发“把文件改成 W1021B”，按钮显示“排下一轮”，下一轮执行，文件变成 W1021B"
       }
     ]
   }
