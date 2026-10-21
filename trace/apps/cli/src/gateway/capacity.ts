@@ -8,7 +8,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { AgentGatewayHub } from '../gateway.ts';
 import type { ActiveRun, ChannelId, ChannelProfile } from './types.ts';
-import { CHANNEL_PROFILES, QUOTA_ACCOUNTS } from './products.ts';
+import { CHANNEL_PROFILES, QUOTA_ACCOUNTS, hostCardStatus } from './products.ts';
 import { HOME } from './common.ts';
 import { classifyFailure } from './failure.ts';
 
@@ -187,6 +187,8 @@ export const capacityMethods = {
     // Named work only competes with our own turns. External sessions only rank automatic choices.
     const l = this.channelLoad(id, false);
     if (!l.driven) return null;
+    const card = this.cardHold(id);
+    if (card) return card;
     if (l.accountCooling) return `${l.label}：${l.accountWhy}`;
     // A bucket its center turns draw from is all but used up: wait for the reset rather than fail (gateway/quota.ts).
     const quota = this.quotaHold(id);
@@ -194,6 +196,39 @@ export const capacityMethods = {
     if (l.cooling) return `${l.label}：熔断冷却中${l.lastError ? `（${String(l.lastError).slice(0, 60)}）` : ''}`;
     if (l.ours >= l.cap) return `${l.label}：中心在跑 ${l.ours}/${l.cap} 已满`;
     return null;
+  },
+
+  /** The product's host card says it is out of service (blocked_down, auth_wall): no work until a person changes it. */
+  cardHold(this: AgentGatewayHub, id: string): string | null {
+    const status = hostCardStatus(id);
+    if (!/blocked_down|auth_wall/.test(status)) return null;
+    return `${CHANNEL_PROFILES[id as ChannelId]?.label || id}：主机卡标着停用（${status.replace(/^[^a-z]*/i, '').slice(0, 80)}）`;
+  },
+
+  /**
+   * Each product as someone handing out work needs to see it (the page's 协作 tab): load, breaker, quota, and why it
+   * cannot take work now, in the words holdFor and quotaLow use for the task board, so the page and the board agree.
+   * Small on purpose: a phone polls it, and the full state carries every session.
+   */
+  channelOverview(this: AgentGatewayHub) {
+    const quota = this.quotaSnapshot().products;
+    return Object.keys(CHANNEL_PROFILES).map((id) => {
+      const l = this.channelLoad(id);
+      const q = quota[id];
+      return {
+        id,
+        label: l.label,
+        driven: l.driven,
+        ours: l.ours,
+        outside: l.outside,
+        cap: l.cap,
+        health: l.health,
+        lastError: l.health === 'closed' ? undefined : String(l.lastError || '').slice(0, 160),
+        hold: this.holdFor(id),
+        low: this.quotaLow(id),
+        quota: q ? { observedAt: q.observedAt, tightest: q.tightest, cooldown: q.cooldown, groups: q.groups } : null,
+      };
+    });
   },
 
   /**
@@ -211,6 +246,7 @@ export const capacityMethods = {
       if (this.sessionReader && !this.sessionReader.ready) left.push(`${l.label}：会话发现未就绪或快照已过期`);
       else if (!l.driven) left.push(`${l.label}：后端不驱动`);
       else if (!l.canSend) left.push(`${l.label}：后端不能发话`);
+      else if (this.cardHold(l.id)) left.push(this.cardHold(l.id)!);
       else if (l.accountCooling) left.push(`${l.label}：${l.accountWhy}`);
       else if (this.quotaHold(l.id)) left.push(this.quotaHold(l.id)!);
       else if (l.cooling) left.push(`${l.label}：熔断冷却中${l.lastError ? `（${String(l.lastError).slice(0, 60)}）` : ''}`);

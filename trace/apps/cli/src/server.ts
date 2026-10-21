@@ -893,6 +893,10 @@ export function createService(opts: ServeOptions): Server {
       if (path === '/api/gateway/models') {
         return json(res, 200, await listModels(gateway, String(url.searchParams.get('channel') || '')));
       }
+      // Each product's load, breaker, quota and why it cannot take work now (capacity.ts channelOverview).
+      if (path === '/api/gateway/channels') {
+        return json(res, 200, { ok: true, channels: gateway.channelOverview() });
+      }
       // Each product's remaining quota (gateway/quota.ts); ?refresh=1 reads it again first.
       if (path === '/api/gateway/quota') {
         if (url.searchParams.get('refresh')) await gateway.refreshQuota().catch(() => {});

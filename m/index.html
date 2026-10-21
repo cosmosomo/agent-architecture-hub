@@ -914,10 +914,27 @@ function dispatchCard(d) {
   const wk = d.wake && (d.wake.state || d.wake.mode);
   const wake = wk ? `<div class="sub">⏰ 派活方：${esc(WAKE[wk] || wk)}${d.wake.wokenAt ? ' ' + clock(d.wake.wokenAt) : ''}</div>` : '';
   const wrap = 'white-space:normal;overflow:visible';
+  // Still out (running, waiting, stuck): the person can take it back (collab-event reclaim stops the turn it is in).
+  const open = ['issued', 'running', 'yielded', 'waiting', 'stalled', 'timeout'].includes(d.status);
   return `<div class="card"><div class="row"><span class="t grow" style="${wrap};display:block;-webkit-line-clamp:unset">${endLink(d.from || {})} → ${endLink(d.to || {})}</span><span class="tag ${d.status === 'stalled' || d.status === 'timeout' ? 'st-stale' : ''}">${st}</span></div>
     <div class="sub" style="${wrap}">${esc(String(d.task || '').slice(0, 160))}</div>
     <div class="sub" style="margin-top:6px;${wrap};line-height:2">${steps}</div>${dispatchWaiting(d)}${reports}${back}${wake}
-    <div class="sub">${esc(d.id)} · ${esc(ago(d.updatedAt))}</div></div>`;
+    <div class="row"><span class="sub grow">${esc(d.id)} · ${esc(ago(d.updatedAt))}</span>${open ? `<button class="btn ghost" data-reclaim="${esc(d.id)}" style="min-height:36px">收回</button>` : ''}</div></div>`;
+}
+
+// Who can take work now (GET /api/gateway/channels): the center's own reasons (holdFor, quotaLow), so the page says
+// what the task board will do.
+function channelsBox(cs) {
+  if (!cs || !cs.length) return '';
+  const rows = cs.filter((c) => c.driven).map((c) => {
+    const t = c.quota && c.quota.tightest;
+    const [st, cls] = c.hold ? ['先别派', 'st-failed'] : c.low ? ['额度低', 'st-stale'] : c.ours ? ['在干活', 'st-working'] : ['能接活', ''];
+    const q = t ? (t.window === 'balance' ? t.label : `${t.group} ${t.label} ${Math.round(t.remaining * 100)}%`) : '';
+    const why = c.hold || c.low || (c.lastError ? '最近失败：' + c.lastError : '');
+    return `<div class="row" style="margin-top:8px"><span class="t grow">${esc(c.label)}</span><span class="tag ${cls}">${st}</span></div>
+      <div class="sub" style="white-space:normal">中心在跑 ${c.ours}/${c.cap}${c.outside ? `，外面还有 ${c.outside} 个会话在用` : ''}${q ? ' · 额度 ' + esc(q) : ''}${why ? ' · ' + esc(why) : ''}</div>`;
+  }).join('');
+  return `<div class="sec">各家现在能不能接活</div><div class="card">${rows}</div>`;
 }
 // Dispatch from the page (POST /api/gateway/dispatch). From a session: that session is the caller and can be woken
 // when the work comes back. From the collaboration page: the person is the caller.
@@ -975,23 +992,31 @@ async function viewCollab() {
   $('#title').textContent = '协作';
   $('#back').hidden = true; $('#newBtn').hidden = false; $('#newBtn').textContent = '＋ 派活'; $('#newBtn').onclick = () => dispatchSheet(null);
   // The header and its button are built once; only the lists below are redrawn, so a tap never lands on a replaced node.
-  $('#main').innerHTML = `<div class="row" style="margin:14px 2px 4px"><span class="grow" id="goalHead" style="color:var(--mute);font-size:13px">目标（一群会话：拆成几件事，派给不同智能体，验收后接着往下做）</span><button class="btn ghost" id="goalNew" style="min-height:36px">＋ 目标</button></div><div id="collabBody"><div class="empty">读取派活单…</div></div>`;
+  $('#main').innerHTML = `<div id="chanBox"></div><div class="row" style="margin:14px 2px 4px"><span class="grow" id="goalHead" style="color:var(--mute);font-size:13px">目标（一群会话：拆成几件事，派给不同智能体，验收后接着往下做）</span><button class="btn ghost" id="goalNew" style="min-height:36px">＋ 目标</button></div><div id="collabBody"><div class="empty">读取派活单…</div></div>`;
   $('#goalNew').onclick = goalSheet;
   const main = $('#collabBody');
+  main.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-reclaim]');
+    if (!b || !confirm('收回这张派活单？被派的会话这一轮会停下，派活单记为取消。')) return;
+    b.disabled = true;
+    try { await post('/api/gateway/collab-event', { kind: 'reclaim', id: b.dataset.reclaim, summary: '人在网页上收回' }); toast('已收回'); last = ''; render(); }
+    catch (err) { toast('没收回：' + err.message); b.disabled = false; }
+  });
   let last = '';
   // Dispatches first; the session list (for links to the caller's session) fills in when it has loaded.
   if (!S.sessions.length) loadSessions().then(() => { if (my === viewId) { clearTimeout(timer); last = ''; render(); } }).catch(() => {});
   const render = async () => {
     if (my !== viewId) return;
-    let r, gs;
-    try { [r, gs] = await Promise.all([api('/api/gateway/dispatches'), api('/api/gateway/goals').catch(() => ({ goals: [] }))]); } catch (e) { main.innerHTML = '<div class="empty">读不到派活单：' + esc(e.message) + '</div>'; return; }
+    let r, gs, chs;
+    try { [r, gs, chs] = await Promise.all([api('/api/gateway/dispatches'), api('/api/gateway/goals').catch(() => ({ goals: [] })), api('/api/gateway/channels').catch(() => null)]); } catch (e) { main.innerHTML = '<div class="empty">读不到派活单：' + esc(e.message) + '</div>'; return; }
     if (my !== viewId) return;
+    $('#chanBox').innerHTML = channelsBox(chs && chs.channels);
     const goals = gs.goals || [];
     $('#goalHead').textContent = `目标 ${goals.length} · 进行中 ${goals.filter((g) => g.status === 'running').length}（一群会话：拆成几件事，派给不同智能体，验收后接着往下做）`;
     const goalHtml = goals.length ? goals.slice(0, 20).map(goalCard).join('') : '<div class="sub" style="margin:0 2px">还没有目标。</div>';
     const ds = (r.dispatches || []).slice().sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     const s = r.summary || {};
-    const waiting = (r.waitingEdges || []).map((w) => `<div class="sub">⌛ ${esc(JSON.stringify(w).slice(0, 160))}</div>`).join('');
+    const waiting = (r.waitingEdges || []).map((w) => `<div class="sub" style="white-space:normal">⌛ ${esc(FAM[w.toChannel] || w.toChannel)}/${esc(w.toSession)}：${esc(String(w.waitingFor || '').slice(0, 120))}（${esc(ago(w.updatedAt))}）</div>`).join('');
     const html = goalHtml + `<div class="sec">派活单 ${s.total || ds.length} · 进行中 ${s.running || 0} · 让出等待 ${s.yielded || 0} · 交回 ${s.completed || 0} · 失败 ${s.failed || 0}</div>${waiting}` +
       (ds.length ? ds.map(dispatchCard).join('') : '<div class="empty">还没有派活。智能体可以用命令行网关 dispatch 派活，见 README“管线”。</div>');
     // Unchanged content is not rewritten (the relative times alone would change it, so they are left out of the key).

@@ -76,8 +76,26 @@ type ProductRow = {
   modes?: string[];
   maxConcurrent?: number;
   quotaAccount?: string;
+  /** The product's host card in channels/hosts/: its front matter `status:` says when it must take no work. */
+  hostCard?: string;
 };
 const PRODUCT_TABLE = JSON.parse(readFileSync(join(REPO_ROOT, 'hub', 'data', 'products.json'), 'utf8'));
+
+/** A product's host card status line (channels/hosts/<card>.md front matter). blocked_down or auth_wall means it takes
+ *  no work: goal_gen.js reads the same line; the center did not, so the page still offered Doubao (10-21). Read at most
+ *  once a minute. */
+const cardStatus = new Map<string, { at: number; status: string }>();
+export function hostCardStatus(id: string): string {
+  const hit = cardStatus.get(id);
+  if (hit && Date.now() - hit.at < 60_000) return hit.status;
+  const row = (PRODUCT_TABLE.products as ProductRow[]).find((r) => r.id === id || (r.aliases || []).includes(id));
+  let status = '';
+  try {
+    if (row?.hostCard) status = (/^status:\s*(.+)$/m.exec(readFileSync(join(REPO_ROOT, 'channels', 'hosts', row.hostCard), 'utf8').split(/\n---/)[0]) || [])[1] || '';
+  } catch {}
+  cardStatus.set(id, { at: Date.now(), status });
+  return status;
+}
 const PRODUCT_ROWS: ProductRow[] = PRODUCT_TABLE.products;
 /** Quota accounts several products may share: label, and the timezone the provider writes its reset time in. */
 export const QUOTA_ACCOUNTS: Record<string, { label: string; resetTimezone?: string; note?: string }> = PRODUCT_TABLE.quotaAccounts || {};

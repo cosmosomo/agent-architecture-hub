@@ -287,6 +287,18 @@
       "path": "/api/gateway/models",
       "does": "一家产品此刻真实可用的模型清单（?channel=claude|antigravity，向这家实际查来，不是产品表里写死的推荐列表；unit model-list）；targets 也带出",
       "cli": "quota"
+    },
+    {
+      "id": "channels",
+      "method": "GET",
+      "path": "/api/gateway/channels",
+      "does": "每家在跑几轮、上限、熔断、额度、现在为什么不能接活（网页协作页用；和任务板同一套判断）"
+    },
+    {
+      "id": "quota",
+      "method": "GET",
+      "path": "/api/gateway/quota",
+      "does": "每家额度：各组各窗口的余量与重置时间、读数时间；?refresh=1 先重读"
     }
   ]
 }

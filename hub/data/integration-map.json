@@ -1,6 +1,6 @@
 {
   "about": "单元 → 动作：每个能力单元在我们的后端由哪个动作实现（action 引用 hub/data/actions.json 的 id），对哪些产品有效，做到什么程度；frontend 一侧记网页上哪个控件、调哪个动作。status：real 实现了且实测通过；partial 实现了一部分；built 实现了还没实测；fill 补齐（原生做不到，搬到 fillLevel 那一级去做）；todo 还没做。依据（实测记录）在黑板，不在这里。改了就重跑 channels/probe/scripts/build_coverage.js。 frontend 条目可带 ui：{slot 放在哪（session-bar 会话栏、session-more 会话的“更多”）, order, label, handler（页面里 BAR_HANDLERS 的处理函数）或 call/op（直接调的接口和操作，如 session-control 的 compact）, choices}；网页的这些控件照它生成，一个控件只在一个单元下定义。",
-  "updated": "2026-10-19",
+  "updated": "2026-10-21",
   "backend": {
     "open": [
       {
@@ -2191,10 +2191,14 @@
         "channels": [
           "claude",
           "zcode",
-          "opencode"
+          "opencode",
+          "codex",
+          "antigravity",
+          "workbuddy",
+          "hermes"
         ],
         "status": "real",
-        "note": "10-18 负责人浏览器实测（手机宽度），4 张真实派活单"
+        "note": "10-18 负责人浏览器实测（手机宽度），4 张真实派活单；10-21 等待列表改成人话（谁在等什么、多久了），对所有家一样"
       }
     ],
     "spawn-subagent": [
@@ -2442,6 +2446,92 @@
         ],
         "status": "built",
         "note": "后端实测通过，网页没点过；ZCode 的问题只能从选项里选，网页不显示自由输入框"
+      }
+    ],
+    "channel-health": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第一批）",
+        "control": "协作页顶上“各家现在能不能接活”：每家中心在跑几轮/上限、外面还有几个会话在用、熔断与最近失败、额度最紧的一组、先别派或额度低的原因（和任务板同一套 holdFor、quotaLow）",
+        "action": "channels",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 旁路实例 18919 浏览器实测：Claude 先别派（中转余额 ¥0.30）、Antigravity 额度低（Gemini 每周 18%）、ZCode 有探针在跑时显示 1/3、豆包主机卡停用时先别派"
+      }
+    ],
+    "capacity": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第一批）",
+        "control": "协作页顶上“各家现在能不能接活”：每家中心在跑几轮/上限、外面还有几个会话在用、熔断与最近失败、额度最紧的一组、先别派或额度低的原因（和任务板同一套 holdFor、quotaLow）",
+        "action": "channels",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 旁路实例 18919 浏览器实测：Claude 先别派（中转余额 ¥0.30）、Antigravity 额度低（Gemini 每周 18%）、ZCode 有探针在跑时显示 1/3、豆包主机卡停用时先别派"
+      }
+    ],
+    "quota": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第一批）",
+        "control": "协作页顶上“各家现在能不能接活”：每家中心在跑几轮/上限、外面还有几个会话在用、熔断与最近失败、额度最紧的一组、先别派或额度低的原因（和任务板同一套 holdFor、quotaLow）",
+        "action": "channels",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 旁路实例 18919 浏览器实测：Claude 先别派（中转余额 ¥0.30）、Antigravity 额度低（Gemini 每周 18%）、ZCode 有探针在跑时显示 1/3、豆包主机卡停用时先别派"
+      }
+    ],
+    "ui-quota-bar": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第一批）",
+        "control": "新任务、派活的“交给谁”下面一行额度：各组余量与多久后重置、读数多久以前；额度低的选项标“额度低”",
+        "action": "gateway-state",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity"
+        ],
+        "status": "real",
+        "note": "10-21 浏览器实测（旁路 18919）：Antigravity 两组四个窗口、Claude 余额不够用、Codex 已重置且标出读数时间；其余几家中心还读不到额度，失败冷却时显示冷却原因"
+      }
+    ],
+    "reclaim": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第一批）",
+        "control": "协作页派活卡片上“收回”：还在外面的单（进行中、让出等待、卡住）确认后收回，被派会话这一轮停下，派活单记为取消",
+        "action": "collab-event",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 旁路实测：ZCode 探针单 dsp_062705_aq21 网页收回后 cancelled，那一轮 aborted。按钮和产品无关，各家的 reclaim 后端已分别实测"
       }
     ]
   }
