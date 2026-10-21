@@ -1,12 +1,12 @@
 # 功能矩阵：每个单元在各家、各位置上的理论上限与现状（由黑板、integration-map 和完整性检查生成，勿手改）
 
-生成时间：2026-10-21T06:31:09.725Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
+生成时间：2026-10-21T06:35:08.909Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
 
 标记：✓ 有行为证据（后面是实现路径）；◐ 部分；? 未验证；✗ 不通；✗假 界面有、实际是别的办法模拟；有（截图/代码） 桌面端界面这一列靠截图或代码分析得出、不是行为实测（这批来自调研，未逐格核）；· 没有记录。
 
 ## 现在还缺什么（外层：按 README“立体认知”的轴把现在的差摆出来）
 
-README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-21T06:31:09.730Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
+README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-21T06:35:08.914Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
 
 **每一层：理论极限、我们的目标、现状、依据记在哪**（一格 = 一个能力单元在一个产品）
 
@@ -16,7 +16,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 原生面 | 那一级循环开放的时机 × 通向它的入口 | 每格查清：原生能做，或要补齐到哪一级 | 231 / 700 格已证实 | 黑板 route = <产品>/L0 或 L1a/<入口>：命令、原始输出、产品版本、日期 |
 | 适配路线 | 路线挂的那个原生面能给的 | 每个产品走能力最高的路线 | 实测通过的格：经 acpx 命令行 66、直连 ACP 桥（嵌入 acpx 运行时可达） 84、直连 app-server 26、直连 Connect-RPC ＋ agentapi 32、驱动原生命令行 100、直连 CDP 操作桌面端界面 4、经 OpenCLI 操作桌面端界面 9 | 黑板 route = <产品>/L1b/acpx 等 |
 | 后端 | 原生面能给的，加上我们当宿主补齐的（两个会话之间、一群会话全由我们） | 全部能力单元；补齐写明搬到哪一级 | 351 / 700 格已接：实测通过 274、部分 30、补齐 39、实现了未测 8 | `hub/data/integration-map.json`：action、status、fillLevel；实测记黑板 route = <产品>/L2/server-api |
-| 网页 | 后端已接的，加上人机交互单元 | 桌面端有的都有，再加我们独有的（待处理、协作图） | 152 / 700 格网页用得到；桌面端有、网页没有 11 项 | integration-map 的 frontend；实测记黑板 route = <产品>/L3/m |
+| 网页 | 后端已接的，加上人机交互单元 | 桌面端有的都有，再加我们独有的（待处理、协作图） | 197 / 700 格网页用得到；桌面端有、网页没有 11 项 | integration-map 的 frontend；实测记黑板 route = <产品>/L3/m |
 | 命令行网关 | 后端的全部动作 | 全部动作 | 26 / 45 个动作有子命令 | `hub/data/actions.json` 的 cli；实测记黑板 route = <产品>/L2/agent_gateway |
 
 **按尺度和位置看**（格数）
@@ -24,10 +24,10 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 尺度 | 格数 | 原生面已证实 | 后端已接：实测通过、部分或补齐 | 后端已接：实现了未测 | 网页上用得到 |
 |---|---|---|---|---|---|
 | 一轮之内 | 70 | 37 | 35 | 0 | 36 |
-| 一个会话 | 245 | 128 | 142 | 3 | 44 |
-| 两个会话之间（我们当宿主） | 84 | 20 | 60 | 0 | 28 |
-| 一群会话（我们当宿主） | 35 | 11 | 31 | 4 | 9 |
-| 底座 | 98 | 33 | 51 | 1 | 35 |
+| 一个会话 | 245 | 128 | 142 | 3 | 58 |
+| 两个会话之间（我们当宿主） | 84 | 20 | 60 | 0 | 42 |
+| 一群会话（我们当宿主） | 35 | 11 | 31 | 4 | 25 |
+| 底座 | 98 | 33 | 51 | 1 | 36 |
 | 高阶能力 | 42 | 0 | 24 | 0 | 0 |
 | 未归尺度 | 126 | 2 | 0 | 0 | 0 |
 
@@ -165,13 +165,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 已到前端 | 自己做（上限已证实，没接进来） | 派出去研究（上限不清或要找别的路） |
 |---|---|---|---|
-| antigravity | 40 | 60 | 51 |
-| codex | 36 | 49 | 66 |
-| claude | 38 | 46 | 67 |
-| zcode | 43 | 51 | 57 |
-| workbuddy | 33 | 59 | 59 |
-| opencode | 35 | 40 | 76 |
-| hermes | 36 | 40 | 75 |
+| antigravity | 47 | 53 | 51 |
+| codex | 44 | 43 | 64 |
+| claude | 47 | 38 | 66 |
+| zcode | 53 | 42 | 56 |
+| workbuddy | 41 | 53 | 57 |
+| opencode | 43 | 34 | 74 |
+| hermes | 44 | 34 | 73 |
 | doubao | 0 | 7 | 1 |
 | gemini | 24 | 2 | 20 |
 | droid | 24 | 2 | 6 |
@@ -184,7 +184,6 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 接管原生会话（resume-native）：antigravity、codex、claude、zcode、opencode、hermes
 - 观察·实时（observe-live）：doubao、antigravity、codex、claude、opencode、hermes、workbuddy
 - 观察·历史（observe-history）：doubao
-- 状态识别（state）：codex、claude、zcode、opencode、hermes、workbuddy
 - 打断（cancel）：codex、claude、zcode、opencode、hermes、workbuddy
 - 关闭会话（close）：antigravity、codex、claude、opencode、hermes、workbuddy
 - 插话（注入）（steer）：codex、hermes、workbuddy
@@ -192,7 +191,6 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 注入·工具结果捎带（inject-tool）：claude、workbuddy
 - 注入·收件箱（inject-inbox）：antigravity、claude、zcode、workbuddy
 - 注入·只入上下文（inject-silent）：claude、workbuddy
-- 目标与预算（goal）：antigravity、claude、zcode
 - 答复审批（permission）：codex、claude、opencode、hermes、workbuddy
 - 分叉（fork）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 压缩上下文（compact）：codex、claude
@@ -205,7 +203,6 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 交付（act-deliver）：doubao、codex、claude
 - 请求（act-request）：antigravity、codex、opencode、workbuddy
 - 让出（act-yield）：antigravity、codex、zcode、opencode、hermes、workbuddy
-- 上报（act-report）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 后台任务唤醒（wake-bg）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 定时唤醒（wake-timer）：antigravity、zcode、hermes、workbuddy
 - 消息唤醒（wake-msg）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
@@ -216,7 +213,7 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 共享任务板（task-board）：opencode
 - 向人提问（ask-user）：codex、claude、zcode、workbuddy
 - 通知人（notify-user）：workbuddy
-- 产出物发布（artifact）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy、gemini、droid
+- 产出物发布（artifact）：gemini、droid
 - 浏览器（browser）：antigravity
 - 终端（terminal）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 开发预览（dev-preview）：claude、zcode、hermes、workbuddy
@@ -226,23 +223,20 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 - 产出约定（output-contract）：antigravity、claude、opencode、workbuddy
 - 只建不跑（open-idle）：antigravity、codex、claude、zcode、opencode、workbuddy
 - 命名与标注（label）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
-- 所有权识别（ownership）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy、gemini、droid
+- 所有权识别（ownership）：gemini、droid
 - 列出会话（discover-sessions）：doubao
 - 探测本机（probe-host）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 回退到某一步（rewind）：antigravity、codex、zcode
 - 归档与取回（archive）：codex、hermes
 - 删除会话（delete）：antigravity、codex、claude、opencode、hermes、workbuddy
-- 可用命令清单（cmd-list）：antigravity、codex、zcode、opencode、hermes、workbuddy
+- 可用命令清单（cmd-list）：antigravity、codex、opencode、hermes、workbuddy
 - 记忆开关（memory-mode）：claude、opencode
-- 循环熔断（loop-guard）：antigravity
 - 渠道租约（channel-lease）：zcode、opencode、workbuddy
 - 宿主排空（host-drain）：hermes
 - 权限作用域（permission-scope）：zcode
-- 读原生会话元数据（native-meta）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
-- 全文检索（content-search）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
+- 全文检索（content-search）：antigravity、codex、opencode、hermes、workbuddy
 - 上下文占用（context-usage）：antigravity、hermes、workbuddy
 - 推理力度（reasoning-effort）：antigravity、codex、zcode
-- 列项目（list-projects）：antigravity、codex、claude、zcode、opencode、hermes、workbuddy
 - 列工作区文件（workspace-files）：antigravity、workbuddy
 - 写回原生元数据（native-meta-write）：antigravity、zcode、hermes
 - 按项目归集（project-view）：workbuddy
@@ -367,12 +361,12 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
 | antigravity | · | ✓ sqlite3 conversation_summaries.db "select status,n | ◐ 所有 7 渠道 status 恒等于 idle (activ | ✓ /m/：列表卡片状态标签与筛选 | 已到前端 |
-| codex | · | ✓ app-server ServerNotification thread/status/change | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | · | 自己做：做到前端 |
-| claude | · | ✓ claude --bg "从 1 数到 500..." --model haiku -> 循环 cl | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | · | 自己做：做到前端 |
-| zcode | · | ✓ node channels/probe/scripts/suite_zcode_l1a.mjs | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | · | 自己做：做到前端 |
-| workbuddy | · | ✓ sessionUpdate event streaming | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | · | 自己做：做到前端 |
-| opencode | · | ✓ 见 probe/results/agy-pro-subagent-entries-20261018. | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | · | 自己做：做到前端 |
-| hermes | · | ◐ 后台起 hermes chat -q "任务ZZCAN2:  | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | · | 自己做：做到前端 |
+| codex | · | ✓ app-server ServerNotification thread/status/change | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片和详情的状态标签（在干活、 | 已到前端 |
+| claude | · | ✓ claude --bg "从 1 数到 500..." --model haiku -> 循环 cl | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片和详情的状态标签（在干活、 | 已到前端 |
+| zcode | · | ✓ node channels/probe/scripts/suite_zcode_l1a.mjs | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片和详情的状态标签（在干活、 | 已到前端 |
+| workbuddy | · | ✓ sessionUpdate event streaming | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片和详情的状态标签（在干活、 | 已到前端 |
+| opencode | · | ✓ 见 probe/results/agy-pro-subagent-entries-20261018. | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片和详情的状态标签（在干活、 | 已到前端 |
+| hermes | · | ◐ 后台起 hermes chat -q "任务ZZCAN2:  | ✓ 命令行 agent_gateway.js read / wait --agent <家> --ses | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片和详情的状态标签（在干活、 | 已到前端 |
 | gemini | · | ✗ gemini --list-sessions | ✗ timeout 90 acpx gemini session | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 打断（cancel）
@@ -498,13 +492,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ node channels/probe/scripts/antigravity/run_agenta | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 自己做：接进适配器 |
-| codex | · | ◐ node channels/probe/scripts/co | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| claude | · | ✓ claude -p "Write an essay of 500 words about archi | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 自己做：接进适配器 |
-| zcode | · | ✓ node channels/probe/scripts/native_zcode_1019.mjs  | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 自己做：接进适配器 |
-| workbuddy | · | ◐ i18n.js grep command.goal | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| opencode | · | ? opencode run --agent plan | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| hermes | · | ◐ hermes chat --help; hermes kan | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| antigravity | · | ✓ node channels/probe/scripts/antigravity/run_agenta | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页目标卡片与目标页：状态、派活 | 已到前端 |
+| codex | · | ◐ node channels/probe/scripts/co | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页目标卡片与目标页：状态、派活 | 已到前端 |
+| claude | · | ✓ claude -p "Write an essay of 500 words about archi | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页目标卡片与目标页：状态、派活 | 已到前端 |
+| zcode | · | ✓ node channels/probe/scripts/native_zcode_1019.mjs  | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页目标卡片与目标页：状态、派活 | 已到前端 |
+| workbuddy | · | ◐ i18n.js grep command.goal | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页目标卡片与目标页：状态、派活 | 已到前端 |
+| opencode | · | ? opencode run --agent plan | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页目标卡片与目标页：状态、派活 | 已到前端 |
+| hermes | · | ◐ hermes chat --help; hermes kan | ◐ 在“一群会话”这一级由中心给目标设预算：派活次数（含返工和验 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页目标卡片与目标页：状态、派活 | 已到前端 |
 
 ## 答复审批（permission）
 
@@ -729,13 +723,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ? 接口存在，缺行为证据：后台长命令可进入 IDLE 待命，但缺 | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | · | 自己做：做到前端 |
-| codex | · | ? audit-inspection | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | · | 自己做：做到前端 |
+| antigravity | · | ? 接口存在，缺行为证据：后台长命令可进入 IDLE 待命，但缺 | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| codex | · | ? audit-inspection | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
 | claude | · | ? task-notification 注释引用 | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | ✓ bb find 返回行 2316：dispatch dsp_013254_z86b status=y | 已到前端 |
-| zcode | · | · | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | · | 自己做：做到前端 |
-| opencode | · | ◐ opencode serve | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | · | 自己做：做到前端 |
-| hermes | · | ◐ terminal_tool.py:164-166; sess | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | · | 自己做：做到前端 |
+| zcode | · | · | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| workbuddy | · | · | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| opencode | · | ◐ opencode serve | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| hermes | · | ◐ terminal_tool.py:164-166; sess | ✓ POST /api/gateway/collab-event（`agent_gateway.js y | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
 
 ## 上报（act-report）
 
@@ -745,13 +739,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ transcript.jsonl 增量读取与 agent_gateway.js report | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | · | 自己做：做到前端 |
-| codex | · | ? audit-inspection | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | · | 自己做：做到前端 |
-| claude | · | ? stream-json 推断 | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | · | 自己做：做到前端 |
-| zcode | · | · | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | · | 自己做：做到前端 |
-| opencode | · | ? task tool progress event | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | · | 自己做：做到前端 |
-| hermes | · | ✓ hermes kanban --help（comment/heartbeat/incidents） | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | · | 自己做：做到前端 |
+| antigravity | · | ✓ transcript.jsonl 增量读取与 agent_gateway.js report | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页派活卡片：“上报（N）”与每 | 已到前端 |
+| codex | · | ? audit-inspection | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页派活卡片：“上报（N）”与每 | 已到前端 |
+| claude | · | ? stream-json 推断 | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页派活卡片：“上报（N）”与每 | 已到前端 |
+| zcode | · | · | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页派活卡片：“上报（N）”与每 | 已到前端 |
+| workbuddy | · | · | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页派活卡片：“上报（N）”与每 | 已到前端 |
+| opencode | · | ? task tool progress event | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页派活卡片：“上报（N）”与每 | 已到前端 |
+| hermes | · | ✓ hermes kanban --help（comment/heartbeat/incidents） | ✓ POST /api/gateway/collab-event（`agent_gateway.js r | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：协作页派活卡片：“上报（N）”与每 | 已到前端 |
 
 ## 等待可见（wait-visible）
 
@@ -778,13 +772,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ channels/probe/scripts/antigravity/run_agentapi.mj | ✗ {"jsonrpc":"2.0","id":null,"er | · | 自己做：接进适配器 |
-| codex | · | ? audit-inspection | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
-| claude | ✓ Bash(run_in_background=true) | · | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
-| zcode | · | ◐ node channels/probe/scripts/na | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
-| workbuddy | · | ✓ codebuddy --bg --name probe-wb-nat-bg1 --exec "ech | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
-| opencode | · | ◐ task(prompt="...", background= | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
-| hermes | · | ✓ acp_probe3.py redirect 会话 messages 落盘（Background s | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | · | 自己做：做到前端 |
+| antigravity | · | ✓ channels/probe/scripts/antigravity/run_agentapi.mj | ✗ {"jsonrpc":"2.0","id":null,"er | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：接进适配器 |
+| codex | · | ? audit-inspection | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| claude | ✓ Bash(run_in_background=true) | · | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| zcode | · | ◐ node channels/probe/scripts/na | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| workbuddy | · | ✓ codebuddy --bg --name probe-wb-nat-bg1 --exec "ech | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| opencode | · | ◐ task(prompt="...", background= | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| hermes | · | ✓ acp_probe3.py redirect 会话 messages 落盘（Background s | ✓ gateway.onRunFinalizedForDispatches + wakeCallerIf | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
 
 ## 定时唤醒（wake-timer）
 
@@ -810,13 +804,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ channels/probe/scripts/antigravity/run_agentapi.mj | ✗ {"jsonrpc":"2.0","id":null,"er | · | 自己做：接进适配器 |
-| codex | · | ? audit-inspection | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | · | 自己做：做到前端 |
-| claude | ✓ 用户在本轮中途发来的消息以“The user sent a new message while yo | · | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | · | 自己做：做到前端 |
-| zcode | · | ◐ 结合 resume（10-17 pass）与 turnSta | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | · | 自己做：做到前端 |
-| opencode | · | ? POST /session/{id}/message | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | · | 自己做：做到前端 |
-| hermes | · | ◐ hermes status（Gateway ✓）; herm | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | · | 自己做：做到前端 |
+| antigravity | · | ✓ channels/probe/scripts/antigravity/run_agentapi.mj | ✗ {"jsonrpc":"2.0","id":null,"er | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：接进适配器 |
+| codex | · | ? audit-inspection | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| claude | ✓ 用户在本轮中途发来的消息以“The user sent a new message while yo | · | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| zcode | · | ◐ 结合 resume（10-17 pass）与 turnSta | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| workbuddy | · | · | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| opencode | · | ? POST /session/{id}/message | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| hermes | · | ◐ hermes status（Gateway ✓）; herm | ✓ 被派方调 deliver/yield 或同级消息送达时触发 processCallerWakes，若 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
 
 ## 卡住可发现（wake-stall）
 
@@ -826,13 +820,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ◐ 只读轮询 | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | · | 自己做：做到前端 |
-| codex | · | ? audit-inspection | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | · | 自己做：做到前端 |
-| claude | · | ? Monitor/Bash timeout schema | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | · | 自己做：做到前端 |
-| zcode | · | · | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | · | 自己做：做到前端 |
-| opencode | · | ? doom_loop policy | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | · | 自己做：做到前端 |
-| hermes | · | ◐ hermes cron runs f0c1b1aa40bf; | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | · | 自己做：做到前端 |
+| antigravity | · | ◐ 只读轮询 | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| codex | · | ? audit-inspection | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| claude | · | ? Monitor/Bash timeout schema | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| zcode | · | · | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| workbuddy | · | · | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| opencode | · | ? doom_loop policy | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| hermes | · | ◐ hermes cron runs f0c1b1aa40bf; | ✓ gateway.reconcileDispatches（巡检与启动恢复）：被派会话无活跃进程且超时未 | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
 
 ## 唤醒撑过重启（wake-persist）
 
@@ -970,13 +964,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | ? 接口存在，缺行为证据：write_to_file 规范支持发 | · | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
-| codex | · | ? audit-inspection | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
-| claude | · | ? 系统提示词屏蔽列表确认 | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
-| zcode | · | · | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
-| workbuddy | · | ✓ node 读 artifact-index/<uuid>.json 首条 | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
-| opencode | · | ? write / opencode export | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
-| hermes | · | ◐ netstat :9119; hermes send --h | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
+| antigravity | ? 接口存在，缺行为证据：write_to_file 规范支持发 | · | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情“产出”：这个会话的产出与 | 已到前端 |
+| codex | · | ? audit-inspection | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情“产出”：这个会话的产出与 | 已到前端 |
+| claude | · | ? 系统提示词屏蔽列表确认 | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情“产出”：这个会话的产出与 | 已到前端 |
+| zcode | · | · | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情“产出”：这个会话的产出与 | 已到前端 |
+| workbuddy | · | ✓ node 读 artifact-index/<uuid>.json 首条 | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情“产出”：这个会话的产出与 | 已到前端 |
+| opencode | · | ? write / opencode export | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情“产出”：这个会话的产出与 | 已到前端 |
+| hermes | · | ◐ netstat :9119; hermes send --h | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情“产出”：这个会话的产出与 | 已到前端 |
 | gemini | · | · | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
 | droid | · | · | ✓ GET /api/sessions/<id>/files（会话工具参数和文字里提到的文件）；GET  | · | 自己做：做到前端 |
 
@@ -1132,13 +1126,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ agentapi get-conversation-metadata <cid> + sqlite3 | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | · | 自己做：做到前端 |
-| codex | · | ✓ thread/loaded/list & state_5.sqlite threads.source | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | · | 自己做：做到前端 |
-| claude | · | ? claude agents --json | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | · | 自己做：做到前端 |
-| zcode | · | ✓ Get-NetTCPConnection -LocalPort 9240 & Get-CimInst | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | · | 自己做：做到前端 |
-| workbuddy | · | ✓ cat ~/.workbuddy/sessions/<pid>.json | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | · | 自己做：做到前端 |
-| opencode | · | · | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | · | 自己做：做到前端 |
-| hermes | · | · | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | · | 自己做：做到前端 |
+| antigravity | · | ✓ agentapi get-conversation-metadata <cid> + sqlite3 | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情顶上的“会话坐标”标签：产 | 已到前端 |
+| codex | · | ✓ thread/loaded/list & state_5.sqlite threads.source | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情顶上的“会话坐标”标签：产 | 已到前端 |
+| claude | · | ? claude agents --json | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情顶上的“会话坐标”标签：产 | 已到前端 |
+| zcode | · | ✓ Get-NetTCPConnection -LocalPort 9240 & Get-CimInst | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情顶上的“会话坐标”标签：产 | 已到前端 |
+| workbuddy | · | ✓ cat ~/.workbuddy/sessions/<pid>.json | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情顶上的“会话坐标”标签：产 | 已到前端 |
+| opencode | · | · | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情顶上的“会话坐标”标签：产 | 已到前端 |
+| hermes | · | · | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话详情顶上的“会话坐标”标签：产 | 已到前端 |
 | gemini | · | · | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | · | 自己做：做到前端 |
 | droid | · | · | ✓ server.buildPoint：按会话实时计算 entry（local-store/acpx/a | · | 自己做：做到前端 |
 
@@ -1284,10 +1278,10 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 | antigravity | · | ✓ node channels/probe/scripts/antigravity/rpc.mjs Ge | · | · | 自己做：接进适配器 |
 | codex | · | ✓ codex help | · | · | 自己做：接进适配器 |
 | claude | · | · | ? session-control op=commands：常驻 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| zcode | · | ✓ node channels/probe/scripts/native_zcode_1019.mjs  | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | · | 自己做：做到前端 |
-| workbuddy | · | ✓ codebuddy --help | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | · | 自己做：做到前端 |
-| opencode | · | · | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | · | 自己做：做到前端 |
-| hermes | · | ✓ acp_probe2.py slash（session/prompt [{type:text,tex | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | · | 自己做：做到前端 |
+| zcode | · | ✓ node channels/probe/scripts/native_zcode_1019.mjs  | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：输入框开头打“/”：弹出这一家自己 | 已到前端 |
+| workbuddy | · | ✓ codebuddy --help | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| opencode | · | · | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| hermes | · | ✓ acp_probe2.py slash（session/prompt [{type:text,tex | ✓ session-control op=commands：常驻 ACP 桥记下智能体在 session | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
 
 ## 借道采样（sampling）
 
@@ -1329,13 +1323,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ node channels/probe/scripts/antigravity/run_agenta | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | · | 自己做：接进适配器 |
-| codex | · | ? audit-inspection | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| claude | · | · | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| zcode | · | · | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| workbuddy | · | · | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| opencode | · | ? opencode agent list / grep doo | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
-| hermes | · | ◐ hermes approvals test 'rm -rf  | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
+| antigravity | · | ✓ node channels/probe/scripts/antigravity/run_agenta | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：目标页写明熔断原因（哪个任务、为什 | 已到前端 |
+| codex | · | ? audit-inspection | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：目标页写明熔断原因（哪个任务、为什 | 已到前端 |
+| claude | · | · | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：目标页写明熔断原因（哪个任务、为什 | 已到前端 |
+| zcode | · | · | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：目标页写明熔断原因（哪个任务、为什 | 已到前端 |
+| workbuddy | · | · | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：目标页写明熔断原因（哪个任务、为什 | 已到前端 |
+| opencode | · | ? opencode agent list / grep doo | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：目标页写明熔断原因（哪个任务、为什 | 已到前端 |
+| hermes | · | ◐ hermes approvals test 'rm -rf  | ◐ 中心在“一群会话”这一级熔断：返工后交回和上次几乎一样（相似 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：目标页写明熔断原因（哪个任务、为什 | 已到前端 |
 
 ## 渠道租约（channel-lease）
 
@@ -1393,13 +1387,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | ✓ node channels/probe/scripts/cdp_read_dom.mjs 9234 | ✗ opencli antigravity state-keys | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
-| codex | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
-| claude | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
-| zcode | ✓ node channels/probe/scripts/cdp_read_dom.mjs 9240 | ✓ sqlite3 ~/.zcode/cli/db/db.sqlite "SELECT title_so | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
-| workbuddy | · | ✓ sqlite3 ... ".schema sessions" | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
-| opencode | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
-| hermes | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | · | 自己做：做到前端 |
+| antigravity | ✓ node channels/probe/scripts/cdp_read_dom.mjs 9234 | ✗ opencli antigravity state-keys | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片：原生标题、哪一家、状态、 | 已到前端 |
+| codex | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片：原生标题、哪一家、状态、 | 已到前端 |
+| claude | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片：原生标题、哪一家、状态、 | 已到前端 |
+| zcode | ✓ node channels/probe/scripts/cdp_read_dom.mjs 9240 | ✓ sqlite3 ~/.zcode/cli/db/db.sqlite "SELECT title_so | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片：原生标题、哪一家、状态、 | 已到前端 |
+| workbuddy | · | ✓ sqlite3 ... ".schema sessions" | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片：原生标题、哪一家、状态、 | 已到前端 |
+| opencode | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片：原生标题、哪一家、状态、 | 已到前端 |
+| hermes | · | · | ✓ 会话列表和详情带原生的标题、工作目录、模型、起止时间、状态 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：会话卡片：原生标题、哪一家、状态、 | 已到前端 |
 | doubao | ✓ node channels/probe/scripts/cdp_read_dom.mjs 9225 | · | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 全文检索（content-search）
@@ -1410,13 +1404,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
-| codex | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
-| claude | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
-| zcode | · | ◐ sqlite3 db.sqlite "SELECT … FR | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
-| workbuddy | · | ◐ node -e "…readdirSync projects | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
-| opencode | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
-| hermes | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | · | 自己做：做到前端 |
+| antigravity | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| codex | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| claude | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：筛选框里打两个字以上：“内容里找到 | 已到前端 |
+| zcode | · | ◐ sqlite3 db.sqlite "SELECT … FR | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：筛选框里打两个字以上：“内容里找到 | 已到前端 |
+| workbuddy | · | ◐ node -e "…readdirSync projects | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| opencode | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
+| hermes | · | · | ✓ GET /api/search?q=（agent_gateway.js search）：SQLite | ? /m/（10-21 负责人：网页追后端第二批，已有功能逐个实 | 自己做：做到前端 |
 
 ## 上下文占用（context-usage）
 
@@ -1458,13 +1452,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | · | 自己做：做到前端 |
-| codex | · | ? opencli codex projects | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | · | 自己做：做到前端 |
-| claude | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | · | 自己做：做到前端 |
-| zcode | · | ✓ opencli zcode list | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | · | 自己做：做到前端 |
-| workbuddy | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | · | 自己做：做到前端 |
-| opencode | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | · | 自己做：做到前端 |
-| hermes | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | · | 自己做：做到前端 |
+| antigravity | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：“项目”页：按工作目录分组，每组写 | 已到前端 |
+| codex | · | ? opencli codex projects | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：“项目”页：按工作目录分组，每组写 | 已到前端 |
+| claude | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：“项目”页：按工作目录分组，每组写 | 已到前端 |
+| zcode | · | ✓ opencli zcode list | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：“项目”页：按工作目录分组，每组写 | 已到前端 |
+| workbuddy | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：“项目”页：按工作目录分组，每组写 | 已到前端 |
+| opencode | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：“项目”页：按工作目录分组，每组写 | 已到前端 |
+| hermes | · | · | ✓ GET /api/sessions?slim=1 每个会话带 project（工作目录）；网页“项目 | ✓ /m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）：“项目”页：按工作目录分组，每组写 | 已到前端 |
 
 ## 列工作区文件（workspace-files）
 

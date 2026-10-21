@@ -1285,6 +1285,22 @@
         ],
         "status": "real",
         "note": ""
+      },
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "会话卡片和详情的状态标签（在干活、在等、停了、出错）",
+        "action": "sessions",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 8899 实测：Claude 会话标“在干活”；页面这段和产品无关，同一套渲染"
       }
     ],
     "observe-history": [
@@ -2532,6 +2548,255 @@
         ],
         "status": "real",
         "note": "10-21 旁路实测：ZCode 探针单 dsp_062705_aq21 网页收回后 cancelled，那一轮 aborted。按钮和产品无关，各家的 reclaim 后端已分别实测"
+      }
+    ],
+    "content-search": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "筛选框里打两个字以上：“内容里找到（N 处，M 个会话）”，点开跳到那一轮",
+        "action": "search",
+        "channels": [
+          "claude",
+          "zcode"
+        ],
+        "status": "real",
+        "note": "10-21 8899 浏览器实测：quota.ts 命中 Claude 会话 13 处；ZCode 测试员暗号命中 6 个会话（ZCode 5、Claude 1）"
+      },
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "同上",
+        "action": "search",
+        "channels": [
+          "codex",
+          "antigravity",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "检索库按会话库统一建索引，这几家这次没专门搜到命中"
+      }
+    ],
+    "list-projects": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "“项目”页：按工作目录分组，每组写在干活几个、会话数、最近时间、哪几家",
+        "action": "sessions",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 8899 实测：multi、Agent-Architecture-Hub 两组里七家都在；页面这段和产品无关，同一套渲染"
+      }
+    ],
+    "native-meta": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "会话卡片：原生标题、哪一家、状态、轮数与工具次数、目录、模型、最近时间",
+        "action": "sessions",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 8899 实测（Claude 卡片、ZCode 会话页）；页面这段和产品无关，同一套渲染"
+      }
+    ],
+    "ownership": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "会话详情顶上的“会话坐标”标签：产品 × 入口 × 所有权（例：ZCode · acp-resident · hub-idle）",
+        "action": "session",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 8899 实测 ZCode 会话；页面这段和产品无关，同一套渲染"
+      }
+    ],
+    "artifact": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "会话详情“产出”：这个会话的产出与用到的文件，点开看内容",
+        "action": "session-files",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 8899 实测 ZCode 会话：列出 1 个文件（AGENTS.md）；页面这段和产品无关，同一套渲染"
+      }
+    ],
+    "cmd-list": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "输入框开头打“/”：弹出这一家自己的命令清单，点一下填进去",
+        "action": "session-control",
+        "channels": [
+          "zcode"
+        ],
+        "status": "real",
+        "note": "10-21 8899 实测 ZCode 会话：19 条（auto、compact、goal、fork、mode、model、quota、resume、mcp…）"
+      },
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "同上",
+        "action": "session-control",
+        "channels": [
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "后端已实测，网页这几家这次没点"
+      }
+    ],
+    "act-report": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "协作页派活卡片：“上报（N）”与每条上报的时间和内容",
+        "action": "dispatches",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 8899 实测：有上报的单显示“上报（1）”；页面这段和产品无关，同一套渲染"
+      }
+    ],
+    "goal": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "协作页目标卡片与目标页：状态、派活用了几次/上限、同时几件、返工上限、恢复与取消",
+        "action": "goals",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 8899 实测：“派活 10/20”“派活 11/12 · 同时最多 3 件 · 每件最多返工 1 次”；页面这段和产品无关，同一套渲染"
+      }
+    ],
+    "loop-guard": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "目标页写明熔断原因（哪个任务、为什么停），可恢复或取消",
+        "action": "goals",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "real",
+        "note": "10-21 8899 实测：“任务 argon 停下了：返工 1 次仍没过验收（上限 1）”；页面这段和产品无关，同一套渲染"
+      }
+    ],
+    "act-yield": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "派活卡片“让出等待”和它在等什么",
+        "action": "dispatches",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "页面有这段，10-21 当时没有这种状态的单可看，没实测"
+      }
+    ],
+    "wake-stall": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "待处理页的“卡住的派活单”卡片",
+        "action": "dispatches",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "页面有这段，10-21 当时没有这种状态的单可看，没实测"
+      }
+    ],
+    "wake-bg": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "从会话派活时“交回后叫醒这个会话接着做”，卡片上写派活方叫没叫醒",
+        "action": "dispatch",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "页面有这段，10-21 当时没有这种状态的单可看，没实测"
+      }
+    ],
+    "wake-msg": [
+      {
+        "page": "/m/（10-21 负责人：网页追后端第二批，已有功能逐个实测）",
+        "control": "同上",
+        "action": "dispatch",
+        "channels": [
+          "claude",
+          "codex",
+          "antigravity",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "页面有这段，10-21 当时没有这种状态的单可看，没实测"
       }
     ]
   }
