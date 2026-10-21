@@ -23,11 +23,14 @@
   // everything an orchestration object carried that the panel does not show elsewhere (docs/hub-graph-format.md: keys the page
   // does not know go to the details, so nothing parsed stays invisible); *_file keys open the attached original
   var SHOWN = { name: 1, role: 1, trigger: 1, model: 1, watches: 1, session: 1, sessions: 1 };
+  // a local document opens in the asset workbench's reader (plannotator-workbench, ?open=<path>)
+  var WORKBENCH = 'http://localhost:8890/';
   function rawFields(m, attrs, tags) {
     var base = m.source && m.source.base;
     var rows = Object.keys(attrs || {}).filter(function (k) { return !SHOWN[k]; }).map(function (k) {
       var v = attrs[k];
       if (/_file$/.test(k) && typeof v === 'string' && base) return [k, '<a class="ob-a" href="' + esc(base + v) + '" target="_blank" rel="noopener">' + esc(v) + ' ↗</a>'];
+      if (typeof v === 'string' && /^[A-Za-z]:[\\/]/.test(v)) return [k, esc(v) + ' <a class="ob-a" href="' + esc(WORKBENCH + '?open=' + encodeURIComponent(v.replace(/\\/g, '/'))) + '" target="_blank" rel="noopener">在工作台打开 ↗</a>'];
       var t = typeof v === 'string' ? v : JSON.stringify(v);
       return [k, t.length > 160 ? '<details><summary>' + esc(t.slice(0, 80)) + '…</summary>' + esc(t) + '</details>' : esc(t)];
     });
