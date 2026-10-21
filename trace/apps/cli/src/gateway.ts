@@ -313,7 +313,7 @@ export class AgentGatewayHub {
         this.selectedModels.get(p.id) ||
         chSessions[0]?.currentModel ||
         p.defaultModel;
-      const chCurrentModel = p.recommendedModels.includes(rawCandidate) ? rawCandidate : p.defaultModel;
+      const chCurrentModel = this.selectedModels.get(p.id) || (p.recommendedModels.includes(rawCandidate) ? rawCandidate : p.defaultModel);
       const chCurrentCwd =
         this.selectedCwds.get(p.id) ||
         chSessions[0]?.cwd ||
@@ -476,6 +476,8 @@ export class AgentGatewayHub {
                 }
                 raw.acpx = raw.acpx || {};
                 raw.acpx.current_model_id = model;
+                // Chosen through the center: stands even when the product table does not list it (models.ts recordedModelStands).
+                raw.acpx.hub_model_choice = model;
                 if (Array.isArray(raw.acpx.available_models) && !raw.acpx.available_models.includes(model)) {
                   raw.acpx.available_models.unshift(model);
                 }

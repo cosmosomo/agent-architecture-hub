@@ -237,6 +237,29 @@ function modelLabel(fam, m) {
   return real ? `${real}（${m}）` : m;
 }
 
+// What a product reports it can run (center: gateway/models.ts, unit model-list), fetched once per product per page
+// load. A product that only takes tier names (modelNames, Antigravity) keeps the table's tiers.
+const liveModelCache = {};
+function liveModelsOf(fam) {
+  const p = ((S.caps && S.caps.products) || []).find((x) => x.id === fam);
+  if (p && p.modelNames) return Promise.resolve(null);
+  return (liveModelCache[fam] ||= api('/api/gateway/models?channel=' + encodeURIComponent(fam)).then((r) => r.models || null, () => { delete liveModelCache[fam]; return null; }));
+}
+// The product table's list (run through the center and seen working) first, then what the product also reports.
+function modelGroups(fam, ch, live) {
+  const verified = ch.recommendedModels || [];
+  return {
+    verified: verified.map((id) => ({ id, label: modelLabel(fam, id) })),
+    more: (live || []).filter((m) => !verified.includes(m.id)).map((m) => ({ id: m.id, label: m.label || m.id })),
+  };
+}
+function modelSelectHtml(fam, ch, live) {
+  const g = modelGroups(fam, ch, live);
+  const opt = (m) => `<option value="${esc(m.id)}" title="${esc(m.id)}" ${m.id === ch.defaultModel ? 'selected' : ''}>${esc(m.label)}</option>`;
+  if (!g.more.length) return g.verified.map(opt).join('') || '<option value="">默认</option>';
+  return (g.verified.length ? `<optgroup label="验证过的">${g.verified.map(opt).join('')}</optgroup>` : '') + `<optgroup label="这家还报了（没验证能用）">${g.more.map(opt).join('')}</optgroup>`;
+}
+
 // Remaining quota where a product can say it (center: gateway/quota.ts), shown where work is handed out.
 const quotaOf = (fam) => (S.gw && S.gw.quota && S.gw.quota.products && S.gw.quota.products[fam]) || null;
 function untilText(t) {
@@ -1500,8 +1523,12 @@ const BAR_HANDLERS = {
   pin: ({ id, sess }) => { store.set('pin:' + id, store.get('pin:' + id) ? null : '1'); activeSessionStatusFn(sess); },
   model: ({ meta, sess }) => {
     const ch = ((S.gw && S.gw.channels) || []).find((c) => c.id === meta.channel) || {};
-    const el = sheet(`<b>换模型（下一句起生效）</b><div class="sub">现在：${esc(meta.model || '默认')}</div>` + (ch.recommendedModels || []).map((m) =>
-      `<button class="card btn-touch" data-m="${esc(m)}">${esc(modelLabel(meta.channel, m))}${m === meta.model ? ' ✓' : ''}</button>`).join(''));
+    const btn = (m) => `<button class="card btn-touch" data-m="${esc(m.id)}" title="${esc(m.id)}">${esc(m.label)}${m.id === meta.model ? ' ✓' : ''}</button>`;
+    const el = sheet(`<b>换模型（下一句起生效）</b><div class="sub">现在：${esc(meta.model || '默认')}</div>` + modelGroups(meta.channel, ch).verified.map(btn).join('') + '<div id="mmore"></div>');
+    liveModelsOf(meta.channel).then((live) => {
+      const more = modelGroups(meta.channel, ch, live).more, box = $('#mmore', el);
+      if (box && more.length) box.innerHTML = '<div class="sub" style="margin-top:10px">这家还报了这些（没验证能用）</div>' + more.map(btn).join('');
+    });
     el.addEventListener('click', async (e) => {
       const b = e.target.closest('[data-m]'); if (!b) return;
       try {
@@ -1881,8 +1908,13 @@ async function newTask(project) {
     const f = $('#nf', el).value;
     const ch = (S.gw.channels || []).find((c) => c.id === f) || {};
     $('#nq', el).textContent = quotaLine(f);
-    const ms = ch.recommendedModels || [];
-    $('#nm', el).innerHTML = ms.map((m) => `<option value="${esc(m)}" ${m === ch.defaultModel ? 'selected' : ''}>${esc(modelLabel(f, m))}</option>`).join('') || '<option value="">默认</option>';
+    $('#nm', el).innerHTML = modelSelectHtml(f, ch);
+    liveModelsOf(f).then((live) => {
+      if (!live || $('#nf', el).value !== f) return;
+      const keep = $('#nm', el).value;
+      $('#nm', el).innerHTML = modelSelectHtml(f, ch, live);
+      $('#nm', el).value = keep;
+    });
   };
   $('#nf', el).onchange = fill; fill();
   $('#nx', el).onclick = () => el.remove();

@@ -1,12 +1,12 @@
 # 功能矩阵：每个单元在各家、各位置上的理论上限与现状（由黑板、integration-map 和完整性检查生成，勿手改）
 
-生成时间：2026-10-21T07:10:33.448Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
+生成时间：2026-10-21T07:19:29.600Z。列按 `channels/README.md`“立体认知”里的位置排：桌面端界面（用户说的原生应用层：桌面应用给人看什么、让人操作什么）、原生接口（原生接口层：app-server、命令行、ACP 桥等暴露给程序的）、适配器与我们的后端（适配器层）、网页（前端交互层）。理论上限来自设计目录《能力单元与协作拓扑_完整性检查_20261018》4.2；桌面端界面这一列靠截图分析和代码分析取证，不是行为实测，标“有（截图/代码）”；现有格子来自一份调研，未逐格核。每做完一件事：追加黑板 → 动了后端或前端就登记 `hub/data/integration-map.json` → 重跑 `channels/probe/scripts/build_coverage.js`。
 
 标记：✓ 有行为证据（后面是实现路径）；◐ 部分；? 未验证；✗ 不通；✗假 界面有、实际是别的办法模拟；有（截图/代码） 桌面端界面这一列靠截图或代码分析得出、不是行为实测（这批来自调研，未逐格核）；· 没有记录。
 
 ## 现在还缺什么（外层：按 README“立体认知”的轴把现在的差摆出来）
 
-README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-21T07:10:33.454Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
+README“立体认知”说清了每一级由谁当宿主、我们在那一级该做什么，拿它对着现状一看就知道差在哪；这里只把数摆出来，供核对。一格 = 一个能力单元在一个产品。生成时间 2026-10-21T07:19:29.606Z；统计七个产品（claude、codex、antigravity、zcode、workbuddy、opencode、hermes），Gemini、Droid 的凭证和 key 有问题，另算。
 
 **每一层：理论极限、我们的目标、现状、依据记在哪**（一格 = 一个能力单元在一个产品）
 
@@ -560,13 +560,13 @@ README“立体认知”说清了每一级由谁当宿主、我们在那一级�
 
 | 产品 | 桌面端界面 | 原生接口 | 适配器与我们的后端 | 网页 | 差距与下一步 |
 |---|---|---|---|---|---|
-| antigravity | · | ✓ node channels/probe/scripts/antigravity/rpc.mjs Ge | ◐ 这一入口给出的是 hub/data/products.jso | · | 自己做：接进适配器 |
-| codex | · | ✓ codex debug models | ✓ acpx --format json codex status -s probe-codex-l1b | · | 自己做：做到前端 |
-| claude | · | ✓ conn.newSession({cwd,mcpServers:[]}) → 读 response. | ◐ 这一入口给出的是 hub/data/products.jso | · | 自己做：接进适配器 |
-| zcode | · | ✓ node channels/probe/scripts/suite_zcode_l1a.mjs | ✓ acpx --format json zcode status -s probe-l1b-full | · | 自己做：做到前端 |
-| workbuddy | · | ✓ codebuddy --help | ✓ acpx --format json workbuddy status -s probe-workb | · | 自己做：做到前端 |
-| opencode | · | ✓ opencode models | ✓ acpx --format json opencode status -s probe-openco | · | 自己做：做到前端 |
-| hermes | · | ✓ connection.newSession 返回体 | ✓ acpx --format json hermes -s probe-hermes-l1b1 <pr | · | 自己做：做到前端 |
+| antigravity | · | ✓ node channels/probe/scripts/antigravity/rpc.mjs Ge | ? GET /api/gateway/models?channe | · | 自己做：接进适配器 |
+| codex | · | ✓ codex debug models | ✓ availableModels=["gpt-6.1-sol","gpt-6-astra","gpt- | ? /m/（10-21 负责人）：“＋新任务”模型下拉和会话“换 | 自己做：做到前端 |
+| claude | · | ✓ conn.newSession({cwd,mcpServers:[]}) → 读 response. | ? GET /api/gateway/models?channe | ? /m/（10-21 负责人）：“＋新任务”模型下拉和会话“换 | 自己做：接进适配器 |
+| zcode | · | ✓ node channels/probe/scripts/suite_zcode_l1a.mjs | ✓ availableModels 返回 7 个模型列表 | ? /m/（10-21 负责人）：“＋新任务”模型下拉和会话“换 | 自己做：做到前端 |
+| workbuddy | · | ✓ codebuddy --help | ✓ {"count":20,"models":["hy4-preview","hy3","hy3-x", | ? /m/（10-21 负责人）：“＋新任务”模型下拉和会话“换 | 自己做：做到前端 |
+| opencode | · | ✓ opencode models | ✓ {"action":"status_snapshot","status":"idle","summa | ? /m/（10-21 负责人）：“＋新任务”模型下拉和会话“换 | 自己做：做到前端 |
+| hermes | · | ✓ connection.newSession 返回体 | ✓ "availableModels":[{"modelId":"custom:glm-5.3",…}, | ? /m/（10-21 负责人）：“＋新任务”模型下拉和会话“换 | 自己做：做到前端 |
 | gemini | · | ✗ gemini --help | · | · | 派研究：原生接口没证实，按理论上限找入口或补齐 |
 
 ## 新建时选模型（model-new）

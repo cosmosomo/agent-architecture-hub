@@ -11,6 +11,7 @@ import type { Session, SessionSummary, Step, Turn } from '@hub-trace/contract';
 import type { ChannelId, ChannelProfile, ActiveRun, AcpxSessionInfo } from './types.ts';
 import { CHANNEL_PROFILES, resolveChannel, detectChannelFromCommand } from './products.ts';
 import { HOME, WORKSPACE_ROOT, NEW_CWD, isSmokeTestPrompt, classifyTool, stripWorkbuddyUserText } from './common.ts';
+import { recordedModelStands } from './models.ts';
 
 export const sessionMethods = {
   /** Parse a single WorkBuddy Desktop `.jsonl` session from `~/.workbuddy/projects/<project>/<id>.jsonl`. */
@@ -633,7 +634,7 @@ export const sessionMethods = {
       this.selectedModels.get(slot) ||
       this.selectedModels.get(prof.id) ||
       prof.defaultModel;
-    const chosenModel = prof.recommendedModels.includes(rawCandidate) ? rawCandidate : prof.defaultModel;
+    const chosenModel = rawCandidate;
     this.selectedModels.set(slot, chosenModel);
     const info: AcpxSessionInfo = {
       acpxRecordId: `new-${prof.id}-${sessionName}`,
@@ -775,8 +776,9 @@ export const sessionMethods = {
             this.selectedModels.get(channel) ||
             prof.defaultModel;
 
-          // Strictly heal any unverified model (e.g. WorkBuddy space-bunny -> custom-local:glm-5.3)
-          if (!prof.recommendedModels.includes(rawModel)) {
+          // Strictly heal a model the product slipped in on its own (e.g. WorkBuddy space-bunny -> custom-local:glm-5.3);
+          // one chosen through the center stands.
+          if (!this.selectedModels.get(slot) && !recordedModelStands(prof, raw, rawModel)) {
             rawModel = prof.defaultModel;
             if (channel === 'workbuddy' && raw.acpx && raw.acpx.current_model_id !== rawModel) {
               try {
@@ -939,7 +941,7 @@ export const sessionMethods = {
         draft?.currentModel ||
         this.selectedModels.get(prof.id) ||
         prof.defaultModel;
-      const activeModel = prof.recommendedModels.includes(rawCand) ? rawCand : prof.defaultModel;
+      const activeModel = rawCand;
       return {
         id: idOrRecordId,
         sourceId: sName,
@@ -1060,7 +1062,7 @@ export const sessionMethods = {
         (typeof raw.acpx?.current_model_id === 'string' && raw.acpx.current_model_id.trim()) ||
         this.selectedModels.get(channel) ||
         prof.defaultModel;
-      const activeModel = prof.recommendedModels.includes(rawCandModel) ? rawCandModel : prof.defaultModel;
+      const activeModel = this.selectedModels.get(slot) || recordedModelStands(prof, raw, rawCandModel) ? rawCandModel : prof.defaultModel;
 
       let stepSeq = 0;
       const flushTurn = () => {

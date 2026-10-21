@@ -9,6 +9,7 @@ import type { RunOpts, ChannelProfile, ActiveRun } from './types.ts';
 import { agentBaseEnv } from './products.ts';
 import { ACP_IDLE_MS, ACPX_TURN_TIMEOUT_SEC } from './common.ts';
 import { toolRequest } from './security.ts';
+import { noteModels } from './models.ts';
 
 export const acpRunMethods = {
   /**
@@ -49,6 +50,7 @@ export const acpRunMethods = {
         const other = this.activeAcpRunsBySession.get(sid);
         if (other && other.runId !== run.runId) throw new Error(`智能体给的会话 ${sid} 正被另一轮（${other.sessionName}）占着`);
         run.acpSessionId = sid;
+        noteModels(prof.id, info.models, `${prof.label} 常驻桥 session/${createdHere ? 'new' : 'load'}`);
         if (model && info.currentModel !== model) {
           try {
             await driver.setSessionModel(sid, model);

@@ -379,6 +379,20 @@
         ],
         "status": "real",
         "note": "10-18 verify.js 10181442 实测四家通过"
+      },
+      {
+        "action": "set-model",
+        "how": "中心选的模型不再被改回默认：换模型时记录写 hub_model_choice，中心自己的 driver 记录也算中心选的；只有这家自己塞进记录、产品表又没有的模型才改回默认（models.ts recordedModelStands）",
+        "channels": [
+          "claude",
+          "codex",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "10-21 负责人；为了选实时列表里的模型后重启不被改回；没测"
       }
     ],
     "mode-switch": [
@@ -1222,6 +1236,47 @@
         ],
         "status": "built",
         "note": "10-21 负责人实现；这三家记录里没有模型上限，只给用量；旁路实例读到 OpenCode 15699、ZCode 34251、Antigravity 90645；没和应用对过"
+      }
+    ],
+    "model-list": [
+      {
+        "action": "models",
+        "how": "GET /api/gateway/models?channel=codex：常驻 app-server 当场 model/list（去掉 hidden）",
+        "channels": [
+          "codex"
+        ],
+        "status": "built",
+        "note": "10-21 负责人实现；旁路实例 18919 读到 7 个（gpt-6.1-sol 等）；没和 Codex 应用里的列表对过"
+      },
+      {
+        "action": "models",
+        "how": "GET /api/gateway/models?channel=antigravity：语言服务器 GetCascadeModelConfigData",
+        "channels": [
+          "antigravity"
+        ],
+        "status": "built",
+        "note": "10-18 已有；网页仍用产品表的三档，因为发话只认档位名"
+      },
+      {
+        "action": "models",
+        "how": "GET /api/gateway/models?channel=claude：有存的列表就用存的，?refresh=1 或没存时开一个 claude-agent-acp 会话读 configOptions（不发话）",
+        "channels": [
+          "claude"
+        ],
+        "status": "built",
+        "note": "10-21 旁路实例当场读到 opus、claude-fable-5-1[1m]、sonnet、haiku（default 去掉了）；没和应用对过"
+      },
+      {
+        "action": "models",
+        "how": "GET /api/gateway/models?channel=…：常驻 ACP 桥每次 session/new、session/load 回报的列表存进 ~/.agent-hub/model-catalog.json；没有时读这家最新一条带 available_models 的 acpx 记录；取两者里新的",
+        "channels": [
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "10-21 旁路实例读到 ZCode 7、WorkBuddy 20、OpenCode 16、Hermes 5 个（都来自 10-18 的 acpx 记录，常驻桥下一次开会话后刷新）；列出来不等于能跑"
       }
     ]
   },
@@ -2994,6 +3049,23 @@
         ],
         "status": "built",
         "note": "没测"
+      }
+    ],
+    "model-list": [
+      {
+        "page": "/m/（10-21 负责人）",
+        "control": "“＋新任务”模型下拉和会话“换模型”：先列产品表验证过的，这家实时列表到了再加一组“这家还报了（没验证能用）”；派活单仍只列验证过的（派活那边只认验证过的）",
+        "action": "models",
+        "channels": [
+          "claude",
+          "codex",
+          "zcode",
+          "workbuddy",
+          "opencode",
+          "hermes"
+        ],
+        "status": "built",
+        "note": "没测；Antigravity 照旧三档"
       }
     ]
   }

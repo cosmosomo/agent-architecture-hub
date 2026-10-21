@@ -285,7 +285,7 @@
       "id": "models",
       "method": "GET",
       "path": "/api/gateway/models",
-      "does": "一家产品此刻真实可用的模型清单（?channel=claude|antigravity，向这家实际查来，不是产品表里写死的推荐列表；unit model-list）；targets 也带出",
+      "does": "一家产品自己报的模型清单，每个标出产品表是否验证过（verified）；Codex 当场问 app-server model/list，Antigravity 当场问语言服务器，Claude 带 ?refresh=1 才当场开桥查，其余家用常驻桥或 acpx 记录最近报的（live 标出是不是当场读的）；unit model-list；targets 也带出",
       "cli": "quota"
     },
     {

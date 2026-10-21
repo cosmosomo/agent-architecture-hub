@@ -891,7 +891,7 @@ export function createService(opts: ServeOptions): Server {
         return json(res, 200, gateway.getState());
       }
       if (path === '/api/gateway/models') {
-        return json(res, 200, await listModels(gateway, String(url.searchParams.get('channel') || '')));
+        return json(res, 200, await listModels(gateway, String(url.searchParams.get('channel') || ''), Boolean(url.searchParams.get('refresh'))));
       }
       // Each product's load, breaker, quota and why it cannot take work now (capacity.ts channelOverview).
       if (path === '/api/gateway/channels') {

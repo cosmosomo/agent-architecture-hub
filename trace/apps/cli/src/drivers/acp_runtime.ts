@@ -66,6 +66,8 @@ export interface AcpSessionInfo {
   sessionId: string;
   currentModel?: string;
   availableModels?: string[];
+  /** The same models with the names the agent gives them. */
+  models?: { id: string; label: string }[];
   configOptions?: any[];
   currentMode?: string;
   availableModes?: string[];
@@ -303,6 +305,9 @@ export class AcpResidentDriver extends EventEmitter {
       currentModel: res?.models?.currentModelId,
       availableModels: Array.isArray(res?.models?.availableModels)
         ? res.models.availableModels.map((m: any) => String(m.modelId || m.id || m))
+        : undefined,
+      models: Array.isArray(res?.models?.availableModels)
+        ? res.models.availableModels.map((m: any) => ({ id: String(m.modelId || m.id || m), label: String(m.name || m.modelId || m.id || m) }))
         : undefined,
       currentMode: res?.modes?.currentModeId,
       availableModes: Array.isArray(res?.modes?.availableModes)
