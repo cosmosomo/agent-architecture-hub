@@ -126,7 +126,10 @@
 
     out.push('<div class="ob-sh">资料（文字编排）</div>');
     m.def.docs.filter(function (d) { return d.layer !== 'private' || !/^d_role_/.test(d.id); }).forEach(function (d) {
-      out.push('<div class="ob-si" style="cursor:default" title="' + esc(d.summary || '') + '"><span class="ob-tw"></span><span class="ob-nm">' + esc(d.name) + '</span><span class="ob-meta">' + esc(L.docLayer[d.layer] || d.layer) + ' · ' + d.audience.length + ' 人</span></div>');
+      var meta = '<span class="ob-meta">' + esc(L.docLayer[d.layer] || d.layer) + ' · ' + d.audience.length + ' 人</span>';
+      // a document with a local path opens in the asset workbench's reader
+      if (d.path) out.push('<a class="ob-si" href="' + esc('http://localhost:8890/?open=' + encodeURIComponent(d.path.replace(/\\/g, '/'))) + '" target="_blank" rel="noopener" title="' + esc((d.summary ? d.summary + '\n' : '') + '在工作台打开：' + d.path) + '"><span class="ob-tw"></span><span class="ob-nm">' + esc(d.name) + ' ↗</span>' + meta + '</a>');
+      else out.push('<div class="ob-si" style="cursor:default" title="' + esc(d.summary || '') + '"><span class="ob-tw"></span><span class="ob-nm">' + esc(d.name) + '</span>' + meta + '</div>');
     });
 
     out.push('<div class="ob-sh">案例实例</div>');

@@ -74,8 +74,38 @@
 | `call` | 一次模型或工具调用 | 调用行 |
 | `case` | 一个任务或案例 | 案例节点 |
 | `merged` | 快速聚合的占位节点 | 聚合占位卡 |
+| `doc` | 一份文档或资料（信息层：任务书、设计稿、决策链、用户原话、产物……） | 侧栏“资料”一行；有本机路径的在资产工作台打开 |
 
 **未知 type 降级渲染**：前端遇到不认识的 type，用默认卡片画出来，不崩。这是格式可扩展的前提。
+
+### 文档对象（`doc`，2026-10-22 加入，用户定）
+
+核心抽象的三层是信息、个体、能力渠道，`doc` 是信息层的对象。读取器早就认它（md 案例的 docs.md 也解析成它），10-22 起写进本表，并且保留 attributes。
+
+```json
+{
+  "id": "USER-VISION-20261021",
+  "type": "doc",
+  "name": "用户理念：注册表、打标与按时间立体理解",
+  "tags": ["nature/user_vision", "core/core", "kind/decision_log", "date/2026-10-21"],
+  "attributes": {
+    "path": "E:/program/GIT/Jobs/…/用户理念_注册表打标与立体理解_20261021.md",
+    "layer": "map",
+    "audience": [],
+    "summary": "用户原话照录……"
+  }
+}
+```
+
+| attributes 键 | 说明 |
+|---|---|
+| `path` | 本机路径；有它就能在资产工作台打开（`http://localhost:8890/?open=<path>`） |
+| `layer` | `consensus`（共识）、`private`（私有）、`map`（地图：注册表里的文档默认这一层） |
+| `audience` | 收到它的个体编号；`"all"` 或不写表示全部智能体，空数组表示不发给谁 |
+| `owner`、`summary` | 负责人、一句话说明 |
+| 其他 | 注册表的 kind、真源标记、维护方式、状态等原样放进来，进详情页 |
+
+个体读写文档用信息线：`{"type": "info", "sub": "read" | "write", "from": <个体>, "to": <文档>}`。注册表导出（`asset_map.py export-graph`）把每个注册文件导成 `doc`，归属工作区用 `info/located_in`，文档之间的关联用 `info/references` 或 `info/derived_from`。
 
 ### 标注会话：把定义连到真实的会话
 
@@ -285,6 +315,7 @@ HUB.model.addSource({
 | hub-graph 概念 | 代码位置 |
 |---------------|---------|
 | `objects` (individual/group/channel) | `hub/js/sources/casedef.js` → `def` |
+| `objects` (doc) | `def.docs`（`from-hub-graph.js`），侧栏“资料”（`hub/js/obs/side.js`） |
 | `objects` (run/call/handoff) | `hub/js/sources/sim.js` → `facts` |
 | `relations` | `def.relations` |
 | `view` | `hub/js/core/store.js` state |

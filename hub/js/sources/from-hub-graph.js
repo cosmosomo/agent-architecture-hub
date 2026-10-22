@@ -58,7 +58,9 @@
         docs.push({
           id: o.id, layer: a.layer || tagOf('layer') || 'private', name: o.name || o.id,
           owner: a.owner || null, summary: a.summary || '',
-          audience: a.audience == null ? 'all' : a.audience, version: 'v1', tags: tags
+          audience: a.audience == null ? 'all' : a.audience, version: 'v1', tags: tags,
+          // where the document lives on this machine (opens in the asset workbench) and everything else it carried
+          path: typeof a.path === 'string' ? a.path : null, attributes: a
         });
       } else if (o.type === 'case') {
         facts.cases.push({
