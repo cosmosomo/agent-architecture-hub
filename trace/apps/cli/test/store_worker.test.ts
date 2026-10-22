@@ -88,6 +88,9 @@ test('search writes on a worker stay visible to queries and removed sources disa
     assert.equal((await search.searchAsync({ q: 'npm', limit: 9 })).total, search.search({ q: 'npm' }).total);
     assert.equal((await search.searchAsync({ q: 'np', limit: 9 })).total, search.search({ q: 'np' }).total);
     assert.equal((await search.sync(store.files(), (f) => store.parseSource(f))).indexed, 0);
+    // A source whose list is not known yet keeps its sessions; once known and empty, they go.
+    const kept = await search.sync([], (f) => store.parseSource(f), { keep: (adapter) => adapter.startsWith('codex') });
+    assert.equal(kept.removed, 0, 'sessions of a source not yet listed stay in the index');
     assert.equal((await search.sync([], (f) => store.parseSource(f))).removed, 4);
     assert.equal(search.search({}).total, 0);
     assert.equal((await search.searchAsync({ q: 'npm', limit: 9 })).total, 0, 'a sync that changed the index drops cached answers');

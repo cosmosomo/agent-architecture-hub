@@ -384,19 +384,24 @@ export function createService(opts: ServeOptions): Server {
   // Sessions the gateway lists from outside the store (Antigravity brain, WorkBuddy desktop, Hermes) go into the
   // search index too, as sources keyed by their update time and turn count; parsed by the gateway. The list is
   // taken at most every 5 minutes and kept on failure, so the index does not drop and rebuild them.
-  let outsideSources: { at: number; list: any[] } = { at: 0, list: [] };
+  let outsideSources: { at: number; list: any[]; known: boolean } = { at: 0, list: [], known: false };
   const OUTSIDE = new Set(['antigravity', 'workbuddy', 'hermes']);
   const outsideFiles = (have: Set<string>) => {
-    if (Date.now() - outsideSources.at > 300_000) {
+    // Until the gateway's session reader has read once, its list is empty: not yet known, not "no sessions".
+    // Taken as known, the first sync after a restart dropped ~540 such sessions from the index and re-parsed
+    // them five minutes later (10-22). Until it is known, every refresh asks again and the sync keeps them.
+    const readerPending = Boolean(gateway.sessionReader && gateway.sessionReader.updatedAt === 0);
+    if (readerPending) gateway.sessionReader!.current(); // starts its first read
+    else if (Date.now() - outsideSources.at > 300_000) {
       try {
         const list = gateway
           .listAcpxSessions()
           .filter((s) => OUTSIDE.has(s.channel) && s.traceSessionId && !have.has(s.traceSessionId))
           .map((s) => ({ id: s.traceSessionId, path: '', kind: 'gateway', adapter: 'gateway:' + s.channel, size: s.turnCount || 0, mtimeMs: Date.parse(s.updatedAt || s.createdAt || '') || 0, summary: { updatedAt: s.updatedAt } }));
-        outsideSources = { at: Date.now(), list };
+        outsideSources = { at: Date.now(), list, known: true };
       } catch {}
     }
-    return outsideSources.list;
+    return outsideSources;
   };
   /** Rescan if due, then let the search index catch up in the background. */
   const refresh = async () => {
@@ -405,14 +410,15 @@ export function createService(opts: ServeOptions): Server {
     // A side instance (HUB_BACKGROUND=0) reads the index 8899 keeps and never writes it (see main.ts serve).
     if (search && process.env.HUB_BACKGROUND !== '0') {
       const files = store.files();
-      const all = [...files, ...outsideFiles(new Set(files.map((f) => f.id)))];
+      const outside = outsideFiles(new Set(files.map((f) => f.id)));
+      const all = [...files, ...outside.list];
       search
         .sync(all, async (f) => {
           if (!f.adapter.startsWith('gateway:')) return store.parseSource(f);
           const session = await gateway.readSessionContract(f.id);
           if (!session) throw new Error(`Missing gateway session ${f.id}`);
           return session;
-        })
+        }, outside.known ? undefined : { keep: (adapter) => adapter.startsWith('gateway:') })
         .catch((error) => console.error('[search-refresh]', error));
     }
   };

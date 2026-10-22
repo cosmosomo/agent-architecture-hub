@@ -117,20 +117,24 @@ export class SearchIndex {
   }
 
   /** Bring the index in line with the store's files. Newest sessions first, so they are searchable soonest. */
-  sync(files: SourceFile[], parse: (f: SourceFile) => Promise<Session>): Promise<SyncReport> {
+  /**
+   * `keep` names the sources whose sessions stay in the index although `files` does not list them: a source whose
+   * list is not known yet (the gateway's, right after a restart) is not a source whose sessions are all gone.
+   */
+  sync(files: SourceFile[], parse: (f: SourceFile) => Promise<Session>, options: { keep?: (adapter: string) => boolean } = {}): Promise<SyncReport> {
     if (this.syncing) return this.syncing;
-    this.syncing = this.doSync(files, parse).finally(() => { this.syncing = null; this.progress.running = false; });
+    this.syncing = this.doSync(files, parse, options).finally(() => { this.syncing = null; this.progress.running = false; });
     return this.syncing;
   }
 
-  private async doSync(files: SourceFile[], parse: (f: SourceFile) => Promise<Session>): Promise<SyncReport> {
+  private async doSync(files: SourceFile[], parse: (f: SourceFile) => Promise<Session>, options: { keep?: (adapter: string) => boolean } = {}): Promise<SyncReport> {
     const t0 = Date.now();
     const known = new Map<string, { size: number; mtime: number; adapter: string }>();
     for (const r of this.db.prepare('SELECT session, size, mtime, adapter FROM files').all() as { session: string; size: number; mtime: number; adapter: string }[]) known.set(r.session, r);
     const live = new Set(files.map((f) => f.id));
     const report: SyncReport = { sessions: files.length, indexed: 0, removed: 0, failed: 0, steps: 0, ms: 0 };
-    for (const id of known.keys()) {
-      if (!live.has(id)) {
+    for (const [id, k] of known) {
+      if (!live.has(id) && !options.keep?.(k.adapter)) {
         if (this.writer) await this.writer.call('remove', [id]);
         else this.remove(id);
         report.removed++;
