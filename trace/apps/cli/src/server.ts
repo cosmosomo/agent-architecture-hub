@@ -1118,7 +1118,7 @@ export function createService(opts: ServeOptions): Server {
       }
       if (path === '/api/search') {
         if (!search) return json(res, 404, { error: 'search is off' });
-        return json(res, 200, search.search(searchQuery(url.searchParams)));
+        return json(res, 200, await search.searchAsync(searchQuery(url.searchParams)));
       }
       if (path === '/api/stats') {
         if (!search) return json(res, 404, { error: 'search is off' });

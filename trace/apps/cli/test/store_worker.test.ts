@@ -84,9 +84,13 @@ test('search writes on a worker stay visible to queries and removed sources disa
     assert.equal(report.indexed, 4);
     assert.equal(search.search({}).total, report.steps);
     assert.ok(search.search({ q: 'npm' }).total > 0);
+    // Queries in the reader worker answer what the main connection answers, short terms included.
+    assert.equal((await search.searchAsync({ q: 'npm', limit: 9 })).total, search.search({ q: 'npm' }).total);
+    assert.equal((await search.searchAsync({ q: 'np', limit: 9 })).total, search.search({ q: 'np' }).total);
     assert.equal((await search.sync(store.files(), (f) => store.parseSource(f))).indexed, 0);
     assert.equal((await search.sync([], (f) => store.parseSource(f))).removed, 4);
     assert.equal(search.search({}).total, 0);
+    assert.equal((await search.searchAsync({ q: 'npm', limit: 9 })).total, 0, 'a sync that changed the index drops cached answers');
   } finally {
     await search?.close();
     await store.close();

@@ -57,8 +57,14 @@ function statusOf(s: Step): string {
 
 const BIG_SESSION = 16 * 1024 * 1024;
 
+const cacheKeyOf = (q: SearchQuery) => JSON.stringify([q.q, q.kinds, q.errors, q.sessions, q.cwd, q.role, q.since, q.until, q.limit, q.offset]);
+
 export class SearchIndex {
   private writer?: ReadRpc;
+  /** Queries run here when serving (search_reader.ts); writes run in `writer`. */
+  private reader?: ReadRpc;
+  /** Bumped whenever a sync changes the index, so an answer computed across one is not cached. */
+  private generation = 0;
   /** When each session was last (re)indexed in this process. */
   private readonly indexedAt = new Map<string, number>();
   readonly file: string;
@@ -92,11 +98,15 @@ export class SearchIndex {
       this.db.exec('DELETE FROM files; DELETE FROM steps; DELETE FROM steps_fts;');
       this.db.prepare("INSERT OR REPLACE INTO meta (k, v) VALUES ('version', ?)").run(INDEX_VERSION);
     }
-    if (options.worker) this.writer = new ReadRpc(new URL('./search_worker.ts', import.meta.url), { file });
+    if (options.worker) {
+      this.writer = new ReadRpc(new URL('./search_worker.ts', import.meta.url), { file });
+      this.reader = new ReadRpc(new URL('./search_reader.ts', import.meta.url), { file });
+    }
   }
 
   close() {
     this.db.close();
+    void this.reader?.close();
     return this.writer?.close();
   }
 
@@ -159,7 +169,10 @@ export class SearchIndex {
       }
       this.progress.done++;
     }
-    if (report.indexed || report.removed) this.results.clear();
+    if (report.indexed || report.removed) {
+      this.results.clear();
+      this.generation++;
+    }
     // A big sync is a rebuild (or first run): refresh the planner's statistics, it picks
     // the wrong side of the steps/files join without them (measured 712ms vs 139ms).
     if (report.indexed > 300) {
@@ -210,10 +223,35 @@ export class SearchIndex {
     return n;
   }
 
+  /** One query, answered from the cache while no sync has changed the index since. */
   search(q: SearchQuery): SearchResult {
-    const cacheKey = JSON.stringify([q.q, q.kinds, q.errors, q.sessions, q.cwd, q.role, q.since, q.until, q.limit, q.offset]);
-    const cached = this.results.get(cacheKey);
+    const key = cacheKeyOf(q);
+    return this.results.get(key) ?? this.remember(key, this.query(q));
+  }
+
+  /**
+   * As search, but run in the reader worker when the index has one (serve), so a slow query never holds the
+   * service's other requests: a short term scans every step, and /api/sessions waited 6 s behind one (10-22).
+   */
+  async searchAsync(q: SearchQuery): Promise<SearchResult> {
+    if (!this.reader) return this.search(q);
+    const key = cacheKeyOf(q);
+    const cached = this.results.get(key);
     if (cached) return cached;
+    const generation = this.generation;
+    const result = { ...(await this.reader.call<SearchResult>('query', [q])), indexing: { ...this.progress } };
+    // A sync that changed the index while the worker answered makes this answer stale: return it, don't keep it.
+    return generation === this.generation ? this.remember(key, result) : result;
+  }
+
+  private remember(key: string, result: SearchResult): SearchResult {
+    if (this.results.size > 200) this.results.delete(this.results.keys().next().value!);
+    this.results.set(key, result);
+    return result;
+  }
+
+  /** Answer one query from the index, uncached (the reader worker calls this). */
+  query(q: SearchQuery): SearchResult {
     const t0 = Date.now();
     const terms = (q.q || '').trim().split(/\s+/).filter(Boolean);
     const long = terms.filter((t) => [...t].length >= 3);
@@ -222,13 +260,20 @@ export class SearchIndex {
     // Conditions shared by hits and facets.
     const where: string[] = [];
     const args: SQLInputValue[] = [];
-    if (long.length) {
+    const match = long.map((t) => '"' + t.replace(/"/g, '""') + '"').join(' ');
+    if (short.length) {
+      // Terms under 3 characters (most Chinese words) cannot use the trigram index and scan every step's text
+      // (~0.4 s over 400k steps). Scan once into a temp table, narrowed by the long terms' index hits when there are
+      // any, and let every count below read it: each of the ~7 statements used to scan again (7-14 s, 10-22).
+      this.db.exec('CREATE TEMP TABLE IF NOT EXISTS q_hits (id INTEGER PRIMARY KEY); DELETE FROM q_hits;');
+      const likes = short.map(() => "body LIKE ? ESCAPE '\\'").join(' AND ');
+      const likeArgs = short.map((t) => '%' + t.replace(/[\\%_]/g, (c) => '\\' + c) + '%');
+      if (long.length) this.db.prepare('INSERT INTO q_hits SELECT rowid FROM steps_fts WHERE steps_fts MATCH ? AND ' + likes).run(match, ...likeArgs);
+      else this.db.prepare('INSERT INTO q_hits SELECT rowid FROM steps_fts WHERE ' + likes).run(...likeArgs);
+      where.push('s.id IN (SELECT id FROM temp.q_hits)');
+    } else if (long.length) {
       where.push('s.id IN (SELECT rowid FROM steps_fts WHERE steps_fts MATCH ?)');
-      args.push(long.map((t) => '"' + t.replace(/"/g, '""') + '"').join(' '));
-    }
-    for (const t of short) {
-      where.push("s.id IN (SELECT rowid FROM steps_fts WHERE body LIKE ? ESCAPE '\\')");
-      args.push('%' + t.replace(/[\\%_]/g, (c) => '\\' + c) + '%');
+      args.push(match);
     }
     if (q.sessions?.length) { where.push('s.session IN (' + q.sessions.map(() => '?').join(',') + ')'); args.push(...q.sessions); }
     if (q.cwd) { where.push('f.cwd = ?'); args.push(q.cwd); }
@@ -285,8 +330,6 @@ export class SearchIndex {
       indexing: { ...this.progress },
       ms: Date.now() - t0,
     };
-    if (this.results.size > 200) this.results.delete(this.results.keys().next().value!);
-    this.results.set(cacheKey, result);
     return result;
   }
 

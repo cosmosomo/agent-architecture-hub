@@ -43,6 +43,13 @@ test('search index: steps are findable, filters and facets follow, and a second 
       assert.ok(byText.total >= 1 && byText.total < all.total, 'a word narrows the set');
       assert.match(byText.hits[0].snippet, /\u0001.*\u0002/, 'the match is marked in the snippet');
 
+      // A term under 3 characters cannot use the trigram index: it is scanned once into a temp table.
+      const short = search.search({ q: 'np' });
+      assert.ok(short.total >= byText.total, '"np" finds at least what "npm" finds');
+      assert.ok(short.hits.every((h) => /np/i.test(h.snippet)), 'every hit holds the short term');
+      assert.equal(search.search({ q: 'npm np' }).total, byText.total, 'a long and a short term: the long one narrows, the short one filters');
+      assert.equal(search.search({ q: 'np', limit: 7 }).total, short.total, 'the temp table is rebuilt per query');
+
       const bySession = search.search({ sessions: ['codex:' + MAIN_ID] });
       assert.ok(bySession.hits.every((h) => h.session === 'codex:' + MAIN_ID));
 
