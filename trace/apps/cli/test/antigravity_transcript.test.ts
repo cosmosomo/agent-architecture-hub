@@ -37,7 +37,7 @@ test('one reader: who said what, model steps with their results, events', () => 
     ['user', 'model', 'model', 'event:error', 'event:subagent', 'event:note', 'user', 'model'],
   );
   assert.equal((entries[0] as any).text, '读一下目录');
-  assert.equal((entries[6] as any).text, '接着做第二步', 'words sent from outside are a person speaking');
+  assert.ok((entries[6] as any).text.includes('接着做第二步'), 'words sent from outside are a person speaking');
 });
 
 test('tool results pair with their calls in order; ids stay unique across steps', () => {

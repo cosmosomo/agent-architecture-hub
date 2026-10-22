@@ -11,7 +11,7 @@ import { DatabaseSync } from 'node:sqlite';
 import type { Session, Step, Turn } from '@hub-trace/contract';
 import type { ChannelProfile, LiveToolCall, ActiveRun, AcpxSessionInfo } from './types.ts';
 import { agentBaseEnv, CHANNEL_PROFILES, normalizeAgyCliModel, resolveAgyProjectId } from './products.ts';
-import { HOME, isSmokeTestPrompt, classifyTool, stripUserRequestTags, agyTitle } from './common.ts';
+import { HOME, isSmokeTestPrompt, classifyTool, stripUserRequestTags, agyTitle, formatMessageTimingBanner, ensurePromptSentStamp } from './common.ts';
 
 /** A tool call in a model step. Calls carry no id: theirs is `agy_<step_index>_<n>`. */
 export type AgyCall = { id: string; name: string; args: Record<string, any> | null; input: string; output?: string; error: boolean; background: boolean };
@@ -55,10 +55,17 @@ export function readAgyTranscript(lines: string[]): { entries: AgyEntry[]; first
     } else if (o.type === 'SYSTEM_MESSAGE') {
       const m = /\[Message\] timestamp=(\S+) sender=(\S+) priority=\S+ content=([\s\S]*?)\s*(?:<\/SYSTEM_MESSAGE>[\s\S]*)?$/.exec(String(o.content || ''));
       if (!m) continue;
+      const sentAt = m[1];
+      const sender = m[2];
       const text = m[3].trim();
-      if (m[2] !== 'system') entries.push({ kind: 'event', at, name: 'note', text: '后台任务回报：' + text.slice(0, 200) });
-      else if (/^(\[Notice\]|The subagent .+ with id ")/.test(text)) entries.push({ kind: 'event', at, name: text.startsWith('The subagent') ? 'subagent' : 'note', text: text.slice(0, 600) });
-      else entries.push({ kind: 'user', at, text });
+      const timingBanner = formatMessageTimingBanner(sentAt, at, sender !== 'system' ? sender : undefined);
+      if (/\/task-\d+$/.test(sender)) {
+        entries.push({ kind: 'event', at, name: 'note', text: `后台任务回报 ${timingBanner}：` + text.slice(0, 200) });
+      } else if (sender === 'system' && /^(\[Notice\]|The subagent .+ with id ")/.test(text)) {
+        entries.push({ kind: 'event', at, name: text.startsWith('The subagent') ? 'subagent' : 'note', text: `${timingBanner}\n` + text.slice(0, 600) });
+      } else {
+        entries.push({ kind: 'user', at, text: `${timingBanner}\n${text}` });
+      }
     } else if (o.type === 'PLANNER_RESPONSE') {
       const raw: any[] = Array.isArray(o.tool_calls) ? o.tool_calls : [];
       const calls = raw.map((tc, i) => agyCall(tc, `agy_${o.step_index ?? entries.length}_${i + 1}`, o.status === 'ERROR'));
@@ -574,7 +581,8 @@ foreach ($p in $procs) {
         this.loadAgySessionMap()[sessionName] ||
         (run.traceSessionId?.startsWith('antigravity:') ? run.traceSessionId.slice('antigravity:'.length) : '');
       if (!cid) return false;
-      const child = spawn(ls.bin, ['agentapi', 'send-message', cid, prompt], {
+      const stampedPrompt = ensurePromptSentStamp(prompt);
+      const child = spawn(ls.bin, ['agentapi', 'send-message', cid, stampedPrompt], {
         cwd,
         env: { ...agentBaseEnv(), ...ls.env, ANTIGRAVITY_PROJECT_ID: resolveAgyProjectId(cwd) },
         windowsHide: true,
@@ -627,8 +635,9 @@ foreach ($p in $procs) {
       existsSync(join(this.agyBrainDir, cid, '.system_generated', 'logs', 'transcript.jsonl'));
 
     const cliModel = normalizeAgyCliModel(model);
+    const stampedPrompt = hasExistingBrain ? ensurePromptSentStamp(prompt) : prompt;
     const args = hasExistingBrain
-      ? ['agentapi', 'send-message', cid, prompt]
+      ? ['agentapi', 'send-message', cid, stampedPrompt]
       : ['agentapi', 'new-conversation', `--model=${cliModel}`, `--title=${agyTitle(sessionName, prompt)}`, prompt];
 
     const deliver = (args: string[]) => {

@@ -8,8 +8,19 @@
   },
   "synchronizers": {
     "scriptNode": "scripts/sync_skill.js",
+    "assetMapCli": "scripts/asset_map.py",
     "hubToolNode": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\hub\\tools\\sync_skill.js",
     "hubToolPowerShell": "E:\\program\\GIT\\Agent\\multi\\Agent-Architecture-Hub\\hub\\tools\\sync_capability_skill.ps1"
+  },
+  "federatedAssetMap": {
+    "role": "parent-registry-bidirectional-peer",
+    "subRegistryId": "SUBREG-HUB-CAPABILITIES",
+    "cliPath": "C:\\Users\\COLORFIRE\\.cc-switch\\skills\\local-capability-hub\\scripts\\asset_map.py",
+    "registryJson": "C:\\Users\\COLORFIRE\\.agent-hub\\asset_map\\registry.json",
+    "sqliteWalDb": "C:\\Users\\COLORFIRE\\.agent-hub\\asset_map\\registry.sqlite",
+    "eventsJsonl": "C:\\Users\\COLORFIRE\\.agent-hub\\asset_map\\events.jsonl",
+    "knowledgeGraphJson": "C:\\Users\\COLORFIRE\\.agent-hub\\asset_map\\asset_graph.json",
+    "markdownView": "C:\\Users\\COLORFIRE\\.agent-hub\\asset_map\\ASSET_MAP.md"
   },
   "backupRoot": "C:\\Users\\COLORFIRE\\.agent-hub\\skill-backups",
   "targets": [

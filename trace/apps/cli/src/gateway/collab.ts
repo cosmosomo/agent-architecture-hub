@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFile
 import { join, resolve } from 'node:path';
 import type { ChannelId, ActiveRun, DispatchRecord } from './types.ts';
 import { CHANNEL_PROFILES, resolveChannel } from './products.ts';
-import { BACKGROUND, MAX_DISPATCH_DEPTH } from './common.ts';
+import { BACKGROUND, MAX_DISPATCH_DEPTH, formatLocalStamp, computeReceiptTiming } from './common.ts';
 
 export const collabMethods = {
   saveDispatch(this: AgentGatewayHub, d: DispatchRecord, broadcastUpdate = true) {
@@ -340,8 +340,10 @@ export const collabMethods = {
         d.wake.state = 'waking';
         this.saveDispatch(d, false);
       }
+      const wakeSentIso = new Date().toISOString();
       const lines: string[] = [
         `【跨会话协同回执唤醒 · 共 ${pending.length} 项派活已返回】`,
+        `- 唤醒发送时间 (sent_at): ${formatLocalStamp(wakeSentIso)} (${wakeSentIso})`,
       ];
       for (const d of pending) {
         const statusLabel =
@@ -352,15 +354,21 @@ export const collabMethods = {
             : d.status === 'stalled'
             ? '超时停滞 (stalled)'
             : `异常结束 (${d.status})`;
+        const t = computeReceiptTiming(d.receipts);
         lines.push(
           `- 派活单 [${d.id}] -> ${d.to.channel}/${d.to.sessionName} (${statusLabel}, 通道: ${d.delivery?.via || 'turn-end'}):`,
         );
+        if (t) {
+          lines.push(
+            `  时效核对: 派发(sent_at)=${t.sentAtLocal || '-'} → 接收(received_at)=${t.seenAtLocal || t.deliveredAtLocal || '-'} → 交回(returned_at)=${t.returnedAtLocal || '-'} (投递Δt=${t.deliveryDelta || '-'}, 总耗时Δt=${t.totalDelta || '-'}${t.staleWarning ? ' ' + t.staleWarning : ''})`,
+          );
+        }
         lines.push(`  摘要: ${d.delivery?.summary || d.error || '(无摘要)'}`);
         if (d.delivery?.files?.length) {
           lines.push(`  产物文件: ${d.delivery.files.join(', ')}`);
         }
       }
-      lines.push(`请根据上述交回结果继续完成你的后续工作。`);
+      lines.push(`请核对当前接收时间 (received_at) 并根据上述交回结果继续完成你的后续工作。`);
 
       const wakeRes = await this.sendPrompt({
         channel: callerChannel,
@@ -538,8 +546,10 @@ export const collabMethods = {
       ? task
       : [
           `【跨会话派活单 · ID: ${id} · 类型: ${kind}】`,
+          `- 发送时间 (sent_at): ${formatLocalStamp(nowIso)} (${nowIso})`,
           `- 派活来源: ${fromLabel}`,
           `- 目标座席: ${toProf.label} / ${toSessionName}`,
+          `- 时效核对要求: 收到本派活单时请核对当前接收时间 (received_at) 与上方 sent_at 的差值 Δt；若滞后较长（如 >5 分钟）或当前会话已有更新的用户指令，请先核实是否过时，严禁盲目覆盖最新进展。`,
           record.contextDigest ? `- 上下文摘要: ${record.contextDigest}` : '',
           `---`,
           `【任务要求】`,
@@ -799,7 +809,7 @@ export const collabMethods = {
         failed: all.filter((d) => d.status === 'failed' || d.status === 'stalled' || d.status === 'cancelled').length,
       },
       waitingEdges,
-      dispatches: all.slice(0, 60),
+      dispatches: all.slice(0, 60).map((d) => ({ ...d, timing: computeReceiptTiming(d.receipts) })),
     };
   },
 
@@ -815,11 +825,11 @@ export const collabMethods = {
       if (params.waitMs && params.waitMs > 0) {
         const waited = await this.waitForDispatch(params.id, params.waitMs);
         if (!waited) return { ok: false, error: `未找到派活单: ${params.id}` };
-        return { ok: true, dispatch: waited };
+        return { ok: true, dispatch: { ...waited, timing: computeReceiptTiming(waited.receipts) } };
       }
       const d = this.dispatches.get(params.id);
       if (!d) return { ok: false, error: `未找到派活单: ${params.id}` };
-      return { ok: true, dispatch: d };
+      return { ok: true, dispatch: { ...d, timing: computeReceiptTiming(d.receipts) } };
     }
     const base = this.getDispatchesSummary();
     // Filter all of them, then cut: filtering only the newest 60 hid older matches (10-20: 8 yielded, status=yielded gave 0).
@@ -872,6 +882,7 @@ export const collabMethods = {
           status: d.status,
           receipt: d.receipt,
           receipts: d.receipts,
+          timing: computeReceiptTiming(d.receipts),
           summary: d.delivery?.summary || d.waitingFor || d.task.slice(0, 80),
           wakeState: d.wake.state,
           updatedAt: d.updatedAt,
@@ -895,6 +906,7 @@ export const collabMethods = {
           status: d.status,
           receipt: d.receipt,
           receipts: d.receipts,
+          timing: computeReceiptTiming(d.receipts),
           waitingFor: d.waitingFor,
           progressCount: d.progressReports.length,
           deliveryVia: d.delivery?.via,
@@ -989,8 +1001,10 @@ export const collabMethods = {
       (params.customInstruction || '').trim() ||
       '请基于上述前序智能体会话的上下文与工作目录，接手并继续完成未尽任务（若前序存在报错请直接定位修复）。';
 
+    const nowIso = new Date().toISOString();
     const handoffPrompt = [
       `【跨智能体协同接力 (Session Handoff): ${fromProf.label} -> ${toProf.label}】`,
+      `- 发送时间 (sent_at): ${formatLocalStamp(nowIso)} (${nowIso})`,
       `- 源会话: ${fromProf.label} (${fromSessionName})`,
       `- 工作目录: ${sourceCwd}`,
       turnDigestLines.length > 0
@@ -1008,9 +1022,8 @@ export const collabMethods = {
       `已将 ${fromProf.label} (${fromSessionName}) 的上下文与目录 (${sourceCwd}) 转交至 ${toProf.label} · ${toModel} (${toSessionName})`,
     );
 
-    const stamp = new Date().toISOString().replace(/\D/g, '').slice(8, 14);
+    const stamp = nowIso.replace(/\D/g, '').slice(8, 14);
     const dispatchId = `dsp_${stamp}_${Math.random().toString(36).slice(2, 6)}`;
-    const nowIso = new Date().toISOString();
     const handoffRecord: DispatchRecord = {
       id: dispatchId,
       kind: 'handoff',

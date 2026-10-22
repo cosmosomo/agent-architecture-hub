@@ -233,3 +233,95 @@ export function agyTitle(sessionName: string, prompt: string): string {
 }
 
 export const MAX_DISPATCH_DEPTH = 3;
+
+/** Format an ISO string or epoch ms into local timezone string `YYYY-MM-DD HH:mm:ss+08:00`. */
+export function formatLocalStamp(isoOrMs?: string | number | null): string {
+  if (isoOrMs === undefined || isoOrMs === null || isoOrMs === '') return '';
+  const ms = typeof isoOrMs === 'number' ? isoOrMs : Date.parse(String(isoOrMs));
+  if (!Number.isFinite(ms)) return String(isoOrMs);
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const offMin = -d.getTimezoneOffset();
+  const sign = offMin >= 0 ? '+' : '-';
+  const absOff = Math.abs(offMin);
+  const offStr = `${sign}${pad(Math.floor(absOff / 60))}:${pad(absOff % 60)}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${offStr}`;
+}
+
+/** Format a duration in milliseconds into a concise human-readable string (`0.4s`, `45s`, `2h 11m 54s`). */
+export function formatDurationShort(deltaMs: number): string {
+  if (!Number.isFinite(deltaMs)) return '0s';
+  const sign = deltaMs < 0 ? '-' : '';
+  const abs = Math.abs(deltaMs);
+  if (abs < 1000) return `${sign}${(abs / 1000).toFixed(1)}s`;
+  const totalSec = Math.round(abs / 1000);
+  if (totalSec < 60) return `${sign}${totalSec}s`;
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${sign}${h}h ${m}m ${s}s`;
+  return `${sign}${m}m ${s}s`;
+}
+
+/**
+ * Build a dual-timestamp verification banner comparing `sentIso` (sent_at) and `recvIso` (received_at),
+ * flagging stale/backlogged messages when `deltaMs > 60_000` (e.g. an unloaded session flushed hours later).
+ */
+export function formatMessageTimingBanner(sentIso?: string, recvIso?: string, sender?: string): string {
+  const sentLocal = formatLocalStamp(sentIso);
+  const recvLocal = formatLocalStamp(recvIso);
+  const sentMs = sentIso ? Date.parse(sentIso) : NaN;
+  const recvMs = recvIso ? Date.parse(recvIso) : NaN;
+  const deltaMs = Number.isFinite(sentMs) && Number.isFinite(recvMs) ? recvMs - sentMs : NaN;
+  const senderPart = sender ? `｜发送方: ${sender}` : '';
+  if (Number.isFinite(deltaMs) && deltaMs > 60_000) {
+    return `【⚠️ 跨会话消息积压延迟告警｜发送(sent_at): ${sentLocal} → 接收(received_at): ${recvLocal}｜滞后 Δt = +${formatDurationShort(deltaMs)}${senderPart}｜请核对时效，切勿盲目覆盖最新指令】`;
+  }
+  const deltaPart = Number.isFinite(deltaMs) ? `｜耗时 Δt = ${formatDurationShort(Math.max(0, deltaMs))}` : '';
+  if (sentLocal && recvLocal) {
+    return `【跨会话消息时效核对｜发送(sent_at): ${sentLocal} → 接收(received_at): ${recvLocal}${deltaPart}${senderPart}】`;
+  }
+  return `【跨会话消息时效核对｜时间: ${recvLocal || sentLocal}${senderPart}】`;
+}
+
+/** Ensure an outgoing cross-session prompt carries an explicit `sent_at` timestamp header before sending. */
+export function ensurePromptSentStamp(prompt: string, sentIso = new Date().toISOString()): string {
+  const text = String(prompt || '');
+  if (!text.trim() || isSmokeTestPrompt(text)) return text;
+  if (/发送时间\s*\(sent_at\)|跨会话消息时效/i.test(text)) return text;
+  const sentLocal = formatLocalStamp(sentIso);
+  return `【跨会话消息时效戳｜发送时间 (sent_at): ${sentLocal} (${sentIso})｜接收时请核对当前本地时间 (received_at)，若间隔过长或与用户最新指令冲突请勿盲目覆盖】\n${text}`;
+}
+
+/** Compute local timestamps and latency deltas from a dispatch's 4-stage `receipts`. */
+export function computeReceiptTiming(receipts?: {
+  issuedAt?: string;
+  deliveredAt?: string;
+  seenAt?: string;
+  returnedAt?: string;
+}) {
+  if (!receipts) return undefined;
+  const iMs = receipts.issuedAt ? Date.parse(receipts.issuedAt) : NaN;
+  const dMs = receipts.deliveredAt ? Date.parse(receipts.deliveredAt) : NaN;
+  const sMs = receipts.seenAt ? Date.parse(receipts.seenAt) : NaN;
+  const rMs = receipts.returnedAt ? Date.parse(receipts.returnedAt) : NaN;
+  const deliveryLatencyMs = Number.isFinite(iMs) && Number.isFinite(dMs) ? Math.max(0, dMs - iMs) : undefined;
+  const seenLatencyMs = Number.isFinite(iMs) && Number.isFinite(sMs) ? Math.max(0, sMs - iMs) : undefined;
+  const totalDurationMs = Number.isFinite(iMs) && Number.isFinite(rMs) ? Math.max(0, rMs - iMs) : undefined;
+  return {
+    sentAtLocal: formatLocalStamp(receipts.issuedAt) || undefined,
+    deliveredAtLocal: formatLocalStamp(receipts.deliveredAt) || undefined,
+    seenAtLocal: formatLocalStamp(receipts.seenAt) || undefined,
+    returnedAtLocal: formatLocalStamp(receipts.returnedAt) || undefined,
+    deliveryLatencyMs,
+    seenLatencyMs,
+    totalDurationMs,
+    deliveryDelta: deliveryLatencyMs !== undefined ? formatDurationShort(deliveryLatencyMs) : undefined,
+    seenDelta: seenLatencyMs !== undefined ? formatDurationShort(seenLatencyMs) : undefined,
+    totalDelta: totalDurationMs !== undefined ? formatDurationShort(totalDurationMs) : undefined,
+    staleWarning:
+      seenLatencyMs !== undefined && seenLatencyMs > 60_000
+        ? `⚠️ 接收滞后 +${formatDurationShort(seenLatencyMs)}`
+        : undefined,
+  };
+}
