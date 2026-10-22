@@ -1,0 +1,107 @@
+<Slide style={{ width: '1280px', height: '720px', padding: 0, position: 'relative' }}>
+    <Image src="assets/bg_content_st.png" style={{ position: 'absolute', top: 0, left: 0, width: '1280px', height: '720px', objectFit: 'cover', zIndex: 0 }} />
+
+    {/* ===== 标识层 L1：页眉双色带 + 双校标识 ===== */}
+    <Box style={{ position: 'absolute', top: 0, left: 0, width: 520, height: 6, background: '#9D0A12', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 0, left: 520, width: 760, height: 6, background: '#073E87', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 16, left: 56, width: 1168, height: 34, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Image src="assets/logo_st_lockup_red.png" style={{ height: 34, width: 127, objectFit: 'contain' }} />
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 13.4, color: '#073E87', letterSpacing: 0.3 }}>
+            Agent-Architecture-Hub · 跨客户端多智能体协同与受控运行系统
+        </Text>
+        <Image src="assets/logo_sitp_mark_navy.png" style={{ height: 24, width: 58, objectFit: 'contain', marginLeft: 9 }} />
+    </Box>
+    <Box style={{ position: 'absolute', top: 58, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+
+    {/* ===== 标识层 L2：页脚署名 ===== */}
+    <Box style={{ position: 'absolute', top: 672, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 684, left: 56, width: 1168, height: 16, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Box style={{ width: 7, height: 7, background: '#9D0A12', marginRight: 5 }} />
+        <Box style={{ width: 7, height: 7, background: '#073E87', marginRight: 10 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>
+            Agent-Architecture-Hub ｜ 多通道客户端接入 · 共享工作区黑板 · 两级轨迹追溯与实时纠偏
+        </Text>
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>7 / 6</Text>
+    </Box>
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.0, color: '#1E3A8A', fontWeight: 'bold' }}>开源对比：相比 35+ 开源智能体项目的四项优势对照</Text>
+    <Text style={{ fontSize: 13.8, color: '#64748B', marginTop: 5 }}>覆盖四大主流赛道：CLI/协议桥接器（acpx/opencli） · 编排运行时（OpenRig/GasTown） · 代码框架（LangGraph/AutoGen） · 遥测看板（Langfuse/OTel）</Text>
+    <Box style={{ marginTop: 10, flexDirection: 'column', gap: 10, height: 424 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderRadius: 6, padding: '8px 14px', flexDirection: 'row', gap: 12, alignItems: 'stretch' }}>
+    <Box style={{ width: 170, flexDirection: 'column', alignItems: 'flex-start', gap: 6, justifyContent: 'center' }}>
+    <Text style={{ fontSize: 14.0, color: '#3730A3', fontWeight: 'bold' }}>01  调度与接入面</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>多路接入</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 310, background: '#FFFFFF', borderLeft: '3.5px solid #9D0A12', borderRadius: 4, padding: '8px 12px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.5, color: '#9D0A12', fontWeight: 'bold' }}>vs acpx / opencli / 单协议桥接器</Text>
+    <Text style={{ fontSize: 11.8, color: '#334155', marginTop: 4 }}>仅走单一 ACP 协议或单侧网页 UI 适配器，遇单接口能力残缺（如 Codex CLI 仅 16%、ACP 仅 11%）无法互补。</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderLeft: '3.5px solid #3730A3', borderRadius: 4, padding: '8px 12px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.5, color: '#3730A3', fontWeight: 'bold' }}>官方协议 + CDP + 本地适配器三路互补接入</Text>
+    <Text style={{ fontSize: 11.8, color: '#1E293B', marginTop: 4 }}>按 4 个位置多路择优：统管 7 款可驱动宿主 + 2 只读会话库（1,882 条会话）+ 豆包桌面端 (CDP 协议) + OpenCLI 160+ 网页 + 22 把 Key。</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderRadius: 6, padding: '8px 14px', flexDirection: 'row', gap: 12, alignItems: 'stretch' }}>
+    <Box style={{ width: 170, flexDirection: 'column', alignItems: 'flex-start', gap: 6, justifyContent: 'center' }}>
+    <Text style={{ fontSize: 14.0, color: '#3730A3', fontWeight: 'bold' }}>02  运行控制与挂起</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>会话控制</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 310, background: '#FFFFFF', borderLeft: '3.5px solid #9D0A12', borderRadius: 4, padding: '8px 12px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.5, color: '#9D0A12', fontWeight: 'bold' }}>vs OpenRig / GasTown / Paperclip</Text>
+    <Text style={{ fontSize: 11.8, color: '#334155', marginTop: 4 }}>强绑定 POSIX tmux 终端会话或单次进程盲跑，在 Windows/GUI 宿主上遇写文件权限审批即挂死或断连。</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderLeft: '3.5px solid #3730A3', borderRadius: 4, padding: '8px 12px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.5, color: '#3730A3', fontWeight: 'bold' }}>Windows / GUI 全宿主常驻会话轮内挂起审批 + 额度排队至恢复时刻</Text>
+    <Text style={{ fontSize: 11.8, color: '#1E293B', marginTop: 4 }}>Codex / Claude / ZCode / WB / Hermes 5 款产品实测写文件前轮内挂起放行；4 家共用智谱账号撞上限自动排队至 18:08 恢复。</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderRadius: 6, padding: '8px 14px', flexDirection: 'row', gap: 12, alignItems: 'stretch' }}>
+    <Box style={{ width: 170, flexDirection: 'column', alignItems: 'flex-start', gap: 6, justifyContent: 'center' }}>
+    <Text style={{ fontSize: 14.0, color: '#3730A3', fontWeight: 'bold' }}>03  编排演进与验收</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>契约编排</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 310, background: '#FFFFFF', borderLeft: '3.5px solid #9D0A12', borderRadius: 4, padding: '8px 12px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.5, color: '#9D0A12', fontWeight: 'bold' }}>vs LangGraph / AutoGen / CrewAI / MetaGPT</Text>
+    <Text style={{ fontSize: 11.8, color: '#334155', marginTop: 4 }}>只调裸模型 API（补丁/沙箱/记忆全靠手写），且用 Python 代码写死 DAG 状态机，改流程慢、缺异构独立验收。</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderLeft: '3.5px solid #3730A3', borderRadius: 4, padding: '8px 12px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.5, color: '#3730A3', fontWeight: 'bold' }}>直接复用成品宿主 + Markdown 渐进式契约 (CLAUDE.md) + 异构独立验收</Text>
+    <Text style={{ fontSize: 11.8, color: '#1E293B', marginTop: 4 }}>免造底层工具轮子；中心自动挑人派活（Codex 7分钟交回、Claude 35秒验收、超时自动换人），已完成 26 个目标与 60 份报告。</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderRadius: 6, padding: '8px 14px', flexDirection: 'row', gap: 12, alignItems: 'stretch' }}>
+    <Box style={{ width: 170, flexDirection: 'column', alignItems: 'flex-start', gap: 6, justifyContent: 'center' }}>
+    <Text style={{ fontSize: 14.0, color: '#3730A3', fontWeight: 'bold' }}>04  观测粒度与反向操控</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>双层追溯</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 310, background: '#FFFFFF', borderLeft: '3.5px solid #9D0A12', borderRadius: 4, padding: '8px 12px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.5, color: '#9D0A12', fontWeight: 'bold' }}>vs Langfuse / Arize Phoenix / OpenTelemetry</Text>
+    <Text style={{ fontSize: 11.8, color: '#334155', marginTop: 4 }}>仅只读记录单层细粒度 API 调用流水账，既看不出分支决策理由，也无法在发现偏离时反向介入正在跑的会话。</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderLeft: '3.5px solid #3730A3', borderRadius: 4, padding: '8px 12px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.5, color: '#3730A3', fontWeight: 'bold' }}>三层轨迹追溯 + 回归脚本逐条对数 + 共享记录三层防误删</Text>
+    <Text style={{ fontSize: 11.8, color: '#1E293B', marginTop: 4 }}>L0 三态拓扑 → L1 决策段 → L2 1,882 条会话原始记录；逐条对数查出 5 处隐藏问题；2,600 行记录被改剩 18 行后 1 分钟自动恢复。</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 38, flexDirection: 'row', alignItems: 'center', gap: 12, background: '#FFFBEB', borderLeft: '4px solid #B45309', borderRadius: 6, padding: '0 14px' }}>
+    <Box style={{ background: '#B45309', borderRadius: 4, padding: '3px 9px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#FFFFFF', fontWeight: 'bold' }}>补充深潜</Text>
+    </Box>
+    <Text style={{ fontSize: 13.5, color: '#1E293B', fontWeight: 'bold' }}>在多路互补接入、常驻会话挂起与额度排队、自动派活异构验收、逐条对数与 1 分钟防误删恢复四个方向补齐开源断点。</Text>
+    </Box>
+    </Box>
+</Slide>

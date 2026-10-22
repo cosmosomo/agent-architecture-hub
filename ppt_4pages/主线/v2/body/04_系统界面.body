@@ -1,0 +1,128 @@
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.5, color: '#073E87', fontWeight: 'bold' }}>实机工作台展示与开源优势：三大操控界面局部放大 × 四维对位 35+ 开源项目</Text>
+    <Text style={{ fontSize: 13.8, color: '#6B7280', marginTop: 5 }}>① 编排与黑板观察台（14 视图）｜ ② 宿主调控与反向写回台 ｜ ③ 手机端 /m/ 实时督工台 ｜ 四大维度对位主流开源方案</Text>
+    <Box style={{ marginTop: 10, flexDirection: 'column', gap: 8, height: 404 }}>
+    <Box style={{ height: 256, flexDirection: 'row', gap: 10 }}>
+    <Box style={{ width: 382, background: '#FFFFFF', border: '1.5px solid #073E87', borderRadius: 6, padding: '5px 7px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.6, color: '#073E87', fontWeight: 'bold' }}>① 编排与黑板观察台（黑板广播流 + 送达四分外环）</Text>
+    <Box style={{ background: '#E8F0FE', border: '1px solid #93C5FD', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#073E87', fontWeight: 'bold' }}>14 视图对账</Text>
+    </Box>
+    </Box>
+    <Box style={{ position: 'relative', width: 366, height: 204, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, marginTop: 3 }}>
+    <Image src="主线/img/orig_blackboard_light.png" style={{ width: 366, height: 204, objectFit: 'fill', borderRadius: 4 }} />
+    <Image src="主线/img/orig_ring_badge.png" style={{ width: 112, height: 52, objectFit: 'fill', position: 'absolute', left: 6, top: 146, borderRadius: 3 }} />
+    </Box>
+    <Text style={{ fontSize: 9.0, color: '#1F2937', marginTop: 3 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>局部聚焦</span>：共享黑板广播流、角色送达四分外环（该知/送到/已读/已写）、三态轨迹对照</Text>
+    </Box>
+    <Box style={{ width: 382, background: '#FFFFFF', border: '1.5px solid #073E87', borderRadius: 6, padding: '5px 7px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.6, color: '#073E87', fontWeight: 'bold' }}>② 宿主调控与反向写回台（渠道矩阵 + Diff 写回）</Text>
+    <Box style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#B45309', fontWeight: 'bold' }}>运行态 + 设计态</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 366, height: 204, background: '#E2E8F0', border: '1px solid #CBD5E1', borderRadius: 4, padding: '2px', flexDirection: 'row', gap: 4, marginTop: 3 }}>
+    <Image src="主线/img/orig_console_light.png" style={{ width: 194, height: 200, objectFit: 'fill', borderRadius: 3 }} />
+    <Image src="主线/img/orig_reverse_diff.png" style={{ width: 164, height: 200, objectFit: 'fill', borderRadius: 3 }} />
+    </Box>
+    <Text style={{ fontSize: 9.0, color: '#1F2937', marginTop: 3 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>局部聚焦</span>：统管 9 产品 1,707 条会话与 22 把 Key，右侧面板支持 inbox.md 规范 Diff 写回</Text>
+    </Box>
+    <Box style={{ width: 384, background: '#FFFFFF', border: '1.5px solid #9D0A12', borderRadius: 6, padding: '5px 7px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.6, color: '#9D0A12', fontWeight: 'bold' }}>③ 移动端实时督工台（/m/ 覆盖桌面端 53%–72% 交互）</Text>
+    <Box style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#9D0A12', fontWeight: 'bold' }}>全双工热操控</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 366, height: 204, background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: 4, padding: '2px', flexDirection: 'row', gap: 4, marginTop: 3 }}>
+    <Image src="主线/img/orig_m1_feed.png" style={{ width: 117, height: 198, objectFit: 'fill', borderRadius: 3 }} />
+    <Image src="主线/img/orig_m2_steer.png" style={{ width: 117, height: 198, objectFit: 'fill', borderRadius: 3 }} />
+    <Image src="主线/img/orig_m3_projects.png" style={{ width: 117, height: 198, objectFit: 'fill', borderRadius: 3 }} />
+    </Box>
+    <Text style={{ fontSize: 9.0, color: '#1F2937', marginTop: 3 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>局部聚焦</span>：置顶轮内审批待办、工具步骤与 steer 插话发送、跨产品活跃会话池与任务板</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1.5px solid #9D0A12', borderRadius: 6, overflow: 'hidden', flexDirection: 'column' }}>
+    <Box style={{ height: 23, background: '#9D0A12', padding: '0 10px', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.5, color: '#FFFFFF', fontWeight: 'bold' }}>相比 35+ 开源智能体项目的 4 个维度对位与独立测试员全量回归实证</Text>
+    <Text style={{ fontSize: 9.0, color: '#FEE2E2' }}>覆盖 CLI 桥接器 / 编排运行时 / 代码框架 / 遥测看板四大赛道</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch' }}>
+    <Box style={{ flex: 1, padding: '5px 8px', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid #E5E7EB' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.5, color: '#073E87', fontWeight: 'bold' }}>1. 调度对象</Text>
+    <Box style={{ background: '#E8F0FE', border: '1px solid #93C5FD', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#073E87', fontWeight: 'bold' }}>调谁</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#FEF2F2', borderLeft: '2.5px solid #9D0A12', borderRadius: 3, padding: '3px 6px' }}>
+    <Text style={{ fontSize: 9.0, color: '#4B5563', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>LangGraph / acpx / opencli</span>：或只调裸模型 API 需手写工具，或仅走单一协议路线</Text>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#F0F7FF', borderLeft: '2.5px solid #073E87', borderRadius: 3, padding: '3.5px 6px' }}>
+    <Text style={{ fontSize: 9.1, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>三路合一 + 中心跨产品宿主</span>：协议+CDP+适配器调 7 大可驱动宿主+160+网页；双会话(58/84)与群会话(31/35)中心当宿主</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, padding: '5px 8px', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid #E5E7EB' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.5, color: '#073E87', fontWeight: 'bold' }}>2. 观测与对账</Text>
+    <Box style={{ background: '#E8F0FE', border: '1px solid #93C5FD', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#073E87', fontWeight: 'bold' }}>看什么</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#FEF2F2', borderLeft: '2.5px solid #9D0A12', borderRadius: 3, padding: '3px 6px' }}>
+    <Text style={{ fontSize: 9.0, color: '#4B5563', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>Langfuse / Arize / OTel</span>：仅记单层细粒度接口流水账，缺粗粒度决策段与跨端对账</Text>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#F0F7FF', borderLeft: '2.5px solid #073E87', borderRadius: 3, padding: '3.5px 6px' }}>
+    <Text style={{ fontSize: 9.1, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>双颗粒度 Trace + 四张表对账</span>：粗粒度决策段(turn+steps)锚定 9 家会话库；532 格与四张表、三态轨迹实时核对</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, padding: '5px 8px', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid #E5E7EB' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.5, color: '#073E87', fontWeight: 'bold' }}>3. 运行控制</Text>
+    <Box style={{ background: '#E8F0FE', border: '1px solid #93C5FD', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#073E87', fontWeight: 'bold' }}>怎么管</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#FEF2F2', borderLeft: '2.5px solid #9D0A12', borderRadius: 3, padding: '3px 6px' }}>
+    <Text style={{ fontSize: 9.0, color: '#4B5563', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>GasTown / Paperclip / OpenRig</span>：绑死 POSIX tmux 或单次盲跑，遇写文件权限请求难挂起</Text>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#F0F7FF', borderLeft: '2.5px solid #073E87', borderRadius: 3, padding: '3.5px 6px' }}>
+    <Text style={{ fontSize: 9.1, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>常驻会话轮内审批 (5 产品实测)</span>：Windows/GUI 全宿主写文件前轮内挂起，手机 /m/ 批准后同轮写出+Codex 线程分叉</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, padding: '5px 8px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.5, color: '#073E87', fontWeight: 'bold' }}>4. 协作演进与评测</Text>
+    <Box style={{ background: '#E8F0FE', border: '1px solid #93C5FD', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#073E87', fontWeight: 'bold' }}>怎么改/测</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#FEF2F2', borderLeft: '2.5px solid #9D0A12', borderRadius: 3, padding: '3px 6px' }}>
+    <Text style={{ fontSize: 9.0, color: '#4B5563', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>MetaGPT / CrewAI / 手工抽测</span>：代码写死 DAG 状态机改流程慢，缺乏独立智能体全矩阵回归</Text>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#F0F7FF', borderLeft: '2.5px solid #073E87', borderRadius: 3, padding: '3.5px 6px' }}>
+    <Text style={{ fontSize: 9.1, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>MD 渐进契约 + 独立测试员全测</span>：CLAUDE.md 即时重构角色；独立真跑 56 格+3 专项，捕获并修复切免费模型污染默认配置缺陷</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 42, flexDirection: 'row', alignItems: 'center', gap: 16, background: 'rgba(7,62,135,0.06)', borderRadius: 8, padding: '0 14px' }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.2, color: '#073E87', fontWeight: 'bold', width: 50 }}>给人</Text>
+    <Text style={{ fontSize: 13.2, color: '#1F2937' }}>桌面端看共享黑板拓扑与反向调控 Diff 写回，手机端 /m/ 随时批权限与插话纠偏</Text>
+    </Box>
+    <Box style={{ width: 1, height: 22, background: '#9CA3AF' }}>
+    
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.2, color: '#9D0A12', fontWeight: 'bold', width: 50 }}>给 AI</Text>
+    <Text style={{ fontSize: 13.2, color: '#1F2937' }}>在常驻会话进程中受控运行，由独立测试智能体真跑 56 格与 3 个专项回归验证</Text>
+    </Box>
+    </Box>
+    </Box>

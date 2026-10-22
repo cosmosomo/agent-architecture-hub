@@ -1,0 +1,352 @@
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.5, color: '#1E3A8A', fontWeight: 'bold' }}>任务调度：协作拓扑组合、本地状态板认领与异构验收</Text>
+    <Text style={{ fontSize: 13.8, color: '#64748B', marginTop: 5 }}>5 种基本形状 × 3 种高阶组合 ｜ 本地状态板（写规范 · 认领任务 · 完成回填） ｜ 26 个目标实证与可配置自治</Text>
+    <Box style={{ marginTop: 8, flexDirection: 'row', gap: 12, height: 426 }}>
+    <Box style={{ width: 584, background: '#EEF2FF', borderTop: '3.5px solid #3730A3', borderRadius: 5, padding: '7px 10px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 13.6, color: '#3730A3', fontWeight: 'bold' }}>多智能体协作拓扑：五种基本形状与三种常用组合模式</Text>
+    <Box style={{ background: '#EEF2FF', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>基本形状 × 组合模式</Text>
+    </Box>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #3730A3', borderRadius: 4, padding: '6px 9px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, borderBottom: '1.5px solid #3730A3' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>① 五种基本协作形状与每步 3 个决定</Text>
+    <Box style={{ background: '#EEF2FF', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>最小单元：一轮问答</Text>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderTop: '2.5px solid #3730A3', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>串行接力</Text>
+    <Text style={{ fontSize: 11.5, color: '#334155' }}>A→B→C</Text>
+    </Box>
+    <Box style={{ marginTop: 2, alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 3, padding: '1px 0', border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/topo_prim_1_relay.png" style={{ width: 102, height: 34, objectFit: 'fill' }} />
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderTop: '2.5px solid #3730A3', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>一对多分发</Text>
+    <Text style={{ fontSize: 11.5, color: '#334155' }}>Fan-out</Text>
+    </Box>
+    <Box style={{ marginTop: 2, alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 3, padding: '1px 0', border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/topo_prim_2_fanout.png" style={{ width: 102, height: 34, objectFit: 'fill' }} />
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderTop: '2.5px solid #3730A3', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>多对一汇总</Text>
+    <Text style={{ fontSize: 11.5, color: '#334155' }}>Fan-in</Text>
+    </Box>
+    <Box style={{ marginTop: 2, alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 3, padding: '1px 0', border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/topo_prim_3_fanin.png" style={{ width: 102, height: 34, objectFit: 'fill' }} />
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderTop: '2.5px solid #B45309', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>双人往返</Text>
+    <Text style={{ fontSize: 11.5, color: '#334155' }}>A↔B</Text>
+    </Box>
+    <Box style={{ marginTop: 2, alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 3, padding: '1px 0', border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/topo_prim_4_loop.png" style={{ width: 102, height: 34, objectFit: 'fill' }} />
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'column', gap: 3, marginTop: 4 }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 64, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>第5种形状</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderLeft: '3px solid #047857', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#047857' }}>共享黑板 / 消息池</span> · 单写者锁 + 事件触发唤醒（免轮询等待）</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 64, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>每步3决定</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderLeft: '3px solid #3730A3', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#3730A3' }}>选谁</span> · 按健康与强项挑人</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderLeft: '3px solid #3730A3', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#3730A3' }}>给啥</span> · 四件套路径指针</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderLeft: '3px solid #B45309', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#B45309' }}>停不停</span> · 独立验收与限次</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #D97706', borderRadius: 4, padding: '6px 9px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, borderBottom: '1.5px solid #D97706' }}>
+    <Text style={{ fontSize: 12.2, color: '#B45309', fontWeight: 'bold' }}>② 三种高阶组合模式（由基本形状拼装 · 深层机制见补充 B4）</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>3 种高阶组合</Text>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'column', gap: 5, marginTop: 5 }}>
+    <Box style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderLeft: '3.5px solid #3730A3', borderRadius: 4, padding: '3px 8px', flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ width: 148, flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>层级状态板+异构验收</Text>
+    <Box style={{ marginTop: 2, alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 3, padding: '1px 0', border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/topo_comp_2_dag.png" style={{ width: 114, height: 28, objectFit: 'fill' }} />
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, marginLeft: 8, flexDirection: 'column', justifyContent: 'center' }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>主控写规范</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>状态板认领</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>完成回填</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>换家验收</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#334155', fontWeight: 'bold' }}>本地任务状态板领活回填 · 做与验分属不同 AI 家族，超时换人</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderLeft: '3.5px solid #B45309', borderRadius: 4, padding: '3px 8px', flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ width: 148, flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>多路盲跑+交叉合议</Text>
+    <Box style={{ marginTop: 2, alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 3, padding: '1px 0', border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/topo_comp_1_debate.png" style={{ width: 114, height: 28, objectFit: 'fill' }} />
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, marginLeft: 8, flexDirection: 'column', justifyContent: 'center' }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>各自盲跑</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>汇总分歧</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>交叉核实</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>裁判合议</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#334155', fontWeight: 'bold' }}>首轮互不可见防顺从附和 · 次轮只对分歧举证收敛</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderLeft: '3.5px solid #047857', borderRadius: 4, padding: '3px 8px', flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ width: 148, flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold' }}>角色常驻+交接接力</Text>
+    <Box style={{ marginTop: 2, alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 3, padding: '1px 0', border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/topo_comp_3_relay.png" style={{ width: 114, height: 28, objectFit: 'fill' }} />
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, marginLeft: 8, flexDirection: 'column', justifyContent: 'center' }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>写交接包</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>落盘指针</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>满额换新</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>读盘续跑</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#334155', fontWeight: 'bold' }}>上下文满 60% 换新会话 · 传文件路径指针不拷长聊天</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '3.5px solid #D97706', borderRadius: 5, padding: '7px 10px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 13.6, color: '#B45309', fontWeight: 'bold' }}>10-19 自动调度实证、本地状态板协同与可配置自治功能</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>真跑实证 × 状态板协同</Text>
+    </Box>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #3730A3', borderRadius: 4, padding: '5px 9px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, borderBottom: '1.5px solid #3730A3' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>① 10-19 真实案例：中心自动派活、异构验收与超时换人</Text>
+    <Box style={{ background: '#EEF2FF', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>已完成 26 个目标</Text>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 5, marginTop: 4 }}>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderTop: '2.5px solid #3730A3', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>26 个目标</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>中心调度已完成</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderTop: '2.5px solid #3730A3', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>7 分钟交回</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>Codex 独立完成研究</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#ECFDF5', borderTop: '2.5px solid #047857', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold' }}>35 秒验收</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>换 Claude 异构复核</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', borderTop: '2.5px solid #B45309', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>自动换人</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>Codex 超时换 Claude</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4 }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 62, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>实跑过程</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>研究拆给两家</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>Codex 7m交回</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>Claude 35s验</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>超时换人重做</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #D97706', borderRadius: 4, padding: '5px 9px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, borderBottom: '1.5px solid #D97706' }}>
+    <Text style={{ fontSize: 12.2, color: '#B45309', fontWeight: 'bold' }}>② 层级协作与本地状态板机制：写规范 · 认领任务 · 完成回填</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>状态板认领 × 渐进固化</Text>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'column', gap: 3, marginTop: 4 }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 58, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>状态板流</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderTop: '2.5px solid #3730A3', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>① 主控写规范</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>定边界与验收标准</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderTop: '2.5px solid #3730A3', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>② 状态板认领</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>按锁领活防冲突重做</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', borderTop: '2.5px solid #B45309', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>③ 完成回填路径</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>写回状态与产物指针</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 58, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>四层文档</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>全局规范</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>CLAUDE.md</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', borderTop: '2.5px solid #B45309', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>角色职责</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>agents/*.md</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>领域技能</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>SKILL.md</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#ECFDF5', borderTop: '2.5px solid #047857', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold' }}>任务状态板</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>TASK / JSON</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 58, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>渐进固化</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#FFFBEB', borderTop: '2.5px solid #B45309', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>① 探索期：文档协作</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>状态板灵活改</Text>
+    </Box>
+    <Text style={{ fontSize: 12.0, color: '#047857', fontWeight: 'bold' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderTop: '2.5px solid #3730A3', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>② 收敛期：标准模板</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>跑通路径抽模板</Text>
+    </Box>
+    <Text style={{ fontSize: 12.0, color: '#047857', fontWeight: 'bold' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#ECFDF5', borderTop: '2.5px solid #047857', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold' }}>③ 成熟期：固定脚本</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>高频链路代码化</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #047857', borderRadius: 4, padding: '5px 9px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, borderBottom: '1.5px solid #047857' }}>
+    <Text style={{ fontSize: 12.2, color: '#047857', fontWeight: 'bold' }}>③ 可配置调度与研究自治功能（按任务场景灵活开关）</Text>
+    <Box style={{ background: '#ECFDF5', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>可配置自治功能</Text>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+    <Box style={{ flex: 1, background: '#FFFBEB', borderTop: '2.5px solid #B45309', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>目标拆解模式可配</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>支持人工拆单或中心自动拆解</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', borderTop: '2.5px solid #3730A3', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>夜间闲时排程可配</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>晚间自动排入大研究与测试</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#ECFDF5', borderTop: '2.5px solid #047857', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold' }}>常驻路线研究员可配</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>各路线配研究员并自动攒经验</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 38, flexDirection: 'row', alignItems: 'center', gap: 12, background: '#EEF2FF', borderLeft: '4px solid #3730A3', borderRadius: 6, padding: '0 14px' }}>
+    <Box style={{ background: '#3730A3', borderRadius: 4, padding: '3px 9px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#FFFFFF', fontWeight: 'bold' }}>核心机制</Text>
+    </Box>
+    <Text style={{ fontSize: 13.5, color: '#1E293B', fontWeight: 'bold' }}>以 5 种基本形状拼出层级状态板、多路盲跑合议与跨轮接力，靠「写规范→状态板认领→完成回填→异构验收」跑通 26 个目标。</Text>
+    </Box>
+    </Box>

@@ -1,0 +1,85 @@
+<Slide style={{ width: '1280px', height: '720px', padding: 0, position: 'relative' }}>
+    <Image src="assets/bg_content_st.png" style={{ position: 'absolute', top: 0, left: 0, width: '1280px', height: '720px', objectFit: 'cover', zIndex: 0 }} />
+
+    {/* ===== 标识层 L1：页眉双色带 + 双校标识 ===== */}
+    <Box style={{ position: 'absolute', top: 0, left: 0, width: 520, height: 6, background: '#9D0A12', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 0, left: 520, width: 760, height: 6, background: '#073E87', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 16, left: 56, width: 1168, height: 34, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Image src="assets/logo_st_lockup_red.png" style={{ height: 34, width: 127, objectFit: 'contain' }} />
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 13.4, color: '#073E87', letterSpacing: 0.3 }}>
+            Agent-Architecture-Hub · 全生态能力渠道与渐进式多智能体系统
+        </Text>
+        <Image src="assets/logo_sitp_mark_navy.png" style={{ height: 24, width: 58, objectFit: 'contain', marginLeft: 9 }} />
+    </Box>
+    <Box style={{ position: 'absolute', top: 58, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+
+    {/* ===== 标识层 L2：页脚署名 ===== */}
+    <Box style={{ position: 'absolute', top: 672, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 684, left: 56, width: 1168, height: 16, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Box style={{ width: 7, height: 7, background: '#9D0A12', marginRight: 5 }} />
+        <Box style={{ width: 7, height: 7, background: '#073E87', marginRight: 10 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>
+            Agent-Architecture-Hub ｜ 官方协议 + CDP + 适配器三路合一 · 126 项能力单元矩阵 · 五种编排拓扑与三态对照
+        </Text>
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>1 / 4</Text>
+    </Box>
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '96px 56px 78px 56px', flexDirection: 'column' }}>
+
+        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#073E87' }}>
+            强共线小样本建模：子空间旋转集成与全谱响应回读
+        </Text>
+        <Text style={{ fontSize: 13.9, color: '#6B7280', marginTop: 7 }}>
+            野生／人工结香筛查（在投一作）｜35 个物理样本组 · 350 条光谱 · 622 维｜外层平均准确率 89.6%
+        </Text>
+
+        <Box style={{ marginTop: 20, flexDirection: 'row', gap: 24, height: 390 }}>
+
+            <Box style={{ flex: 1, flexDirection: 'column', gap: 10 }}>
+
+                <Box style={{ background: '#F5F7FB', borderRadius: 8, padding: '12px 18px', borderLeft: '3px solid #073E87' }}>
+                    <Text style={{ fontSize: 14.4, fontWeight: 'bold', color: '#1F2937' }}>
+                        五类模型外层平均准确率对比
+                    </Text>
+                    <Text style={{ fontSize: 13.4, color: '#1F2937', marginTop: 6, lineHeight: 1.6 }}>
+                        PLS-DA 81.1% ｜ RBF-SVM 78.9% ｜ 随机森林 85.8% ｜ XGBoost 85.0% ｜
+                        <span style={{ fontWeight: 'bold', color: '#A40006' }}> Rotation Forest 89.6%</span>
+                    </Text>
+                </Box>
+
+                <Box style={{ flex: 1, background: '#F5F7FB', borderRadius: 8, padding: '12px 18px', borderLeft: '3px solid #073E87' }}>
+                    <Text style={{ fontSize: 14.4, fontWeight: 'bold', color: '#1F2937' }}>
+                        为什么旋转集成在小样本连续光谱上更优
+                    </Text>
+                    <Text style={{ fontSize: 13.4, color: '#1F2937', marginTop: 6, lineHeight: 1.5 }}>
+                        相邻波数高度共线（622 个连续变量），单波数正交切分难以捕捉谱带斜率与组合谱形；随机子空间划分后在子集内做 PCA 正交旋转（不丢弃小特征值主成分），既构造对连续谱带敏感的斜向判别面，又增强基分类器多样性。
+                    </Text>
+                </Box>
+
+                <Box style={{ flex: 1, background: '#F5F7FB', borderRadius: 8, padding: '12px 18px', borderLeft: '3px solid #073E87' }}>
+                    <Text style={{ fontSize: 14.4, fontWeight: 'bold', color: '#1F2937' }}>
+                        把旋转空间的判别映射回波数轴
+                    </Text>
+                    <Text style={{ fontSize: 13.4, color: '#1F2937', marginTop: 6, lineHeight: 1.5 }}>
+                        以预测概率构建 21 个平衡增强概率层（17,499 条通过 QC 的候选谱），提取 600–1800 cm⁻¹ 全轴条件响应曲线 s(ν) 与二维同步协方差矩阵，与实测一阶导差分谱对照。
+                    </Text>
+                </Box>
+
+            </Box>
+
+            <Box style={{ width: 447, flexDirection: 'column' }}>
+                <Image src="主线/img/w2_v35_fig4.png" style={{ width: 447, height: 390, objectFit: 'contain', borderRadius: 6 }} />
+            </Box>
+
+        </Box>
+
+        <Box style={{ marginTop: 16, flexDirection: 'row', background: 'rgba(157,10,18,0.055)', borderRadius: 6 }}>
+            <Box style={{ width: 4, background: '#9D0A12', borderRadius: 6 }} />
+            <Text style={{ fontSize: 14.4, color: '#1F2937', padding: '12px 18px', lineHeight: 1.5 }}>
+                在无先验窗口提示下，模型全谱响应与实测类别差谱的峰谷结构 <span style={{ fontWeight: 'bold' }}>r = 0.981</span>——模型学到的是真实谱形差异，而非背景噪声。图 4｜模型连续响应与实测类别差谱对照（终稿）。
+            </Text>
+        </Box>
+
+    </Box>
+</Slide>

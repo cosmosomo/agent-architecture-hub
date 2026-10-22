@@ -1,0 +1,259 @@
+<Slide style={{ width: '1280px', height: '720px', padding: 0, position: 'relative' }}>
+    <Image src="assets/bg_content_st.png" style={{ position: 'absolute', top: 0, left: 0, width: '1280px', height: '720px', objectFit: 'cover', zIndex: 0 }} />
+
+    {/* ===== 标识层 L1：页眉双色带 + 双校标识 ===== */}
+    <Box style={{ position: 'absolute', top: 0, left: 0, width: 520, height: 6, background: '#9D0A12', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 0, left: 520, width: 760, height: 6, background: '#073E87', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 16, left: 56, width: 1168, height: 34, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Image src="assets/logo_st_lockup_red.png" style={{ height: 34, width: 127, objectFit: 'contain' }} />
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 13.4, color: '#073E87', letterSpacing: 0.3 }}>
+            Agent-Architecture-Hub · 跨客户端多智能体协同与受控运行系统
+        </Text>
+        <Image src="assets/logo_sitp_mark_navy.png" style={{ height: 24, width: 58, objectFit: 'contain', marginLeft: 9 }} />
+    </Box>
+    <Box style={{ position: 'absolute', top: 58, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+
+    {/* ===== 标识层 L2：页脚署名 ===== */}
+    <Box style={{ position: 'absolute', top: 672, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 684, left: 56, width: 1168, height: 16, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Box style={{ width: 7, height: 7, background: '#9D0A12', marginRight: 5 }} />
+        <Box style={{ width: 7, height: 7, background: '#073E87', marginRight: 10 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>
+            Agent-Architecture-Hub ｜ 多通道客户端接入 · 共享工作区黑板 · 两级轨迹追溯与实时纠偏
+        </Text>
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>1 / 6</Text>
+    </Box>
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.5, color: '#1E3A8A', fontWeight: 'bold' }}>系统立题：本机 9 款 AI 产品统一接入与跨产品协同</Text>
+    <Text style={{ fontSize: 13.8, color: '#64748B', marginTop: 5 }}>9 款产品 · 1,882 条会话 · 132 个能力单元 · 26 个已完成目标 ｜ 复用各家客户端最高缓存率与 42 条独家功能</Text>
+    <Box style={{ flexDirection: 'row', gap: 10, marginTop: 4, height: 50 }}>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderLeft: '4px solid #3730A3', borderRadius: 4, padding: '4px 10px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+    <Text style={{ fontSize: 17.5, color: '#3730A3', fontWeight: 'bold' }}>9 款</Text>
+    <Text style={{ fontSize: 12.2, color: '#1E293B', fontWeight: 'bold', marginLeft: 6 }}>本机 AI 产品</Text>
+    </Box>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>7 家可驱动 · 2 家只读检索</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderLeft: '4px solid #B45309', borderRadius: 4, padding: '4px 10px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+    <Text style={{ fontSize: 17.5, color: '#B45309', fontWeight: 'bold' }}>1,882 条</Text>
+    <Text style={{ fontSize: 12.2, color: '#1E293B', fontWeight: 'bold', marginLeft: 6 }}>真实会话记录</Text>
+    </Box>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>统一格式直读 · 全文可搜</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderLeft: '4px solid #3730A3', borderRadius: 4, padding: '4px 10px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+    <Text style={{ fontSize: 17.5, color: '#3730A3', fontWeight: 'bold' }}>132 个</Text>
+    <Text style={{ fontSize: 12.2, color: '#1E293B', fontWeight: 'bold', marginLeft: 6 }}>能力单元矩阵</Text>
+    </Box>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>82 项功能 + 50 项显示交互</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderLeft: '4px solid #047857', borderRadius: 4, padding: '4px 10px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+    <Text style={{ fontSize: 17.5, color: '#047857', fontWeight: 'bold' }}>26 个</Text>
+    <Text style={{ fontSize: 12.2, color: '#1E293B', fontWeight: 'bold', marginLeft: 6 }}>已跑通目标</Text>
+    </Box>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>累计产出 60 份研究报告</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 6, flexDirection: 'row', gap: 12, height: 370 }}>
+    <Box style={{ width: 290, background: '#FFFFFF', padding: '4px 8px 6px 8px', flexDirection: 'column' }}>
+    <Box style={{ height: 4, background: '#94A3B8', borderRadius: 2 }}>
+    
+    </Box>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+    <Text style={{ fontSize: 12.0, color: '#64748B', fontWeight: 'bold' }}>路线 01</Text>
+    <Box style={{ background: '#F1F5F9', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#334155', fontWeight: 'bold' }}>什么都要手写 · 仅适固定流程</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 14.6, color: '#334155', fontWeight: 'bold', marginTop: 4 }}>代码框架调裸接口（如 LangGraph）</Text>
+    <Box style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between', marginTop: 8, marginBottom: 8 }}>
+    <Box style={{ borderLeft: '3.5px solid #9D0A12', padding: '4px 0 4px 9px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.4, color: '#9D0A12', fontWeight: 'bold' }}>裸接口缺原厂高缓存与低价</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #9D0A12', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#9D0A12', fontWeight: 'bold' }}>无客户端缓存</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>缺原厂最高命中</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #9D0A12', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#9D0A12', fontWeight: 'bold' }}>无套餐补贴</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>长上下文成本高</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ borderLeft: '3.5px solid #9D0A12', padding: '4px 0 4px 9px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.4, color: '#9D0A12', fontWeight: 'bold' }}>底层轮子全靠自己手写</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #9D0A12', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#9D0A12', fontWeight: 'bold' }}>手写底层轮子</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>沙箱/补丁/工具</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #9D0A12', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#9D0A12', fontWeight: 'bold' }}>写死状态机</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>LangGraph/AutoGen</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ borderLeft: '3.5px solid #9D0A12', padding: '4px 0 4px 9px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.4, color: '#9D0A12', fontWeight: 'bold' }}>多端会话割裂与改流程难</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #9D0A12', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#9D0A12', fontWeight: 'bold' }}>会话日志割裂</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>各工具各自建库</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #9D0A12', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#9D0A12', fontWeight: 'bold' }}>探索改拓扑难</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>改流程需重写代码</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ background: '#F1F5F9', borderRadius: 4, padding: '6px 8px', alignItems: 'center' }}>
+    <Text style={{ fontSize: 12.0, color: '#334155', fontWeight: 'bold' }}>缺高缓存率 · 重复造轮子 · 仅适固定流程</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 310, background: '#FFFFFF', padding: '4px 8px 6px 8px', flexDirection: 'column', borderLeft: '1px solid #CBD5E1', paddingLeft: 14 }}>
+    <Box style={{ height: 4, background: '#94A3B8', borderRadius: 2 }}>
+    
+    </Box>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+    <Text style={{ fontSize: 12.0, color: '#64748B', fontWeight: 'bold' }}>路线 02</Text>
+    <Box style={{ background: '#F1F5F9', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#334155', fontWeight: 'bold' }}>高缓存与独家功能 · 困在单窗</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 14.6, color: '#334155', fontWeight: 'bold', marginTop: 4 }}>成品客户端单窗（如 Codex/Claude）</Text>
+    <Box style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between', marginTop: 8, marginBottom: 8 }}>
+    <Box style={{ borderLeft: '3.5px solid #047857', padding: '4px 0 4px 9px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.4, color: '#047857', fontWeight: 'bold' }}>自家应用享最高最强缓存率</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #047857', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#047857', fontWeight: 'bold' }}>最高缓存命中</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>如 Codex / Claude</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #047857', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#047857', fontWeight: 'bold' }}>官方套餐补贴</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>实际成本极便宜</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ borderLeft: '3.5px solid #3730A3', padding: '4px 0 4px 9px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.4, color: '#3730A3', fontWeight: 'bold' }}>含 42 条独家功能与个人渠道</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>42条独家功能</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>闭源Skill/知识库</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>个人功能渠道</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>邮箱/飞书连接器</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ borderLeft: '3.5px solid #B45309', padding: '4px 0 4px 9px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.4, color: '#B45309', fontWeight: 'bold' }}>锁在单窗且逆向反代违规</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #B45309', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#B45309', fontWeight: 'bold' }}>单窗信息孤岛</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>各存各的难协同</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #B45309', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#B45309', fontWeight: 'bold' }}>逆向反代封号</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>丢高缓存与生态</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ background: '#F1F5F9', borderRadius: 4, padding: '6px 8px', alignItems: 'center' }}>
+    <Text style={{ fontSize: 12.0, color: '#334155', fontWeight: 'bold' }}>享最高缓存与独家功能 · 锁单窗难协同</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 540, background: '#FFFFFF', padding: '4px 8px 6px 8px', flexDirection: 'column', borderLeft: '1px solid #CBD5E1', paddingLeft: 14 }}>
+    <Box style={{ height: 4, background: '#D97706', borderRadius: 2 }}>
+    
+    </Box>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+    <Text style={{ fontSize: 12.0, color: '#B45309', fontWeight: 'bold' }}>路线 03 · 本系统</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>9 款产品组队 + 拓展固定流程</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 14.6, color: '#3730A3', fontWeight: 'bold', marginTop: 4 }}>三路接入 + 中心自动派活 + 借别家所长</Text>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch', marginTop: 8, marginBottom: 8 }}>
+    <Box style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ borderLeft: '3.5px solid #3730A3', padding: '4px 0 4px 9px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.4, color: '#3730A3', fontWeight: 'bold' }}>保留原厂最高缓存率 + 借别家所长派活</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>100% 原生缓存</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>直驱官方客户端</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>42条独家功能</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>操作电脑/深研</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>邮箱/飞书渠道</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>基础/共享/专属</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ borderLeft: '3.5px solid #3730A3', padding: '4px 0 4px 9px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.4, color: '#3730A3', fontWeight: 'bold' }}>中心自动挑人派活 + 异构验收 + 额度排队</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>自动挑人换人</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>按负载挑·超时换</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>另一家AI验收</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>7m交回·35s验收</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #3730A3', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>额度撞线排队</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>4家共用等恢复</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ borderLeft: '3.5px solid #B45309', padding: '4px 0 4px 9px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.4, color: '#B45309', fontWeight: 'bold' }}>粗粒度灵活探索 + 沉淀拓展固定工作流</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #B45309', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#B45309', fontWeight: 'bold' }}>MD 契约探索</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>零代码秒改拓扑</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #B45309', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#B45309', fontWeight: 'bold' }}>成熟路径固化</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>抽为标准任务链</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '2.5px solid #B45309', border: '1px solid #E2E8F0', borderRadius: 4, padding: '6px 7px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#B45309', fontWeight: 'bold' }}>拓展固定工作流</Text>
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 3 }}>兼顾确定性执行</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ width: 106, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', marginLeft: 6 }}>
+    <Image src="主线/img/gpt_p13_hub_glass_layers.png" style={{ width: 100, height: 100, objectFit: 'fill', borderRadius: 6 }} />
+    <Text style={{ fontSize: 11.6, color: '#64748B', marginTop: 4 }}>三层状态映射</Text>
+    </Box>
+    </Box>
+    <Box style={{ background: '#3730A3', borderRadius: 4, padding: '6px 8px', alignItems: 'center' }}>
+    <Text style={{ fontSize: 12.0, color: '#FFFFFF', fontWeight: 'bold' }}>把 9 款本机产品变成能分工、能互相验收、能拓展固定流程的团队</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 38, flexDirection: 'row', alignItems: 'center', gap: 12, background: '#EEF2FF', borderLeft: '4px solid #3730A3', borderRadius: 6, padding: '0 14px' }}>
+    <Box style={{ background: '#3730A3', borderRadius: 4, padding: '3px 9px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#FFFFFF', fontWeight: 'bold' }}>核心机制</Text>
+    </Box>
+    <Text style={{ fontSize: 13.5, color: '#1E293B', fontWeight: 'bold' }}>直接驱动 9 款本机产品复用原厂最高缓存率与 42 条独家功能，由中心自动挑人派活、异构验收并支持拓展固定工作流。</Text>
+    </Box>
+    </Box>
+</Slide>

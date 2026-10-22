@@ -1,0 +1,49 @@
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.0, color: '#1E3A8A', fontWeight: 'bold' }}>通信与排障：送达≠唤醒四态回执与 10-19 真实排障详单</Text>
+    <Text style={{ fontSize: 13.8, color: '#64748B', marginTop: 5 }}>发出→送达→读到→交回四态回执 ｜ 逐条对数查出 5 处隐藏问题 ｜ 2,600 行误删 1 分钟恢复与切模污染排障</Text>
+    <Box style={{ marginTop: 8, flexDirection: 'row', gap: 14, height: 424 }}>
+    <Box style={{ width: 590, background: '#EEF2FF', borderTop: '4px solid #3730A3', borderRadius: 6, padding: '12px 14px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 13.5, color: '#3730A3', fontWeight: 'bold' }}>跨产品通信原语映射：送达 ≠ 唤醒（四态回执 + 五类唤醒 + 四件套指针定义）</Text>
+    <Box style={{ background: '#FFFBEB', borderLeft: '4px solid #D97706', borderRadius: 5, padding: '9px 12px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.4, color: '#B45309', fontWeight: 'bold' }}>1. 严格区分「送达 (Deliver) ≠ 读到 (Read) ≠ 唤醒 (Wake)」</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• 发出 (Sent) → 送达 (Delivered，写入目标收件箱或消息队列) → 读到 (Read，进入目标当前轮上下文口) → 交回 (Returned，产出回执)</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• 观察台「送达四分外环」实时显示每条黑板消息的【1.该知道 / 2.已送到 / 3.已读到 / 4.已写回】，防止把「文件写进目录」误判为「对方已读到」</Text>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #3730A3', borderRadius: 5, padding: '9px 12px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.4, color: '#3730A3', fontWeight: 'bold' }}>2. 五类唤醒机制与甲乙两条决定传路</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• 五类唤醒：派活唤醒 (dispatch) · 交回唤醒 (deliver) · 依赖解封唤醒 · 审批放行唤醒 · 异常/超预算唤醒人</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• 甲路（写进信息尾块，全宿主通用） vs 乙路（调用 agent_gateway.js 20 个 CLI 子命令或 MCP 工具）</Text>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #1E3A8A', borderRadius: 5, padding: '9px 12px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.4, color: '#3730A3', fontWeight: 'bold' }}>3. 任务与记忆路径指针交接包（四件套定义）与单写者锁</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• ① 要求标准 (CLAUDE.md) · ② 角色任务 (TASK.md) · ③ 记忆路径指针 · ④ 上手先读步骤；严禁多轮自由聊天拷贝长文，统一单写者锁</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '4px solid #9D0A12', borderRadius: 6, padding: '12px 14px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 13.5, color: '#9D0A12', fontWeight: 'bold' }}>10-18 至 10-19 全量真跑实证与真实故障诊断重演详单</Text>
+    <Box style={{ background: '#FEF2F2', borderLeft: '4px solid #9D0A12', borderRadius: 5, padding: '10px 12px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.4, color: '#9D0A12', fontWeight: 'bold' }}>诊断实录 A：10-19 逐条对数抓出 5 处假通过 & 共享记录 2,600 行误删 1 分钟恢复</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• 逐条对数（probe_display.mjs）：把 7 家网页/手机显示内容与原始记录逐条核对工具调用、结果、思考字数，查出并修复 5 处隐藏问题</Text>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold', marginTop: 4 }}>• 误删恢复（guard.ts）：一个 AI 误把 2,600 行实测记录整份重写剩 18 行；建立三层防线（仅中心写/每分钟查变短恢复/私有版本库），1 分钟自动恢复</Text>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #3730A3', borderRadius: 5, padding: '10px 12px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.4, color: '#3730A3', fontWeight: 'bold' }}>诊断实录 B：OpenCode 免费模型切换污染全局配置 & 跨压缩回看第 1 轮原话</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• 切模防污染：独立测试员（ZCode，dsp_151506_yvx4）真跑 56 项回归抓出 OpenCode 切模改写全局配置缺陷，加快照回滚锁修复</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• 跨压缩取原话（recall-history）：实测 OpenCode 在第 17 轮一条命令准确取回被自动压缩掉的第 1 轮原话</Text>
+    </Box>
+    <Box style={{ background: '#FFFBEB', borderLeft: '4px solid #D97706', borderRadius: 5, padding: '10px 12px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.4, color: '#B45309', fontWeight: 'bold' }}>诊断实录 C：10-19 自动调度异构验收、额度排队与轮内挂起审批真跑</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• Codex 7 分钟交回 + Claude 35 秒验收通过；Codex 超时自动换 Claude 重做；4 家共用智谱撞上限自动排队至 18:08；5 款宿主轮内挂起放行全通过</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 38, flexDirection: 'row', alignItems: 'center', gap: 12, background: '#FFFBEB', borderLeft: '4px solid #B45309', borderRadius: 6, padding: '0 14px' }}>
+    <Box style={{ background: '#B45309', borderRadius: 4, padding: '3px 9px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#FFFFFF', fontWeight: 'bold' }}>补充深潜</Text>
+    </Box>
+    <Text style={{ fontSize: 13.5, color: '#1E293B', fontWeight: 'bold' }}>严格区分「送达 ≠ 读到 ≠ 唤醒」四态回执，通过逐条对数、三层防删与 56 项回归真跑抓出并修复跨产品隐藏缺陷。</Text>
+    </Box>
+    </Box>

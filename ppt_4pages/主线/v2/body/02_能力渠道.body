@@ -1,0 +1,273 @@
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.5, color: '#073E87', fontWeight: 'bold' }}>能力渠道与基本能力矩阵：各家原生面 vs 多路择优 + 中心当宿主</Text>
+    <Text style={{ fontSize: 13.8, color: '#6B7280', marginTop: 5 }}>9 产品 1,707 条本地会话 + 豆包 + 160+ 网页登录态 + 30+ 模型池 + 22 把 Key ｜ 五级尺度 532 格实测对账</Text>
+    <Box style={{ marginTop: 10, flexDirection: 'row', gap: 12, height: 404 }}>
+    <Box style={{ width: 430, flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ background: '#F5F7FB', borderRadius: 8, padding: '9px 12px', borderLeft: '3.5px solid #073E87', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 14.8, color: '#073E87', fontWeight: 'bold' }}>四根轴正交拆解：尺度 × 位置 × 产品 × 依据</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>五级尺度：一步 ⊂ 一轮 ⊂ 单会话 ⊂ 两会话 ⊂ 群会话</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>五个位置：本体 → 原生面 → 适配路线 → 后端 → 网页</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>四张表对账：原生证实 ≥191 格 → 后端已接 283 格</Text>
+    </Box>
+    <Box style={{ background: '#F5F7FB', borderRadius: 8, padding: '9px 12px', borderLeft: '3.5px solid #B45309', flexDirection: 'column', marginTop: 8 }}>
+    <Text style={{ fontSize: 14.8, color: '#B45309', fontWeight: 'bold' }}>小尺度（一轮 / 单会话）：各产品当宿主 + 多路择优</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>各家单一接口暴露不全（如 Codex CLI 16%、ACP 11%）</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>组合常驻 ACP + 官方服务 + 本地会话库：ZCode 升至 50%</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>小尺度做不到则跨级降级兜底（如轮内插话降级下一轮）</Text>
+    </Box>
+    <Box style={{ background: '#F5F7FB', borderRadius: 8, padding: '9px 12px', borderLeft: '3.5px solid #9D0A12', flexDirection: 'column', marginTop: 8 }}>
+    <Text style={{ fontSize: 14.8, color: '#9D0A12', fontWeight: 'bold' }}>大尺度（两会话 / 群会话）：由本中心自己当宿主</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>各家仅管内部子智能体(12/84)，跨产品协同无公共宿主</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>中心当宿主实测接通双会话 58/84 格、群会话 31/35 格</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>统管 9 家会话全文检索、160+ 网页登录态与 22 把 Key</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 726, flexDirection: 'column', gap: 8 }}>
+    <Box style={{ height: 114, background: '#FFFFFF', border: '1.5px solid #073E87', borderRadius: 6, overflow: 'hidden', flexDirection: 'column' }}>
+    <Box style={{ height: 23, background: '#073E87', padding: '0 8px', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.2, color: '#FFFFFF', fontWeight: 'bold' }}>全生态 12 路能力渠道（7 可驱动产品 + 2 只读库共 1,707 条 + 豆包 + 160+ 网页 + 30+ 模型池 + 22 把 Key）</Text>
+    <Text style={{ fontSize: 9.0, color: '#E0E7FF', fontWeight: 'bold' }}>分母：76 能力 + 50 交互</Text>
+    </Box>
+    <Box style={{ padding: '5px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', gap: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#D97706', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>CC</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>Claude (236)</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>CLI/JSON</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>实68%|后47%</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#073E87', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>CX</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>Codex (151)</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>app-server</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>实66%|后46%</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#2563EB', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>AG</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>AGY (240)</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>RPC/API</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>实59%|后38%</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#7C3AED', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>ZC</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>ZCode (822)</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>常驻ACP+库</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>证29%→后50%</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#059669', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>WB</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>WorkBuddy(84)</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>常驻ACP+库</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>证28%→后47%</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#0D9488', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>OC</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>OpenCode(95)</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>ACP/serve</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>证33%→后43%</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, flexDirection: 'row', gap: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#4F46E5', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>HM</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>Hermes (43)</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>ACP/state</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>证30%→后43%</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#9D0A12', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>RO</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>Gemini/Droid</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>本地会话库</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>只读 16+20条</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#0284C7', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>DB</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>豆包桌面端</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>CDP 9225</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>独立拨号通道</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#EA580C', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>UI</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>OpenCLI网页</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>CDP登录态</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>160+站|UI 9格</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#475569', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>MD</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>cc-switch池</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>按次切配置</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>30+ 供应商</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ background: '#047857', borderRadius: 3, padding: '1px 4px', marginRight: 4 }}>
+    <Text style={{ fontSize: 8.2, color: '#FFFFFF', fontWeight: 'bold' }}>SR</Text>
+    </Box>
+    <Text style={{ fontSize: 9.6, color: '#1F2937', fontWeight: 'bold' }}>Search Hub</Text>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 7.9, color: '#6B7280' }}>自动轮换</Text>
+    <Text style={{ fontSize: 8.1, color: '#073E87', fontWeight: 'bold' }}>22 把搜索Key</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1.5px solid #073E87', borderRadius: 6, overflow: 'hidden', flexDirection: 'column' }}>
+    <Box style={{ height: 24, background: '#073E87', flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ width: 96, padding: '4px 6px' }}>
+    <Text style={{ fontSize: 9.6, color: '#FFFFFF', fontWeight: 'bold' }}>五个尺度 (532格)</Text>
+    </Box>
+    <Box style={{ width: 288, padding: '4px 6px' }}>
+    <Text style={{ fontSize: 9.6, color: '#FECACA', fontWeight: 'bold' }}>各产品原生面（谁当宿主 · 已证实下限 ≥191 格）</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '4px 6px' }}>
+    <Text style={{ fontSize: 9.6, color: '#BFDBFE', fontWeight: 'bold' }}>本系统「多路择优 + 中心当宿主」实测（后端已接 283 格 / 通过 240 格）</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch', borderBottom: '1px solid #E5E7EB' }}>
+    <Box style={{ width: 96, padding: '3px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.6, color: '#073E87', fontWeight: 'bold' }}>1. 一轮之内</Text>
+    <Text style={{ fontSize: 8.3, color: '#6B7280', marginTop: 1 }}>10单元 · 70格</Text>
+    </Box>
+    <Box style={{ width: 288, padding: '3px 6px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.1, color: '#4B5563', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>各产品当宿主 (已证实 ≥39/70)</span>：Codex/Claude/AGY 支持轮内插话，但单口 CLI 或 ACP 通道暴露不全</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '3px 6px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.2, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>多路择优 + 轮内挂起 (已接 32/70)</span>：5 个产品实测写文件前轮内挂起→网页/CLI 批准后同轮写出；跨级可降级队列</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch', borderBottom: '1px solid #E5E7EB' }}>
+    <Box style={{ width: 96, padding: '3px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.6, color: '#073E87', fontWeight: 'bold' }}>2. 一个会话</Text>
+    <Text style={{ fontSize: 8.3, color: '#6B7280', marginTop: 1 }}>34单元 · 238格</Text>
+    </Box>
+    <Box style={{ width: 288, padding: '3px 6px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.1, color: '#4B5563', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>各产品当宿主 (已证实 ≥98/238)</span>：自带存储与恢复；跨进程带锁(Codex 7分钟)，ACP 缺会话分叉与压缩</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '3px 6px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.2, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>常驻 ACP + 本地会话库 (已接 129/238)</span>：实测通过 119 格；无锁直读会话库，ZCode 后端从 29% 升至 50%，WB 升至 47%</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch', borderBottom: '1px solid #E5E7EB' }}>
+    <Box style={{ width: 96, padding: '3px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.6, color: '#073E87', fontWeight: 'bold' }}>3. 两个会话间</Text>
+    <Text style={{ fontSize: 8.3, color: '#6B7280', marginTop: 1 }}>12单元 · 84格</Text>
+    </Box>
+    <Box style={{ width: 288, padding: '3px 6px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.1, color: '#4B5563', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>仅同产品子代理 (已证实 ≥12/84)</span>：7 家里 6 家支持内部派子智能体；跨产品派活与回执无单一产品当宿主</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '3px 6px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.2, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>跨产品由中心当宿主 (已接 58/84)</span>：实测通过 51 格；中心保管等待、跨产品问答原语、四态回执与五类消息唤醒</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch', borderBottom: '1px solid #E5E7EB' }}>
+    <Box style={{ width: 96, padding: '3px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.6, color: '#073E87', fontWeight: 'bold' }}>4. 一群会话</Text>
+    <Text style={{ fontSize: 8.3, color: '#6B7280', marginTop: 1 }}>5单元 · 35格</Text>
+    </Box>
+    <Box style={{ width: 288, padding: '3px 6px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.1, color: '#4B5563', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>仅单产品内列表 (已证实 ≥8/35)</span>：各家仅管自身会话列表；跨产品任务板、预算熔断与独立验收无单一宿主</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '3px 6px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.2, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>跨产品群会话中心当宿主 (已接 31/35)</span>：实测通过 24 格；任务板离线判定 20/20 过，ZCode→OpenCode→Hermes 验收跑通</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch' }}>
+    <Box style={{ width: 96, padding: '3px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.6, color: '#073E87', fontWeight: 'bold' }}>5. 渠道与环境</Text>
+    <Text style={{ fontSize: 8.3, color: '#6B7280', marginTop: 1 }}>15单元·105格</Text>
+    </Box>
+    <Box style={{ width: 288, padding: '3px 6px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.1, color: '#4B5563', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>归各产品与本机 (已证实 ≥34/105)</span>：4 家可报命令清单；会话内切模型易改写产品级全局默认配置</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '3px 6px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.2, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>统一供给 + 双端入口 (已接 25/105)</span>：统管 30+ 模型池与 22 把 Key；手机端 /m/ 覆盖桌面端 53%–72% 交互项</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 42, flexDirection: 'row', alignItems: 'center', gap: 16, background: 'rgba(7,62,135,0.06)', borderRadius: 8, padding: '0 14px' }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.2, color: '#073E87', fontWeight: 'bold', width: 50 }}>给人</Text>
+    <Text style={{ fontSize: 13.2, color: '#1F2937' }}>按五级尺度对比看清「各家原生下限」与「多路择优 + 中心当宿主」的实测增益</Text>
+    </Box>
+    <Box style={{ width: 1, height: 22, background: '#9CA3AF' }}>
+    
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.2, color: '#9D0A12', fontWeight: 'bold', width: 50 }}>给 AI</Text>
+    <Text style={{ fontSize: 13.2, color: '#1F2937' }}>基于四张表（agent_gateway.js tables）实时对账，自动择优路由并支持跨尺度降级兜底</Text>
+    </Box>
+    </Box>
+    </Box>

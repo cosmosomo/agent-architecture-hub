@@ -1,0 +1,18 @@
+import { AcpBridge } from 'file:///E:/program/GIT/Agent/multi/Agent-Architecture-Hub/hub/tools/acp_resident_bridge.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+const code = 'FORK-ZC-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+const b = new AcpBridge('zcode');
+await b.start();
+await b.newSession(process.cwd());
+const scratch = path.join(process.cwd(), 'channels', 'probe', 'scripts', 'output', `zc-fork-${Date.now()}.txt`);
+await b.prompt(`请创建文件 ${scratch}，内容一行：${code}。创建完成只回复 OK。`, { timeoutMs: 180000 });
+const r = await b.call('session/fork', { sessionId: b.sessionId, cwd: process.cwd() });
+const forked = r.forkedSessionId;
+console.log('forkedSessionId:', forked);
+b.chunks = '';
+b.sessionId = forked;
+await b.prompt('仅凭会话记忆回答：你之前写入文件的暗号是什么？只回答暗号本身。', { timeoutMs: 180000 });
+console.log('forkFinal:', JSON.stringify(b.chunks.slice(-160)));
+console.log('verified:', b.chunks.includes(code));
+process.exit(0);

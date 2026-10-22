@@ -1,0 +1,83 @@
+<Slide style={{ width: '1280px', height: '720px', padding: 0, position: 'relative' }}>
+    <Image src="assets/bg_content_st.png" style={{ position: 'absolute', top: 0, left: 0, width: '1280px', height: '720px', objectFit: 'cover', zIndex: 0 }} />
+
+    {/* ===== 标识层 L1：页眉双色带 + 双校标识 ===== */}
+    <Box style={{ position: 'absolute', top: 0, left: 0, width: 520, height: 6, background: '#9D0A12', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 0, left: 520, width: 760, height: 6, background: '#073E87', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 16, left: 56, width: 1168, height: 34, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Image src="assets/logo_st_lockup_red.png" style={{ height: 34, width: 127, objectFit: 'contain' }} />
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 13.4, color: '#073E87', letterSpacing: 0.3 }}>
+            Agent-Architecture-Hub · 跨客户端多智能体协同与受控运行系统
+        </Text>
+        <Image src="assets/logo_sitp_mark_navy.png" style={{ height: 24, width: 58, objectFit: 'contain', marginLeft: 9 }} />
+    </Box>
+    <Box style={{ position: 'absolute', top: 58, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+
+    {/* ===== 标识层 L2：页脚署名 ===== */}
+    <Box style={{ position: 'absolute', top: 672, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 684, left: 56, width: 1168, height: 16, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Box style={{ width: 7, height: 7, background: '#9D0A12', marginRight: 5 }} />
+        <Box style={{ width: 7, height: 7, background: '#073E87', marginRight: 10 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>
+            Agent-Architecture-Hub ｜ 多通道客户端接入 · 共享工作区黑板 · 两级轨迹追溯与实时纠偏
+        </Text>
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>6 / 6</Text>
+    </Box>
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.5, color: '#1E3A8A', fontWeight: 'bold' }}>实机工作台：手机督工台、中心控制台与全景观察台</Text>
+    <Text style={{ fontSize: 13.8, color: '#64748B', marginTop: 5 }}>在手机上看任意 AI 每一步、半路插话、批准操作、回答提问、派活 ｜ 已统管 9 款产品、1,882 条会话、26 个目标</Text>
+    <Box style={{ marginTop: 8, flexDirection: 'row', gap: 14, height: 426 }}>
+    <Box style={{ width: 376, background: '#FFFFFF', borderTop: '3.5px solid #3730A3', padding: '8px 8px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.0, color: '#3730A3', fontWeight: 'bold' }}>① 全景编排与流程对账观察台</Text>
+    <Box style={{ background: '#EEF2FF', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>6 大部门 · 3 粒度 × 3 状态</Text>
+    </Box>
+    </Box>
+    <Box style={{ position: 'relative', width: 360, height: 276, background: '#FFFFFF', borderRadius: 4, marginTop: 6, border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/snap_obs_full_light.png" style={{ width: 360, height: 276, objectFit: 'fill', borderRadius: 4 }} />
+    </Box>
+    <Text style={{ fontSize: 12.0, color: '#1E293B', fontWeight: 'bold', marginTop: 7 }}>部门/小组/个体三级粒度切换 · 预设契约/实际运行/越权三态对账</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 3, lineHeight: 1.3 }}>同屏呈现 6 大部门完整协作拓扑、送达四分外环与底部执行时间轴，点击节点直接下钻 1,882 条会话原始证据</Text>
+    </Box>
+    <Box style={{ width: 376, background: '#FFFFFF', borderTop: '3.5px solid #1E3A8A', padding: '8px 8px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.0, color: '#3730A3', fontWeight: 'bold' }}>② 跨产品中心控制台与自动巡检</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>26 个目标 · 跨产品接力</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 360, height: 276, background: '#FFFFFF', borderRadius: 4, marginTop: 6, border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/snap_console_sup_light.png" style={{ width: 360, height: 276, objectFit: 'fill', borderRadius: 4 }} />
+    </Box>
+    <Text style={{ fontSize: 12.0, color: '#1E293B', fontWeight: 'bold', marginTop: 7 }}>7 款可驱动宿主健康监控 · 自动挑人派活 · 跨渠道上下文一键接力</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 3, lineHeight: 1.3 }}>已完成 26 个目标、60 份研究报告；实时统计自动批准 (19次)、断网续跑 (120次)、额度排队与超时换人重做</Text>
+    </Box>
+    <Box style={{ width: 380, background: '#FFFFFF', borderTop: '3.5px solid #D97706', padding: '8px 8px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.0, color: '#B45309', fontWeight: 'bold' }}>③ 手机督工台与安全组网远程办公</Text>
+    <Box style={{ background: '#ECFDF5', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>Tailscale 组网 · 随地督工</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 360, height: 276, background: '#F8FAFC', borderRadius: 4, padding: '0 4px', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, border: '1px solid #E2E8F0' }}>
+    <Image src="主线/img/orig_m1_feed.png" style={{ width: 174, height: 276, objectFit: 'fill', borderRadius: 4 }} />
+    <Image src="主线/img/orig_m2_steer.png" style={{ width: 174, height: 276, objectFit: 'fill', borderRadius: 4 }} />
+    </Box>
+    <Text style={{ fontSize: 12.0, color: '#B45309', fontWeight: 'bold', marginTop: 7 }}>手机上看任意 AI 每一步 · 半路插话 · 批准操作 · 回答提问 · 派活</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 3, lineHeight: 1.3 }}>通过 Tailscale 点对点加密组网直连本机（免公网暴露端口），在通勤或差旅任意地方用手机实时督工与放行审批</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 38, flexDirection: 'row', alignItems: 'center', gap: 12, background: '#EEF2FF', borderLeft: '4px solid #3730A3', borderRadius: 6, padding: '0 14px' }}>
+    <Box style={{ background: '#3730A3', borderRadius: 4, padding: '3px 9px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#FFFFFF', fontWeight: 'bold' }}>核心机制</Text>
+    </Box>
+    <Text style={{ fontSize: 13.5, color: '#1E293B', fontWeight: 'bold' }}>桌面端全景掌控 6 大部门三态拓扑、中心巡检与跨产品接力；手机督工台通过安全组网实现任意地方看每一步、插话、批准、答问与派活。</Text>
+    </Box>
+    </Box>
+</Slide>

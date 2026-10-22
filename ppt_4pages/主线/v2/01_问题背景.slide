@@ -1,0 +1,176 @@
+<Slide style={{ width: '1280px', height: '720px', padding: 0, position: 'relative' }}>
+    <Image src="assets/bg_content_st.png" style={{ position: 'absolute', top: 0, left: 0, width: '1280px', height: '720px', objectFit: 'cover', zIndex: 0 }} />
+
+    {/* ===== 标识层 L1：页眉双色带 + 双校标识 ===== */}
+    <Box style={{ position: 'absolute', top: 0, left: 0, width: 520, height: 6, background: '#9D0A12', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 0, left: 520, width: 760, height: 6, background: '#073E87', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 16, left: 56, width: 1168, height: 34, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Image src="assets/logo_st_lockup_red.png" style={{ height: 34, width: 127, objectFit: 'contain' }} />
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 13.4, color: '#073E87', letterSpacing: 0.3 }}>
+            Agent-Architecture-Hub · 全生态能力渠道与渐进式多智能体系统
+        </Text>
+        <Image src="assets/logo_sitp_mark_navy.png" style={{ height: 24, width: 58, objectFit: 'contain', marginLeft: 9 }} />
+    </Box>
+    <Box style={{ position: 'absolute', top: 58, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+
+    {/* ===== 标识层 L2：页脚署名 ===== */}
+    <Box style={{ position: 'absolute', top: 672, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 684, left: 56, width: 1168, height: 16, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Box style={{ width: 7, height: 7, background: '#9D0A12', marginRight: 5 }} />
+        <Box style={{ width: 7, height: 7, background: '#073E87', marginRight: 10 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>
+            Agent-Architecture-Hub ｜ 官方协议 + CDP + 适配器三路合一 · 126 项能力单元矩阵 · 五种编排拓扑与三态对照
+        </Text>
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>1 / 4</Text>
+    </Box>
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.5, color: '#073E87', fontWeight: 'bold' }}>现实痛点与范式转换：复用成品客户端生态，打破单窗封闭与刚性代码</Text>
+    <Text style={{ fontSize: 13.8, color: '#6B7280', marginTop: 5 }}>自家应用享最高缓存率与低价补贴，但封闭难拓展 ｜ 底层代码框架什么都要手写 ｜ 双颗粒度 Trace 与 MD 渐进编排</Text>
+    <Box style={{ marginTop: 10, flexDirection: 'row', gap: 12, height: 404 }}>
+    <Box style={{ width: 430, flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ background: '#F5F7FB', borderRadius: 8, padding: '9px 12px', borderLeft: '3.5px solid #9D0A12', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 14.8, color: '#9D0A12', fontWeight: 'bold' }}>痛点 A：各家成品享最高缓存率但封闭，反代违规丢功能</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>各家对自家应用(如 Claude Desktop/Code)给最高缓存率与低价</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>最大缺点是生态封闭、可拓展性差，会话锁在单窗口</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>拆凭证逆向反代既违规封号，又丢掉原厂高缓存与工具链</Text>
+    </Box>
+    <Box style={{ background: '#F5F7FB', borderRadius: 8, padding: '9px 12px', borderLeft: '3.5px solid #073E87', flexDirection: 'column', marginTop: 8 }}>
+    <Text style={{ fontSize: 14.8, color: '#073E87', fontWeight: 'bold' }}>痛点 B：底层代码框架什么都要手写 vs MD 渐进编排</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>LangGraph、AutoGen 只给空架子，工具与沙箱全靠手写</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>Python 写死 DAG 状态机改流程慢，我们直接复用成品宿主</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>用 CLAUDE.md、TASK.md 定契约，随时用自然语言重构角色</Text>
+    </Box>
+    <Box style={{ background: '#F5F7FB', borderRadius: 8, padding: '9px 12px', borderLeft: '3.5px solid #9D0A12', flexDirection: 'column', marginTop: 8 }}>
+    <Text style={{ fontSize: 14.8, color: '#9D0A12', fontWeight: 'bold' }}>痛点 C：单层流水账难看懂 vs 双颗粒度 Trace 回路</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>通用追踪仅记细粒度调用流水账，看不出为什么这么选</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>双颗粒度 Trace：粗粒度决策段(turn+steps)锚定细粒度步</Text>
+    <Text style={{ fontSize: 12.6, color: '#1F2937', marginTop: 4, lineHeight: 1.30 }}>配合四件套指针交接、轮内挂起审批与异构独立验收</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 726, flexDirection: 'column', gap: 8 }}>
+    <Box style={{ height: 118, flexDirection: 'row', gap: 8 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1.5px solid #9D0A12', borderRadius: 6, padding: '6px 8px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 11.0, color: '#9D0A12', fontWeight: 'bold' }}>各家成品生态：自家高缓存低价但封闭难拓展</Text>
+    <Box style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#9D0A12', fontWeight: 'bold' }}>封闭 vs 反代</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#ECFDF5', borderLeft: '2.5px solid #047857', borderRadius: 3, padding: '3px 6px' }}>
+    <Text style={{ fontSize: 9.1, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#047857' }}>✓ 为什么用成品</span>：自家应用(如 Claude Desktop/Code)享最高最强缓存率与补贴，极便宜</Text>
+    </Box>
+    <Box style={{ marginTop: 3, background: '#FEF2F2', borderLeft: '2.5px solid #9D0A12', borderRadius: 3, padding: '3px 6px' }}>
+    <Text style={{ fontSize: 9.3, color: '#1F2937', lineHeight: 1.24 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>✗ 成品最大痛点</span>：高度封闭、可拓展性差，跨产品派活与验收无公共宿主</Text>
+    </Box>
+    <Box style={{ marginTop: 3, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 3, padding: '2.5px 6px' }}>
+    <Text style={{ fontSize: 9.2, color: '#1F2937', lineHeight: 1.22 }}><span style={{ fontWeight: 'bold', color: '#B45309' }}>⚠ 逆向反代不可取</span>：拆凭证封号，且丢掉原厂高缓存率、补丁沙箱与会话状态</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1.5px solid #073E87', borderRadius: 6, padding: '6px 8px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 11.2, color: '#073E87', fontWeight: 'bold' }}>本系统：协议 + CDP + 适配器三路接入</Text>
+    <Box style={{ background: '#E8F0FE', border: '1px solid #93C5FD', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#073E87', fontWeight: 'bold' }}>保留高缓存+中心宿主</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#F0F7FF', border: '1px solid #BFDBFE', borderRadius: 3, padding: '3px 6px' }}>
+    <Text style={{ fontSize: 9.3, color: '#1F2937' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>① 官方协议</span>：常驻 ACP、Codex app-server、Claude JSON、AGY RPC</Text>
+    </Box>
+    <Box style={{ marginTop: 3, background: '#F0F7FF', border: '1px solid #BFDBFE', borderRadius: 3, padding: '3px 6px' }}>
+    <Text style={{ fontSize: 9.3, color: '#1F2937' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>② 桌面与网页 CDP</span>：豆包 9225 + OpenCLI 160+ 已登录网页（桌面 UI 实测 9 格）</Text>
+    </Box>
+    <Box style={{ marginTop: 3, background: '#F0F7FF', border: '1px solid #BFDBFE', borderRadius: 3, padding: '3px 6px' }}>
+    <Text style={{ fontSize: 9.1, color: '#1F2937' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>③ 分尺度当宿主</span>：小尺度复用原厂宿主保留最高缓存率与低价，跨产品由中心当宿主</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1.5px solid #073E87', borderRadius: 6, overflow: 'hidden', flexDirection: 'column' }}>
+    <Box style={{ height: 25, background: '#073E87', flexDirection: 'row', alignItems: 'center' }}>
+    <Box style={{ width: 82, padding: '4px 6px' }}>
+    <Text style={{ fontSize: 10.0, color: '#FFFFFF', fontWeight: 'bold' }}>核心维度</Text>
+    </Box>
+    <Box style={{ width: 298, padding: '4px 7px' }}>
+    <Text style={{ fontSize: 9.8, color: '#FFFFFF', fontWeight: 'bold' }}>底层代码框架 (什么都要手写) 与 闭源成品 (封闭难拓展)</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '4px 7px' }}>
+    <Text style={{ fontSize: 9.8, color: '#FFFFFF', fontWeight: 'bold' }}>本系统设计 (官方协议 + CDP + 适配器 · MD 渐进编排 · 双颗粒度 Trace)</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch', borderBottom: '1px solid #E5E7EB' }}>
+    <Box style={{ width: 82, padding: '4px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 10.0, color: '#073E87', fontWeight: 'bold' }}>1. 开发编排</Text>
+    </Box>
+    <Box style={{ width: 298, padding: '4px 7px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.3, color: '#4B5563', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>底层框架什么都要手写 + DAG 写死</span>：只调裸模型 API，补丁/沙箱/记忆全靠手写，改流程需改 Python 代码</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '4px 7px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.4, color: '#1F2937', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>复用 7 大可驱动宿主 + MD 渐进编排</span>：免造底层轮子；用 CLAUDE.md、TASK.md 自然语言随时重构角色与拓扑</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch', borderBottom: '1px solid #E5E7EB' }}>
+    <Box style={{ width: 82, padding: '4px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 10.0, color: '#073E87', fontWeight: 'bold' }}>2. 决策还原</Text>
+    </Box>
+    <Box style={{ width: 298, padding: '4px 7px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.3, color: '#4B5563', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>单层调用流水账 + 生态黑盒</span>：通用遥测仅记细粒度 API 进出文本，满屏步骤看不出「当时为什么这么选」</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '4px 7px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.4, color: '#1F2937', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>双颗粒度 Trace（粗粒度决策段 + 细粒度步）</span>：粗粒度决策段(触发/备选/选择/理由)经 turn+steps 锚定在 9 家细粒度轮/步证据上</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch', borderBottom: '1px solid #E5E7EB' }}>
+    <Box style={{ width: 82, padding: '4px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 10.0, color: '#073E87', fontWeight: 'bold' }}>3. 生态拓展</Text>
+    </Box>
+    <Box style={{ width: 298, padding: '4px 7px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.3, color: '#4B5563', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>各家产品封闭、可拓展性差</span>：虽有自家最高缓存命中率、低价补贴与子代理(12/84)，但跨产品无宿主</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '4px 7px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.4, color: '#1F2937', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>按五级尺度分清宿主归属（532 格对账）</span>：小尺度复用原厂最高缓存率与低价优化；双会话(58/84)与群会话(31/35)由中心当宿主</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch', borderBottom: '1px solid #E5E7EB' }}>
+    <Box style={{ width: 82, padding: '4px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 10.0, color: '#073E87', fontWeight: 'bold' }}>4. 漂移监控</Text>
+    </Box>
+    <Box style={{ width: 298, padding: '4px 7px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.3, color: '#4B5563', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>长程多轮目标漂移失控</span>：多轮转发对话全文易冲淡初始约束，缺乏规范与实际轨迹的实时比对</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '4px 7px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.4, color: '#1F2937', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>四件套指针交接 + 三态轨迹对照</span>：交接仅传路径指针不传长文；任务板预算熔断 + 异构独立验收 + 实线/虚线/橙色对照</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'stretch' }}>
+    <Box style={{ width: 82, padding: '4px 6px', background: '#F8FAFC', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 10.0, color: '#073E87', fontWeight: 'bold' }}>5. 运行控制</Text>
+    </Box>
+    <Box style={{ width: 298, padding: '4px 7px', background: '#FFFBFB', borderRight: '1px solid #E5E7EB', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.3, color: '#4B5563', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>单次子进程遇审批即挂死或断连</span>：单次 CLI 进程无法在写文件前挂起等待外部批准，重跑易丢上下文</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '4px 7px', background: '#F8FBFF', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9.4, color: '#1F2937', lineHeight: 1.25 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>常驻会话轮内审批 + 会话库线程分叉</span>：5 个产品实测写文件前轮内挂起→网页/CLI 批准后同轮写出；Codex 支持线程分叉</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 42, flexDirection: 'row', alignItems: 'center', gap: 16, background: 'rgba(7,62,135,0.06)', borderRadius: 8, padding: '0 14px' }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.2, color: '#073E87', fontWeight: 'bold', width: 50 }}>给人</Text>
+    <Text style={{ fontSize: 13.2, color: '#1F2937' }}>双颗粒度 Trace 先看粗粒度决策段，再按 turn+steps 下钻细粒度步骤证据</Text>
+    </Box>
+    <Box style={{ width: 1, height: 22, background: '#9CA3AF' }}>
+    
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.2, color: '#9D0A12', fontWeight: 'bold', width: 50 }}>给 AI</Text>
+    <Text style={{ fontSize: 13.2, color: '#1F2937' }}>靠官方协议+CDP+适配器吃尽各家活动低价与闭源独家优化，小尺度复用宿主、大尺度中心当宿主</Text>
+    </Box>
+    </Box>
+    </Box>
+</Slide>

@@ -1,0 +1,72 @@
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.0, color: '#1E3A8A', fontWeight: 'bold' }}>能力详表：132 个能力单元四张表对账与受控状态机</Text>
+    <Text style={{ fontSize: 13.8, color: '#64748B', marginTop: 5 }}>node hub/tools/agent_gateway.js tables 实时核对 ｜ 82 项功能 + 50 项显示交互 ｜ 额度排队与超时换人状态机</Text>
+    <Box style={{ marginTop: 8, flexDirection: 'row', gap: 14, height: 424 }}>
+    <Box style={{ width: 680, background: '#EEF2FF', borderTop: '4px solid #3730A3', borderRadius: 6, padding: '12px 14px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 13.5, color: '#3730A3', fontWeight: 'bold' }}>四张表单一真源与 4 个位置实测对账（132 个能力单元 = 82 项功能 + 50 项显示交互）</Text>
+    <Box style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #3730A3', borderRadius: 4, padding: '6px 8px' }}>
+    <Text style={{ fontSize: 11.8, color: '#3730A3', fontWeight: 'bold' }}>① capability-units.json</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>82 项功能 + 50 项显示交互定义</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #D97706', borderRadius: 4, padding: '6px 8px' }}>
+    <Text style={{ fontSize: 11.8, color: '#B45309', fontWeight: 'bold' }}>② blackboard.jsonl</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>真机探针实测事实（三层防删保护）</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #3730A3', borderRadius: 4, padding: '6px 8px' }}>
+    <Text style={{ fontSize: 11.8, color: '#3730A3', fontWeight: 'bold' }}>③ integration-map.json</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>45 单元后端路由与前端映射</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #047857', borderRadius: 4, padding: '6px 8px' }}>
+    <Text style={{ fontSize: 11.8, color: '#047857', fontWeight: 'bold' }}>④ actions.json</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>20 / 37 动作已配 CLI 子命令</Text>
+    </Box>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #3730A3', borderRadius: 5, padding: '10px 12px', marginTop: 8, flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.5, color: '#1E3A8A', fontWeight: 'bold' }}>按产品单口基线到多路融合实测跃升明细（CAPABILITY_MAP.md，共 1,882 条会话）</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 5 }}>• Claude Code (520)：单口 22% ➔ 多路融合 68%（stream-json + 会话库，登记 6 项独家，35 秒异构验收主力）</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• OpenAI Codex (280)：单口 16% ➔ 三路互补 66%（app-server 31 项 + CLI + 会话库，登记 6 项独家）</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• Antigravity (110)：单口 18% ➔ 三路互补 59%（Connect-RPC 332 接口 + vscdb，区分「看到接口」与「试过行为」）</Text>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold', marginTop: 4 }}>• ZCode / WorkBuddy (664)：单口 28% ➔ 多路互补 60%（登记 17 项独家，日常调研主力、验收级文档与 283 个连接器）</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>• OpenCode / Hermes (272)：单口 21% ➔ 多路互补 56%（常驻共享服务 + ACP 桥，第 17 轮跨压缩取回第 1 轮原话）</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 4 }}>• Gemini CLI / Factory Droid (36)：本地会话库零侵入直读（100% 原始记录对数还原），统一检索与决策链复原</Text>
+    </Box>
+    <Box style={{ background: '#FFFBEB', borderLeft: '4px solid #D97706', borderRadius: 5, padding: '8px 12px', marginTop: 8, flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.5, color: '#B45309', fontWeight: 'bold' }}>四个位置协同补齐矩阵</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 4 }}>位置① 产品本体（盘清上限+42条独家） ➔ 位置② 原生接口（9类入口 ≥191项暴露） ➔ 位置③ 中心后端（接通283项·群组0→89项） ➔ 位置④ 网页与手机（50项显示全对数+126项控）</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '4px solid #D97706', borderRadius: 6, padding: '12px 14px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 13.5, color: '#B45309', fontWeight: 'bold' }}>会话与任务板受控状态转移体系</Text>
+    <Box style={{ background: '#FFFFFF', borderLeft: '3.5px solid #3730A3', borderRadius: 4, padding: '8px 10px' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>① 创建、预检与额度排队态 (Created / Preflight / Quota_Wait)</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 3 }}>校验模型池配额与锁；4 家共用智谱账号撞上限时自动排队等到恢复时刻（18:08），不算失败</Text>
+    </Box>
+    <Box style={{ background: '#FFFFFF', borderLeft: '3.5px solid #3730A3', borderRadius: 4, padding: '8px 10px' }}>
+    <Text style={{ fontSize: 12.2, color: '#3730A3', fontWeight: 'bold' }}>② 常驻运行与轮内流式态 (Running / Streaming / Steerable)</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 3 }}>常驻进程流式输出推理步与工具调用，支持轮内插话纠偏或降级下一轮队列</Text>
+    </Box>
+    <Box style={{ background: '#FFFBEB', borderLeft: '3.5px solid #D97706', borderRadius: 4, padding: '8px 10px' }}>
+    <Text style={{ fontSize: 12.2, color: '#B45309', fontWeight: 'bold' }}>③ 轮内审批挂起态 (Approval_Pending → Approved / Rejected)</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 3 }}>触敏写文件/命令前在当前轮挂起，手机端或 CLI 批准后同轮继续写出</Text>
+    </Box>
+    <Box style={{ background: '#ECFDF5', borderLeft: '3.5px solid #047857', borderRadius: 4, padding: '8px 10px' }}>
+    <Text style={{ fontSize: 12.2, color: '#047857', fontWeight: 'bold' }}>④ 异构独立验收态 (Verifying → PASS / FAIL_Rework)</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 3 }}>交回结果触发命令或异构智能体独立复核（如 Codex 7m 交回 → Claude 35s 验收），PASS 解封下游</Text>
+    </Box>
+    <Box style={{ background: '#FEF2F2', borderLeft: '3.5px solid #9D0A12', borderRadius: 4, padding: '8px 10px' }}>
+    <Text style={{ fontSize: 12.2, color: '#9D0A12', fontWeight: 'bold' }}>⑤ 超时换人、熔断与分叉态 (Reassigned / Circuit_Broken / Forked)</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 3 }}>卡住超时自动排除并换另一家 AI 重做；连败超限熔断，支持注入 Diff 从快照分叉恢复</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 38, flexDirection: 'row', alignItems: 'center', gap: 12, background: '#FFFBEB', borderLeft: '4px solid #B45309', borderRadius: 6, padding: '0 14px' }}>
+    <Box style={{ background: '#B45309', borderRadius: 4, padding: '3px 9px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#FFFFFF', fontWeight: 'bold' }}>补充深潜</Text>
+    </Box>
+    <Text style={{ fontSize: 13.5, color: '#1E293B', fontWeight: 'bold' }}>四张表将各产品原生能力、后端接通率与网页可用率实时锁定在唯一证据源，配合受控状态机实现额度排队与超时自动换人。</Text>
+    </Box>
+    </Box>

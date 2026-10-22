@@ -66,3 +66,21 @@ channels/probe/reports/
 
 # raw harness census data: samples from the user's own sessions (local)
 channels/research/harness/*-census.json
+
+# Probe run outputs (logs, text dumps, result files) stay local like the rest of the evidence; the scripts are committed
+channels/probe/scripts/**/*.log
+channels/probe/scripts/**/*_out.txt
+channels/probe/scripts/**/*results*.json
+channels/probe/scripts/**/today_*.txt
+channels/probe/scripts/**/perm_native_*.txt
+channels/probe/scripts/agy_rpc_methods.json
+
+# Slides: sources (.slide, build scripts, text) are committed; rendered images, built decks and caches stay local
+ppt_4pages/.cache/
+ppt_4pages/.slidep/
+ppt_4pages/assets/
+ppt_4pages/**/*.png
+ppt_4pages/**/*.pptx
+deck/assets/
+__pycache__/
+*.pyc

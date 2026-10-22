@@ -1,0 +1,56 @@
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.0, color: '#1E3A8A', fontWeight: 'bold' }}>复合拓扑详解：生成式五维空间、8 种交接契约与三大防退化机制</Text>
+    <Text style={{ fontSize: 13.8, color: '#64748B', marginTop: 5 }}>5 形状 × 3 决定 × 5 控制源 × 5 可见域 ｜ 8 种交接 × 四件套指针 ｜ 双账本状态板 · 隔离极差仲裁 · 受控拉起接力</Text>
+    <Box style={{ marginTop: 8, flexDirection: 'row', gap: 14, height: 424 }}>
+    <Box style={{ width: 585, background: '#EEF2FF', borderTop: '4px solid #3730A3', borderRadius: 6, padding: '8px 11px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 13.0, color: '#3730A3', fontWeight: 'bold' }}>生成式拓扑五维空间 × 8 种标准交接契约（拒绝写死几十种固定模板）</Text>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #3730A3', borderRadius: 5, padding: '6px 10px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.0, color: '#3730A3', fontWeight: 'bold' }}>1. 生成式拓扑公式：五维正交组合空间</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 5 种基本形状：串行接力 (A→B→C) · 一对多分发 · 多对一汇总 · 双人往返 (A↔B) · 共享黑板/消息池</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 每步 3 个决定：选谁（按负载与强项挑人） · 给啥（四件套指针+工具授权） · 停不停（判据/闸门/限次）</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 5 种控制权来源：预写规则（代码/表） · 主管智能体 · 当前智能体自决（交棒） · 自由抢单 · 人类插手</Text>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold', marginTop: 2 }}>• 5 级信息可见范围：全隔离（仅看交接包） ➔ 只读快照 ➔ 点对点带过滤 ➔ 群聊消息池 ➔ 共享黑板（单写者锁）</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 两条决定传路：路径甲（写进回复末尾协定块，全宿主通用） × 路径乙（调 MCP/CLI 工具，轮内即时执行）</Text>
+    </Box>
+    <Box style={{ background: '#FFFBEB', borderLeft: '4px solid #D97706', borderRadius: 5, padding: '6px 10px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.0, color: '#B45309', fontWeight: 'bold' }}>2. 8 种标准交接场景 × 四件套路径指针契约（防传话失真与上下文过载）</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 纵向 4 种：① 任务分派 (主管→执行) · ② 执行交回 (执行→主管) · ③ 审查退回 (审查→执行) · ④ 升级求助 (执行→主管/人)</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 横向与跨批 4 种：⑤ 平级协查 (A↔B) · ⑥ 汇总归档 (多路→汇总) · ⑦ 轮换接力 (前任→继任) · ⑧ 跨轮事件唤醒 (中心→待命)</Text>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold', marginTop: 2 }}>• 四件套指针包：① 全局规范 (CLAUDE.md) · ② 角色任务书 (TASK.md) · ③ 记忆路径指针 · ④ 产物路径（带身份戳与逻辑时钟）</Text>
+    </Box>
+    <Box style={{ background: '#ECFDF5', borderLeft: '4px solid #047857', borderRadius: 5, padding: '6px 10px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.0, color: '#047857', fontWeight: 'bold' }}>3. 覆盖 7 类主流组织结构与三度解耦守恒</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 7 类结构：单主管星型 · 多层树形 · 流水线 DAG · 审查环 · 辩论合议庭 · 共享黑板自治池 · 跨轮记忆接力链</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 三度解耦：① 角色与渠道绑定可调 · ② 决定权归属可调 · ③ 必读清单上限防过载（先粗粒度探索再固化脚本）</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderTop: '4px solid #D97706', borderRadius: 6, padding: '8px 11px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 13.0, color: '#B45309', fontWeight: 'bold' }}>三大高阶复合拓扑的「防退化、防盲从、防失控」核心工程机制</Text>
+    <Box style={{ background: '#FFFFFF', borderLeft: '4px solid #3730A3', borderRadius: 5, padding: '8px 10px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.0, color: '#3730A3', fontWeight: 'bold' }}>复合拓扑 A：双循环双账本主管 + 本地状态板认领 + 跨家族异构验收环</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 双账本 + 状态板：外环维护任务账本（已知事实、待证假设、总计划），内环维护进度账本；子智能体在状态板按锁认领任务、完成回填路径</Text>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold', marginTop: 2 }}>• 跨家族异构验收：强制执行者与验收者分属不同模型家族（如 Codex 产出由 Claude 35 秒验收），阻断同源训练盲区导致的「自己审自己放水」</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 四级防死锁熔断：L1 单步超时换异构宿主 ➔ L2 审查退回限 3 次 ➔ L3 乒乓震荡检测 ➔ L4 退回外环缩减重规划或交人</Text>
+    </Box>
+    <Box style={{ background: '#FFFBEB', borderLeft: '4px solid #D97706', borderRadius: 5, padding: '8px 10px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.0, color: '#B45309', fontWeight: 'bold' }}>复合拓扑 B：首轮全隔离盲跑 + 极差防带偏 + 硬判据辩论合议庭</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 阻断顺从附和与反共识带偏：首轮强制「全隔离可见域」独立盲跑产出结论与证据，防止早发言高置信度错误带偏同伴（Anti-Conformity）</Text>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold', marginTop: 2 }}>• 极差阈值与硬判据一票否决：次轮仅交换结构化分歧摘要；评审打分极差超阈值时严禁算平均分，强制触发质询并以测试/脚本硬判据裁决</Text>
+    </Box>
+    <Box style={{ background: '#ECFDF5', borderLeft: '4px solid #047857', borderRadius: 5, padding: '8px 10px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 12.0, color: '#047857', fontWeight: 'bold' }}>复合拓扑 C：受控拉起账本 + 长角色短实例（满 60% 交棒）+ 双层状态映射</Text>
+    <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>• 受控拉起防递归失控：每次派生子会话必记入中心账本（记录父子关系、层数上限、预算与超时），严禁无记录隐式递归拉起</Text>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold', marginTop: 2 }}>• 满 60% 主动交棒 + 状态映射：角色与记忆常驻、单次会话短命（窗口达 60% 打包四件套指针换新实例）；内部 7 细态自动折算为父级 4 粗态</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 38, flexDirection: 'row', alignItems: 'center', gap: 12, background: '#FFFBEB', borderLeft: '4px solid #B45309', borderRadius: 6, padding: '0 14px' }}>
+    <Box style={{ background: '#B45309', borderRadius: 4, padding: '3px 9px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#FFFFFF', fontWeight: 'bold' }}>补充深潜</Text>
+    </Box>
+    <Text style={{ fontSize: 13.5, color: '#1E293B', fontWeight: 'bold' }}>以五维正交生成公式与 8 种四件套交接契约统一 7 类组织结构，并为三大高阶复合拓扑配齐防死锁、防盲从、防失控机制。</Text>
+    </Box>
+    </Box>

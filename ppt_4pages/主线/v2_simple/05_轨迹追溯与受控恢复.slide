@@ -1,0 +1,367 @@
+<Slide style={{ width: '1280px', height: '720px', padding: 0, position: 'relative' }}>
+    <Image src="assets/bg_content_st.png" style={{ position: 'absolute', top: 0, left: 0, width: '1280px', height: '720px', objectFit: 'cover', zIndex: 0 }} />
+
+    {/* ===== 标识层 L1：页眉双色带 + 双校标识 ===== */}
+    <Box style={{ position: 'absolute', top: 0, left: 0, width: 520, height: 6, background: '#9D0A12', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 0, left: 520, width: 760, height: 6, background: '#073E87', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 16, left: 56, width: 1168, height: 34, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Image src="assets/logo_st_lockup_red.png" style={{ height: 34, width: 127, objectFit: 'contain' }} />
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 13.4, color: '#073E87', letterSpacing: 0.3 }}>
+            Agent-Architecture-Hub · 跨客户端多智能体协同与受控运行系统
+        </Text>
+        <Image src="assets/logo_sitp_mark_navy.png" style={{ height: 24, width: 58, objectFit: 'contain', marginLeft: 9 }} />
+    </Box>
+    <Box style={{ position: 'absolute', top: 58, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+
+    {/* ===== 标识层 L2：页脚署名 ===== */}
+    <Box style={{ position: 'absolute', top: 672, left: 56, width: 1168, height: 1, background: '#E5E7EB', zIndex: 5 }} />
+    <Box style={{ position: 'absolute', top: 684, left: 56, width: 1168, height: 16, zIndex: 5, flexDirection: 'row', alignItems: 'center' }}>
+        <Box style={{ width: 7, height: 7, background: '#9D0A12', marginRight: 5 }} />
+        <Box style={{ width: 7, height: 7, background: '#073E87', marginRight: 10 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>
+            Agent-Architecture-Hub ｜ 多通道客户端接入 · 共享工作区黑板 · 两级轨迹追溯与实时纠偏
+        </Text>
+        <Box style={{ flex: 1 }} />
+        <Text style={{ fontSize: 11.8, color: '#9CA3AF' }}>5 / 6</Text>
+    </Box>
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.5, color: '#1E3A8A', fontWeight: 'bold' }}>质量与安全：逐条对数、三层轨迹追溯与误删自动恢复</Text>
+    <Text style={{ fontSize: 13.8, color: '#64748B', marginTop: 5 }}>L0 拓扑 → L1 决策段 → L2 原始记录（1,882 条会话） ｜ 回归脚本逐条对数查出 5 处隐藏问题 ｜ 误重写 2,600 行 1 分钟自动恢复</Text>
+    <Box style={{ marginTop: 8, flexDirection: 'row', gap: 12, height: 426 }}>
+    <Box style={{ width: 585, background: '#FFFFFF', padding: '2px 8px 2px 2px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, borderBottom: '2px solid #3730A3' }}>
+    <Box style={{ flex: 1, flexDirection: 'column' }}>
+    <Text style={{ fontSize: 13.8, color: '#3730A3', fontWeight: 'bold' }}>组织拓扑与执行时间轴结合的三层轨迹追溯</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>按轮次与步骤双向锚定，解决单层流水账看不出分支决策原因的难题</Text>
+    </Box>
+    <Image src="主线/img/gpt_p14_trace_microscope.png" style={{ width: 48, height: 48, objectFit: 'fill', borderRadius: 5 }} />
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 2 }}>
+    <Box style={{ width: 40, alignItems: 'center', flexDirection: 'column' }}>
+    <Box style={{ width: 36, height: 22, borderRadius: 4, background: '#3730A3', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.8, color: '#FFFFFF', fontWeight: 'bold' }}>L0</Text>
+    </Box>
+    <Box style={{ width: 3, height: 18, background: '#CBD5E1', marginTop: 2 }}>
+    
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, marginLeft: 7, background: '#F8FAFC', borderLeft: '3.5px solid #3730A3', borderRadius: 4, padding: '4px 8px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 2, borderBottom: '1px solid #E2E8F0' }}>
+    <Text style={{ fontSize: 12.4, color: '#3730A3', fontWeight: 'bold' }}>组织拓扑层（跨产品全局图与三态对账）</Text>
+    <Box style={{ background: '#EEF2FF', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>全局空间视图</Text>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'column', gap: 2, marginTop: 2 }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 58, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>三级粒度</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderLeft: '3px solid #3730A3', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#3730A3' }}>部门级</span> · Dept</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderLeft: '3px solid #3730A3', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#3730A3' }}>小组级</span> · Team</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderLeft: '3px solid #3730A3', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#3730A3' }}>个体级</span> · Agent</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderLeft: '3px solid #3730A3', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#3730A3' }}>四连线</span> · 派/报/醒</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 58, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>三态对账</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderLeft: '3px solid #334155', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#334155' }}>预设契约</span> · 实线基准</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderLeft: '3px solid #3730A3', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#3730A3' }}>实际运行</span> · 虚线叠加</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderLeft: '3px solid #B45309', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#B45309' }}>越权通信</span> · 橙色告警</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 2 }}>
+    <Box style={{ width: 40, alignItems: 'center', flexDirection: 'column' }}>
+    <Box style={{ width: 36, height: 22, borderRadius: 4, background: '#B45309', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.8, color: '#FFFFFF', fontWeight: 'bold' }}>L1</Text>
+    </Box>
+    <Box style={{ width: 3, height: 18, background: '#CBD5E1', marginTop: 2 }}>
+    
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, marginLeft: 7, background: '#F8FAFC', borderLeft: '3.5px solid #B45309', borderRadius: 4, padding: '4px 8px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 2, borderBottom: '1px solid #E2E8F0' }}>
+    <Text style={{ fontSize: 12.4, color: '#B45309', fontWeight: 'bold' }}>粗粒度决策段（多维抽象 · 预定义记录 · 旧会话复原）</Text>
+    <Box style={{ background: '#FEF3C7', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>预埋记录 × 逆向复原</Text>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'column', gap: 2, marginTop: 2 }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 58, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>多维抽象</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#FFFBEB', borderTop: '2.5px solid #B45309', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>阶段任务切换</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>按里程碑聚合</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', borderTop: '2.5px solid #B45309', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>方案路线选型</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>按分支理由聚合</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', borderTop: '2.5px solid #B45309', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>异常回退纠偏</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>按报错改道聚合</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 58, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>预埋记录</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>写决策库</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>触发原因</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>备选方案</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>所选路径</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>锚定步号</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 58, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>旧库复原</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderLeft: '3px solid #047857', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#047857' }}>存量旧会话</span> · 1,882 条无埋点</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderLeft: '3px solid #047857', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#047857' }}>逆向复原决策链</span> · 按骨架索引抽取拐点</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 2 }}>
+    <Box style={{ width: 40, alignItems: 'center', flexDirection: 'column' }}>
+    <Box style={{ width: 36, height: 22, borderRadius: 4, background: '#1E3A8A', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.8, color: '#FFFFFF', fontWeight: 'bold' }}>L2</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, marginLeft: 7, background: '#F8FAFC', borderLeft: '3.5px solid #1E3A8A', borderRadius: 4, padding: '4px 8px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 2, borderBottom: '1px solid #E2E8F0' }}>
+    <Text style={{ fontSize: 12.4, color: '#1E3A8A', fontWeight: 'bold' }}>细粒度轮/步证据层（本机会话库无锁直读）</Text>
+    <Box style={{ background: '#F1F5F9', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E3A8A', fontWeight: 'bold' }}>底层证据锚定</Text>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'column', gap: 2, marginTop: 2 }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+    <Box style={{ width: 58, paddingRight: 4 }}>
+    <Text style={{ fontSize: 11.5, color: '#1E3A8A', fontWeight: 'bold' }}>一键下钻</Text>
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderLeft: '3px solid #1E3A8A', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#1E3A8A' }}>模型思考</span> · Think</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderLeft: '3px solid #1E3A8A', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#1E3A8A' }}>工具入参</span> · Args</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderLeft: '3px solid #B45309', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#B45309' }}>修改补丁</span> · Diff</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderLeft: '3px solid #047857', borderRadius: 3, padding: '3px 6px', alignItems: 'center', flexDirection: 'row' }}>
+    <Text style={{ fontSize: 11.5, color: '#1E293B' }}><span style={{ fontWeight: 'bold', color: '#047857' }}>退出码</span> · Exit</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 2, background: '#FFFBEB', borderLeft: '4px solid #D97706', padding: '3px 8px', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>分层阅读：</Text>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>① 读首尾与骨架</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>② 定位转折轮次</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#B45309', fontWeight: 'bold' }}>③ 按需展开 (省80%上下文)</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, borderLeft: '1px solid #CBD5E1', paddingLeft: 12, flexDirection: 'column', gap: 7, justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 13.8, color: '#3730A3', fontWeight: 'bold' }}>10-19 逐条对数、共享记录三层防误删与常驻会话拦截恢复</Text>
+    <Box style={{ background: '#EEF2FF', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>真跑核验 × 自动恢复</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderLeft: '4px solid #3730A3', borderRadius: 4, padding: '5px 10px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, borderBottom: '1px solid #E2E8F0' }}>
+    <Text style={{ fontSize: 12.6, color: '#3730A3', fontWeight: 'bold' }}>回归脚本把 7 家显示内容与原始记录逐条对数（查出 5 处隐藏问题）</Text>
+    <Box style={{ background: '#EEF2FF', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>① 逐条对数核验</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4 }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>直读原始会话库</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>比对网页与手机</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>核对工具与思考</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>查出 5 处并修复</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 5, marginTop: 4 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #3730A3', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>逐条核对三项指标</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>工具调用 · 结果 · 思考字数</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #3730A3', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#3730A3', fontWeight: 'bold' }}>自述忠实度核验</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>decisions 理由 vs 真实 Diff</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, paddingTop: 3, borderTop: '1px dashed #CBD5E1' }}>
+    <Text style={{ fontSize: 11.5, color: '#3730A3', fontWeight: 'bold' }}>10-19 实测：probe_display.mjs 逐条对数查出并修复 5 处之前标“通过”的隐藏问题</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderLeft: '4px solid #9D0A12', borderRadius: 4, padding: '5px 10px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, borderBottom: '1px solid #E2E8F0' }}>
+    <Text style={{ fontSize: 12.6, color: '#9D0A12', fontWeight: 'bold' }}>防 AI 误删共享记录三层防线（2,600 行被改剩 18 行后 1 分钟恢复）</Text>
+    <Box style={{ background: '#FEF2F2', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#9D0A12', fontWeight: 'bold' }}>② 共享记录保护</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4 }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#9D0A12', fontWeight: 'bold' }}>2600行被改剩18行</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#9D0A12', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#9D0A12', fontWeight: 'bold' }}>① 仅中心能写</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#9D0A12', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#9D0A12', fontWeight: 'bold' }}>② 变短自动恢复</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#9D0A12', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#9D0A12', fontWeight: 'bold' }}>③ 存私有版本库</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 5, marginTop: 4 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #9D0A12', border: '1px solid #FECACA', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#9D0A12', fontWeight: 'bold' }}>1 分钟内自动恢复</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>guard.ts 实时监控行数骤降</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #B45309', border: '1px solid #FDE68A', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#B45309', fontWeight: 'bold' }}>私有版本库留底</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>每次改动自动快照防丢失</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, paddingTop: 3, borderTop: '1px dashed #CBD5E1' }}>
+    <Text style={{ fontSize: 11.5, color: '#9D0A12', fontWeight: 'bold' }}>10-19 实测：一个 AI 误把 2,600 行实测记录重写成 18 行，三层防线在 1 分钟内自动恢复</Text>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', borderLeft: '4px solid #047857', borderRadius: 4, padding: '5px 10px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, borderBottom: '1px solid #E2E8F0' }}>
+    <Text style={{ fontSize: 12.6, color: '#047857', fontWeight: 'bold' }}>写文件前轮内挂起审批、中途插话纠偏与历史快照分叉续跑</Text>
+    <Box style={{ background: '#ECFDF5', borderRadius: 4, padding: '2px 8px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>③ 事中拦截与分叉</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4 }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>触敏写文件前挂起</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>手机/CLI 审批放行</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>同轮继续写出</Text>
+    </Box>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold', margin: '0 2px' }}>➔</Text>
+    <Box style={{ flex: 1, background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>注入Diff分叉续跑</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 5, marginTop: 4 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #047857', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold' }}>5 款宿主轮内挂起</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>免杀进程原位等待放行</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', borderTop: '2.5px solid #047857', border: '1px solid #A7F3D0', borderRadius: 4, padding: '3px 6px', flexDirection: 'column', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11.6, color: '#047857', fontWeight: 'bold' }}>历史快照分叉恢复</Text>
+    <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>任务板熔断 20/20 判定全过</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, paddingTop: 3, borderTop: '1px dashed #CBD5E1' }}>
+    <Text style={{ fontSize: 11.5, color: '#047857', fontWeight: 'bold' }}>实测验证：Codex / Claude / ZCode / WB / Hermes 5 款产品写文件前轮内挂起放行全通过</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 38, flexDirection: 'row', alignItems: 'center', gap: 12, background: '#EEF2FF', borderLeft: '4px solid #3730A3', borderRadius: 6, padding: '0 14px' }}>
+    <Box style={{ background: '#3730A3', borderRadius: 4, padding: '3px 9px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 12.2, color: '#FFFFFF', fontWeight: 'bold' }}>核心机制</Text>
+    </Box>
+    <Text style={{ fontSize: 13.5, color: '#1E293B', fontWeight: 'bold' }}>三层轨迹让 1,882 条会话可追因，回归脚本逐条对数查出 5 处隐藏问题，三层防线在共享记录 2,600 行被改剩 18 行时 1 分钟自动恢复。</Text>
+    </Box>
+    </Box>
+</Slide>

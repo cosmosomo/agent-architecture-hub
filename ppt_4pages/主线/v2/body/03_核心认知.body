@@ -1,0 +1,338 @@
+    <Box style={{ position: 'relative', zIndex: 1, width: '1280px', height: '720px', padding: '94px 56px 76px 56px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 26.5, color: '#073E87', fontWeight: 'bold' }}>核心认知与编排拓扑：三个基础抽象 × 四级同构 × 五种协作拓扑</Text>
+    <Text style={{ fontSize: 13.8, color: '#6B7280', marginTop: 5 }}>能力渠道 ↔ 智能体(模型+Harness) ↔ 信息 ｜ 1 个智能体 ⊂ 2 个之间 ⊂ 超过 3 个 ⊂ 编排层 ｜ 写下它 ↔ 看着它三态对照</Text>
+    <Box style={{ marginTop: 8, flexDirection: 'row', gap: 10, height: 44 }}>
+    <Box style={{ flex: 1, background: '#F5F7FB', borderRadius: 6, padding: '5px 10px', borderTop: '3px solid #073E87', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 14.0, color: '#073E87', fontWeight: 'bold' }}>三个基础抽象 + 两条通路</Text>
+    <Text style={{ fontSize: 12.0, color: '#1F2937', marginTop: 2, lineHeight: 1.22 }}>能力渠道 ↔ 智能体 ↔ 信息；靠信息或当工具相连</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F5F7FB', borderRadius: 6, padding: '5px 10px', borderTop: '3px solid #B45309', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 14.0, color: '#B45309', fontWeight: 'bold' }}>四级同构（超过 3 个）</Text>
+    <Text style={{ fontSize: 12.0, color: '#1F2937', marginTop: 2, lineHeight: 1.22 }}>1个智能体 → 2个(问答) → 超过3个(拓扑) → 编排层</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F5F7FB', borderRadius: 6, padding: '5px 10px', borderTop: '3px solid #9D0A12', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 14.0, color: '#9D0A12', fontWeight: 'bold' }}>五种拓扑 × 跨产品独立验收</Text>
+    <Text style={{ fontSize: 12.0, color: '#1F2937', marginTop: 2, lineHeight: 1.22 }}>接力/分发/汇总/往返/共享；ZCode→OpenCode→Hermes 实证</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 7, flexDirection: 'row', gap: 10, height: 352 }}>
+    <Box style={{ width: 404, background: '#FFFFFF', border: '1.5px solid #073E87', borderRadius: 6, overflow: 'hidden', flexDirection: 'column' }}>
+    <Box style={{ height: 22, background: '#073E87', padding: '0 8px', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.5, color: '#FFFFFF', fontWeight: 'bold' }}>最粗一层：三个基础抽象 × 两条通路 × 四级同构嵌套</Text>
+    <Text style={{ fontSize: 8.8, color: '#E0E7FF' }}>外层=一步 里层=一圈</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '5px 6px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ background: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: 4, padding: '2.5px 6px' }}>
+    <Text style={{ fontSize: 8.7, color: '#1F2937' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>✎ 写下它（编排）</span>：把角色、拓扑、交接与验收写进 CLAUDE.md / TASK.md 与任务板</Text>
+    </Box>
+    <Box style={{ marginTop: 4, flexDirection: 'row', alignItems: 'stretch' }}>
+    <Box style={{ width: 100, background: '#FEF2F2', border: '1.5px solid #9D0A12', borderRadius: 5, padding: '4px 5px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 9.6, color: '#9D0A12', fontWeight: 'bold' }}>能力渠道</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 2 }}>内置工具 (读/写/Shell)</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}>外部扩展 (MCP/OpenCLI)</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}>网关 (20 个子命令)</Text>
+    <Text style={{ fontSize: 8.2, color: '#9D0A12', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>其他智能体 (当工具)</span></Text>
+    </Box>
+    <Box style={{ width: 14, alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11, color: '#9D0A12', fontWeight: 'bold' }}>↔</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F0F7FF', border: '1.5px solid #073E87', borderRadius: 5, padding: '4px 5px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 9.6, color: '#073E87', fontWeight: 'bold' }}>智能体 = 模型 + Harness</Text>
+    <Box style={{ marginTop: 3, flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Box style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#9D0A12', fontWeight: 'bold' }}>◀ 工具口</Text>
+    </Box>
+    <Box style={{ background: '#DBEAFE', border: '1px solid #93C5FD', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#073E87', fontWeight: 'bold' }}>视窗推理</Text>
+    </Box>
+    <Box style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#B45309', fontWeight: 'bold' }}>上下文口 ▶</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 3, background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 3, padding: '3px 4px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 8, color: '#1F2937' }}>①系统提示 ②工具注入 ③上下文装配</Text>
+    <Text style={{ fontSize: 8, color: '#1F2937', marginTop: 2 }}>④输出解析 ⑤循环不早停 ⑥写回环境</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 14, alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 11, color: '#B45309', fontWeight: 'bold' }}>↔</Text>
+    </Box>
+    <Box style={{ width: 98, background: '#FFFBEB', border: '1.5px solid #D97706', borderRadius: 5, padding: '4px 5px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 9.6, color: '#B45309', fontWeight: 'bold' }}>信息</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 2 }}>任务规范 (MD文档)</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}>历史与外部资料</Text>
+    <Text style={{ fontSize: 8.2, color: '#073E87', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>交接包 (四件套指针)</span></Text>
+    <Text style={{ fontSize: 8.2, color: '#B45309', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#B45309' }}>共享状态 (任务板/黑板)</span></Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 8.8, color: '#073E87', fontWeight: 'bold' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>多智能体相连的两条唯一通路（不引入第 4 个新概念）</span></Text>
+    <Text style={{ fontSize: 8.3, color: '#1F2937', marginTop: 1 }}>① 靠「信息」相连：A 的产出成「交接包 / 共享黑板」进入 B 的「上下文口」</Text>
+    <Text style={{ fontSize: 8.3, color: '#1F2937', marginTop: 1 }}>② 靠「能力渠道」相连：A 通过「工具口」把 B 当子代理/工具直接调用（问答原语）</Text>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 8.6, color: '#073E87', fontWeight: 'bold' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>四级同构嵌套（每步共用：❶ 下一个是谁 → ❷ 给它什么 → ❸ 执行 → ❹ 停不停）</span></Text>
+    <Box style={{ marginTop: 2, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 3, padding: '2px 4px', alignItems: 'center' }}>
+    <Text style={{ fontSize: 8.6, color: '#073E87', fontWeight: 'bold' }}>1 个智能体</Text>
+    <Text style={{ fontSize: 7.8, color: '#1F2937' }}>单轮 6 步微循环</Text>
+    </Box>
+    <Text style={{ fontSize: 10, color: '#073E87', fontWeight: 'bold' }}>⊂</Text>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 3, padding: '2px 4px', alignItems: 'center' }}>
+    <Text style={{ fontSize: 8.6, color: '#073E87', fontWeight: 'bold' }}>2 个之间</Text>
+    <Text style={{ fontSize: 7.8, color: '#1F2937' }}>最小原语「问答」</Text>
+    </Box>
+    <Text style={{ fontSize: 10, color: '#9D0A12', fontWeight: 'bold' }}>⊂</Text>
+    <Box style={{ flex: 1, background: '#FEF2F2', border: '1.5px solid #9D0A12', borderRadius: 3, padding: '2px 4px', alignItems: 'center' }}>
+    <Text style={{ fontSize: 8.6, color: '#9D0A12', fontWeight: 'bold' }}>超过 3 个</Text>
+    <Text style={{ fontSize: 7.8, color: '#1F2937' }}>5 种基本形状拓扑</Text>
+    </Box>
+    <Text style={{ fontSize: 10, color: '#B45309', fontWeight: 'bold' }}>⊂</Text>
+    <Box style={{ flex: 1, background: '#FFFBEB', border: '1.5px solid #D97706', borderRadius: 3, padding: '2px 4px', alignItems: 'center' }}>
+    <Text style={{ fontSize: 8.6, color: '#B45309', fontWeight: 'bold' }}>编排层</Text>
+    <Text style={{ fontSize: 7.8, color: '#1F2937' }}>写下它↔看着它</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 4, background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 4, padding: '2.5px 6px' }}>
+    <Text style={{ fontSize: 8.5, color: '#1F2937' }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>◉ 看着它（双颗粒度 Trace）</span>：粗粒度决策段(触发/备选/选择/理由)经 turn+steps 锚定细粒度步</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1.5px solid #073E87', borderRadius: 6, overflow: 'hidden', flexDirection: 'column' }}>
+    <Box style={{ height: 22, background: '#073E87', padding: '0 8px', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 10.3, color: '#FFFFFF', fontWeight: 'bold' }}>「超过 3 个智能体」与「编排层」拓扑结构：五种原子形状 × 决策通路 × 双颗粒度 Trace</Text>
+    <Text style={{ fontSize: 8.8, color: '#E0E7FF' }}>节点=智能体 边=问答/交接包</Text>
+    </Box>
+    <Box style={{ flex: 1, padding: '5px 7px', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box style={{ flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 9.5, color: '#073E87', fontWeight: 'bold' }}>1. 五种基本拓扑形状（超过 3 个智能体的协作流程，均由这 5 种原子形状自由拼装）</Text>
+    <Box style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#9D0A12', fontWeight: 'bold' }}>多智能体编排拓扑</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 3, flexDirection: 'row', gap: 5 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 5, padding: '4px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 9.8, color: '#073E87', fontWeight: 'bold' }}>① 接力</Text>
+    <Text style={{ fontSize: 8.5, color: '#6B7280' }}>A→B→C</Text>
+    </Box>
+    <Box style={{ height: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 4, marginTop: 3 }}>
+    <Box style={{ width: 20, height: 20, borderRadius: 99, background: '#073E87', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9, color: '#FFFFFF', fontWeight: 'bold' }}>A</Text>
+    </Box>
+    <Box style={{ width: 16, height: 2, background: '#073E87' }}>
+    
+    </Box>
+    <Box style={{ width: 20, height: 20, borderRadius: 99, background: '#047857', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9, color: '#FFFFFF', fontWeight: 'bold' }}>B</Text>
+    </Box>
+    <Box style={{ width: 16, height: 2, background: '#047857' }}>
+    
+    </Box>
+    <Box style={{ width: 20, height: 20, borderRadius: 99, background: '#073E87', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9, color: '#FFFFFF', fontWeight: 'bold' }}>C</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 8.4, color: '#1F2937', marginTop: 3 }}>A 产出作 B 输入</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>实测</span>：ZCode→OC→Hermes</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 5, padding: '4px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 9.8, color: '#073E87', fontWeight: 'bold' }}>② 分发</Text>
+    <Text style={{ fontSize: 8.5, color: '#6B7280' }}>A→B₁..ₙ</Text>
+    </Box>
+    <Box style={{ height: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 4, marginTop: 3 }}>
+    <Box style={{ width: 20, height: 20, borderRadius: 99, background: '#073E87', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9, color: '#FFFFFF', fontWeight: 'bold' }}>A</Text>
+    </Box>
+    <Box style={{ width: 12, height: 2, background: '#073E87' }}>
+    
+    </Box>
+    <Box style={{ flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+    <Box style={{ width: 13, height: 13, borderRadius: 99, background: '#047857', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 7.5, color: '#FFFFFF', fontWeight: 'bold' }}>B1</Text>
+    </Box>
+    <Box style={{ width: 13, height: 13, borderRadius: 99, background: '#047857', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 7.5, color: '#FFFFFF', fontWeight: 'bold' }}>B2</Text>
+    </Box>
+    <Box style={{ width: 13, height: 13, borderRadius: 99, background: '#047857', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 7.5, color: '#FFFFFF', fontWeight: 'bold' }}>B3</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 8.4, color: '#1F2937', marginTop: 3 }}>同一任务拆多人并行</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>场景</span>：并行探索 / 多路竞速</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 5, padding: '4px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 9.8, color: '#073E87', fontWeight: 'bold' }}>③ 汇总</Text>
+    <Text style={{ fontSize: 8.5, color: '#6B7280' }}>B₁..ₙ→C</Text>
+    </Box>
+    <Box style={{ height: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 4, marginTop: 3 }}>
+    <Box style={{ flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+    <Box style={{ width: 13, height: 13, borderRadius: 99, background: '#047857', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 7.5, color: '#FFFFFF', fontWeight: 'bold' }}>B1</Text>
+    </Box>
+    <Box style={{ width: 13, height: 13, borderRadius: 99, background: '#047857', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 7.5, color: '#FFFFFF', fontWeight: 'bold' }}>B2</Text>
+    </Box>
+    <Box style={{ width: 13, height: 13, borderRadius: 99, background: '#047857', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 7.5, color: '#FFFFFF', fontWeight: 'bold' }}>B3</Text>
+    </Box>
+    </Box>
+    <Box style={{ width: 12, height: 2, background: '#047857' }}>
+    
+    </Box>
+    <Box style={{ width: 20, height: 20, borderRadius: 99, background: '#073E87', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9, color: '#FFFFFF', fontWeight: 'bold' }}>C</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 8.4, color: '#1F2937', marginTop: 3 }}>多路输出合交一人收口</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>场景</span>：主管合流 / 汇总收口</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 5, padding: '4px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 9.8, color: '#9D0A12', fontWeight: 'bold' }}>④ 往返</Text>
+    <Text style={{ fontSize: 8.5, color: '#6B7280' }}>A↔审</Text>
+    </Box>
+    <Box style={{ height: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 4, marginTop: 3 }}>
+    <Box style={{ width: 20, height: 20, borderRadius: 99, background: '#073E87', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9, color: '#FFFFFF', fontWeight: 'bold' }}>A</Text>
+    </Box>
+    <Box style={{ flexDirection: 'column', alignItems: 'center' }}>
+    <Box style={{ width: 22, height: 2, background: '#073E87' }}>
+    
+    </Box>
+    <Text style={{ fontSize: 10, color: '#9D0A12', fontWeight: 'bold' }}>↔</Text>
+    <Box style={{ width: 22, height: 2, background: '#9D0A12' }}>
+    
+    </Box>
+    </Box>
+    <Box style={{ width: 20, height: 20, borderRadius: 99, background: '#9D0A12', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 9, color: '#FFFFFF', fontWeight: 'bold' }}>审</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 8.4, color: '#1F2937', marginTop: 3 }}>异构智能体独立验收打回</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>实测</span>：FAIL 自动打回重派</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 5, padding: '4px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 9.8, color: '#B45309', fontWeight: 'bold' }}>⑤ 共享</Text>
+    <Text style={{ fontSize: 8.5, color: '#6B7280' }}>A,B,C↔板</Text>
+    </Box>
+    <Box style={{ height: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', background: '#FFFFFF', borderRadius: 4, marginTop: 3 }}>
+    <Box style={{ width: 16, height: 16, borderRadius: 99, background: '#073E87', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8, color: '#FFFFFF', fontWeight: 'bold' }}>A</Text>
+    </Box>
+    <Box style={{ width: 6, height: 2, background: '#B45309' }}>
+    
+    </Box>
+    <Box style={{ background: '#FEF3C7', border: '1.5px solid #D97706', borderRadius: 3, padding: '2px 4px' }}>
+    <Text style={{ fontSize: 7.8, color: '#B45309', fontWeight: 'bold' }}>共享黑板</Text>
+    </Box>
+    <Box style={{ width: 6, height: 2, background: '#B45309' }}>
+    
+    </Box>
+    <Box style={{ width: 16, height: 16, borderRadius: 99, background: '#047857', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8, color: '#FFFFFF', fontWeight: 'bold' }}>B</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 8.4, color: '#1F2937', marginTop: 3 }}>共用任务板与黑板读写</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#B45309' }}>实测</span>：依赖解封与预算熔断</Text>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flexDirection: 'row', gap: 6 }}>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 5, padding: '4px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 9.4, color: '#073E87', fontWeight: 'bold' }}>2. 三次决定的 3 种来源</Text>
+    <Box style={{ background: '#E8F0FE', border: '1px solid #93C5FD', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#073E87', fontWeight: 'bold' }}>谁决定</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 8.4, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>① 规则驱动</span>：按任务板依赖图自动解封与流转</Text>
+    <Text style={{ fontSize: 8.4, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>② 智能体驱动</span>：由主管或异构验收智能体裁决 PASS/FAIL</Text>
+    <Text style={{ fontSize: 8.4, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>③ 混合 + 人兜底</span>：遇轮内审批或超预算熔断暂停，交人裁决</Text>
+    </Box>
+    <Box style={{ flex: 1.08, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 5, padding: '4px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 9.4, color: '#073E87', fontWeight: 'bold' }}>3. 传决定 2 路与接力实测</Text>
+    <Box style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#9D0A12', fontWeight: 'bold' }}>怎么传</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 8.3, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>甲路(信息尾块)</span> 全宿主通 ｜ <span style={{ fontWeight: 'bold', color: '#9D0A12' }}>乙路(MCP/网关)</span> 调工具派活</Text>
+    <Text style={{ fontSize: 8.3, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>跨产品实测</span>：ZCode 算平方 → OpenCode 算总和得 55</Text>
+    <Text style={{ fontSize: 8.3, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#047857' }}>异构独立验收</span>：中心自动派 Hermes 复算返回 PASS</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 5, padding: '4px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={{ fontSize: 9.4, color: '#073E87', fontWeight: 'bold' }}>4. 交接包四件套与单写者锁</Text>
+    <Box style={{ background: '#ECFDF5', border: '1px solid #6EE7B7', borderRadius: 4, padding: '1px 5px', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 8.8, color: '#047857', fontWeight: 'bold' }}>防漂移</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', gap: 3 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 3, padding: '2px 4px' }}>
+    <Text style={{ fontSize: 8.1, color: '#1F2937' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>① 要求标准</span> · CLAUDE.md</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 3, padding: '2px 4px' }}>
+    <Text style={{ fontSize: 8.1, color: '#1F2937' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>② 角色任务</span> · TASK.md</Text>
+    </Box>
+    </Box>
+    <Box style={{ marginTop: 2, flexDirection: 'row', gap: 3 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 3, padding: '2px 4px' }}>
+    <Text style={{ fontSize: 8.1, color: '#1F2937' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>③ 记忆文件</span> · 路径指针</Text>
+    </Box>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 3, padding: '2px 4px' }}>
+    <Text style={{ fontSize: 8.1, color: '#1F2937' }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>④ 上手步骤</span> · 先读哪几个</Text>
+    </Box>
+    </Box>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>四态回执 + 单写者锁</span>：发出→送达→读到→交回，杜绝覆盖</Text>
+    </Box>
+    </Box>
+    <Box style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 5, padding: '4px 6px', flexDirection: 'column' }}>
+    <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 9.4, color: '#073E87', fontWeight: 'bold' }}>5. 编排层「写下它 ↔ 看着它」回路：四类拓扑连线 × 三态轨迹对照 × 双颗粒度 Trace 叠层</Text>
+    <Text style={{ fontSize: 8.5, color: '#9D0A12', fontWeight: 'bold' }}>粗粒度决策段 (turn+steps) ↔ 细粒度调用步</Text>
+    </Box>
+    <Box style={{ marginTop: 3, flexDirection: 'row', gap: 5 }}>
+    <Box style={{ flex: 1, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 8.5, color: '#073E87', fontWeight: 'bold' }}>四类拓扑连线 (节点=角色/文件/渠道)：</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>任务线</span> 派发/转交 ｜ <span style={{ fontWeight: 'bold', color: '#047857' }}>信息线</span> 读写产出</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#6D28D9' }}>汇报线</span> 验收/介入 ｜ <span style={{ fontWeight: 'bold', color: '#B45309' }}>唤醒线</span> 恢复与换模配额</Text>
+    </Box>
+    <Box style={{ flex: 1.15, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 8.5, color: '#073E87', fontWeight: 'bold' }}>三态轨迹对照 (预期规范 vs 真实轨迹)：</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>━━ 实线(已实现)</span>：契约写了，实际也按约发生</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#6B7280' }}>┈┈ 虚线(未发生)</span>：未跑到 ｜ <span style={{ fontWeight: 'bold', color: '#D97706' }}>━━ 橙色(越权)</span>：私调或越界</Text>
+    </Box>
+    <Box style={{ flex: 1.1, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 4, padding: '3px 6px', flexDirection: 'column' }}>
+    <Text style={{ fontSize: 8.5, color: '#073E87', fontWeight: 'bold' }}>双颗粒度 Trace 叠层 (annotate.js)：</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 2 }}><span style={{ fontWeight: 'bold', color: '#9D0A12' }}>粗粒度决策段</span>：触发/备选/选择/理由 (挂 turn+steps)</Text>
+    <Text style={{ fontSize: 8.2, color: '#1F2937', marginTop: 1 }}><span style={{ fontWeight: 'bold', color: '#073E87' }}>细粒度证据层</span>：展开 9 家会话库每一步推理与工具调用</Text>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    </Box>
+    <Box style={{ flex: 1 }}>
+    
+    </Box>
+    <Box style={{ height: 42, flexDirection: 'row', alignItems: 'center', gap: 16, background: 'rgba(7,62,135,0.06)', borderRadius: 8, padding: '0 14px' }}>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.2, color: '#073E87', fontWeight: 'bold', width: 50 }}>给人</Text>
+    <Text style={{ fontSize: 13.2, color: '#1F2937' }}>用五种基本拓扑与四线三态对照图，看清超过 3 个智能体的协作与偏离</Text>
+    </Box>
+    <Box style={{ width: 1, height: 22, background: '#9CA3AF' }}>
+    
+    </Box>
+    <Box style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14.2, color: '#9D0A12', fontWeight: 'bold', width: 50 }}>给 AI</Text>
+    <Text style={{ fontSize: 13.2, color: '#1F2937' }}>靠甲乙两路向中心传决定，配合四件套指针交接、单写者锁与异构智能体独立验收防偏移</Text>
+    </Box>
+    </Box>
+    </Box>
