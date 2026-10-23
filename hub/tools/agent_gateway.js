@@ -2204,6 +2204,9 @@ function main() {
   if (sub === 'note') return cmdNote(args);
   if (sub === 'bb') return cmdBlackboard(args);
   if (sub === 'audit') return cmdAudit(args);
+  // Two commands share the name answer: a dispatch id (dsp_…) means the dispatcher answers the target's request;
+  // anything else is a person answering a question an agent asked mid-turn.
+  if (sub === 'answer' && /^dsp_/.test(String(args.id || args._[1] || ''))) return cmdCollabEvent(args, 'answer');
   if (['sessions', 'session', 'search', 'state', 'pick', 'approve', 'answer', 'model', 'session-control'].includes(sub)) return cmdApi(args, sub);
   if (sub === 'deliver') return cmdCollabEvent(args, 'deliver');
   if (sub === 'report') return cmdCollabEvent(args, 'report');
