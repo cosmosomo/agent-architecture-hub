@@ -166,7 +166,8 @@ export const sessionControlMethods = {
         } else if (prof.id === 'codex') {
           if (!nativeId) throw new Error('这个 Codex 会话还没有线程编号');
           const driver = await this.ensureCodexDriver();
-          const r: any = await driver.request('thread/unsubscribe', { threadId: nativeId }).catch((e: any) => ({ status: 'not-loaded', error: String(e?.message || e) }));
+          // Through the driver, so a later prompt to this session resumes the thread before starting a turn.
+          const r: any = await driver.unsubscribeThread(nativeId).catch((e: any) => ({ status: 'not-loaded', error: String(e?.message || e) }));
           how = `thread/unsubscribe（${r?.status || 'ok'}）`;
         } else if (prof.route === 'acp-resident') {
           if (!nativeId) throw new Error('这个会话还没在智能体那边建出来');

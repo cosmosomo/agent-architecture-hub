@@ -125,6 +125,10 @@ export class CodexAppServerDriver extends EventEmitter {
   private reqId = 1;
   private pendingRequests = new Map<number | string, { resolve: (res: any) => void; reject: (err: any) => void; timeoutTimer?: NodeJS.Timeout }>();
   private loadedThreadIds = new Set<string>();
+  // Threads this connection unsubscribed from (session close). The server keeps an idle thread loaded for minutes
+  // after its last subscriber leaves, so thread/loaded/list still lists it, yet this connection gets none of its
+  // events until it resumes the thread: a turn started without that resume never reports back.
+  private unsubscribedThreadIds = new Set<string>();
   private activeTurns = new Map<string, string>(); // threadId -> turnId
   private options: CodexAppServerOptions;
   private isInitialized = false;
@@ -456,7 +460,7 @@ export class CodexAppServerDriver extends EventEmitter {
    */
   async resumeThread(threadId: string, opts: Partial<ThreadStartOptions> = {}): Promise<string> {
     const loadedList = await this.listLoadedThreads();
-    if (!loadedList.includes(threadId)) {
+    if (!loadedList.includes(threadId) || this.unsubscribedThreadIds.has(threadId)) {
       const params: Record<string, any> = {
         threadId,
         excludeTurns: true,
@@ -471,8 +475,17 @@ export class CodexAppServerDriver extends EventEmitter {
 
       await this.request('thread/resume', params);
       this.loadedThreadIds.add(threadId);
+      this.unsubscribedThreadIds.delete(threadId);
     }
     return threadId;
+  }
+
+  /** Stop receiving a thread's events (session close); a later resumeThread subscribes again. */
+  async unsubscribeThread(threadId: string): Promise<any> {
+    const res = await this.request('thread/unsubscribe', { threadId });
+    this.loadedThreadIds.delete(threadId);
+    this.unsubscribedThreadIds.add(threadId);
+    return res;
   }
 
   /**
