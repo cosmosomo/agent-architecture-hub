@@ -15,6 +15,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { listModels } from './gateway/models.ts';
 import { extname, join, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
+import { spawn } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { CONTRACT_VERSION, overview, type RootInfo, type Session, type SessionDoc, type SessionSummary } from '@hub-trace/contract';
 import { sessionToOtlp } from '@hub-trace/otel';
@@ -294,6 +295,15 @@ function sendFile(res: ServerResponse, path: string, head: boolean) {
 }
 
 const FEEDBACK_ROOT = join(homedir(), '.agent-hub', 'feedback');
+
+/** Phone feedback also goes on the registry's annotation board (user 10-23: 一块板、三个来源、负责人自己认领). The
+ *  board's import picks up feedback not yet on it, so this stays one call and never makes a card twice. */
+function feedbackToBoard(): void {
+  const script = join(homedir(), '.agent-hub', 'asset_map', 'asset_map.py');
+  if (!existsSync(script)) return;
+  const child = spawn('uv', ['run', '--no-project', 'python', script, 'board', 'import-legacy'], { windowsHide: true, stdio: 'ignore' });
+  child.on('error', (error) => console.error('[feedback-board]', error));
+}
 
 function readJsonBody(req: IncomingMessage, maxBytes = 256 * 1024): Promise<Record<string, any>> {
   return new Promise((ok, fail) => {
@@ -829,6 +839,7 @@ export function createService(opts: ServeOptions): Server {
         });
         const record = { id, at: now.toISOString(), text, page: String(body.page || ''), context: body.context || null, userAgent: String(req.headers['user-agent'] || ''), images: files, handled: false };
         writeFileSync(join(dir, 'feedback.json'), JSON.stringify(record, null, 2), 'utf8');
+        feedbackToBoard();
         return json(res, 200, { ok: true, id, images: files.length });
       }
       if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'read only');
