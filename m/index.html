@@ -1605,6 +1605,11 @@ async function viewSession(id) {
   const main = $('#main');
   main.innerHTML = '<div class="statusline" id="sl">读取中…</div><div id="rel"></div><div id="approval-banner" hidden></div><div id="older"></div><div id="turns"></div><div id="question-banner" hidden></div>';
   try { await Promise.all([loadSessions(), loadCaps()]); } catch {}
+  // A session made a moment ago (a fork opens straight into its new session) is not in the list this page holds yet
+  // (loadSessions keeps the list while a session is open); without its row there is no origin and close and rename hide.
+  if (!S.sessions.some((s) => s.id === id)) {
+    try { const j = await api('/api/sessions?slim=1'); S.sessions = j.sessions || S.sessions; S.loadedAt = Date.now(); } catch {}
+  }
   let meta = S.sessions.find((s) => s.id === id) || { id, channel: id.split(':')[0], title: id };
   if (meta.channel === 'claude-code') meta.channel = 'claude';
   S.currentMeta = meta;
