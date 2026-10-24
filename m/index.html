@@ -461,7 +461,7 @@ function handleSseMessage(msg) {
     // A turn the person started from the page: tell them when it ends, unless they are looking at it.
     const looking = S.activeView === 'session' && S.currentMeta && (S.currentMeta.id === r.traceSessionId || controlName(S.currentMeta) === r.sessionName);
     if (r.source === 'web' && (document.hidden || !looking)) {
-      notifyPerson(`${FAM[r.channel] || r.channel} ${r.status === 'completed' ? '干完了' : r.status === 'aborted' ? '停下了' : '没做成'}`, String(r.text || r.error || r.prompt || '').slice(0, 80), r.traceSessionId ? '#/s/' + encodeURIComponent(r.traceSessionId) : '');
+      notifyPerson(`${FAM[r.channel] || r.channel} ${r.status === 'completed' ? '干完了' : r.status === 'aborted' ? '停下了' : '没做成'}`, String(r.text || plainError(r.error) || r.error || r.prompt || '').slice(0, 80), r.traceSessionId ? '#/s/' + encodeURIComponent(r.traceSessionId) : '');
     }
     const s = S.sessions.find((x) => x.id === r.traceSessionId || x.name === r.sessionName);
     if (s) s.state = r.status === 'completed' ? 'idle' : (r.status || 'idle');
@@ -648,10 +648,31 @@ async function loadFeedStalls() {
   S.stalledDispatches = result.dispatches.filter((d) => (d.status === 'stalled' || d.status === 'timeout') && Date.parse(d.updatedAt || d.receipts?.returnedAt || '') > since);
   S.stallError = '';
 }
+// Products report failures in their own words (an HTTP client's "EOF", a quota code). Say what happened in plain
+// words and keep the original one tap away (用户 10-20 在手机上问“啥报错”，批注板 BRD-20261023-202940-015).
+const ERROR_PLAIN = [
+  [/\b(EOF|ECONNRESET|ECONNREFUSED|socket hang up|connection reset|connection refused)\b/i, '连模型服务的网络断了'],
+  [/\b(ENOTFOUND|getaddrinfo|EAI_AGAIN)\b/i, '找不到模型服务的地址，可能是网络或代理没通'],
+  [/\b(429|rate.?limit|too many requests|RESOURCE_EXHAUSTED)\b/i, '请求太频繁或额度用完，被模型服务限流'],
+  [/\b(quota|insufficient.?(balance|credit|quota))\b|余额不足|额度不足/i, '额度或余额不够'],
+  [/\b(401|403|unauthori[sz]ed|forbidden|invalid.?api.?key|PERMISSION_DENIED|UNAUTHENTICATED)\b/i, '登录或密钥失效，没有权限'],
+  [/\b(HTTP|status)\s*5\d\d\b|internal server error|bad gateway|service unavailable|overloaded|\bUNAVAILABLE\b/i, '模型服务那边出错或过载'],
+  [/\b(ETIMEDOUT|timeout|timed out|deadline exceeded)\b/i, '等模型服务回复超时'],
+];
+function plainError(text) {
+  const t = String(text || '');
+  if (!/error|fail|失败|EOF|ECONN|ENOTFOUND|timeout|timed out|429|quota|denied|unauthori|unavailable|overloaded|\bHTTP\s*[45]\d\d\b/i.test(t)) return '';
+  const hit = ERROR_PLAIN.find(([rx]) => rx.test(t));
+  if (!hit) return '';
+  const host = /https?:\/\/([^/"'\s:]+)/.exec(t);
+  const tries = /attempt\s*(\d+)/i.exec(t);
+  return hit[1] + (host ? `（${host[1]}）` : '') + (tries ? `，已重试 ${tries[1]} 次` : '');
+}
+
 function stalledDispatchCard(d) {
   return `<div class="card" data-key="stall:${esc(d.id)}" data-unit="wake-stall" style="border:2px solid var(--warn);background:rgba(180,83,9,.08)">
     <div class="row"><b class="tag st-stale">卡住/已超时</b><span>${esc(FAM[d.to.channel] || d.to.channel)} · ${esc(d.to.sessionName)}</span></div>
-    <div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(d.error || d.delivery?.summary || '中心已标记异常，请核对派活单')}</div>
+    <div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc((plainError(d.error) ? plainError(d.error) + '。原文：' : '') + (d.error || d.delivery?.summary || '中心已标记异常，请核对派活单'))}</div>
     ${d.waitingFor ? `<div style="white-space:pre-wrap">等待条件：${esc(d.waitingFor)}</div>` : ''}
     <div class="sub">${esc(d.id)} · ${esc(d.updatedAt)}</div><a href="#/collab">查看协作派活记录</a></div>`;
 }
@@ -1344,7 +1365,14 @@ function stepsHtml(steps) {
   flush();
   return html;
 }
-const actHtml = (a) => (a.kind === 'think' ? thinkStep(a) : a.kind === 'event' ? `<div class="who">↩ ${esc(a.text || a.name || '事件')}</div>` : toolStep(a));
+const eventHtml = (a) => {
+  const raw = a.text || a.name || '事件';
+  const plain = plainError(raw);
+  return plain
+    ? `<details class="who"><summary>↩ ${esc(plain)}</summary><div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(raw)}</div></details>`
+    : `<div class="who">↩ ${esc(raw)}</div>`;
+};
+const actHtml = (a) => (a.kind === 'think' ? thinkStep(a) : a.kind === 'event' ? eventHtml(a) : toolStep(a));
 document.addEventListener('toggle', (e) => {
   const d = e.target;
   if (!d.open || !d.querySelector) return;
