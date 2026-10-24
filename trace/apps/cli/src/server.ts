@@ -1197,9 +1197,29 @@ export function createService(opts: ServeOptions): Server {
           rawId.startsWith('hermes:')
             ? undefined
             : await store.session(rawId);
+        // One session, two records: the product's own (every step, context usage, compactions) and the hub's thin
+        // acpx record (prompts and replies, its turns carry no times of their own). The thin one is shown only when
+        // it is clearly ahead, i.e. the product's record has not caught up with a turn sent a moment ago. Picking
+        // by turn count alone flipped between the two whenever they disagreed by one turn (blackboard 2495, 10-24).
+        const lastAt = (s: any) => Date.parse(String(s?.updatedAt || s?.turns?.[s.turns.length - 1]?.endedAt || s?.startedAt || '')) || 0;
+        const acpxAhead =
+          acpxSess && (!storeSess || (acpxSess.turns.length > storeSess.turns.length && lastAt(acpxSess) > lastAt(storeSess) + 30_000));
         const rawSession =
-          acpxSess && (!storeSess || acpxSess.turns.length > storeSess.turns.length)
-            ? { ...acpxSess, id: rawId }
+          acpxAhead
+            ? {
+                ...acpxSess,
+                id: rawId,
+                // The product's record still knows what the thin one cannot: the context in use and the compactions.
+                ...(storeSess
+                  ? {
+                      stats: {
+                        ...acpxSess.stats,
+                        context: acpxSess.stats?.context ?? storeSess.stats?.context,
+                        compactions: Math.max(acpxSess.stats?.compactions || 0, storeSess.stats?.compactions || 0),
+                      },
+                    }
+                  : {}),
+              }
             : storeSess
               ? {
                   ...storeSess,
